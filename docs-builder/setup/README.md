@@ -21,8 +21,8 @@ Set up elastic/docs-builder CLI for use in actions
 ## Usage
 <!--usage action="your/action" version="v1"-->
 ```yaml
-on: push
 steps:
-  - uses: your/action@v1
+  - uses: elastic/docs-actions/docs-builder/setup
+  - run: docs-builder --version
 ```
 <!--/usage-->
