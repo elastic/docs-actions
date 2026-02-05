@@ -1,0 +1,32 @@
+name: git/setup
+
+description: 'Set up Git for use in actions with a GitHub token'
+
+inputs:
+  git-user:
+    description: 'Git user name'
+    default: 'elasticdocs'
+  git-email:
+    description: 'Git user email'
+    default: 'docs-eng@elastic.co'
+  github-token:
+    description: 'GitHub token'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Setup git
+      shell: bash
+      run: |
+        git config --global user.name "${GIT_USER}"
+        git config --global user.email "${GIT_EMAIL}"
+        gh auth setup-git
+
+        echo "GIT_USER=${GIT_USER}" >> $GITHUB_ENV
+        echo "GIT_EMAIL=${GIT_EMAIL}" >> $GITHUB_ENV
+
+      env:
+        GIT_USER: '${{ inputs.git-user }}'
+        GIT_EMAIL: '${{ inputs.git-email }}'
+        GITHUB_TOKEN: '${{ inputs.github-token }}'
