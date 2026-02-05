@@ -2,10 +2,10 @@ name: codex/update-link-index
 description: This action updates the link index for the given repository.
 
 inputs:
-  environment:
+  codex-env:
     description: The environment to update the link index for
     required: false
-    default: "dev"
+    default: "engineering"
 
 runs:
   using: composite
@@ -33,7 +33,7 @@ runs:
       uses: actions/download-artifact@v6
       with:
         name: links
-        path: ${{ inputs.environment }}/${{ github.repository }}
+        path: ${{ inputs.codex-env }}/${{ github.repository }}
     - name: Commit and push
       shell: bash
       run: |
