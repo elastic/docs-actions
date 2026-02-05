@@ -1,0 +1,74 @@
+name: codex/update-link-index
+description: This action updates the link index for the given repository.
+
+inputs:
+  environment:
+    description: The environment to update the link index for
+    required: false
+    default: "dev"
+
+runs:
+  using: composite
+  steps:
+    - name: Generate vault role
+      id: generate-vault-role
+      shell: bash
+      run: |
+          workflow_ref="${{ github.repository }}/.github/workflows/codex-build.yml"
+          echo "${workflow_ref}"
+          hash=$(echo -n "${workflow_ref}" | sha256sum | awk '{print substr($1, 1, 12)}')
+          echo "result=token-policy-${hash}" >> "${GITHUB_OUTPUT}"
+    - name: Fetch ephemeral GitHub token
+      id: fetch-ephemeral-token
+      uses: elastic/ci-gh-actions/fetch-github-token@v1.0.0
+      with:
+          vault-instance: "ci-prod"
+          vault-role: "${{ steps.generate-vault-role.outputs.result }}"
+    - name: Clone codex-link-index
+      uses: actions/checkout@v6
+      with:
+          repository: elastic/codex-link-index
+          token: ${{ steps.fetch-ephemeral-token.outputs.token }}
+    - name: Download artifact
+      uses: actions/download-artifact@v6
+      with:
+        name: links
+        path: ${{ inputs.environment }}/${{ github.repository }}
+    - name: Commit and push
+      shell: bash
+      run: |
+          echo "::group::Configure git"
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "::endgroup::"
+
+          echo "::group::Stage changes"
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            echo "::endgroup::"
+            exit 0
+          fi
+          git diff --staged --stat
+          echo "::endgroup::"
+
+          echo "::group::Commit"
+          git commit -m "Update link index for ${{ github.repository }}@${{ github.sha }}
+
+          Workflow run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "::endgroup::"
+          
+          echo "::group::Push"
+          for i in {1..5}; do
+            if git push; then
+              echo "Push succeeded"
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::warning::Push failed, attempt $i/5. Rebasing and retrying..."
+            git pull --rebase
+          done
+
+          echo "::error::Failed to push after 5 attempts"
+          echo "::endgroup::"
+          exit 1
