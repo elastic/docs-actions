@@ -14,7 +14,7 @@ runs:
       id: generate-vault-role
       shell: bash
       run: |
-          workflow_ref="${{ github.repository }}/.github/workflows/codex-build.yml"
+          workflow_ref=$(echo "${GITHUB_WORKFLOW_REF}" | awk -F'@' '{print $1}')
           echo "${workflow_ref}"
           hash=$(echo -n "${workflow_ref}" | sha256sum | awk '{print substr($1, 1, 12)}')
           echo "result=token-policy-${hash}" >> "${GITHUB_OUTPUT}"
