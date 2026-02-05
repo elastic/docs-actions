@@ -26,11 +26,14 @@ jobs:
         with:
           name: docs
           path: .artifacts/docs/html
+          retention-days: 1
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
           name: links
           path: .artifacts/docs/html/links.json
+          retention-days: 1
+
 
   deploy:
     needs: build
