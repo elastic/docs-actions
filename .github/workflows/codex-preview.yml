@@ -3,10 +3,10 @@ name: Codex Preview
 on:
   workflow_call:
     inputs:
-      environment:
+      codex-env:
         description: The environment to build the codex for
         required: false
-        default: "dev"
+        default: "engineering"
         type: string
       path-pattern:
         description: The path pattern to check for changes
@@ -86,4 +86,4 @@ jobs:
     steps:
       - uses: elastic/docs-actions/codex/update-link-index@main
         with:
-          environment: ${{ inputs.environment }}
+          codex-env: ${{ inputs.codex-env }}
