@@ -1,11 +1,18 @@
 name: test-docs-builder-setup
 
 on:
-  pull_request: ~
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'docs-builder/setup/**'
+      - '.github/workflows/test-docs-builder-setup.yml'
   push:
     branches:
       - main
-
+    paths:
+      - 'docs-builder/setup/**'
+      - '.github/workflows/test-docs-builder-setup.yml'
 jobs:
   test:
     name: version=${{ matrix.version }}
