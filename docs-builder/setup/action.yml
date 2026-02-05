@@ -20,30 +20,29 @@ runs:
     - name: Acquire docs-builder binary
       shell: bash
       run: |
-        echo "::group::Acquire docs-builder binary"
+        INSTALL_DIR="${HOME}/.docs-builder/bin"
+        mkdir -p "${INSTALL_DIR}"
 
         if [[ "${DOCS_BUILDER_VERSION}" == "edge" ]]; then
-            docker cp $(docker create --name tc ghcr.io/elastic/docs-builder:edge):/app/docs-builder . && docker rm tc
-            exit 0;
-        fi
-        
-        if [[ "${DOCS_BUILDER_VERSION}" == "latest" ]]; then
-          DOCS_BUILDER_VERSION="" # empty string to get the latest version
+            docker cp $(docker create --name tc ghcr.io/elastic/docs-builder:edge):/app/docs-builder "${INSTALL_DIR}/docs-builder" && docker rm tc
+        else
+            if [[ "${DOCS_BUILDER_VERSION}" == "latest" ]]; then
+              DOCS_BUILDER_VERSION="" # empty string to get the latest version
+            fi
+
+            TEMP_DIR=$(mktemp -d)
+            trap "rm -rf ${TEMP_DIR}" EXIT
+
+            gh release download "${DOCS_BUILDER_VERSION}" --pattern 'docs-builder-linux-x64.zip' --repo elastic/docs-builder --dir "${TEMP_DIR}"
+            gh attestation verify "${TEMP_DIR}/docs-builder-linux-x64.zip" -R elastic/docs-builder
+            unzip -p "${TEMP_DIR}/docs-builder-linux-x64.zip" docs-builder > "${INSTALL_DIR}/docs-builder"
         fi
 
-        gh release download "${DOCS_BUILDER_VERSION}" --pattern 'docs-builder-linux-x64.zip' --repo elastic/docs-builder
-        gh attestation verify ./docs-builder-linux-x64.zip -R elastic/docs-builder
-        unzip -p ./docs-builder-linux-x64.zip docs-builder > docs-builder
+        chmod +x "${INSTALL_DIR}/docs-builder"
+        echo "${INSTALL_DIR}" >> $GITHUB_PATH
 
-        echo "::endgroup::"
+        echo "::notice title=Builder version::$(${INSTALL_DIR}/docs-builder --version)"
         
       env:
         DOCS_BUILDER_VERSION: '${{ inputs.version }}'
         GH_TOKEN: '${{ inputs.github-token }}'
-
-    - name: Add docs-builder to /usr/local/bin
-      shell: bash
-      run: |
-          cp docs-builder /usr/local/bin/docs-builder
-          chmod +x /usr/local/bin/docs-builder
-          echo "::notice title=Builder version::$(docs-builder --version)"
