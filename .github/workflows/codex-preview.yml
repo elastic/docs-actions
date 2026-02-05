@@ -1,4 +1,4 @@
-name: Codex Build
+name: Codex Preview
 
 on:
   workflow_call:
@@ -32,7 +32,7 @@ jobs:
           name: links
           path: .artifacts/docs/html/links.json
 
-  preview:
+  deploy:
     needs: build
     runs-on: ubuntu-latest
     steps:
