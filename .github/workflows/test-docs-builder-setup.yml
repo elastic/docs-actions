@@ -15,7 +15,7 @@ on:
       - '.github/workflows/test-docs-builder-setup.yml'
 jobs:
   test:
-    name: version=${{ matrix.version }}
+    name: version=${{ matrix.version || 'default' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
