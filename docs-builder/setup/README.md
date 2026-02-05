@@ -9,7 +9,7 @@ Set up elastic/docs-builder CLI for use in actions
 | Name           | Description         | Required | Default               |
 |----------------|---------------------|----------|-----------------------|
 | `version`      | docs-builer version | `false`  | `latest`              |
-| `github-token` | GitHub token        | `true`   | `${{ github.token }}` |
+| `github-token` | GitHub token        | `false`  | `${{ github.token }}` |
 <!--/inputs-->
 
 ## Outputs
