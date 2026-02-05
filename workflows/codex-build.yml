@@ -1,0 +1,51 @@
+name: Codex Build
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: The environment to build the codex for
+        required: false
+        default: "dev"
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Setup docs-builder
+        uses: elastic/docs-actions/docs-builder/setup@main
+      - name: Build
+        run: docs-builder --output ./.artifacts/docs/html
+      - name: Upload docs
+        uses: actions/upload-artifact@v6
+        with:
+          name: docs
+          path: .artifacts/docs/html
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: links
+          path: .artifacts/docs/html/links.json
+
+  preview:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: docs
+          path: .
+
+  update-link-index:
+    concurrency:
+      group: codex-upload-link-index
+    needs: build
+    permissions:
+      id-token: write
+    if: github.ref == 'refs/heads/main'
+    uses: elastic/docs-actions/codex/update-link-index@main
