@@ -49,6 +49,8 @@ jobs:
     permissions:
       id-token: write
     if: github.ref == 'refs/heads/main'
-    uses: elastic/docs-actions/codex/update-link-index@main
-    with:
-      environment: ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: elastic/docs-actions/codex/update-link-index@main
+        with:
+          environment: ${{ inputs.environment }}
