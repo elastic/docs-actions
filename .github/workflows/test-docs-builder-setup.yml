@@ -1,0 +1,29 @@
+name: test-docs-builder-setup
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'docs-builder/setup/**'
+      - '.github/workflows/test-docs-builder-setup.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs-builder/setup/**'
+      - '.github/workflows/test-docs-builder-setup.yml'
+jobs:
+  test:
+    name: version=${{ matrix.version || 'default' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [edge, latest, '0.100.0', null]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./docs-builder/setup
+        with:
+          version: ${{ matrix.version }}
+      - run: docs-builder --version
