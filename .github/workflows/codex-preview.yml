@@ -20,7 +20,9 @@ on:
         type: string
 
 jobs:
-  check: 
+  check:
+    permissions:
+      pull-requests: read
     runs-on: ubuntu-latest
     outputs:
       any_modified: ${{ steps.check-files.outputs.any_modified }}
@@ -63,7 +65,6 @@ jobs:
           name: links
           path: .artifacts/docs/html/links.json
           retention-days: 1
-
 
   deploy:
     needs: build
