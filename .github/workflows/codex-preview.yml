@@ -23,6 +23,7 @@ jobs:
   check:
     permissions:
       pull-requests: read
+      contents: read
     runs-on: ubuntu-latest
     outputs:
       any_modified: ${{ steps.check-files.outputs.any_modified }}
