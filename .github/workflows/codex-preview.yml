@@ -1,0 +1,91 @@
+name: Codex Preview
+
+on:
+  workflow_call:
+    inputs:
+      codex-env:
+        description: The environment to build the codex for
+        required: false
+        default: "engineering"
+        type: string
+      path-pattern:
+        description: The path pattern to check for changes
+        required: false
+        default: '**'
+        type: string
+      path-pattern-ignore:
+        description: The path pattern to ignore changes
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  check:
+    permissions:
+      pull-requests: read
+      contents: read
+    runs-on: ubuntu-latest
+    outputs:
+      any_modified: ${{ steps.check-files.outputs.any_modified }}
+    steps:
+      - name: Checkout
+        # Checkout is needed to get changed files when the event is not a pull request
+        if: contains(fromJSON('["push", "merge_group", "workflow_dispatch"]'), github.event_name)
+        uses: actions/checkout@v6
+      - name: Check changes
+        id: check-files
+        uses: tj-actions/changed-files@v47
+        with:
+          files: ${{ inputs.path-pattern }}
+          files_ignore: |
+            ${{ inputs.path-pattern-ignore }}
+            .github/**
+            README.md
+  build:
+    needs: check
+    if: needs.check.outputs.any_modified == 'true'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Setup docs-builder
+        uses: elastic/docs-actions/docs-builder/setup@main
+      - name: Build
+        run: docs-builder --output ./.artifacts/docs/html
+      - name: Upload docs
+        uses: actions/upload-artifact@v6
+        with:
+          name: docs
+          path: .artifacts/docs/html
+          retention-days: 1
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: links
+          path: .artifacts/docs/html/links.json
+          retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: docs
+          path: .
+
+  update-link-index:
+    concurrency:
+      group: codex-upload-link-index
+    needs: build
+    permissions:
+      id-token: write
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: elastic/docs-actions/codex/update-link-index@main
+        with:
+          codex-env: ${{ inputs.codex-env }}
