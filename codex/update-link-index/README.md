@@ -6,9 +6,9 @@ This action updates the link index for the given repository.
 
 ## Inputs
 <!--inputs-->
-| Name          | Description                                  | Required | Default |
-|---------------|----------------------------------------------|----------|---------|
-| `environment` | The environment to update the link index for | `false`  | `dev`   |
+| Name        | Description                                  | Required | Default       |
+|-------------|----------------------------------------------|----------|---------------|
+| `codex-env` | The environment to update the link index for | `false`  | `engineering` |
 <!--/inputs-->
 
 ## Outputs
