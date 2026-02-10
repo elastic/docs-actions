@@ -102,13 +102,13 @@ jobs:
         uses: actions/download-artifact@v6
         with:
           name: docs
-          path: .
+          path: output
       - uses: elastic/docs-actions/aws/auth@main
         with:
           aws_role_name_prefix: codex-eng-preview-
       - name: AWS sync docs to S3
         run: |
-          aws s3 sync .artifacts/docs/html "s3://elastic-codex-website-engineering${PATH_PREFIX}" --delete --no-follow-symlinks
+          aws s3 sync docs "s3://elastic-codex-website-engineering${PATH_PREFIX}" --delete --no-follow-symlinks
           aws cloudfront create-invalidation \
             --distribution-id EKT7LT5PM8RKS \
             --paths "${PATH_PREFIX}" "${PATH_PREFIX}/*"
