@@ -63,6 +63,8 @@ jobs:
         uses: actions/checkout@v6
       - name: Setup docs-builder
         uses: elastic/docs-actions/docs-builder/setup@main
+        with:
+          version: edge
       - name: Generate env.PATH_PREFIX
         id: generate-path-prefix
         env:
