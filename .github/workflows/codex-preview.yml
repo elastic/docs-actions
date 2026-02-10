@@ -111,7 +111,7 @@ jobs:
         run: |
           aws s3 sync docs "s3://elastic-codex-website-engineering${PATH_PREFIX}" --delete --no-follow-symlinks
           aws cloudfront create-invalidation \
-            --distribution-id EKT7LT5PM8RKS \
+            --distribution-id E1BSBYLPE05D2R \
             --paths "${PATH_PREFIX}" "${PATH_PREFIX}/*"
         env:
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
