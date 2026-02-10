@@ -63,10 +63,10 @@ jobs:
         run: |
           case "${GITHUB_EVENT_NAME}" in
             "merge_group" | "pull_request" | "pull_request_target")
-              path_prefix="/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}"
+              path_prefix="/_preview/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}"
               ;;
             "push" | "workflow_dispatch")
-              path_prefix="/${GITHUB_REPOSITORY}/tree/${GITHUB_REF_NAME}"
+              path_prefix="/_preview/${GITHUB_REPOSITORY}/tree/${GITHUB_REF_NAME}"
               ;;
             *)
               echo "Unsupported event: '${GITHUB_EVENT_NAME}'";
@@ -74,6 +74,7 @@ jobs:
               ;;
           esac
           echo "PATH_PREFIX=${path_prefix}" >> $GITHUB_ENV
+          echo "result=${path_prefix}" >> $GITHUB_OUTPUT
       - name: Build
         run: docs-builder --output ./.artifacts/docs/html --path-prefix ${{ env.PATH_PREFIX }}
         env:
