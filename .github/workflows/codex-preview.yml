@@ -102,7 +102,7 @@ jobs:
         uses: actions/download-artifact@v6
         with:
           name: docs
-          path: output
+          path: docs
       - uses: elastic/docs-actions/aws/auth@main
         with:
           aws_role_name_prefix: codex-eng-preview-
