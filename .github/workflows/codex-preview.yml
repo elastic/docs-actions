@@ -57,6 +57,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
+        # We would need to checkout the PR branch if the event to support pull_request_target.
+        # Skip this for now because it's not clear if we need to or should support it.
+        # However, the rest of the workflow is designed to support pull_request_target.
         uses: actions/checkout@v6
       - name: Setup docs-builder
         uses: elastic/docs-actions/docs-builder/setup@main
@@ -96,11 +99,18 @@ jobs:
           name: links
           path: .artifacts/docs/html/links.json
           retention-days: 1
+      - name: Warn about fork PR
+        if: >
+          startsWith(github.event_name, 'pull_request')
+          && github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::warning::Preview deployments are only available for PRs from the same repository, not from forks." \
+            "You can either change the event to pull_request_target or push the branch to the upstream repository instead."
 
   deploy:
     if: >
       contains(fromJSON('["pull_request", "pull_request_target"]'), github.event_name)
-      && github.event.repository.fork == false
+      && (github.event_name == 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository)
     permissions:
       id-token: write
       deployments: write
