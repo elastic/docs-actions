@@ -19,6 +19,12 @@ on:
         default: ''
         type: string
 
+permissions:
+  id-token: write
+  deployments: write
+  contents: read
+  pull-requests: write
+
 jobs:
   check:
     permissions:
@@ -54,7 +60,6 @@ jobs:
         uses: actions/checkout@v6
       - name: Setup docs-builder
         uses: elastic/docs-actions/docs-builder/setup@main
-
       - name: Generate env.PATH_PREFIX
         id: generate-path-prefix
         env:
@@ -96,12 +101,44 @@ jobs:
     if: >
       contains(fromJSON('["pull_request", "pull_request_target"]'), github.event_name)
       && github.event.repository.fork == false
-
     permissions:
       id-token: write
+      deployments: write
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Create Deployment
+        if: contains(fromJSON('["pull_request", "pull_request_target", "workflow_dispatch"]'), github.event_name) 
+        uses: actions/github-script@v8
+        id: deployment
+        with:
+          result-encoding: string
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = process.env.PR_NUMBER;
+            const environment = 'codex-preview';
+            const task = prNumber ? `codex-preview-${prNumber}` : undefined;
+            const deployment = await github.rest.repos.createDeployment({
+                owner,
+                repo,
+                environment,
+                task,
+                ref: process.env.REF,
+                auto_merge: false,
+                transient_environment: true,
+                required_contexts: [],
+            })
+            await github.rest.repos.createDeploymentStatus({
+                deployment_id: deployment.data.id,
+                owner,
+                repo,
+                state: "in_progress",
+                log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            })
+            return deployment.data.id
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REF: ${{ startsWith(github.event_name, 'pull_request') && github.event.pull_request.head.sha || github.ref_name }}
       - name: Download artifact
         uses: actions/download-artifact@v6
         with:
@@ -127,7 +164,10 @@ jobs:
     needs: build
     permissions:
       id-token: write
-    if: github.ref == 'refs/heads/main' && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name)
+    if: >
+      github.ref == 'refs/heads/main'
+      && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name)
+      && github.event.repository.fork == false
     runs-on: ubuntu-latest
     steps:
       - uses: elastic/docs-actions/codex/update-link-index@main
