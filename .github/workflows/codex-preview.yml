@@ -44,6 +44,8 @@ jobs:
   build:
     needs: check
     if: needs.check.outputs.any_modified == 'true'
+    outputs:
+      path_prefix: ${{ steps.generate-path-prefix.outputs.result }}
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -52,8 +54,30 @@ jobs:
         uses: actions/checkout@v6
       - name: Setup docs-builder
         uses: elastic/docs-actions/docs-builder/setup@main
+
+      - name: Generate env.PATH_PREFIX
+        id: generate-path-prefix
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          case "${GITHUB_EVENT_NAME}" in
+            "merge_group" | "pull_request" | "pull_request_target")
+              path_prefix="/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}"
+              ;;
+            "push" | "workflow_dispatch")
+              path_prefix="/${GITHUB_REPOSITORY}/tree/${GITHUB_REF_NAME}"
+              ;;
+            *)
+              echo "Unsupported event: '${GITHUB_EVENT_NAME}'";
+              exit 1;
+              ;;
+          esac
+          echo "PATH_PREFIX=${path_prefix}" >> $GITHUB_ENV
       - name: Build
-        run: docs-builder --output ./.artifacts/docs/html
+        run: docs-builder --output ./.artifacts/docs/html --path-prefix ${{ env.PATH_PREFIX }}
+        env:
+          PATH_PREFIX: ${{ env.PATH_PREFIX }}
       - name: Upload docs
         uses: actions/upload-artifact@v6
         with:
@@ -68,6 +92,8 @@ jobs:
           retention-days: 1
 
   deploy:
+    permissions:
+      id-token: write
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -76,6 +102,19 @@ jobs:
         with:
           name: docs
           path: .
+      - uses: elastic/docs-actions/aws/auth@main
+        with:
+          aws_role_name_prefix: codex-eng-preview-
+      - name: AWS sync docs to S3
+        run: |
+          aws s3 sync .artifacts/docs/html "s3://elastic-codex-website-engineering${PATH_PREFIX}" --delete --no-follow-symlinks
+          aws cloudfront create-invalidation \
+            --distribution-id EKT7LT5PM8RKS \
+            --paths "${PATH_PREFIX}" "${PATH_PREFIX}/*"
+        env:
+          PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
+          AWS_RETRY_MODE: standard
+          AWS_MAX_ATTEMPTS: 3
 
   update-link-index:
     concurrency:
