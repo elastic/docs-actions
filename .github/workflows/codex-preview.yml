@@ -148,6 +148,7 @@ jobs:
         with:
           aws_role_name_prefix: codex-eng-preview-
       - name: AWS sync docs to S3
+        id: s3-upload
         run: |
           aws s3 sync docs "s3://elastic-codex-website-engineering${PATH_PREFIX}" --delete --no-follow-symlinks
           aws cloudfront create-invalidation \
@@ -157,6 +158,22 @@ jobs:
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
           AWS_RETRY_MODE: standard
           AWS_MAX_ATTEMPTS: 3
+      - name: Update deployment status
+        uses: actions/github-script@v8
+        if: always() && steps.deployment.outputs.result
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.result }},
+              state: "${{ steps.s3-upload.outcome == 'success' && 'success' || 'failure' }}",
+              environment_url: `https://codex.elastic.dev${process.env.PATH_PREFIX}`,
+              log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            })
 
   update-link-index:
     concurrency:
