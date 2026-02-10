@@ -133,20 +133,3 @@ jobs:
       - uses: elastic/docs-actions/codex/update-link-index@main
         with:
           codex-env: ${{ inputs.codex-env }}
-
-  cleanup:
-    if:  github.event.action == 'closed'
-    permissions:
-      id-token: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: elastic/docs-actions/aws/auth@main
-        with:
-          aws_role_name_prefix: codex-eng-preview-
-      - name: Delete s3 objects
-        run: |
-          aws s3 rm "s3://elastic-codex-website-engineering${PATH_PREFIX}" --recursive
-        env:
-          PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
-          AWS_RETRY_MODE: standard
-          AWS_MAX_ATTEMPTS: 3
