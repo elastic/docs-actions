@@ -30,7 +30,7 @@ jobs:
     permissions:
       pull-requests: read
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       any_modified: ${{ steps.check-files.outputs.any_modified }}
     steps:
@@ -197,7 +197,7 @@ jobs:
       github.ref == 'refs/heads/main'
       && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name)
       && github.event.repository.fork == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - uses: elastic/docs-actions/codex/update-link-index@main
         with:
