@@ -1,0 +1,204 @@
+name: Codex Preview
+
+on:
+  workflow_call:
+    inputs:
+      codex-env:
+        description: The environment to build the codex for
+        required: false
+        default: "engineering"
+        type: string
+      path-pattern:
+        description: The path pattern to check for changes
+        required: false
+        default: '**'
+        type: string
+      path-pattern-ignore:
+        description: The path pattern to ignore changes
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  id-token: write
+  deployments: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  check:
+    permissions:
+      pull-requests: read
+      contents: read
+    runs-on: ubuntu-slim
+    outputs:
+      any_modified: ${{ steps.check-files.outputs.any_modified }}
+    steps:
+      - name: Checkout
+        # Checkout is needed to get changed files when the event is not a pull request
+        if: contains(fromJSON('["push", "merge_group", "workflow_dispatch"]'), github.event_name)
+        uses: actions/checkout@v6
+      - name: Check changes
+        id: check-files
+        uses: tj-actions/changed-files@v47
+        with:
+          files: ${{ inputs.path-pattern }}
+          files_ignore: |
+            ${{ inputs.path-pattern-ignore }}
+            .github/**
+            README.md
+  build:
+    needs: check
+    if: needs.check.outputs.any_modified == 'true'
+    outputs:
+      path_prefix: ${{ steps.generate-path-prefix.outputs.result }}
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        # We would need to checkout the PR branch if the event to support pull_request_target.
+        # Skip this for now because it's not clear if we need to or should support it.
+        # However, the rest of the workflow is designed to support pull_request_target.
+        uses: actions/checkout@v6
+      - name: Setup docs-builder
+        uses: elastic/docs-actions/docs-builder/setup@main
+        with:
+          version: edge
+      - name: Generate env.PATH_PREFIX
+        id: generate-path-prefix
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          case "${GITHUB_EVENT_NAME}" in
+            "merge_group" | "pull_request" | "pull_request_target")
+              path_prefix="/_preview/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}"
+              ;;
+            "push" | "workflow_dispatch")
+              path_prefix="/_preview/${GITHUB_REPOSITORY}/tree/${GITHUB_REF_NAME}"
+              ;;
+            *)
+              echo "Unsupported event: '${GITHUB_EVENT_NAME}'";
+              exit 1;
+              ;;
+          esac
+          echo "PATH_PREFIX=${path_prefix}" >> $GITHUB_ENV
+          echo "result=${path_prefix}" >> $GITHUB_OUTPUT
+      - name: Build
+        run: docs-builder --output ./.artifacts/docs/html --path-prefix ${{ env.PATH_PREFIX }}
+        env:
+          PATH_PREFIX: ${{ env.PATH_PREFIX }}
+      - name: Upload docs
+        uses: actions/upload-artifact@v6
+        with:
+          name: docs
+          path: .artifacts/docs/html
+          retention-days: 1
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: links
+          path: .artifacts/docs/html/links.json
+          retention-days: 1
+      - name: Warn about fork PR
+        if: >
+          startsWith(github.event_name, 'pull_request')
+          && github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::warning::Preview deployments are only available for PRs from the same repository, not from forks." \
+            "You can either change the event to pull_request_target or push the branch to the upstream repository instead."
+
+  deploy:
+    if: >
+      contains(fromJSON('["pull_request", "pull_request_target"]'), github.event_name)
+      && (github.event_name == 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository)
+    permissions:
+      id-token: write
+      deployments: write
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Deployment
+        if: contains(fromJSON('["pull_request", "pull_request_target", "workflow_dispatch"]'), github.event_name) 
+        uses: actions/github-script@v8
+        id: deployment
+        with:
+          result-encoding: string
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = process.env.PR_NUMBER;
+            const environment = 'codex-preview';
+            const task = prNumber ? `codex-preview-${prNumber}` : undefined;
+            const deployment = await github.rest.repos.createDeployment({
+                owner,
+                repo,
+                environment,
+                task,
+                ref: process.env.REF,
+                auto_merge: false,
+                transient_environment: true,
+                required_contexts: [],
+            })
+            await github.rest.repos.createDeploymentStatus({
+                deployment_id: deployment.data.id,
+                owner,
+                repo,
+                state: "in_progress",
+                log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            })
+            return deployment.data.id
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REF: ${{ startsWith(github.event_name, 'pull_request') && github.event.pull_request.head.sha || github.ref_name }}
+      - name: Download artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: docs
+          path: docs
+      - uses: elastic/docs-actions/aws/auth@main
+        with:
+          aws_role_name_prefix: codex-eng-preview-
+      - name: AWS sync docs to S3
+        id: s3-upload
+        run: |
+          aws s3 sync docs "s3://elastic-codex-website-engineering${PATH_PREFIX}" --delete --no-follow-symlinks
+          aws cloudfront create-invalidation \
+            --distribution-id E1BSBYLPE05D2R \
+            --paths "${PATH_PREFIX}" "${PATH_PREFIX}/*"
+        env:
+          PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
+          AWS_RETRY_MODE: standard
+          AWS_MAX_ATTEMPTS: 3
+      - name: Update deployment status
+        uses: actions/github-script@v8
+        if: always() && steps.deployment.outputs.result
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.result }},
+              state: "${{ steps.s3-upload.outcome == 'success' && 'success' || 'failure' }}",
+              environment_url: `https://codex.elastic.dev${process.env.PATH_PREFIX}`,
+              log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            })
+
+  update-link-index:
+    concurrency:
+      group: codex-upload-link-index
+    needs: build
+    permissions:
+      id-token: write
+    if: >
+      github.ref == 'refs/heads/main'
+      && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name)
+      && github.event.repository.fork == false
+    runs-on: ubuntu-slim
+    steps:
+      - uses: elastic/docs-actions/codex/update-link-index@main
+        with:
+          codex-env: ${{ inputs.codex-env }}
