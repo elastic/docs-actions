@@ -6,7 +6,7 @@ on:
       codex-env:
         description: The environment to build the codex for
         required: false
-        default: "engineering"
+        default: "internal"
         type: string
       path-pattern:
         description: The path pattern to check for changes
@@ -162,7 +162,7 @@ jobs:
       - name: AWS sync docs to S3
         id: s3-upload
         run: |
-          aws s3 sync docs "s3://elastic-codex-website-engineering${PATH_PREFIX}" --delete --no-follow-symlinks
+          aws s3 sync docs "s3://elastic-codex-website-internal${PATH_PREFIX}" --delete --no-follow-symlinks
           aws cloudfront create-invalidation \
             --distribution-id E1BSBYLPE05D2R \
             --paths "${PATH_PREFIX}" "${PATH_PREFIX}/*"

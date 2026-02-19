@@ -53,4 +53,4 @@ jobs:
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          aws s3 rm "s3://elastic-codex-website-engineering/_preview/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}" --recursive
+          aws s3 rm "s3://elastic-codex-website-internal/_preview/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}" --recursive

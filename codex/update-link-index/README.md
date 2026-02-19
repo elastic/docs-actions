@@ -8,7 +8,7 @@ This action updates the link index for the given repository.
 <!--inputs-->
 | Name        | Description                                  | Required | Default       |
 |-------------|----------------------------------------------|----------|---------------|
-| `codex-env` | The environment to update the link index for | `false`  | `engineering` |
+| `codex-env` | The environment to update the link index for | `false`  | `internal` |
 <!--/inputs-->
 
 ## Outputs
