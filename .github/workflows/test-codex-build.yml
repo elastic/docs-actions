@@ -1,0 +1,47 @@
+name: test-codex-build
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'codex/build/**'
+      - '.github/workflows/test-codex-build.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'codex/build/**'
+      - '.github/workflows/test-codex-build.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: 'codex/build'
+      - name: Mock docs-builder setup
+        run: |
+          mkdir -p docs
+          cd docs
+          
+          cat << EOF > docset.yml
+          display_name: 'My project'
+          description: My project is awesome!
+          icon: asterisk
+
+          registry: internal
+
+          toc:
+            - file: index.md
+          EOF
+
+          cat << EOF > index.md
+          # Test
+          This is a test.
+          EOF
+      - name: verify
+        run: tree -a
+          
+      - uses: ./codex/build
+        id: codex-build

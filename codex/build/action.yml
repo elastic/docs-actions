@@ -1,0 +1,63 @@
+name: codex/build
+description: Builds the codex documentation
+
+inputs:
+  docs-builder-version:
+    description: The version of docs-builder to use
+    required: false
+    default: "edge"
+    type: string
+
+outputs:
+  path-prefix:
+    description: The path prefix for the documentation
+    value: ${{ steps.generate-path-prefix.outputs.result }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup docs-builder
+      uses: elastic/docs-actions/docs-builder/setup@main
+      with:
+        version: ${{ inputs.docs-builder-version }}
+    - name: Generate env.PATH_PREFIX
+      id: generate-path-prefix
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        GITHUB_REF_NAME: ${{ github.ref_name }}
+      run: |
+        case "${GITHUB_EVENT_NAME}" in
+          "merge_group" | "pull_request" | "pull_request_target")
+            path_prefix="/_preview/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}"
+            ;;
+          "push" | "workflow_dispatch")
+            path_prefix="/_preview/${GITHUB_REPOSITORY}/tree/${GITHUB_REF_NAME}"
+            ;;
+          *)
+            echo "Unsupported event: '${GITHUB_EVENT_NAME}'";
+            exit 1;
+            ;;
+        esac
+        echo "PATH_PREFIX=${path_prefix}" >> $GITHUB_ENV
+        echo "result=${path_prefix}" >> $GITHUB_OUTPUT
+      shell: bash
+    - name: Build
+      run: docs-builder --output ./.artifacts/docs/html --path-prefix ${{ env.PATH_PREFIX }}
+      shell: bash
+      env:
+        PATH_PREFIX: ${{ env.PATH_PREFIX }}
+    - name: Upload docs
+      uses: actions/upload-artifact@v6
+      with:
+        name: docs
+        path: .artifacts/docs/html
+        retention-days: 1
+        if-no-files-found: error
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: links
+        path: .artifacts/docs/html/links.json
+        retention-days: 1
+        if-no-files-found: error
