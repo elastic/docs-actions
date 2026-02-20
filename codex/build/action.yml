@@ -17,7 +17,7 @@ runs:
   using: composite
   steps:
     - name: Setup docs-builder
-      uses: elastic/docs-actions/docs-builder/setup@main
+      uses: elastic/docs-actions/docs-builder/setup@v1
       with:
         version: ${{ inputs.docs-builder-version }}
     - name: Generate env.PATH_PREFIX
