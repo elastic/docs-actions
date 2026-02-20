@@ -163,11 +163,14 @@ jobs:
   update-link-index:
     concurrency:
       group: codex-upload-link-index
-    needs: build
+    needs: 
+      - build
+      - check
     permissions:
       id-token: write
     if: >
-      github.ref == 'refs/heads/main'
+      needs.check.outputs.any_modified == 'true'
+      && github.ref == 'refs/heads/main'
       && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name)
       && github.event.repository.fork == false
     runs-on: ubuntu-slim
