@@ -16,11 +16,6 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Checkout code
-      # We would need to checkout the PR branch if the event to support pull_request_target.
-      # Skip this for now because it's not clear if we need to or should support it.
-      # However, the rest of the workflow is designed to support pull_request_target.
-      uses: actions/checkout@v6
     - name: Setup docs-builder
       uses: elastic/docs-actions/docs-builder/setup@main
       with:
