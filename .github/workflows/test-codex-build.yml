@@ -25,17 +25,16 @@ jobs:
           mkdir -p docs
           cd docs
           
-          cat > docset.yml <<EOF
+          cat << EOF > docset.yml
           display_name: test
           toc:
             - file: index.md
           EOF
 
-          cat > index.md <<EOF
+          cat << EOF > index.md
           # Test
           This is a test.
           EOF
           
       - uses: ./codex/build
-        with:
-          version: edge
+        id: codex-build

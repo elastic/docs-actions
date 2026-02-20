@@ -8,6 +8,11 @@ inputs:
     default: "edge"
     type: string
 
+outputs:
+  path-prefix:
+    description: The path prefix for the documentation
+    value: ${{ steps.generate-path-prefix.outputs.result }}
+
 runs:
   using: composite
   steps:
@@ -61,12 +66,3 @@ runs:
         path: .artifacts/docs/html/links.json
         retention-days: 1
         if-no-files-found: error
-
-    - name: Warn about fork PR
-      if: >
-        startsWith(github.event_name, 'pull_request')
-        && github.event.pull_request.head.repo.full_name != github.repository
-      run: |
-        echo "::warning::Preview deployments are only available for PRs from the same repository, not from forks." \
-          "You can either change the event to pull_request_target or push the branch to the upstream repository instead."
-      shell: bash
