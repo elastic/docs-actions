@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          sparse-checkout: 'codex/build/**'
+          sparse-checkout: 'codex/build'
       - name: Mock docs-builder setup
         run: |
           mkdir -p docs
