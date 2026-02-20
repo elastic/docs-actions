@@ -52,12 +52,16 @@ runs:
         name: docs
         path: .artifacts/docs/html
         retention-days: 1
+        if-no-files-found: error
+
     - name: Upload artifact
       uses: actions/upload-artifact@v6
       with:
         name: links
         path: .artifacts/docs/html/links.json
         retention-days: 1
+        if-no-files-found: error
+
     - name: Warn about fork PR
       if: >
         startsWith(github.event_name, 'pull_request')
