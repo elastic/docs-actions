@@ -35,6 +35,8 @@ jobs:
           # Test
           This is a test.
           EOF
+      - name: verify
+        run: tree -a
           
       - uses: ./codex/build
         id: codex-build
