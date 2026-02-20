@@ -43,7 +43,7 @@ jobs:
               });
             }
 
-      - uses: elastic/docs-actions/aws/auth@main
+      - uses: elastic/docs-actions/aws/auth@v1
         with:
           aws_role_name_prefix: codex-eng-preview-
         if: steps.delete-deployment.outputs.is-empty == 'false'

@@ -18,9 +18,9 @@ This action updates the link index for the given repository.
 <!--/outputs-->
 
 ## Usage
-<!--usage action="your/action" version="v1"-->
+<!--usage action="elastic/docs-actions/codex/update-link-index" version="v1"-->
 ```yaml
 steps:
-  - uses: elastic/docs-actions/codex/update-link-index@main
+  - uses: elastic/docs-actions/codex/update-link-index@v1
 ```
 <!--/usage-->

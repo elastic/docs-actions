@@ -49,75 +49,47 @@ jobs:
             README.md
   build:
     needs: check
-    if: needs.check.outputs.any_modified == 'true'
     outputs:
-      path_prefix: ${{ steps.generate-path-prefix.outputs.result }}
+      path_prefix: ${{ steps.codex-build.outputs.path-prefix }}
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ${{ needs.check.outputs.any_modified == 'true' && 'ubuntu-latest' || 'ubuntu-slim' }}
     steps:
-      # TODO: Use the codex/build action instead
       - name: Checkout code
+        if: needs.check.outputs.any_modified == 'true'
         # We would need to checkout the PR branch if the event to support pull_request_target.
         # Skip this for now because it's not clear if we need to or should support it.
         # However, the rest of the workflow is designed to support pull_request_target.
         uses: actions/checkout@v6
-      - name: Setup docs-builder
-        uses: elastic/docs-actions/docs-builder/setup@main
+      - uses: elastic/docs-actions/codex/build@v1
+        if: needs.check.outputs.any_modified == 'true'
+        id: codex-build
         with:
-          version: edge
-      - name: Generate env.PATH_PREFIX
-        id: generate-path-prefix
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_REF_NAME: ${{ github.ref_name }}
-        run: |
-          case "${GITHUB_EVENT_NAME}" in
-            "merge_group" | "pull_request" | "pull_request_target")
-              path_prefix="/_preview/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}"
-              ;;
-            "push" | "workflow_dispatch")
-              path_prefix="/_preview/${GITHUB_REPOSITORY}/tree/${GITHUB_REF_NAME}"
-              ;;
-            *)
-              echo "Unsupported event: '${GITHUB_EVENT_NAME}'";
-              exit 1;
-              ;;
-          esac
-          echo "PATH_PREFIX=${path_prefix}" >> $GITHUB_ENV
-          echo "result=${path_prefix}" >> $GITHUB_OUTPUT
-      - name: Build
-        run: docs-builder --output ./.artifacts/docs/html --path-prefix ${{ env.PATH_PREFIX }}
-        env:
-          PATH_PREFIX: ${{ env.PATH_PREFIX }}
-      - name: Upload docs
-        uses: actions/upload-artifact@v6
-        with:
-          name: docs
-          path: .artifacts/docs/html
-          retention-days: 1
-      - name: Upload artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: links
-          path: .artifacts/docs/html/links.json
-          retention-days: 1
+          docs-builder-version: edge
       - name: Warn about fork PR
         if: >
           startsWith(github.event_name, 'pull_request')
           && github.event.pull_request.head.repo.full_name != github.repository
+          && needs.check.outputs.any_modified == 'true'
         run: |
           echo "::warning::Preview deployments are only available for PRs from the same repository, not from forks." \
             "You can either change the event to pull_request_target or push the branch to the upstream repository instead."
+      - name: Skip build
+        if: needs.check.outputs.any_modified == 'false'
+        run: |
+          echo "::warning::No changes detected, skipping build."
 
   deploy:
     if: >
-      contains(fromJSON('["pull_request", "pull_request_target"]'), github.event_name)
+      needs.check.outputs.any_modified == 'true'
+      && contains(fromJSON('["pull_request", "pull_request_target"]'), github.event_name)
       && (github.event_name == 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository)
     permissions:
       id-token: write
       deployments: write
-    needs: build
+    needs: 
+      - check
+      - build
     runs-on: ubuntu-latest
     steps:
       - name: Create Deployment
@@ -157,7 +129,7 @@ jobs:
         with:
           name: docs
           path: docs
-      - uses: elastic/docs-actions/aws/auth@main
+      - uses: elastic/docs-actions/aws/auth@v1
         with:
           aws_role_name_prefix: codex-eng-preview-
       - name: AWS sync docs to S3
@@ -200,6 +172,6 @@ jobs:
       && github.event.repository.fork == false
     runs-on: ubuntu-slim
     steps:
-      - uses: elastic/docs-actions/codex/update-link-index@main
+      - uses: elastic/docs-actions/codex/update-link-index@v1
         with:
           codex-env: ${{ inputs.codex-env }}
