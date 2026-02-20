@@ -26,7 +26,12 @@ jobs:
           cd docs
           
           cat << EOF > docset.yml
-          display_name: test
+          display_name: 'My project'
+          description: My project is awesome!
+          icon: asterisk
+
+          registry: internal
+
           toc:
             - file: index.md
           EOF
