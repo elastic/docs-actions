@@ -51,6 +51,7 @@ runs:
       with:
         name: docs
         path: .artifacts/docs/html
+        compression-level: 1
         retention-days: 1
         if-no-files-found: error
 
@@ -59,5 +60,6 @@ runs:
       with:
         name: links
         path: .artifacts/docs/html/links.json
+        compression-level: 1
         retention-days: 1
         if-no-files-found: error
