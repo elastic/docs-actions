@@ -19,6 +19,9 @@ on:
         default: ''
         type: string
 
+concurrency:
+  group: ${{github.workflow}}-${{ github.ref }}
+
 permissions:
   id-token: write
   deployments: write
@@ -161,8 +164,6 @@ jobs:
             })
 
   update-link-index:
-    concurrency:
-      group: codex-upload-link-index
     needs: 
       - build
       - check
