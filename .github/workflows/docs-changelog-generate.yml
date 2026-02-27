@@ -31,11 +31,18 @@ jobs:
     if: github.event.pull_request.state == 'open'
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve actions ref
+        id: actions-ref
+        shell: bash
+        run: echo "ref=${WORKFLOW_REF##*@}" >> "$GITHUB_OUTPUT"
+        env:
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+
       - name: Checkout actions
         uses: actions/checkout@v6
         with:
           repository: elastic/docs-actions
-          ref: ${{ github.job_workflow_sha || github.sha }}
+          ref: ${{ steps.actions-ref.outputs.ref }}
           sparse-checkout: docs-builder/changelog
 
       - name: Generate changelog
