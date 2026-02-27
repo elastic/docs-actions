@@ -48,9 +48,22 @@ on:
       - labeled
       - unlabeled
 
+permissions:
+  contents: read
+
+concurrency:
+  group: changelog-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
-  changelog:
-    uses: elastic/docs-actions/.github/workflows/docs-changelog-generate.yml@v1
+  generate:
+    if: github.event.pull_request.state == 'open'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate changelog
+        uses: elastic/docs-actions/docs-builder/changelog/generate@v1
+        with:
+          config: docs/changelog.yml
 ```
 
 **`.github/workflows/docs-changelog-commit.yml`**
@@ -68,12 +81,20 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: changelog-commit-${{ github.event.workflow_run.head_branch || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
-  changelog:
+  commit:
     if: github.event.workflow_run.event == 'pull_request'
-    uses: elastic/docs-actions/.github/workflows/docs-changelog-commit.yml@v1
-    with:
-      run-id: ${{ github.event.workflow_run.id }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Commit changelog
+        uses: elastic/docs-actions/docs-builder/changelog/commit@v1
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
 ```
 
 > **Important:** The `name` in the generate workflow (`docs-changelog-generate`) must match the `workflows:` reference in the commit workflow. If you rename one, rename the other.
@@ -88,7 +109,7 @@ Make sure the GitHub labels referenced in your `docs/changelog.yml` exist in you
 PR opened/labeled
        |
        v
-docs-changelog-generate workflow
+generate workflow
        |
        +-- skip if changelog:skip label is present
        +-- skip if last commit is from the bot (prevents loops)
@@ -98,7 +119,7 @@ docs-changelog-generate workflow
        +-- uploads result as artifact
        |
        v
-docs-changelog-commit workflow (triggered by workflow_run)
+commit workflow (triggered by workflow_run)
        |
        +-- re-validates PR state (labels, head SHA)
        +-- downloads artifact
@@ -110,26 +131,28 @@ The two-workflow design is required because the generate workflow runs with read
 
 ## Customization
 
-Both workflows accept optional inputs via `workflow_call`:
+The generate action accepts optional inputs:
 
-| Input                | Workflow  | Description                              | Default              |
-|----------------------|-----------|------------------------------------------|----------------------|
-| `config`             | generate  | Path to changelog configuration file     | `docs/changelog.yml` |
-| `strip-title-prefix` | generate  | Remove `[Prefix]:` from PR titles       | `false`              |
+| Input                  | Description                              | Default              |
+|------------------------|------------------------------------------|----------------------|
+| `config`               | Path to changelog configuration file     | `docs/changelog.yml` |
+| `strip-title-prefix`   | Remove `[Prefix]:` from PR titles       | `false`              |
+| `changelog-dir`        | Directory for changelog entry files      | `docs/changelog`     |
+| `docs-builder-version` | docs-builder version to install          | `edge`               |
+| `github-token`         | GitHub token for API access              | `${{ github.token }}`|
 
 Example with custom config path:
 
 ```yaml
-jobs:
-  changelog:
-    uses: elastic/docs-actions/.github/workflows/docs-changelog-generate.yml@v1
-    with:
-      config: .changelog/config.yml
+      - name: Generate changelog
+        uses: elastic/docs-actions/docs-builder/changelog/generate@v1
+        with:
+          config: .changelog/config.yml
 ```
 
 ## Skipping changelog generation
 
-Add the `changelog:skip` label to a PR to skip changelog generation entirely. The generate workflow will exit early and no artifact or commit is produced.
+Add the `changelog:skip` label to a PR to skip changelog generation entirely. The generate action will exit early and no artifact or commit is produced.
 
 ## Manual edits
 
