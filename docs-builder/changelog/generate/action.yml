@@ -88,6 +88,65 @@ runs:
         fi
         echo "manually-edited=false" >> "$GITHUB_OUTPUT"
 
+    - name: Resolve PR metadata
+      id: pr-meta
+      if: >
+        steps.preflight.outputs.should-proceed == 'true'
+        && steps.manual-check.outputs.manually-edited != 'true'
+      shell: bash
+      env:
+        CONFIG_FILE: ${{ inputs.config }}
+        PR_TITLE: ${{ github.event.pull_request.title }}
+        STRIP_TITLE_PREFIX: ${{ inputs.strip-title-prefix }}
+      run: |
+        TITLE="$PR_TITLE"
+        if [ "$STRIP_TITLE_PREFIX" = "true" ]; then
+          # Strip [Prefix]: patterns, matching docs-builder's StripSquareBracketPrefix
+          while [[ "$TITLE" == \[* ]]; do
+            TITLE="${TITLE#*]}"
+            TITLE="${TITLE#"${TITLE%%[![:space:]]*}"}"
+          done
+          if [[ "$TITLE" == :* ]]; then
+            TITLE="${TITLE#:}"
+            TITLE="${TITLE#"${TITLE%%[![:space:]]*}"}"
+          fi
+        fi
+
+        {
+          echo "title<<PR_TITLE_EOF"
+          echo "$TITLE"
+          echo "PR_TITLE_EOF"
+        } >> "$GITHUB_OUTPUT"
+
+        PR_LABELS=$(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH" 2>/dev/null || echo "")
+
+        TYPE=""
+        if [ -f "$CONFIG_FILE" ] && [ -n "$PR_LABELS" ]; then
+          MAPPING=$(yq eval '
+            .pivot.types // {} | to_entries[] |
+            select(.value != null) |
+            .key as $type |
+            (
+              select(.value | type == "!!str") | .value | split(",")[] | sub("^ +"; "") | sub(" +$"; "") | select(length > 0) | ($type + "=" + .),
+              select(.value | type == "!!seq") | .value[] | ($type + "=" + .),
+              select(.value | type == "!!map") | (.value.labels // "") |
+                (select(type == "!!seq") | .[] | ($type + "=" + .),
+                 select(type == "!!str") | split(",")[] | sub("^ +"; "") | sub(" +$"; "") | select(length > 0) | ($type + "=" + .))
+            )
+          ' "$CONFIG_FILE" 2>/dev/null || echo "")
+
+          while IFS= read -r label; do
+            [ -z "$label" ] && continue
+            MATCHED=$(echo "$MAPPING" | awk -F= -v lbl="$label" '$2 == lbl {print $1; exit}')
+            if [ -n "$MATCHED" ]; then
+              TYPE="$MATCHED"
+              break
+            fi
+          done <<< "$PR_LABELS"
+        fi
+
+        echo "type=$TYPE" >> "$GITHUB_OUTPUT"
+
     - name: Run changelog add
       id: generate
       if: >
@@ -100,7 +159,8 @@ runs:
         OWNER: ${{ github.repository_owner }}
         REPO: ${{ github.event.repository.name }}
         CONFIG_FILE: ${{ inputs.config }}
-        STRIP_TITLE_PREFIX: ${{ inputs.strip-title-prefix }}
+        PR_TITLE: ${{ steps.pr-meta.outputs.title }}
+        PR_TYPE: ${{ steps.pr-meta.outputs.type }}
       run: |
         mkdir -p /tmp/changelog-staging
 
@@ -114,8 +174,12 @@ runs:
           --config "$CONFIG_FILE"
         )
 
-        if [ "$STRIP_TITLE_PREFIX" = "true" ]; then
-          ARGS+=(--strip-title-prefix)
+        if [ -n "$PR_TITLE" ]; then
+          ARGS+=(--title "$PR_TITLE")
+        fi
+
+        if [ -n "$PR_TYPE" ]; then
+          ARGS+=(--type "$PR_TYPE")
         fi
 
         set +e

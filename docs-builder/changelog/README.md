@@ -78,6 +78,7 @@ on:
       - completed
 
 permissions:
+  actions: read
   contents: write
   pull-requests: write
 
