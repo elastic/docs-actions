@@ -1,0 +1,256 @@
+name: docs-builder/changelog/commit
+description: >
+  Download a changelog artifact from a generate workflow run,
+  commit it to the PR branch, and post a PR comment.
+
+inputs:
+  run-id:
+    description: 'Workflow run ID to download the changelog artifact from'
+    required: true
+  github-token:
+    description: 'GitHub token with contents:write and pull-requests:write'
+    default: '${{ github.token }}'
+  artifact-name:
+    description: 'Name of the artifact to download'
+    default: 'changelog-result'
+
+outputs:
+  committed:
+    description: 'Whether a changelog was committed (true/false)'
+    value: ${{ steps.commit.outputs.committed || 'false' }}
+  pr-number:
+    description: 'The PR number from the changelog metadata'
+    value: ${{ steps.meta.outputs.pr-number }}
+
+runs:
+  using: composite
+  steps:
+    - name: Download artifact
+      id: download
+      continue-on-error: true
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: /tmp/changelog-result
+        run-id: ${{ inputs.run-id }}
+        github-token: ${{ inputs.github-token }}
+
+    - name: Read metadata
+      if: steps.download.outcome == 'success'
+      id: meta
+      shell: bash
+      run: |
+        META="/tmp/changelog-result/metadata.json"
+        if [ ! -f "$META" ]; then
+          echo "has-metadata=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        echo "has-metadata=true" >> "$GITHUB_OUTPUT"
+        echo "pr-number=$(jq -r '.pr_number' "$META")" >> "$GITHUB_OUTPUT"
+        echo "head-ref=$(jq -r '.head_ref' "$META")" >> "$GITHUB_OUTPUT"
+        echo "head-sha=$(jq -r '.head_sha' "$META")" >> "$GITHUB_OUTPUT"
+        echo "status=$(jq -r '.status' "$META")" >> "$GITHUB_OUTPUT"
+        echo "config-file=$(jq -r '.config_file' "$META")" >> "$GITHUB_OUTPUT"
+        echo "changelog-dir=$(jq -r '.changelog_dir' "$META")" >> "$GITHUB_OUTPUT"
+
+        {
+          echo "label-table<<LABEL_TABLE_EOF"
+          jq -r '.label_table' "$META"
+          echo "LABEL_TABLE_EOF"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Validate current PR state
+      if: >
+        steps.download.outcome == 'success'
+        && steps.meta.outputs.has-metadata == 'true'
+      id: validate
+      uses: actions/github-script@v8
+      env:
+        PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
+        EXPECTED_HEAD_SHA: ${{ steps.meta.outputs.head-sha }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        # language=javascript
+        script: |
+          const { owner, repo } = context.repo;
+          const prNumber = parseInt(process.env.PR_NUMBER, 10);
+          const expectedSha = process.env.EXPECTED_HEAD_SHA;
+
+          const { data: pr } = await github.rest.pulls.get({
+            owner, repo, pull_number: prNumber,
+          });
+
+          if (pr.head.sha !== expectedSha) {
+            core.info(`PR head has moved (expected ${expectedSha}, now ${pr.head.sha}). A newer generate run should handle this.`);
+            core.setOutput('should-proceed', 'false');
+            return;
+          }
+
+          const labels = pr.labels.map(l => l.name);
+          if (labels.includes('changelog:skip')) {
+            core.info('changelog:skip label found on PR, aborting commit.');
+            core.setOutput('should-proceed', 'false');
+            return;
+          }
+
+          core.setOutput('should-proceed', 'true');
+
+    - name: Checkout PR branch
+      if: >
+        steps.download.outcome == 'success'
+        && steps.meta.outputs.has-metadata == 'true'
+        && steps.meta.outputs.status == 'success'
+        && steps.validate.outputs.should-proceed == 'true'
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ steps.meta.outputs.head-ref }}
+        token: ${{ inputs.github-token }}
+        persist-credentials: true
+
+    - name: Commit changelog
+      if: >
+        steps.download.outcome == 'success'
+        && steps.meta.outputs.has-metadata == 'true'
+        && steps.meta.outputs.status == 'success'
+        && steps.validate.outputs.should-proceed == 'true'
+      id: commit
+      shell: bash
+      env:
+        PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
+        CHANGELOG_DIR: ${{ steps.meta.outputs.changelog-dir }}
+      run: |
+        mkdir -p "$CHANGELOG_DIR"
+        cp "/tmp/changelog-result/${PR_NUMBER}.yaml" "$CHANGELOG_DIR/${PR_NUMBER}.yaml"
+
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add "$CHANGELOG_DIR/${PR_NUMBER}.yaml"
+
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+          echo "committed=false" >> "$GITHUB_OUTPUT"
+        else
+          git commit -m "Add changelog for PR #${PR_NUMBER}"
+          git push
+          echo "committed=true" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Post success comment
+      if: >
+        steps.download.outcome == 'success'
+        && steps.meta.outputs.has-metadata == 'true'
+        && steps.meta.outputs.status == 'success'
+        && steps.validate.outputs.should-proceed == 'true'
+      uses: actions/github-script@v8
+      env:
+        PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
+        HEAD_REF: ${{ steps.meta.outputs.head-ref }}
+        CHANGELOG_DIR: ${{ steps.meta.outputs.changelog-dir }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        # language=javascript
+        script: |
+          const title = '## 📋 Changelog';
+          const prNumber = parseInt(process.env.PR_NUMBER, 10);
+          const branch = process.env.HEAD_REF;
+          const { owner, repo } = context.repo;
+          const filePath = `${process.env.CHANGELOG_DIR}/${prNumber}.yaml`;
+          const viewUrl = `https://github.com/${owner}/${repo}/blob/${branch}/${filePath}`;
+          const editUrl = `https://github.com/${owner}/${repo}/edit/${branch}/${filePath}`;
+
+          const body = [
+            title,
+            '',
+            `Changelog entry committed: [\`${filePath}\`](${viewUrl})`,
+            '',
+            `[✏️ Edit this changelog](${editUrl})`,
+          ].join('\n');
+
+          const issue_number = prNumber;
+          const { data: comments } = await github.rest.issues.listComments({
+            owner, repo, issue_number,
+          });
+          const existing = comments.find(c =>
+            c.user.type === 'Bot' &&
+            c.body.startsWith(title)
+          );
+          if (existing) {
+            await github.rest.issues.updateComment({
+              owner, repo,
+              comment_id: existing.id,
+              body,
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner, repo,
+              issue_number,
+              body,
+            });
+          }
+
+    - name: Post failure comment with available labels
+      if: >
+        steps.download.outcome == 'success'
+        && steps.meta.outputs.has-metadata == 'true'
+        && steps.meta.outputs.status == 'no-label'
+        && steps.validate.outputs.should-proceed == 'true'
+      uses: actions/github-script@v8
+      env:
+        PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
+        LABEL_TABLE: ${{ steps.meta.outputs.label-table }}
+        CONFIG_FILE: ${{ steps.meta.outputs.config-file }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        # language=javascript
+        script: |
+          const title = '## 📋 Changelog';
+          const { owner, repo } = context.repo;
+          const prNumber = parseInt(process.env.PR_NUMBER, 10);
+          const configFile = process.env.CONFIG_FILE || 'docs/changelog.yml';
+          const labelRows = process.env.LABEL_TABLE || '';
+
+          let labelSection;
+          if (labelRows.trim()) {
+            labelSection = [
+              '',
+              'Add one of these labels to your PR:',
+              '',
+              '| Label | Changelog type |',
+              '|---|---|',
+              labelRows,
+            ].join('\n');
+          } else {
+            labelSection = `\nAdd a type label that matches your \`pivot.types\` configuration in \`${configFile}\`.`;
+          }
+
+          const body = [
+            title,
+            '',
+            '⚠️ **Cannot generate changelog:** no matching type label found on this PR.',
+            labelSection,
+            '',
+            'To skip the changelog for this PR, add the `changelog:skip` label.',
+          ].join('\n');
+
+          const issue_number = prNumber;
+          const { data: comments } = await github.rest.issues.listComments({
+            owner, repo, issue_number,
+          });
+          const existing = comments.find(c =>
+            c.user.type === 'Bot' &&
+            c.body.startsWith(title)
+          );
+          if (existing) {
+            await github.rest.issues.updateComment({
+              owner, repo,
+              comment_id: existing.id,
+              body,
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner, repo,
+              issue_number,
+              body,
+            });
+          }

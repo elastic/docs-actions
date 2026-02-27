@@ -1,0 +1,34 @@
+name: docs-changelog-commit
+
+on:
+  workflow_run:
+    workflows: [docs-changelog-generate]
+    types:
+      - completed
+  workflow_call:
+    inputs:
+      run-id:
+        description: 'The workflow run ID to download artifacts from'
+        type: number
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: docs-changelog-commit-${{ github.event.workflow_run.head_branch || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  commit:
+    if: >
+      (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request')
+      || github.event_name == 'workflow_call'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Commit changelog
+        uses: ./docs-builder/changelog/commit
+        with:
+          run-id: ${{ inputs.run-id || github.event.workflow_run.id }}
+          github-token: ${{ github.token }}

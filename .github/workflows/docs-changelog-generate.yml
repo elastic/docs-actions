@@ -1,0 +1,38 @@
+name: docs-changelog-generate
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
+  workflow_call:
+    inputs:
+      strip-title-prefix:
+        description: 'Remove [Prefix]: from PR titles before using as changelog title'
+        type: boolean
+        default: false
+      config:
+        description: 'Path to changelog.yml configuration file'
+        type: string
+        default: 'docs/changelog.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: changelog-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    if: github.event.pull_request.state == 'open'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate changelog
+        uses: ./docs-builder/changelog/generate
+        with:
+          config: ${{ inputs.config || 'docs/changelog.yml' }}
+          strip-title-prefix: ${{ inputs.strip-title-prefix || 'false' }}
