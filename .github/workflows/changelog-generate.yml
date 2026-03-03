@@ -1,4 +1,4 @@
-name: Changelog
+name: Changelog generate
 
 on:
   workflow_call:
@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Generate changelog
-        uses: elastic/docs-actions/changelog/generate@v1
+        uses: elastic/docs-actions/changelog/generate@action/changelog
         with:
           config: ${{ inputs.config }}
           strip-title-prefix: ${{ inputs.strip-title-prefix }}

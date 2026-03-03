@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Commit changelog
-        uses: elastic/docs-actions/changelog/commit@v1
+        uses: elastic/docs-actions/changelog/commit@action/changelog
         with:
           run-id: ${{ inputs.run-id }}
           comment-only: ${{ inputs.comment-only }}
