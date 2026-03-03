@@ -45,6 +45,7 @@ on:
       - opened
       - synchronize
       - reopened
+      - edited
       - labeled
       - unlabeled
 
@@ -107,7 +108,7 @@ Make sure the GitHub labels referenced in your `docs/changelog.yml` exist in you
 ## How it works
 
 ```
-PR opened/labeled
+PR opened/labeled/edited
        |
        v
 generate workflow

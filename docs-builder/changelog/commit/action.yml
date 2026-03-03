@@ -138,10 +138,7 @@ runs:
 
     - name: Post success comment
       if: >
-        steps.download.outcome == 'success'
-        && steps.meta.outputs.has-metadata == 'true'
-        && steps.meta.outputs.status == 'success'
-        && steps.validate.outputs.should-proceed == 'true'
+        steps.commit.outputs.committed == 'true'
       uses: actions/github-script@v8
       env:
         PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
@@ -151,7 +148,7 @@ runs:
         github-token: ${{ inputs.github-token }}
         # language=javascript
         script: |
-          const title = '## 📋 Changelog';
+          const title = '### 📋 Changelog';
           const prNumber = parseInt(process.env.PR_NUMBER, 10);
           const branch = process.env.HEAD_REF;
           const { owner, repo } = context.repo;
@@ -204,7 +201,7 @@ runs:
         github-token: ${{ inputs.github-token }}
         # language=javascript
         script: |
-          const title = '## 📋 Changelog';
+          const title = '### 📋 Changelog';
           const { owner, repo } = context.repo;
           const prNumber = parseInt(process.env.PR_NUMBER, 10);
           const configFile = process.env.CONFIG_FILE || 'docs/changelog.yml';

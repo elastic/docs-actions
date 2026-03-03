@@ -22,13 +22,13 @@ inputs:
 
 outputs:
   status:
-    description: 'Result: success, no-label, manually-edited, or skipped'
+    description: 'Result: success, no-label, no-title, error, manually-edited, or skipped'
     value: ${{ steps.resolve.outputs.status }}
 
 runs:
   using: composite
   steps:
-    - name: Pre-flight checks
+    - name: Check for skip label or last commit from bot
       id: preflight
       uses: actions/github-script@v8
       with:
@@ -62,46 +62,33 @@ runs:
       if: steps.preflight.outputs.should-proceed == 'true'
       uses: actions/checkout@v6
 
-    - name: Setup docs-builder
-      if: steps.preflight.outputs.should-proceed == 'true'
-      uses: elastic/docs-actions/docs-builder/setup@v1
-      with:
-        version: ${{ inputs.docs-builder-version }}
-        github-token: ${{ inputs.github-token }}
-
-    - name: Check for manual edits
-      id: manual-check
+    - name: Evaluate PR metadata
+      id: evaluate
       if: steps.preflight.outputs.should-proceed == 'true'
       shell: bash
       env:
         CHANGELOG_DIR: ${{ inputs.changelog-dir }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
+        CONFIG_FILE: ${{ inputs.config }}
+        PR_TITLE: ${{ github.event.pull_request.title }}
+        STRIP_TITLE_PREFIX: ${{ inputs.strip-title-prefix }}
       run: |
+        # --- Manual edit check ---
         CHANGELOG_FILE="${CHANGELOG_DIR}/${PR_NUMBER}.yaml"
         if [ -f "$CHANGELOG_FILE" ]; then
           LAST_AUTHOR=$(git log -1 --format='%an' -- "$CHANGELOG_FILE" 2>/dev/null || echo "")
           if [ -n "$LAST_AUTHOR" ] && [ "$LAST_AUTHOR" != "github-actions[bot]" ]; then
             echo "Changelog was manually edited by $LAST_AUTHOR, skipping regeneration"
-            echo "manually-edited=true" >> "$GITHUB_OUTPUT"
+            echo "should-generate=false" >> "$GITHUB_OUTPUT"
+            echo "should-upload=false" >> "$GITHUB_OUTPUT"
+            echo "status=manually-edited" >> "$GITHUB_OUTPUT"
             exit 0
           fi
         fi
-        echo "manually-edited=false" >> "$GITHUB_OUTPUT"
 
-    - name: Resolve PR metadata
-      id: pr-meta
-      if: >
-        steps.preflight.outputs.should-proceed == 'true'
-        && steps.manual-check.outputs.manually-edited != 'true'
-      shell: bash
-      env:
-        CONFIG_FILE: ${{ inputs.config }}
-        PR_TITLE: ${{ github.event.pull_request.title }}
-        STRIP_TITLE_PREFIX: ${{ inputs.strip-title-prefix }}
-      run: |
+        # --- Title resolution ---
         TITLE="$PR_TITLE"
         if [ "$STRIP_TITLE_PREFIX" = "true" ]; then
-          # Strip [Prefix]: patterns, matching docs-builder's StripSquareBracketPrefix
           while [[ "$TITLE" == \[* ]]; do
             TITLE="${TITLE#*]}"
             TITLE="${TITLE#"${TITLE%%[![:space:]]*}"}"
@@ -112,12 +99,21 @@ runs:
           fi
         fi
 
+        if [ -z "$TITLE" ]; then
+          echo "::error::PR has no title. Cannot generate changelog entry."
+          echo "should-generate=false" >> "$GITHUB_OUTPUT"
+          echo "should-upload=false" >> "$GITHUB_OUTPUT"
+          echo "status=no-title" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
         {
           echo "title<<PR_TITLE_EOF"
           echo "$TITLE"
           echo "PR_TITLE_EOF"
         } >> "$GITHUB_OUTPUT"
 
+        # --- Type resolution from labels + config ---
         PR_LABELS=$(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH" 2>/dev/null || echo "")
 
         TYPE=""
@@ -147,11 +143,55 @@ runs:
 
         echo "type=$TYPE" >> "$GITHUB_OUTPUT"
 
+        if [ -z "$TYPE" ]; then
+          # Build a label→type table for the PR comment
+          if [ -f "$CONFIG_FILE" ]; then
+            TABLE=$(yq eval '
+              .pivot.types // {} | to_entries[] |
+              select(.value != null) |
+              .key as $type |
+              (
+                select(.value | type == "!!str") | .value,
+                select(.value | type == "!!seq") | .value | join(","),
+                select(.value | type == "!!map") | (.value.labels // "") |
+                  (select(type == "!!seq") | join(","), select(type == "!!str"))
+              ) |
+              select(length > 0) |
+              split(",")[] | sub("^ +"; "") | sub(" +$"; "") |
+              select(length > 0) |
+              "| `" + . + "` | " + $type + " |"
+            ' "$CONFIG_FILE" 2>/dev/null || echo "")
+          else
+            TABLE=""
+          fi
+
+          {
+            echo "label-table<<LABEL_TABLE_EOF"
+            echo "$TABLE"
+            echo "LABEL_TABLE_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "should-generate=false" >> "$GITHUB_OUTPUT"
+          echo "should-upload=true" >> "$GITHUB_OUTPUT"
+          echo "status=no-label" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        # --- All checks passed ---
+        echo "should-generate=true" >> "$GITHUB_OUTPUT"
+        echo "should-upload=true" >> "$GITHUB_OUTPUT"
+        echo "status=proceed" >> "$GITHUB_OUTPUT"
+
+    - name: Setup docs-builder
+      if: steps.evaluate.outputs.should-generate == 'true'
+      uses: elastic/docs-actions/docs-builder/setup@v1
+      with:
+        version: ${{ inputs.docs-builder-version }}
+        github-token: ${{ inputs.github-token }}
+
     - name: Run changelog add
       id: generate
-      if: >
-        steps.preflight.outputs.should-proceed == 'true'
-        && steps.manual-check.outputs.manually-edited != 'true'
+      if: steps.evaluate.outputs.should-generate == 'true'
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
@@ -159,83 +199,25 @@ runs:
         OWNER: ${{ github.repository_owner }}
         REPO: ${{ github.event.repository.name }}
         CONFIG_FILE: ${{ inputs.config }}
-        PR_TITLE: ${{ steps.pr-meta.outputs.title }}
-        PR_TYPE: ${{ steps.pr-meta.outputs.type }}
+        PR_TITLE: ${{ steps.evaluate.outputs.title }}
+        PR_TYPE: ${{ steps.evaluate.outputs.type }}
       run: |
         mkdir -p /tmp/changelog-staging
-
-        ARGS=(
-          changelog add
-          --prs "$PR_NUMBER"
-          --owner "$OWNER"
-          --repo "$REPO"
-          --use-pr-number
-          --output /tmp/changelog-staging
-          --config "$CONFIG_FILE"
-        )
-
-        if [ -n "$PR_TITLE" ]; then
-          ARGS+=(--title "$PR_TITLE")
-        fi
-
-        if [ -n "$PR_TYPE" ]; then
-          ARGS+=(--type "$PR_TYPE")
-        fi
-
-        set +e
-        docs-builder "${ARGS[@]}" 2>&1
-        EXIT_CODE=$?
-        set -e
-
-        echo "exit-code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
-        if [ $EXIT_CODE -eq 0 ] && [ -f "/tmp/changelog-staging/${PR_NUMBER}.yaml" ]; then
-          echo "generated=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "generated=false" >> "$GITHUB_OUTPUT"
-        fi
-
-    - name: Extract label mappings from config
-      id: labels
-      if: >
-        steps.preflight.outputs.should-proceed == 'true'
-        && steps.manual-check.outputs.manually-edited != 'true'
-        && steps.generate.outputs.generated == 'false'
-      shell: bash
-      env:
-        CONFIG_FILE: ${{ inputs.config }}
-      run: |
-        if [ ! -f "$CONFIG_FILE" ]; then
-          echo "table=" >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-
-        TABLE=$(yq eval '
-          .pivot.types // {} | to_entries[] |
-          select(.value != null) |
-          .key as $type |
-          (
-            select(.value | type == "!!str") | .value,
-            select(.value | type == "!!seq") | .value | join(","),
-            select(.value | type == "!!map") | (.value.labels // "") |
-              (select(type == "!!seq") | join(","), select(type == "!!str"))
-          ) |
-          select(length > 0) |
-          split(",")[] | sub("^ +"; "") | sub(" +$"; "") |
-          select(length > 0) |
-          "| `" + . + "` | " + $type + " |"
-        ' "$CONFIG_FILE" 2>/dev/null || echo "")
-
-        {
-          echo "table<<LABEL_TABLE_EOF"
-          echo "$TABLE"
-          echo "LABEL_TABLE_EOF"
-        } >> "$GITHUB_OUTPUT"
+        docs-builder changelog add \
+          --prs "$PR_NUMBER" \
+          --owner "$OWNER" \
+          --repo "$REPO" \
+          --use-pr-number \
+          --output /tmp/changelog-staging \
+          --config "$CONFIG_FILE" \
+          --title "$PR_TITLE" \
+          --type "$PR_TYPE"
 
     - name: Prepare artifact
-      id: prepare
       if: >
-        steps.preflight.outputs.should-proceed == 'true'
-        && steps.manual-check.outputs.manually-edited != 'true'
+        always()
+        && (steps.generate.outcome == 'success'
+        || steps.evaluate.outputs.status == 'no-label')
       shell: bash
       env:
         PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -243,12 +225,11 @@ runs:
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         CONFIG_FILE: ${{ inputs.config }}
         CHANGELOG_DIR: ${{ inputs.changelog-dir }}
-        LABEL_TABLE: ${{ steps.labels.outputs.table }}
+        LABEL_TABLE: ${{ steps.evaluate.outputs.label-table }}
       run: |
         mkdir -p /tmp/changelog-result
 
-        GENERATED="${{ steps.generate.outputs.generated }}"
-        if [ "$GENERATED" = "true" ]; then
+        if [ "${{ steps.generate.outcome }}" = "success" ]; then
           STATUS="success"
           cp "/tmp/changelog-staging/${PR_NUMBER}.yaml" "/tmp/changelog-result/${PR_NUMBER}.yaml"
         else
@@ -269,8 +250,9 @@ runs:
 
     - name: Upload artifact
       if: >
-        steps.preflight.outputs.should-proceed == 'true'
-        && steps.manual-check.outputs.manually-edited != 'true'
+        always()
+        && (steps.generate.outcome == 'success'
+        || steps.evaluate.outputs.status == 'no-label')
       uses: actions/upload-artifact@v4
       with:
         name: changelog-result
@@ -279,21 +261,40 @@ runs:
 
     - name: Resolve status
       id: resolve
+      if: always()
       shell: bash
       run: |
         if [ "${{ steps.preflight.outputs.should-proceed }}" != "true" ]; then
           echo "status=skipped" >> "$GITHUB_OUTPUT"
-        elif [ "${{ steps.manual-check.outputs.manually-edited }}" = "true" ]; then
-          echo "status=manually-edited" >> "$GITHUB_OUTPUT"
-        elif [ "${{ steps.generate.outputs.generated }}" = "true" ]; then
-          echo "status=success" >> "$GITHUB_OUTPUT"
+        elif [ "${{ steps.evaluate.outputs.status }}" = "proceed" ]; then
+          if [ "${{ steps.generate.outcome }}" = "success" ]; then
+            echo "status=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=error" >> "$GITHUB_OUTPUT"
+          fi
         else
-          echo "status=no-label" >> "$GITHUB_OUTPUT"
+          echo "status=${{ steps.evaluate.outputs.status }}" >> "$GITHUB_OUTPUT"
         fi
 
-    - name: Fail if no type label found
-      if: steps.resolve.outputs.status == 'no-label'
+    - name: Fail if needed
+      if: >
+        always()
+        && (steps.resolve.outputs.status == 'no-title'
+        || steps.resolve.outputs.status == 'no-label'
+        || steps.resolve.outputs.status == 'error')
       shell: bash
+      env:
+        STATUS: ${{ steps.resolve.outputs.status }}
       run: |
-        echo "::error::No valid type label found. Add a type label or changelog:skip to this PR."
+        case "$STATUS" in
+          no-title)
+            echo "::error::PR has no title. Cannot generate a changelog entry without a title."
+            ;;
+          no-label)
+            echo "::error::No valid type label found. Add a type label or changelog:skip to this PR."
+            ;;
+          *)
+            echo "::error::Changelog generation failed unexpectedly."
+            ;;
+        esac
         exit 1
