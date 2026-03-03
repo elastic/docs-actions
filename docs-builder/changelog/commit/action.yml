@@ -20,7 +20,7 @@ outputs:
     value: ${{ steps.commit.outputs.committed || 'false' }}
   pr-number:
     description: 'The PR number from the changelog metadata'
-    value: ${{ steps.meta.outputs.pr-number }}
+    value: ${{ steps.evaluate.outputs.pr-number }}
 
 runs:
   using: composite
@@ -35,90 +35,69 @@ runs:
         run-id: ${{ inputs.run-id }}
         github-token: ${{ inputs.github-token }}
 
-    - name: Read metadata
+    - name: Evaluate artifact and validate PR
+      id: evaluate
       if: steps.download.outcome == 'success'
-      id: meta
-      shell: bash
-      run: |
-        META="/tmp/changelog-result/metadata.json"
-        if [ ! -f "$META" ]; then
-          echo "has-metadata=false" >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-
-        echo "has-metadata=true" >> "$GITHUB_OUTPUT"
-        echo "pr-number=$(jq -r '.pr_number' "$META")" >> "$GITHUB_OUTPUT"
-        echo "head-ref=$(jq -r '.head_ref' "$META")" >> "$GITHUB_OUTPUT"
-        echo "head-sha=$(jq -r '.head_sha' "$META")" >> "$GITHUB_OUTPUT"
-        echo "status=$(jq -r '.status' "$META")" >> "$GITHUB_OUTPUT"
-        echo "config-file=$(jq -r '.config_file' "$META")" >> "$GITHUB_OUTPUT"
-        echo "changelog-dir=$(jq -r '.changelog_dir' "$META")" >> "$GITHUB_OUTPUT"
-
-        {
-          echo "label-table<<LABEL_TABLE_EOF"
-          jq -r '.label_table' "$META"
-          echo "LABEL_TABLE_EOF"
-        } >> "$GITHUB_OUTPUT"
-
-    - name: Validate current PR state
-      if: >
-        steps.download.outcome == 'success'
-        && steps.meta.outputs.has-metadata == 'true'
-      id: validate
       uses: actions/github-script@v8
-      env:
-        PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
-        EXPECTED_HEAD_SHA: ${{ steps.meta.outputs.head-sha }}
       with:
         github-token: ${{ inputs.github-token }}
         # language=javascript
         script: |
+          const fs = require('fs');
+
+          const metaPath = '/tmp/changelog-result/metadata.json';
+          if (!fs.existsSync(metaPath)) {
+            core.info('No metadata file found in artifact');
+            return;
+          }
+
+          const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+          core.setOutput('pr-number', String(meta.pr_number));
+          core.setOutput('head-ref', meta.head_ref);
+          core.setOutput('status', meta.status);
+          core.setOutput('config-file', meta.config_file);
+          core.setOutput('changelog-dir', meta.changelog_dir);
+          core.setOutput('label-table', meta.label_table || '');
+
           const { owner, repo } = context.repo;
-          const prNumber = parseInt(process.env.PR_NUMBER, 10);
-          const expectedSha = process.env.EXPECTED_HEAD_SHA;
+          const prNumber = meta.pr_number;
 
           const { data: pr } = await github.rest.pulls.get({
             owner, repo, pull_number: prNumber,
           });
 
-          if (pr.head.sha !== expectedSha) {
-            core.info(`PR head has moved (expected ${expectedSha}, now ${pr.head.sha}). A newer generate run should handle this.`);
-            core.setOutput('should-proceed', 'false');
+          if (pr.head.sha !== meta.head_sha) {
+            core.info(`PR head has moved (expected ${meta.head_sha}, now ${pr.head.sha}). A newer generate run should handle this.`);
             return;
           }
 
           const labels = pr.labels.map(l => l.name);
           if (labels.includes('changelog:skip')) {
             core.info('changelog:skip label found on PR, aborting commit.');
-            core.setOutput('should-proceed', 'false');
             return;
           }
 
-          core.setOutput('should-proceed', 'true');
+          if (meta.status === 'success') {
+            core.setOutput('should-commit', 'true');
+          } else if (meta.status === 'no-label') {
+            core.setOutput('should-comment-failure', 'true');
+          }
 
     - name: Checkout PR branch
-      if: >
-        steps.download.outcome == 'success'
-        && steps.meta.outputs.has-metadata == 'true'
-        && steps.meta.outputs.status == 'success'
-        && steps.validate.outputs.should-proceed == 'true'
+      if: steps.evaluate.outputs.should-commit == 'true'
       uses: actions/checkout@v6
       with:
-        ref: ${{ steps.meta.outputs.head-ref }}
+        ref: ${{ steps.evaluate.outputs.head-ref }}
         token: ${{ inputs.github-token }}
         persist-credentials: true
 
     - name: Commit changelog
-      if: >
-        steps.download.outcome == 'success'
-        && steps.meta.outputs.has-metadata == 'true'
-        && steps.meta.outputs.status == 'success'
-        && steps.validate.outputs.should-proceed == 'true'
+      if: steps.evaluate.outputs.should-commit == 'true'
       id: commit
       shell: bash
       env:
-        PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
-        CHANGELOG_DIR: ${{ steps.meta.outputs.changelog-dir }}
+        PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
+        CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
       run: |
         mkdir -p "$CHANGELOG_DIR"
         cp "/tmp/changelog-result/${PR_NUMBER}.yaml" "$CHANGELOG_DIR/${PR_NUMBER}.yaml"
@@ -137,13 +116,12 @@ runs:
         fi
 
     - name: Post success comment
-      if: >
-        steps.commit.outputs.committed == 'true'
+      if: steps.commit.outputs.committed == 'true'
       uses: actions/github-script@v8
       env:
-        PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
-        HEAD_REF: ${{ steps.meta.outputs.head-ref }}
-        CHANGELOG_DIR: ${{ steps.meta.outputs.changelog-dir }}
+        PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
+        HEAD_REF: ${{ steps.evaluate.outputs.head-ref }}
+        CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
       with:
         github-token: ${{ inputs.github-token }}
         # language=javascript
@@ -187,16 +165,12 @@ runs:
           }
 
     - name: Post failure comment with available labels
-      if: >
-        steps.download.outcome == 'success'
-        && steps.meta.outputs.has-metadata == 'true'
-        && steps.meta.outputs.status == 'no-label'
-        && steps.validate.outputs.should-proceed == 'true'
+      if: steps.evaluate.outputs.should-comment-failure == 'true'
       uses: actions/github-script@v8
       env:
-        PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
-        LABEL_TABLE: ${{ steps.meta.outputs.label-table }}
-        CONFIG_FILE: ${{ steps.meta.outputs.config-file }}
+        PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
+        LABEL_TABLE: ${{ steps.evaluate.outputs.label-table }}
+        CONFIG_FILE: ${{ steps.evaluate.outputs.config-file }}
       with:
         github-token: ${{ inputs.github-token }}
         # language=javascript
