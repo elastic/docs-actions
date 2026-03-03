@@ -99,18 +99,26 @@ runs:
         PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
         CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
       run: |
+        CHANGELOG_FILE="$CHANGELOG_DIR/${PR_NUMBER}.yaml"
+
+        if [ -f "$CHANGELOG_FILE" ]; then
+          VERB="Update"
+        else
+          VERB="Add"
+        fi
+
         mkdir -p "$CHANGELOG_DIR"
-        cp "/tmp/changelog-result/${PR_NUMBER}.yaml" "$CHANGELOG_DIR/${PR_NUMBER}.yaml"
+        cp "/tmp/changelog-result/${PR_NUMBER}.yaml" "$CHANGELOG_FILE"
 
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add "$CHANGELOG_DIR/${PR_NUMBER}.yaml"
+        git add "$CHANGELOG_FILE"
 
         if git diff --cached --quiet; then
           echo "No changes to commit"
           echo "committed=false" >> "$GITHUB_OUTPUT"
         else
-          git commit -m "Add changelog for PR #${PR_NUMBER}"
+          git commit -m "Docs: ${VERB} changelog for PR #${PR_NUMBER}"
           git push
           echo "committed=true" >> "$GITHUB_OUTPUT"
         fi
