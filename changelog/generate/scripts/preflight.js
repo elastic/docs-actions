@@ -1,6 +1,14 @@
 // Pre-flight checks: skip label, bot commit loop prevention, manual edit detection.
 // Runs before any expensive operations (checkout, docs-builder setup).
 module.exports = async ({ github, context, core }) => {
+  // On 'edited' events, only re-run if the title changed (not body-only edits)
+  if (context.payload.action === 'edited' && !context.payload.changes?.title) {
+    core.info('PR body was edited (not title), skipping changelog regeneration');
+    core.setOutput('should-proceed', 'false');
+    core.setOutput('status', 'skipped');
+    return;
+  }
+
   const labels = context.payload.pull_request.labels.map(l => l.name);
   if (labels.includes('changelog:skip')) {
     core.info('changelog:skip label found, skipping changelog generation');
