@@ -58,6 +58,18 @@ runs:
         token: ${{ inputs.github-token }}
         persist-credentials: true
 
+    - name: Verify checkout SHA
+      if: steps.evaluate.outputs.should-commit == 'true'
+      shell: bash
+      env:
+        EXPECTED_SHA: ${{ steps.evaluate.outputs.head-sha }}
+      run: |
+        ACTUAL_SHA=$(git rev-parse HEAD)
+        if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+          echo "::error::Checkout SHA mismatch (expected $EXPECTED_SHA, got $ACTUAL_SHA). Aborting to prevent writing to wrong branch."
+          exit 1
+        fi
+
     - name: Commit changelog
       if: steps.evaluate.outputs.should-commit == 'true'
       id: commit
