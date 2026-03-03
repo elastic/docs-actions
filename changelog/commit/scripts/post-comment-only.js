@@ -31,11 +31,11 @@ module.exports = async ({ github, context, core }) => {
 
   const issue_number = prNumber;
   const { data: comments } = await github.rest.issues.listComments({
-    owner, repo, issue_number,
+    owner, repo, issue_number, per_page: 100,
   });
   const existing = comments.find(c =>
-    c.user.type === 'Bot' &&
-    c.body.startsWith(title)
+    c.user?.login === 'github-actions[bot]' &&
+    c.body?.startsWith(title)
   );
   if (existing) {
     await github.rest.issues.updateComment({
