@@ -8,6 +8,11 @@ on:
         required: false
         default: "internal"
         type: string
+      docs-builder-version:
+        description: Version of docs-builder to use (e.g. edge, 1.2.3)
+        required: false
+        default: "edge"
+        type: string
       path-pattern:
         description: The path pattern to check for changes
         required: false
@@ -68,7 +73,7 @@ jobs:
         if: needs.check.outputs.any_modified == 'true'
         id: codex-build
         with:
-          docs-builder-version: edge
+          docs-builder-version: ${{ inputs.docs-builder-version }}
       - name: Warn about fork PR
         if: >
           startsWith(github.event_name, 'pull_request')
