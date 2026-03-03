@@ -73,10 +73,11 @@ runs:
           exit 0
         fi
 
+        DELIM="TITLE_$(openssl rand -hex 8)"
         {
-          echo "title<<PR_TITLE_EOF"
+          echo "title<<${DELIM}"
           echo "$TITLE"
-          echo "PR_TITLE_EOF"
+          echo "${DELIM}"
         } >> "$GITHUB_OUTPUT"
 
         # --- Type resolution from labels + config ---
@@ -131,10 +132,11 @@ runs:
             TABLE=""
           fi
 
+          DELIM="LABELS_$(openssl rand -hex 8)"
           {
-            echo "label-table<<LABEL_TABLE_EOF"
+            echo "label-table<<${DELIM}"
             echo "$TABLE"
-            echo "LABEL_TABLE_EOF"
+            echo "${DELIM}"
           } >> "$GITHUB_OUTPUT"
 
           echo "should-generate=false" >> "$GITHUB_OUTPUT"
@@ -202,17 +204,23 @@ runs:
           STATUS="no-label"
         fi
 
-        cat > /tmp/changelog-result/metadata.json <<METADATA_EOF
-        {
-          "pr_number": ${PR_NUMBER},
-          "head_ref": "${HEAD_REF}",
-          "head_sha": "${HEAD_SHA}",
-          "status": "${STATUS}",
-          "label_table": $(echo "$LABEL_TABLE" | jq -Rs .),
-          "config_file": "${CONFIG_FILE}",
-          "changelog_dir": "${CHANGELOG_DIR}"
-        }
-        METADATA_EOF
+        jq -n \
+          --argjson pr_number "$PR_NUMBER" \
+          --arg head_ref "$HEAD_REF" \
+          --arg head_sha "$HEAD_SHA" \
+          --arg status "$STATUS" \
+          --arg label_table "$LABEL_TABLE" \
+          --arg config_file "$CONFIG_FILE" \
+          --arg changelog_dir "$CHANGELOG_DIR" \
+          '{
+            pr_number: $pr_number,
+            head_ref: $head_ref,
+            head_sha: $head_sha,
+            status: $status,
+            label_table: $label_table,
+            config_file: $config_file,
+            changelog_dir: $changelog_dir
+          }' > /tmp/changelog-result/metadata.json
 
     - name: Upload artifact
       if: >
@@ -246,7 +254,6 @@ runs:
       if: >
         always()
         && (steps.resolve.outputs.status == 'no-title'
-        || steps.resolve.outputs.status == 'no-label'
         || steps.resolve.outputs.status == 'error')
       shell: bash
       env:
@@ -255,9 +262,6 @@ runs:
         case "$STATUS" in
           no-title)
             echo "::error::PR has no title. Cannot generate a changelog entry without a title."
-            ;;
-          no-label)
-            echo "::error::No valid type label found. Add a type label or changelog:skip to this PR."
             ;;
           *)
             echo "::error::Changelog generation failed unexpectedly."
