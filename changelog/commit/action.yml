@@ -1,0 +1,129 @@
+name: changelog/commit
+description: >
+  Download a changelog artifact from a generate workflow run,
+  commit it to the PR branch (or post as comment), and update the PR.
+
+inputs:
+  run-id:
+    description: 'Workflow run ID to download the changelog artifact from'
+    default: '${{ github.run_id }}'
+  github-token:
+    description: 'GitHub token with contents:write and pull-requests:write'
+    default: '${{ github.token }}'
+  artifact-name:
+    description: 'Name of the artifact to download'
+    default: 'changelog-result'
+  comment-only:
+    description: 'Post changelog as a PR comment instead of committing to the branch'
+    default: 'false'
+
+outputs:
+  committed:
+    description: 'Whether a changelog was committed (true/false)'
+    value: ${{ steps.commit.outputs.committed || 'false' }}
+  pr-number:
+    description: 'The PR number from the changelog metadata'
+    value: ${{ steps.evaluate.outputs.pr-number }}
+
+runs:
+  using: composite
+  steps:
+    - name: Download artifact
+      id: download
+      continue-on-error: true
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: /tmp/changelog-result
+        run-id: ${{ inputs.run-id }}
+        github-token: ${{ inputs.github-token }}
+
+    - name: Evaluate artifact and validate PR
+      id: evaluate
+      if: steps.download.outcome == 'success'
+      uses: actions/github-script@v8
+      env:
+        COMMENT_ONLY: ${{ inputs.comment-only }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/evaluate.js');
+          await script({ github, context, core });
+
+    - name: Checkout PR branch
+      if: steps.evaluate.outputs.should-commit == 'true'
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ steps.evaluate.outputs.head-ref }}
+        token: ${{ inputs.github-token }}
+        persist-credentials: true
+
+    - name: Commit changelog
+      if: steps.evaluate.outputs.should-commit == 'true'
+      id: commit
+      shell: bash
+      env:
+        PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
+        CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
+      run: |
+        CHANGELOG_FILE="$CHANGELOG_DIR/${PR_NUMBER}.yaml"
+
+        if [ -f "$CHANGELOG_FILE" ]; then
+          VERB="Update"
+        else
+          VERB="Add"
+        fi
+
+        mkdir -p "$CHANGELOG_DIR"
+        cp "/tmp/changelog-result/${PR_NUMBER}.yaml" "$CHANGELOG_FILE"
+
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add "$CHANGELOG_FILE"
+
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+          echo "committed=false" >> "$GITHUB_OUTPUT"
+        else
+          git commit -m "${VERB} changelog for PR #${PR_NUMBER}"
+          git push
+          echo "committed=true" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Post success comment
+      if: steps.commit.outputs.committed == 'true'
+      uses: actions/github-script@v8
+      env:
+        PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
+        HEAD_REF: ${{ steps.evaluate.outputs.head-ref }}
+        CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/post-success-comment.js');
+          await script({ github, context, core });
+
+    - name: Post comment-only changelog
+      if: steps.evaluate.outputs.should-comment-success == 'true'
+      uses: actions/github-script@v8
+      env:
+        PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
+        CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/post-comment-only.js');
+          await script({ github, context, core });
+
+    - name: Post failure comment with available labels
+      if: steps.evaluate.outputs.should-comment-failure == 'true'
+      uses: actions/github-script@v8
+      env:
+        PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
+        LABEL_TABLE: ${{ steps.evaluate.outputs.label-table }}
+        CONFIG_FILE: ${{ steps.evaluate.outputs.config-file }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/post-failure-comment.js');
+          await script({ github, context, core });

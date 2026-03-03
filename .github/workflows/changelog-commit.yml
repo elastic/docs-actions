@@ -1,0 +1,28 @@
+name: Changelog commit
+
+on:
+  workflow_call:
+    inputs:
+      run-id:
+        description: 'Workflow run ID to download the changelog artifact from'
+        type: string
+        required: true
+      comment-only:
+        description: 'Post changelog as a PR comment instead of committing to the branch'
+        type: boolean
+        default: false
+
+concurrency:
+  group: changelog-commit-${{ github.event.workflow_run.head_branch || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  commit:
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Commit changelog
+        uses: elastic/docs-actions/changelog/commit@v1
+        with:
+          run-id: ${{ inputs.run-id }}
+          comment-only: ${{ inputs.comment-only }}
