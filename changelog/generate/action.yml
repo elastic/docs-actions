@@ -9,13 +9,10 @@ inputs:
     default: 'docs/changelog.yml'
   strip-title-prefix:
     description: 'Remove [Prefix]: from PR titles'
-    default: 'false'
+    default: 'true'
   changelog-dir:
     description: 'Directory for changelog entry files'
     default: 'docs/changelog'
-  docs-builder-version:
-    description: 'docs-builder version to install'
-    default: 'edge'
   github-token:
     description: 'GitHub token for API access'
     default: '${{ github.token }}'
@@ -154,7 +151,7 @@ runs:
       if: steps.evaluate.outputs.should-generate == 'true'
       uses: elastic/docs-actions/docs-builder/setup@v1
       with:
-        version: ${{ inputs.docs-builder-version }}
+        version: latest
         github-token: ${{ inputs.github-token }}
 
     - name: Run changelog add
@@ -163,23 +160,36 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-        PR_NUMBER: ${{ github.event.pull_request.number }}
-        OWNER: ${{ github.repository_owner }}
-        REPO: ${{ github.event.repository.name }}
         CONFIG_FILE: ${{ inputs.config }}
-        PR_TITLE: ${{ steps.evaluate.outputs.title }}
-        PR_TYPE: ${{ steps.evaluate.outputs.type }}
       run: |
         mkdir -p /tmp/changelog-staging
         docs-builder changelog add \
-          --prs "$PR_NUMBER" \
-          --owner "$OWNER" \
-          --repo "$REPO" \
-          --use-pr-number \
-          --output /tmp/changelog-staging \
           --config "$CONFIG_FILE" \
-          --title "$PR_TITLE" \
-          --type "$PR_TYPE"
+          --output /tmp/changelog-staging
+
+    # - name: Run changelog add (verbose, for debugging)
+    #   id: generate
+    #   if: steps.evaluate.outputs.should-generate == 'true'
+    #   shell: bash
+    #   env:
+    #     GITHUB_TOKEN: ${{ inputs.github-token }}
+    #     PR_NUMBER: ${{ github.event.pull_request.number }}
+    #     OWNER: ${{ github.repository_owner }}
+    #     REPO: ${{ github.event.repository.name }}
+    #     CONFIG_FILE: ${{ inputs.config }}
+    #     PR_TITLE: ${{ steps.evaluate.outputs.title }}
+    #     PR_TYPE: ${{ steps.evaluate.outputs.type }}
+    #   run: |
+    #     mkdir -p /tmp/changelog-staging
+    #     docs-builder changelog add \
+    #       --prs "$PR_NUMBER" \
+    #       --owner "$OWNER" \
+    #       --repo "$REPO" \
+    #       --use-pr-number \
+    #       --output /tmp/changelog-staging \
+    #       --config "$CONFIG_FILE" \
+    #       --title "$PR_TITLE" \
+    #       --type "$PR_TYPE"
 
     - name: Prepare artifact
       if: >

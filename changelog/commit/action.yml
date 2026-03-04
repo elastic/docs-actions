@@ -10,9 +10,6 @@ inputs:
   github-token:
     description: 'GitHub token with contents:write and pull-requests:write'
     default: '${{ github.token }}'
-  artifact-name:
-    description: 'Name of the artifact to download'
-    default: 'changelog-result'
   comment-only:
     description: 'Post changelog as a PR comment instead of committing to the branch'
     default: 'false'
@@ -33,11 +30,17 @@ runs:
       continue-on-error: true
       uses: actions/download-artifact@v4
       with:
-        name: ${{ inputs.artifact-name }}
+        name: changelog-result
         path: /tmp/changelog-result
         run-id: ${{ inputs.run-id }}
         github-token: ${{ inputs.github-token }}
 
+    # TODO: replace with docs-builder changelog evaluate-pr once available:
+    #   docs-builder changelog evaluate-pr \
+    #     --metadata /tmp/changelog-result/metadata.json \
+    #     --comment-only "$COMMENT_ONLY"
+    # This should handle: metadata reading, PR validation (SHA, skip label from
+    # config), fork detection, and output the action flags for downstream steps.
     - name: Evaluate artifact and validate PR
       id: evaluate
       if: steps.download.outcome == 'success'

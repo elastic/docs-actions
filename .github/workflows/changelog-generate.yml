@@ -7,18 +7,6 @@ on:
         description: 'Path to changelog.yml configuration file'
         type: string
         default: 'docs/changelog.yml'
-      strip-title-prefix:
-        description: 'Remove [Prefix]: from PR titles'
-        type: boolean
-        default: false
-      changelog-dir:
-        description: 'Directory for changelog entry files'
-        type: string
-        default: 'docs/changelog'
-      docs-builder-version:
-        description: 'docs-builder version to install'
-        type: string
-        default: 'edge'
 
 concurrency:
   group: changelog-${{ github.event.pull_request.number || github.run_id }}
@@ -30,9 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Generate changelog
-        uses: elastic/docs-actions/changelog/generate@action/changelog
+        uses: elastic/docs-actions/changelog/generate@v1
         with:
           config: ${{ inputs.config }}
-          strip-title-prefix: ${{ inputs.strip-title-prefix }}
-          changelog-dir: ${{ inputs.changelog-dir }}
-          docs-builder-version: ${{ inputs.docs-builder-version }}

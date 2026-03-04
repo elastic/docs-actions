@@ -32,9 +32,9 @@ pivot:
 
 Each key under `pivot.types` is a changelog type. The `labels` list defines which GitHub labels map to that type. When a PR has one of these labels, the changelog entry is categorized accordingly.
 
-### 2. Create the workflow
+### 2. Create the workflows
 
-Add the following:
+Add two workflow files to your repository:
 
 **`.github/workflows/changelog-generate.yml`**
 
@@ -78,13 +78,11 @@ permissions:
 jobs:
   commit:
     uses: elastic/docs-actions/.github/workflows/changelog-commit.yml@v1
-    with:
-      run-id: ${{ github.event.workflow_run.id }}
 ```
 
 > **Important:** The `name` in the generate workflow (`changelog-generate`) must match the `workflows:` reference in the commit workflow. If you rename one, rename the other.
 
-The two-workflow design is required because the generate workflow runs with read-only permissions (from the PR context), while the commit workflow runs with write permissions (from `workflow_run`, which uses the base branch's permissions). This is a [standard pattern](https://securitylab.github.com/research/github-actions-preventing-pwn-requests/) for safely writing to PR branches from forks.
+The two-workflow design is required because the generate workflow runs with read-only permissions (from the PR context), while the commit workflow runs with write permissions (from `workflow_run`, which uses the base branch's permissions). This is a [standard pattern](https://securitylab.github.com/research/github-actions-preventing-pwn-requests/) for safely handling PR branches, including those from forks.
 
 ### 3. Create the labels
 
@@ -96,54 +94,42 @@ Make sure the GitHub labels referenced in your `docs/changelog.yml` exist in you
 PR opened/labeled/title edited
        |
        v
-generate job
+generate workflow (read-only)
        |
        +-- skip if changelog:skip label is present
        +-- skip if last commit is from the bot (prevents loops)
        +-- skip if changelog file was manually edited
+       +-- skip if only the PR body was edited (not the title)
        |
+       +-- resolves title and type from PR metadata + config
        +-- runs: docs-builder changelog add
        +-- uploads result as artifact
        |
        v
-commit job
+commit workflow (write permissions, via workflow_run)
        |
        +-- re-validates PR state (labels, head SHA)
        +-- downloads artifact
        +-- commits changelog file to PR branch
        +-- posts PR comment with view/edit links
+       |
+       +-- fork PRs: posts changelog as comment instead
+       +-- no-label PRs: posts comment listing available labels
 ```
-
-## Inputs
-
-### Generate workflow
-
-| Input                  | Description                              | Default              |
-|------------------------|------------------------------------------|----------------------|
-| `config`               | Path to changelog configuration file     | `docs/changelog.yml` |
-| `strip-title-prefix`   | Remove `[Prefix]:` from PR titles       | `false`              |
-| `changelog-dir`        | Directory for changelog entry files      | `docs/changelog`     |
-| `docs-builder-version` | docs-builder version to install          | `edge`               |
-
-### Commit workflow
-
-| Input          | Description                                             | Default  |
-|----------------|---------------------------------------------------------|----------|
-| `run-id`       | Workflow run ID to download the changelog artifact from | required |
-| `comment-only` | Post as PR comment instead of committing to the branch  | `false`  |
 
 ### Comment-only mode
 
-If you prefer not to have bot commits on your PR branches, pass `comment-only: true` to the commit workflow. The changelog entry will be posted as a PR comment instead of being committed to the branch:
+If you prefer not to have bot commits on your PR branches, pass `comment-only: true` to the commit workflow. The changelog content will be posted as a PR comment instead:
 
 ```yaml
 jobs:
   commit:
     uses: elastic/docs-actions/.github/workflows/changelog-commit.yml@v1
     with:
-      run-id: ${{ github.event.workflow_run.id }}
       comment-only: true
 ```
+
+Fork PRs automatically use comment-only mode since the workflow token cannot push to fork branches.
 
 ## Skipping changelog generation
 
@@ -156,12 +142,3 @@ If a human edits the changelog file directly (i.e., the last commit to `docs/cha
 ## Output
 
 Each PR produces a file at `docs/changelog/{PR_NUMBER}.yaml` on the PR branch. These files are consumed by `docs-builder` during documentation builds to produce a rendered changelog page.
-
-## Advanced: using composite actions directly
-
-The reusable workflows are thin wrappers around two composite actions. If you need more control, you can use them directly in your own workflow steps:
-
-- `elastic/docs-actions/changelog/generate@v1` -- generates the changelog and uploads an artifact
-- `elastic/docs-actions/changelog/commit@v1` -- downloads the artifact and commits or comments
-
-See the individual action files for their full input/output definitions.
