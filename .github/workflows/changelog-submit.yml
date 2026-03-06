@@ -22,5 +22,4 @@ jobs:
       - name: Submit changelog
         uses: elastic/docs-actions/changelog/submit@v1
         with:
-          run-id: ${{ github.event.workflow_run.id }}
           comment-only: ${{ inputs.comment-only }}

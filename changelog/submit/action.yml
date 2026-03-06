@@ -1,12 +1,10 @@
-name: changelog/submit
+name: Changelog submit
 description: >
-  Download a changelog artifact from a generate workflow run,
-  commit it to the PR branch (or post as comment), and update the PR.
+  Downloads metadata and a changelog artifact from a generate workflow run,
+  validates PR state, commits the changelog to the PR branch (or posts as comment),
+  and updates the PR.
 
 inputs:
-  run-id:
-    description: 'Workflow run ID to download the changelog artifact from'
-    default: '${{ github.run_id }}'
   github-token:
     description: 'GitHub token with contents:write and pull-requests:write'
     default: '${{ github.token }}'
@@ -32,7 +30,7 @@ runs:
       with:
         name: changelog-result
         path: /tmp/changelog-result
-        run-id: ${{ inputs.run-id }}
+        run-id: ${{ github.event.workflow_run.id }}
         github-token: ${{ inputs.github-token }}
 
     - name: Setup docs-builder

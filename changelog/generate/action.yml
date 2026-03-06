@@ -1,7 +1,7 @@
-name: changelog/generate
+name: Changelog generate
 description: >
   Generate a changelog entry for a pull request using docs-builder.
-  Handles setup, generation, artifact upload, and PR guard checks.
+  Handles setup, changelog generation, artifact upload, metadata creation and PR guard checks.
 
 inputs:
   config:
@@ -10,9 +10,6 @@ inputs:
   strip-title-prefix:
     description: 'Remove [Prefix]: from PR titles'
     default: 'true'
-  changelog-dir:
-    description: 'Directory for changelog entry files'
-    default: 'docs/changelog'
   github-token:
     description: 'GitHub token for API access'
     default: '${{ github.token }}'
@@ -40,7 +37,6 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         CONFIG_FILE: ${{ inputs.config }}
-        CHANGELOG_DIR: ${{ inputs.changelog-dir }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         PR_TITLE: ${{ github.event.pull_request.title }}
         PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
@@ -62,7 +58,6 @@ runs:
 
         docs-builder changelog evaluate-pr \
           --config "$CONFIG_FILE" \
-          --changelog-dir "$CHANGELOG_DIR" \
           --owner "${{ github.repository_owner }}" \
           --repo "${{ github.event.repository.name }}" \
           --pr-number "$PR_NUMBER" \
@@ -93,7 +88,6 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         CONFIG_FILE: ${{ inputs.config }}
-        CHANGELOG_DIR: ${{ inputs.changelog-dir }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         HEAD_REF: ${{ github.event.pull_request.head.ref }}
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -109,7 +103,6 @@ runs:
           --pr-number "$PR_NUMBER" \
           --head-ref "$HEAD_REF" \
           --head-sha "$HEAD_SHA" \
-          --changelog-dir "$CHANGELOG_DIR" \
           --config "$CONFIG_FILE" \
           ${LABEL_TABLE:+--label-table "$LABEL_TABLE"}
 
