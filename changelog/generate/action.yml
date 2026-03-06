@@ -25,134 +25,54 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Pre-flight checks
-      id: preflight
-      uses: actions/github-script@v8
-      env:
-        CHANGELOG_DIR: ${{ inputs.changelog-dir }}
-      with:
-        github-token: ${{ inputs.github-token }}
-        script: |
-          const script = require('${{ github.action_path }}/scripts/preflight.js');
-          await script({ github, context, core });
-
     - name: Checkout
-      if: steps.preflight.outputs.should-proceed == 'true'
       uses: actions/checkout@v6
 
-    - name: Evaluate PR metadata
-      id: evaluate
-      if: steps.preflight.outputs.should-proceed == 'true'
-      shell: bash
-      env:
-        CONFIG_FILE: ${{ inputs.config }}
-        PR_TITLE: ${{ github.event.pull_request.title }}
-        STRIP_TITLE_PREFIX: ${{ inputs.strip-title-prefix }}
-      run: |
-        # --- Title resolution ---
-        TITLE="$PR_TITLE"
-        if [ "$STRIP_TITLE_PREFIX" = "true" ]; then
-          while [[ "$TITLE" == \[* ]]; do
-            TITLE="${TITLE#*]}"
-            TITLE="${TITLE#"${TITLE%%[![:space:]]*}"}"
-          done
-          if [[ "$TITLE" == :* ]]; then
-            TITLE="${TITLE#:}"
-            TITLE="${TITLE#"${TITLE%%[![:space:]]*}"}"
-          fi
-        fi
-
-        if [ -z "$TITLE" ]; then
-          echo "::error::PR has no title. Cannot generate changelog entry."
-          echo "should-generate=false" >> "$GITHUB_OUTPUT"
-          echo "should-upload=false" >> "$GITHUB_OUTPUT"
-          echo "status=no-title" >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-
-        DELIM="TITLE_$(openssl rand -hex 8)"
-        {
-          echo "title<<${DELIM}"
-          echo "$TITLE"
-          echo "${DELIM}"
-        } >> "$GITHUB_OUTPUT"
-
-        # --- Type resolution from labels + config ---
-        PR_LABELS=$(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH" 2>/dev/null || echo "")
-
-        TYPE=""
-        if [ -f "$CONFIG_FILE" ] && [ -n "$PR_LABELS" ]; then
-          MAPPING=$(yq eval '
-            .pivot.types // {} | to_entries[] |
-            select(.value != null) |
-            .key as $type |
-            (
-              select(.value | type == "!!str") | .value | split(",")[] | sub("^ +"; "") | sub(" +$"; "") | select(length > 0) | ($type + "=" + .),
-              select(.value | type == "!!seq") | .value[] | ($type + "=" + .),
-              select(.value | type == "!!map") | (.value.labels // "") |
-                (select(type == "!!seq") | .[] | ($type + "=" + .),
-                 select(type == "!!str") | split(",")[] | sub("^ +"; "") | sub(" +$"; "") | select(length > 0) | ($type + "=" + .))
-            )
-          ' "$CONFIG_FILE" 2>/dev/null || echo "")
-
-          while IFS= read -r label; do
-            [ -z "$label" ] && continue
-            MATCHED=$(echo "$MAPPING" | awk -F= -v lbl="$label" '$2 == lbl {print $1; exit}')
-            if [ -n "$MATCHED" ]; then
-              TYPE="$MATCHED"
-              break
-            fi
-          done <<< "$PR_LABELS"
-        fi
-
-        echo "type=$TYPE" >> "$GITHUB_OUTPUT"
-
-        if [ -z "$TYPE" ]; then
-          # Build a label→type table for the PR comment
-          if [ -f "$CONFIG_FILE" ]; then
-            TABLE=$(yq eval '
-              .pivot.types // {} | to_entries[] |
-              select(.value != null) |
-              .key as $type |
-              (
-                select(.value | type == "!!str") | .value,
-                select(.value | type == "!!seq") | .value | join(","),
-                select(.value | type == "!!map") | (.value.labels // "") |
-                  (select(type == "!!seq") | join(","), select(type == "!!str"))
-              ) |
-              select(length > 0) |
-              split(",")[] | sub("^ +"; "") | sub(" +$"; "") |
-              select(length > 0) |
-              "| `" + . + "` | " + $type + " |"
-            ' "$CONFIG_FILE" 2>/dev/null || echo "")
-          else
-            TABLE=""
-          fi
-
-          DELIM="LABELS_$(openssl rand -hex 8)"
-          {
-            echo "label-table<<${DELIM}"
-            echo "$TABLE"
-            echo "${DELIM}"
-          } >> "$GITHUB_OUTPUT"
-
-          echo "should-generate=false" >> "$GITHUB_OUTPUT"
-          echo "should-upload=true" >> "$GITHUB_OUTPUT"
-          echo "status=no-label" >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-
-        # --- All checks passed ---
-        echo "should-generate=true" >> "$GITHUB_OUTPUT"
-        echo "should-upload=true" >> "$GITHUB_OUTPUT"
-        echo "status=proceed" >> "$GITHUB_OUTPUT"
-
     - name: Setup docs-builder
-      if: steps.evaluate.outputs.should-generate == 'true'
       uses: elastic/docs-actions/docs-builder/setup@v1
       with:
         version: latest
         github-token: ${{ inputs.github-token }}
+
+    - name: Evaluate PR
+      id: evaluate
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        CONFIG_FILE: ${{ inputs.config }}
+        CHANGELOG_DIR: ${{ inputs.changelog-dir }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_TITLE: ${{ github.event.pull_request.title }}
+        PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        EVENT_ACTION: ${{ github.event.action }}
+        TITLE_CHANGED: ${{ github.event.changes.title != null }}
+        STRIP_PREFIX: ${{ inputs.strip-title-prefix }}
+      run: |
+        TITLE_FLAG=""
+        if [ "$TITLE_CHANGED" = "true" ]; then
+          TITLE_FLAG="--title-changed"
+        fi
+
+        PREFIX_FLAG=""
+        if [ "$STRIP_PREFIX" = "true" ]; then
+          PREFIX_FLAG="--strip-title-prefix"
+        fi
+
+        docs-builder changelog evaluate-pr \
+          --config "$CONFIG_FILE" \
+          --changelog-dir "$CHANGELOG_DIR" \
+          --owner "${{ github.repository_owner }}" \
+          --repo "${{ github.event.repository.name }}" \
+          --pr-number "$PR_NUMBER" \
+          --pr-title "$PR_TITLE" \
+          --pr-labels "$PR_LABELS" \
+          --head-ref "$HEAD_REF" \
+          --head-sha "$HEAD_SHA" \
+          --event-action "$EVENT_ACTION" \
+          $TITLE_FLAG \
+          $PREFIX_FLAG
 
     - name: Run changelog add
       id: generate
@@ -167,114 +87,63 @@ runs:
           --config "$CONFIG_FILE" \
           --output /tmp/changelog-staging
 
-    # - name: Run changelog add (verbose, for debugging)
-    #   id: generate
-    #   if: steps.evaluate.outputs.should-generate == 'true'
-    #   shell: bash
-    #   env:
-    #     GITHUB_TOKEN: ${{ inputs.github-token }}
-    #     PR_NUMBER: ${{ github.event.pull_request.number }}
-    #     OWNER: ${{ github.repository_owner }}
-    #     REPO: ${{ github.event.repository.name }}
-    #     CONFIG_FILE: ${{ inputs.config }}
-    #     PR_TITLE: ${{ steps.evaluate.outputs.title }}
-    #     PR_TYPE: ${{ steps.evaluate.outputs.type }}
-    #   run: |
-    #     mkdir -p /tmp/changelog-staging
-    #     docs-builder changelog add \
-    #       --prs "$PR_NUMBER" \
-    #       --owner "$OWNER" \
-    #       --repo "$REPO" \
-    #       --use-pr-number \
-    #       --output /tmp/changelog-staging \
-    #       --config "$CONFIG_FILE" \
-    #       --title "$PR_TITLE" \
-    #       --type "$PR_TYPE"
-
     - name: Prepare artifact
-      if: >
-        always()
-        && (steps.generate.outcome == 'success'
-        || steps.evaluate.outputs.status == 'no-label')
+      if: always() && steps.evaluate.outputs.should-upload == 'true'
       shell: bash
       env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        CONFIG_FILE: ${{ inputs.config }}
+        CHANGELOG_DIR: ${{ inputs.changelog-dir }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         HEAD_REF: ${{ github.event.pull_request.head.ref }}
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        CONFIG_FILE: ${{ inputs.config }}
-        CHANGELOG_DIR: ${{ inputs.changelog-dir }}
+        EVALUATE_STATUS: ${{ steps.evaluate.outputs.status }}
+        GENERATE_OUTCOME: ${{ steps.generate.outcome }}
         LABEL_TABLE: ${{ steps.evaluate.outputs.label-table }}
       run: |
-        mkdir -p /tmp/changelog-result
-
-        if [ "${{ steps.generate.outcome }}" = "success" ]; then
-          STATUS="success"
-          cp "/tmp/changelog-staging/${PR_NUMBER}.yaml" "/tmp/changelog-result/${PR_NUMBER}.yaml"
-        else
-          STATUS="no-label"
-        fi
-
-        jq -n \
-          --argjson pr_number "$PR_NUMBER" \
-          --arg head_ref "$HEAD_REF" \
-          --arg head_sha "$HEAD_SHA" \
-          --arg status "$STATUS" \
-          --arg label_table "$LABEL_TABLE" \
-          --arg config_file "$CONFIG_FILE" \
-          --arg changelog_dir "$CHANGELOG_DIR" \
-          '{
-            pr_number: $pr_number,
-            head_ref: $head_ref,
-            head_sha: $head_sha,
-            status: $status,
-            label_table: $label_table,
-            config_file: $config_file,
-            changelog_dir: $changelog_dir
-          }' > /tmp/changelog-result/metadata.json
+        docs-builder changelog prepare-artifact \
+          --staging-dir /tmp/changelog-staging \
+          --output-dir /tmp/changelog-result \
+          --evaluate-status "$EVALUATE_STATUS" \
+          --generate-outcome "${GENERATE_OUTCOME:-skipped}" \
+          --pr-number "$PR_NUMBER" \
+          --head-ref "$HEAD_REF" \
+          --head-sha "$HEAD_SHA" \
+          --changelog-dir "$CHANGELOG_DIR" \
+          --config "$CONFIG_FILE" \
+          ${LABEL_TABLE:+--label-table "$LABEL_TABLE"}
 
     - name: Upload artifact
-      if: >
-        always()
-        && (steps.generate.outcome == 'success'
-        || steps.evaluate.outputs.status == 'no-label')
+      if: always() && steps.evaluate.outputs.should-upload == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: changelog-result
         path: /tmp/changelog-result/
         retention-days: 1
 
-    - name: Resolve status
+    - name: Resolve generation outcome
       id: resolve
       if: always()
       shell: bash
       run: |
-        if [ "${{ steps.preflight.outputs.should-proceed }}" != "true" ]; then
-          echo "status=${{ steps.preflight.outputs.status || 'skipped' }}" >> "$GITHUB_OUTPUT"
-        elif [ "${{ steps.evaluate.outputs.status }}" = "proceed" ]; then
+        STATUS="${{ steps.evaluate.outputs.status }}"
+        if [ "$STATUS" = "proceed" ]; then
           if [ "${{ steps.generate.outcome }}" = "success" ]; then
-            echo "status=success" >> "$GITHUB_OUTPUT"
+            STATUS="success"
           else
-            echo "status=error" >> "$GITHUB_OUTPUT"
+            STATUS="error"
           fi
-        else
-          echo "status=${{ steps.evaluate.outputs.status }}" >> "$GITHUB_OUTPUT"
         fi
+        STATUS="${STATUS:-skipped}"
+        echo "status=$STATUS" >> "$GITHUB_OUTPUT"
 
-    - name: Fail if needed
-      if: >
-        always()
-        && (steps.resolve.outputs.status == 'no-title'
-        || steps.resolve.outputs.status == 'error')
-      shell: bash
-      env:
-        STATUS: ${{ steps.resolve.outputs.status }}
-      run: |
         case "$STATUS" in
           no-title)
             echo "::error::PR has no title. Cannot generate a changelog entry without a title."
+            exit 1
             ;;
-          *)
+          error)
             echo "::error::Changelog generation failed unexpectedly."
+            exit 1
             ;;
         esac
-        exit 1

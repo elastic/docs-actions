@@ -1,4 +1,4 @@
-name: changelog/commit
+name: changelog/submit
 description: >
   Download a changelog artifact from a generate workflow run,
   commit it to the PR branch (or post as comment), and update the PR.
@@ -35,23 +35,31 @@ runs:
         run-id: ${{ inputs.run-id }}
         github-token: ${{ inputs.github-token }}
 
-    # TODO: replace with docs-builder changelog evaluate-pr once available:
-    #   docs-builder changelog evaluate-pr \
-    #     --metadata /tmp/changelog-result/metadata.json \
-    #     --comment-only "$COMMENT_ONLY"
-    # This should handle: metadata reading, PR validation (SHA, skip label from
-    # config), fork detection, and output the action flags for downstream steps.
-    - name: Evaluate artifact and validate PR
+    - name: Setup docs-builder
+      if: steps.download.outcome == 'success'
+      uses: elastic/docs-actions/docs-builder/setup@v1
+      with:
+        version: latest
+        github-token: ${{ inputs.github-token }}
+
+    - name: Evaluate artifact
       id: evaluate
       if: steps.download.outcome == 'success'
-      uses: actions/github-script@v8
+      shell: bash
       env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
         COMMENT_ONLY: ${{ inputs.comment-only }}
-      with:
-        github-token: ${{ inputs.github-token }}
-        script: |
-          const script = require('${{ github.action_path }}/scripts/evaluate.js');
-          await script({ github, context, core });
+      run: |
+        COMMENT_FLAG=""
+        if [ "$COMMENT_ONLY" = "true" ]; then
+          COMMENT_FLAG="--comment-only"
+        fi
+
+        docs-builder changelog evaluate-artifact \
+          --metadata /tmp/changelog-result/metadata.json \
+          --owner "${{ github.repository_owner }}" \
+          --repo "${{ github.event.repository.name }}" \
+          $COMMENT_FLAG
 
     - name: Checkout PR branch
       if: steps.evaluate.outputs.should-commit == 'true'
@@ -130,7 +138,7 @@ runs:
           const script = require('${{ github.action_path }}/scripts/post-comment-only.js');
           await script({ github, context, core });
 
-    - name: Post failure comment with available labels
+    - name: Post failure comment
       if: steps.evaluate.outputs.should-comment-failure == 'true'
       uses: actions/github-script@v8
       env:

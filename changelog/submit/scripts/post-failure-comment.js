@@ -13,8 +13,6 @@ module.exports = async ({ github, context, core }) => {
       '',
       '🔖 Add one of these labels to your PR:',
       '',
-      '| Label | Changelog type |',
-      '|---|---|',
       labelRows,
     ].join('\n');
   } else {
@@ -27,7 +25,7 @@ module.exports = async ({ github, context, core }) => {
     '⚠️ **Cannot generate changelog:** no matching type label found on this PR.',
     labelSection,
     '',
-    '🔖 To skip the changelog for this PR, add the `changelog:skip` label.',
+    `🔖 To skip changelog generation or configure label rules, see \`${configFile}\`.`,
   ].join('\n');
 
   const issue_number = prNumber;

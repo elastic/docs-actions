@@ -1,6 +1,6 @@
 # Changelog automation
 
-Automatically generate and commit changelog entries for pull requests.
+Automatically generate and submit changelog entries for pull requests.
 
 When a PR is opened or labeled, the system generates a changelog YAML file based on the PR title and type label, commits it to the PR branch, and posts a comment with a link to view or edit the entry.
 
@@ -59,10 +59,10 @@ jobs:
     uses: elastic/docs-actions/.github/workflows/changelog-generate.yml@v1
 ```
 
-**`.github/workflows/changelog-commit.yml`**
+**`.github/workflows/changelog-submit.yml`**
 
 ```yaml
-name: changelog-commit
+name: changelog-submit
 
 on:
   workflow_run:
@@ -76,17 +76,17 @@ permissions:
   pull-requests: write
 
 jobs:
-  commit:
-    uses: elastic/docs-actions/.github/workflows/changelog-commit.yml@v1
+  submit:
+    uses: elastic/docs-actions/.github/workflows/changelog-submit.yml@v1
 ```
 
-> **Important:** The `name` in the generate workflow (`changelog-generate`) must match the `workflows:` reference in the commit workflow. If you rename one, rename the other.
+> **Important:** The `name` in the generate workflow (`changelog-generate`) must match the `workflows:` reference in the submit workflow. If you rename one, rename the other.
 
-The two-workflow design is required because the generate workflow runs with read-only permissions (from the PR context), while the commit workflow runs with write permissions (from `workflow_run`, which uses the base branch's permissions). This is a [standard pattern](https://securitylab.github.com/research/github-actions-preventing-pwn-requests/) for safely handling PR branches, including those from forks.
+The two-workflow design is required because the generate workflow runs with read-only permissions (from the PR context), while the submit workflow runs with write permissions (from `workflow_run`, which uses the base branch's permissions). This is a [standard pattern](https://securitylab.github.com/research/github-actions-preventing-pwn-requests/) for safely handling PR branches, including those from forks.
 
 ### 3. Create the labels
 
-Make sure the GitHub labels referenced in your `docs/changelog.yml` exist in your repository. You also need a `changelog:skip` label for PRs that should not generate a changelog entry.
+Make sure the GitHub labels referenced in your `docs/changelog.yml` exist in your repository. To allow PRs to skip changelog generation, configure `rules.create.exclude` in your changelog config with the appropriate label(s).
 
 ## How it works
 
@@ -96,7 +96,7 @@ PR opened/labeled/title edited
        v
 generate workflow (read-only)
        |
-       +-- skip if changelog:skip label is present
+       +-- skip if labels match rules.create exclusion rules
        +-- skip if last commit is from the bot (prevents loops)
        +-- skip if changelog file was manually edited
        +-- skip if only the PR body was edited (not the title)
@@ -106,10 +106,10 @@ generate workflow (read-only)
        +-- uploads result as artifact
        |
        v
-commit workflow (write permissions, via workflow_run)
+submit workflow (write permissions, via workflow_run)
        |
-       +-- re-validates PR state (labels, head SHA)
        +-- downloads artifact
+       +-- re-validates PR state (labels, head SHA, fork detection)
        +-- commits changelog file to PR branch
        +-- posts PR comment with view/edit links
        |
@@ -119,12 +119,12 @@ commit workflow (write permissions, via workflow_run)
 
 ### Comment-only mode
 
-If you prefer not to have bot commits on your PR branches, pass `comment-only: true` to the commit workflow. The changelog content will be posted as a PR comment instead:
+If you prefer not to have bot commits on your PR branches, pass `comment-only: true` to the submit workflow. The changelog content will be posted as a PR comment instead:
 
 ```yaml
 jobs:
-  commit:
-    uses: elastic/docs-actions/.github/workflows/changelog-commit.yml@v1
+  submit:
+    uses: elastic/docs-actions/.github/workflows/changelog-submit.yml@v1
     with:
       comment-only: true
 ```
@@ -133,7 +133,15 @@ Fork PRs automatically use comment-only mode since the workflow token cannot pus
 
 ## Skipping changelog generation
 
-Add the `changelog:skip` label to a PR to skip changelog generation entirely. The generate action will exit early and no artifact or commit is produced.
+Configure `rules.create` in your `docs/changelog.yml` to control which PRs generate changelog entries. For example, to skip PRs with a `changelog:skip` label:
+
+```yaml
+rules:
+  create:
+    exclude: "changelog:skip"
+```
+
+When all products are blocked by the create rules, the generate action will exit early and no artifact or commit is produced.
 
 ## Manual edits
 

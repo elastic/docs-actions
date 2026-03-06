@@ -1,4 +1,4 @@
-name: Changelog commit
+name: Changelog submit
 
 on:
   workflow_call:
@@ -9,18 +9,18 @@ on:
         default: false
 
 concurrency:
-  group: changelog-commit-${{ github.event.workflow_run.head_branch || github.run_id }}
+  group: changelog-submit-${{ github.event.workflow_run.head_branch || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  commit:
+  submit:
     if: >
       github.event.workflow_run.event == 'pull_request'
       && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
-      - name: Commit changelog
-        uses: elastic/docs-actions/changelog/commit@v1
+      - name: Submit changelog
+        uses: elastic/docs-actions/changelog/submit@v1
         with:
           run-id: ${{ github.event.workflow_run.id }}
           comment-only: ${{ inputs.comment-only }}
