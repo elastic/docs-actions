@@ -86,7 +86,7 @@ The two-workflow design is required because the generate workflow runs with read
 
 ### 3. Create the labels
 
-Make sure the GitHub labels referenced in your `docs/changelog.yml` exist in your repository. To allow PRs to skip changelog generation, configure `rules.create.exclude` in your changelog config with the appropriate label(s).
+Make sure the GitHub labels referenced in your `docs/changelog.yml` exist in your repository. You can control which PRs generate changelog entries using `rules.create` in your config -- either by excluding PRs with certain labels or by requiring specific labels to be present. For details, see [Rules for creation and publishing](https://elastic.github.io/docs-builder/contribute/changelog/#rules-for-creation-and-publishing).
 
 ## How it works
 
@@ -141,7 +141,7 @@ rules:
     exclude: "changelog:skip"
 ```
 
-When all products are blocked by the create rules, the generate action will exit early and no artifact or commit is produced.
+When all products are blocked by the create rules, the generate action will exit early and no artifact or commit is produced. You can also use `include` mode or per-product overrides. See [Rules for creation and publishing](https://elastic.github.io/docs-builder/contribute/changelog/#rules-for-creation-and-publishing) for the full reference.
 
 ## Manual edits
 

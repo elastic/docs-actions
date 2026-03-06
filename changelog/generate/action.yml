@@ -79,6 +79,7 @@ runs:
       run: |
         mkdir -p /tmp/changelog-staging
         docs-builder changelog add \
+          --concise \
           --config "$CONFIG_FILE" \
           --output /tmp/changelog-staging
 
