@@ -76,6 +76,11 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         CONFIG_FILE: ${{ inputs.config }}
+        CHANGELOG_PR_NUMBER: ${{ github.event.pull_request.number }}
+        CHANGELOG_TITLE: ${{ steps.evaluate.outputs.title }}
+        CHANGELOG_TYPE: ${{ steps.evaluate.outputs.type }}
+        CHANGELOG_OWNER: ${{ github.repository_owner }}
+        CHANGELOG_REPO: ${{ github.event.repository.name }}
       run: |
         mkdir -p /tmp/changelog-staging
         docs-builder changelog add \
