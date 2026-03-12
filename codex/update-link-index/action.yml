@@ -24,6 +24,7 @@ runs:
       with:
           vault-instance: "ci-prod"
           vault-role: "${{ steps.generate-vault-role.outputs.result }}"
+          skip-token-revoke: true
     - name: Clone codex-link-index
       uses: actions/checkout@v6
       with:
