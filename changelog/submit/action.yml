@@ -37,7 +37,7 @@ runs:
       if: steps.download.outcome == 'success'
       uses: elastic/docs-actions/docs-builder/setup@v1
       with:
-        version: latest
+        version: edge
         github-token: ${{ inputs.github-token }}
 
     - name: Evaluate artifact
@@ -86,8 +86,9 @@ runs:
       env:
         PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
         CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
+        CHANGELOG_FILENAME: ${{ steps.evaluate.outputs.changelog-filename }}
       run: |
-        CHANGELOG_FILE="$CHANGELOG_DIR/${PR_NUMBER}.yaml"
+        CHANGELOG_FILE="$CHANGELOG_DIR/$CHANGELOG_FILENAME"
 
         if [ -f "$CHANGELOG_FILE" ]; then
           VERB="Update"
@@ -96,7 +97,7 @@ runs:
         fi
 
         mkdir -p "$CHANGELOG_DIR"
-        cp "/tmp/changelog-result/${PR_NUMBER}.yaml" "$CHANGELOG_FILE"
+        cp "/tmp/changelog-result/$CHANGELOG_FILENAME" "$CHANGELOG_FILE"
 
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -118,6 +119,7 @@ runs:
         PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
         HEAD_REF: ${{ steps.evaluate.outputs.head-ref }}
         CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
+        CHANGELOG_FILENAME: ${{ steps.evaluate.outputs.changelog-filename }}
       with:
         github-token: ${{ inputs.github-token }}
         script: |
@@ -130,6 +132,7 @@ runs:
       env:
         PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
         CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
+        CHANGELOG_FILENAME: ${{ steps.evaluate.outputs.changelog-filename }}
       with:
         github-token: ${{ inputs.github-token }}
         script: |

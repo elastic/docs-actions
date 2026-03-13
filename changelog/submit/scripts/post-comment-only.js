@@ -7,7 +7,8 @@ module.exports = async ({ github, context, core }) => {
   const prNumber = parseInt(process.env.PR_NUMBER, 10);
   const { owner, repo } = context.repo;
   const changelogDir = process.env.CHANGELOG_DIR;
-  const filePath = `/tmp/changelog-result/${prNumber}.yaml`;
+  const changelogFilename = process.env.CHANGELOG_FILENAME;
+  const filePath = `/tmp/changelog-result/${changelogFilename}`;
 
   let content = '';
   if (fs.existsSync(filePath)) {
@@ -17,7 +18,7 @@ module.exports = async ({ github, context, core }) => {
   const bodyParts = [title, ''];
   if (content) {
     bodyParts.push(
-      `Generated changelog entry for \`${changelogDir}/${prNumber}.yaml\`:`,
+      `Generated changelog entry for \`${changelogDir}/${changelogFilename}\`:`,
       '',
       '```yaml',
       content,

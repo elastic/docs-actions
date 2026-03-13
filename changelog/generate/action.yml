@@ -28,7 +28,7 @@ runs:
     - name: Setup docs-builder
       uses: elastic/docs-actions/docs-builder/setup@v1
       with:
-        version: latest
+        version: edge
         github-token: ${{ inputs.github-token }}
 
     - name: Evaluate PR
@@ -100,6 +100,7 @@ runs:
         EVALUATE_STATUS: ${{ steps.evaluate.outputs.status }}
         GENERATE_OUTCOME: ${{ steps.generate.outcome }}
         LABEL_TABLE: ${{ steps.evaluate.outputs.label-table }}
+        EXISTING_FILENAME: ${{ steps.evaluate.outputs.existing-changelog-filename }}
       run: |
         docs-builder changelog prepare-artifact \
           --staging-dir /tmp/changelog-staging \
@@ -110,7 +111,8 @@ runs:
           --head-ref "$HEAD_REF" \
           --head-sha "$HEAD_SHA" \
           --config "$CONFIG_FILE" \
-          ${LABEL_TABLE:+--label-table "$LABEL_TABLE"}
+          ${LABEL_TABLE:+--label-table "$LABEL_TABLE"} \
+          ${EXISTING_FILENAME:+--existing-changelog-filename "$EXISTING_FILENAME"}
 
     - name: Upload artifact
       if: always() && steps.evaluate.outputs.should-upload == 'true'

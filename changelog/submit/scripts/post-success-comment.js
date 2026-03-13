@@ -4,7 +4,7 @@ module.exports = async ({ github, context, core }) => {
   const prNumber = parseInt(process.env.PR_NUMBER, 10);
   const branch = process.env.HEAD_REF;
   const { owner, repo } = context.repo;
-  const filePath = `${process.env.CHANGELOG_DIR}/${prNumber}.yaml`;
+  const filePath = `${process.env.CHANGELOG_DIR}/${process.env.CHANGELOG_FILENAME}`;
   const viewUrl = `https://github.com/${owner}/${repo}/blob/${branch}/${filePath}`;
   const editUrl = `https://github.com/${owner}/${repo}/edit/${branch}/${filePath}`;
 
