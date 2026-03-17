@@ -149,4 +149,4 @@ If a human edits the changelog file directly (i.e., the last commit to `docs/cha
 
 ## Output
 
-Each PR produces a file at `docs/changelog/{PR_NUMBER}.yaml` on the PR branch. These files are consumed by `docs-builder` during documentation builds to produce a rendered changelog page.
+Each PR produces a change file (for example, `docs/changelog/{PR_NUMBER}.yaml`) on the PR branch. These files are consumed by `docs-builder` during documentation builds to produce a rendered changelog page.
