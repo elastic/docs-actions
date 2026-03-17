@@ -145,7 +145,7 @@ When all products are blocked by the create rules, the generate action will exit
 
 ## Manual edits
 
-If a human edits the changelog file directly (i.e., the last commit to `docs/changelog/{PR_NUMBER}.yaml` is not from `github-actions[bot]`), the automation will not overwrite it. This lets authors customize the generated entry without it being regenerated on the next push.
+If a human edits the changelog file directly (i.e., the last commit on that file is not from `github-actions[bot]`), the automation will not overwrite it. This lets authors customize the generated entry without it being regenerated on the next push.
 
 ## Output
 
