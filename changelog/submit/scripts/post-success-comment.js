@@ -1,40 +1,20 @@
-// Posts (or updates) a PR comment with links to the committed changelog file.
+const { TITLE, upsertComment } = require('./comment-helper');
+
 module.exports = async ({ github, context, core }) => {
-  const title = '### 📋 Changelog';
   const prNumber = parseInt(process.env.PR_NUMBER, 10);
   const branch = process.env.HEAD_REF;
+  const changelogFile = process.env.CHANGELOG_FILE;
   const { owner, repo } = context.repo;
-  const filePath = `${process.env.CHANGELOG_DIR}/${process.env.CHANGELOG_FILENAME}`;
-  const viewUrl = `https://github.com/${owner}/${repo}/blob/${branch}/${filePath}`;
-  const editUrl = `https://github.com/${owner}/${repo}/edit/${branch}/${filePath}`;
+  const viewUrl = `https://github.com/${owner}/${repo}/blob/${branch}/${changelogFile}`;
+  const editUrl = `https://github.com/${owner}/${repo}/edit/${branch}/${changelogFile}`;
 
   const body = [
-    title,
+    TITLE,
     '',
-    `📝 Changelog entry committed: [\`${filePath}\`](${viewUrl})`,
+    `📝 Changelog entry committed: [\`${changelogFile}\`](${viewUrl})`,
     '',
     `✏️ [Edit this changelog](${editUrl})`,
   ].join('\n');
 
-  const issue_number = prNumber;
-  const { data: comments } = await github.rest.issues.listComments({
-    owner, repo, issue_number, per_page: 100,
-  });
-  const existing = comments.find(c =>
-    c.user?.login === 'github-actions[bot]' &&
-    c.body?.startsWith(title)
-  );
-  if (existing) {
-    await github.rest.issues.updateComment({
-      owner, repo,
-      comment_id: existing.id,
-      body,
-    });
-  } else {
-    await github.rest.issues.createComment({
-      owner, repo,
-      issue_number,
-      body,
-    });
-  }
+  await upsertComment({ github, context, prNumber, body });
 };

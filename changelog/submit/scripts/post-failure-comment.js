@@ -1,8 +1,6 @@
-// Posts (or updates) a PR comment explaining that no matching type label was
-// found, and lists the available labels from the changelog config.
+const { TITLE, upsertComment } = require('./comment-helper');
+
 module.exports = async ({ github, context, core }) => {
-  const title = '### 📋 Changelog';
-  const { owner, repo } = context.repo;
   const prNumber = parseInt(process.env.PR_NUMBER, 10);
   const configFile = process.env.CONFIG_FILE || 'docs/changelog.yml';
   const labelRows = process.env.LABEL_TABLE || '';
@@ -20,7 +18,7 @@ module.exports = async ({ github, context, core }) => {
   }
 
   const body = [
-    title,
+    TITLE,
     '',
     '⚠️ **Cannot generate changelog:** no matching type label found on this PR.',
     labelSection,
@@ -28,25 +26,5 @@ module.exports = async ({ github, context, core }) => {
     `🔖 To skip changelog generation or configure label rules, see \`${configFile}\`.`,
   ].join('\n');
 
-  const issue_number = prNumber;
-  const { data: comments } = await github.rest.issues.listComments({
-    owner, repo, issue_number, per_page: 100,
-  });
-  const existing = comments.find(c =>
-    c.user?.login === 'github-actions[bot]' &&
-    c.body?.startsWith(title)
-  );
-  if (existing) {
-    await github.rest.issues.updateComment({
-      owner, repo,
-      comment_id: existing.id,
-      body,
-    });
-  } else {
-    await github.rest.issues.createComment({
-      owner, repo,
-      issue_number,
-      body,
-    });
-  }
+  await upsertComment({ github, context, prNumber, body });
 };

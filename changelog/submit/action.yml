@@ -1,10 +1,16 @@
 name: Changelog submit
 description: >
-  Downloads metadata and a changelog artifact from a generate workflow run,
-  validates PR state, commits the changelog to the PR branch (or posts as comment),
-  and updates the PR.
+  Self-contained action that generates a changelog entry and either commits it
+  to the PR branch or posts it as a PR comment. Runs in the trusted workflow_run
+  context with write permissions — no artifact from the validate workflow is needed.
 
 inputs:
+  config:
+    description: 'Path to changelog.yml configuration file'
+    default: 'docs/changelog.yml'
+  strip-title-prefix:
+    description: 'Remove [Prefix]: from PR titles'
+    default: 'true'
   github-token:
     description: 'GitHub token with contents:write and pull-requests:write'
     default: '${{ github.token }}'
@@ -17,78 +23,169 @@ outputs:
     description: 'Whether a changelog was committed (true/false)'
     value: ${{ steps.commit.outputs.committed || 'false' }}
   pr-number:
-    description: 'The PR number from the changelog metadata'
-    value: ${{ steps.evaluate.outputs.pr-number }}
+    description: 'The PR number'
+    value: ${{ steps.pr.outputs.number }}
 
 runs:
   using: composite
   steps:
-    - name: Download artifact
-      id: download
-      continue-on-error: true
-      uses: actions/download-artifact@v4
+    - name: Resolve PR
+      id: pr
+      uses: actions/github-script@v8
       with:
-        name: changelog-result
-        path: /tmp/changelog-result
-        run-id: ${{ github.event.workflow_run.id }}
         github-token: ${{ inputs.github-token }}
+        script: |
+          const run = context.payload.workflow_run;
+          if (run.pull_requests?.length > 0) {
+            core.setOutput('number', run.pull_requests[0].number);
+            core.info(`Resolved PR #${run.pull_requests[0].number} from workflow_run.pull_requests`);
+            return;
+          }
+          // Fallback for fork PRs: search by head branch
+          const headRepo = run.head_repository;
+          const headLabel = `${headRepo.owner.login}:${run.head_branch}`;
+          const { data: prs } = await github.rest.pulls.list({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            head: headLabel,
+          });
+          if (prs.length > 0) {
+            core.setOutput('number', prs[0].number);
+            core.info(`Resolved PR #${prs[0].number} from pulls.list (head=${headLabel})`);
+          } else {
+            core.info('No open PR found — skipping');
+          }
+
+    - name: Fetch PR data
+      id: pr-data
+      if: steps.pr.outputs.number != ''
+      uses: actions/github-script@v8
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const { data: pr } = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: parseInt(process.env.PR_NUMBER, 10),
+          });
+          if (pr.state !== 'open') {
+            core.info(`PR #${pr.number} is ${pr.state} — skipping`);
+            return;
+          }
+          core.setOutput('title', pr.title);
+          core.setOutput('labels', pr.labels.map(l => l.name).join(','));
+          core.setOutput('is-fork', String(pr.head.repo?.full_name !== pr.base.repo?.full_name));
+          core.setOutput('head-ref', pr.head.ref);
+          core.setOutput('head-sha', pr.head.sha);
+          core.setOutput('proceed', 'true');
+      env:
+        PR_NUMBER: ${{ steps.pr.outputs.number }}
+
+    - name: Checkout PR branch
+      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ steps.pr-data.outputs.head-ref }}
+        token: ${{ inputs.github-token }}
+        persist-credentials: true
+
+    - name: Checkout base repo
+      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork == 'true'
+      uses: actions/checkout@v6
+
+    - name: Verify checkout SHA
+      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+      shell: bash
+      env:
+        EXPECTED_SHA: ${{ steps.pr-data.outputs.head-sha }}
+      run: |
+        ACTUAL_SHA=$(git rev-parse HEAD)
+        if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+          echo "::error::Checkout SHA mismatch (expected $EXPECTED_SHA, got $ACTUAL_SHA). Aborting."
+          exit 1
+        fi
 
     - name: Setup docs-builder
-      if: steps.download.outcome == 'success'
+      if: steps.pr-data.outputs.proceed == 'true'
       uses: elastic/docs-actions/docs-builder/setup@v1
       with:
         version: edge
         github-token: ${{ inputs.github-token }}
 
-    - name: Evaluate artifact
+    - name: Evaluate PR
       id: evaluate
-      if: steps.download.outcome == 'success'
+      if: steps.pr-data.outputs.proceed == 'true'
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-        COMMENT_ONLY: ${{ inputs.comment-only }}
+        CONFIG_FILE: ${{ inputs.config }}
+        PR_NUMBER: ${{ steps.pr.outputs.number }}
+        PR_TITLE: ${{ steps.pr-data.outputs.title }}
+        PR_LABELS: ${{ steps.pr-data.outputs.labels }}
+        HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
+        HEAD_SHA: ${{ steps.pr-data.outputs.head-sha }}
+        STRIP_PREFIX: ${{ inputs.strip-title-prefix }}
       run: |
-        COMMENT_FLAG=""
-        if [ "$COMMENT_ONLY" = "true" ]; then
-          COMMENT_FLAG="--comment-only"
+        PREFIX_FLAG=""
+        if [ "$STRIP_PREFIX" = "true" ]; then
+          PREFIX_FLAG="--strip-title-prefix"
         fi
 
-        docs-builder changelog evaluate-artifact \
-          --metadata /tmp/changelog-result/metadata.json \
+        docs-builder changelog evaluate-pr \
+          --config "$CONFIG_FILE" \
           --owner "${{ github.repository_owner }}" \
           --repo "${{ github.event.repository.name }}" \
-          $COMMENT_FLAG
+          --pr-number "$PR_NUMBER" \
+          --pr-title "$PR_TITLE" \
+          --pr-labels "$PR_LABELS" \
+          --head-ref "$HEAD_REF" \
+          --head-sha "$HEAD_SHA" \
+          $PREFIX_FLAG
 
-    - name: Checkout PR branch
-      if: steps.evaluate.outputs.should-commit == 'true'
-      uses: actions/checkout@v6
-      with:
-        ref: ${{ steps.evaluate.outputs.head-ref }}
-        token: ${{ inputs.github-token }}
-        persist-credentials: true
-
-    - name: Verify checkout SHA
-      if: steps.evaluate.outputs.should-commit == 'true'
+    - name: Generate changelog
+      id: generate
+      if: steps.evaluate.outputs.should-generate == 'true'
       shell: bash
       env:
-        EXPECTED_SHA: ${{ steps.evaluate.outputs.head-sha }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        CONFIG_FILE: ${{ inputs.config }}
+        CHANGELOG_PR_NUMBER: ${{ steps.pr.outputs.number }}
+        CHANGELOG_TITLE: ${{ steps.evaluate.outputs.title }}
+        CHANGELOG_TYPE: ${{ steps.evaluate.outputs.type }}
+        CHANGELOG_OWNER: ${{ github.repository_owner }}
+        CHANGELOG_REPO: ${{ github.event.repository.name }}
       run: |
-        ACTUAL_SHA=$(git rev-parse HEAD)
-        if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
-          echo "::error::Checkout SHA mismatch (expected $EXPECTED_SHA, got $ACTUAL_SHA). Aborting to prevent writing to wrong branch."
-          exit 1
-        fi
+        mkdir -p /tmp/changelog-staging
+        docs-builder changelog add \
+          --concise \
+          --config "$CONFIG_FILE" \
+          --output /tmp/changelog-staging
 
     - name: Commit changelog
-      if: steps.evaluate.outputs.should-commit == 'true'
+      if: >
+        steps.generate.outcome == 'success'
+        && steps.pr-data.outputs.is-fork != 'true'
+        && inputs.comment-only != 'true'
       id: commit
       shell: bash
       env:
-        PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
+        PR_NUMBER: ${{ steps.pr.outputs.number }}
         CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
-        CHANGELOG_FILENAME: ${{ steps.evaluate.outputs.changelog-filename }}
+        EXISTING_FILENAME: ${{ steps.evaluate.outputs.existing-changelog-filename }}
       run: |
-        CHANGELOG_FILE="$CHANGELOG_DIR/$CHANGELOG_FILENAME"
+        GENERATED=$(ls /tmp/changelog-staging/*.yaml 2>/dev/null | head -1)
+        if [ -z "$GENERATED" ]; then
+          echo "::error::No changelog YAML found in staging directory"
+          exit 1
+        fi
+
+        if [ -n "$EXISTING_FILENAME" ]; then
+          TARGET_FILENAME="$EXISTING_FILENAME"
+        else
+          TARGET_FILENAME=$(basename "$GENERATED")
+        fi
+        CHANGELOG_FILE="$CHANGELOG_DIR/$TARGET_FILENAME"
 
         if [ -f "$CHANGELOG_FILE" ]; then
           VERB="Update"
@@ -97,7 +194,7 @@ runs:
         fi
 
         mkdir -p "$CHANGELOG_DIR"
-        cp "/tmp/changelog-result/$CHANGELOG_FILENAME" "$CHANGELOG_FILE"
+        cp "$GENERATED" "$CHANGELOG_FILE"
 
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -112,14 +209,15 @@ runs:
           echo "committed=true" >> "$GITHUB_OUTPUT"
         fi
 
+        echo "changelog-file=$CHANGELOG_FILE" >> "$GITHUB_OUTPUT"
+
     - name: Post success comment
       if: steps.commit.outputs.committed == 'true'
       uses: actions/github-script@v8
       env:
-        PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
-        HEAD_REF: ${{ steps.evaluate.outputs.head-ref }}
-        CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
-        CHANGELOG_FILENAME: ${{ steps.evaluate.outputs.changelog-filename }}
+        PR_NUMBER: ${{ steps.pr.outputs.number }}
+        HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
+        CHANGELOG_FILE: ${{ steps.commit.outputs.changelog-file }}
       with:
         github-token: ${{ inputs.github-token }}
         script: |
@@ -127,12 +225,14 @@ runs:
           await script({ github, context, core });
 
     - name: Post comment-only changelog
-      if: steps.evaluate.outputs.should-comment-success == 'true'
+      if: >
+        steps.generate.outcome == 'success'
+        && (steps.pr-data.outputs.is-fork == 'true' || inputs.comment-only == 'true')
       uses: actions/github-script@v8
       env:
-        PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
+        PR_NUMBER: ${{ steps.pr.outputs.number }}
         CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
-        CHANGELOG_FILENAME: ${{ steps.evaluate.outputs.changelog-filename }}
+        STAGING_DIR: /tmp/changelog-staging
       with:
         github-token: ${{ inputs.github-token }}
         script: |
@@ -140,12 +240,12 @@ runs:
           await script({ github, context, core });
 
     - name: Post failure comment
-      if: steps.evaluate.outputs.should-comment-failure == 'true'
+      if: steps.evaluate.outputs.status == 'no-label'
       uses: actions/github-script@v8
       env:
-        PR_NUMBER: ${{ steps.evaluate.outputs.pr-number }}
+        PR_NUMBER: ${{ steps.pr.outputs.number }}
         LABEL_TABLE: ${{ steps.evaluate.outputs.label-table }}
-        CONFIG_FILE: ${{ steps.evaluate.outputs.config-file }}
+        CONFIG_FILE: ${{ inputs.config }}
       with:
         github-token: ${{ inputs.github-token }}
         script: |

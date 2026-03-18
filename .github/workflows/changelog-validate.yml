@@ -1,4 +1,4 @@
-name: Changelog generate
+name: Changelog validate
 
 on:
   workflow_call:
@@ -13,11 +13,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  generate:
+  validate:
     if: github.event.pull_request.state == 'open'
     runs-on: ubuntu-latest
     steps:
-      - name: Generate changelog
-        uses: elastic/docs-actions/changelog/generate@v1
+      - name: Validate changelog
+        uses: elastic/docs-actions/changelog/validate@v1
         with:
           config: ${{ inputs.config }}

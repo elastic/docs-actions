@@ -2,7 +2,7 @@
 
 Automatically generate and submit changelog entries for pull requests.
 
-When a PR is opened or labeled, the system generates a changelog YAML file based on the PR title and type label, commits it to the PR branch, and posts a comment with a link to view or edit the entry.
+When a PR is opened or labeled, the system validates the PR metadata, then generates a changelog YAML file based on the PR title and type label, commits it to the PR branch, and posts a comment with a link to view or edit the entry.
 
 ## Setup
 
@@ -36,10 +36,10 @@ Each key under `pivot.types` is a changelog type. The `labels` list defines whic
 
 Add two workflow files to your repository:
 
-**`.github/workflows/changelog-generate.yml`**
+**`.github/workflows/changelog-validate.yml`**
 
 ```yaml
-name: changelog-generate
+name: changelog-validate
 
 on:
   pull_request:
@@ -55,8 +55,8 @@ permissions:
   contents: read
 
 jobs:
-  generate:
-    uses: elastic/docs-actions/.github/workflows/changelog-generate.yml@v1
+  validate:
+    uses: elastic/docs-actions/.github/workflows/changelog-validate.yml@v1
 ```
 
 **`.github/workflows/changelog-submit.yml`**
@@ -66,12 +66,11 @@ name: changelog-submit
 
 on:
   workflow_run:
-    workflows: [changelog-generate]
+    workflows: [changelog-validate]
     types:
       - completed
 
 permissions:
-  actions: read
   contents: write
   pull-requests: write
 
@@ -80,9 +79,9 @@ jobs:
     uses: elastic/docs-actions/.github/workflows/changelog-submit.yml@v1
 ```
 
-> **Important:** The `name` in the generate workflow (`changelog-generate`) must match the `workflows:` reference in the submit workflow. If you rename one, rename the other.
+> **Important:** The `name` in the validate workflow (`changelog-validate`) must match the `workflows:` reference in the submit workflow. If you rename one, rename the other.
 
-The two-workflow design is required because the generate workflow runs with read-only permissions (from the PR context), while the submit workflow runs with write permissions (from `workflow_run`, which uses the base branch's permissions). This is a [standard pattern](https://securitylab.github.com/research/github-actions-preventing-pwn-requests/) for safely handling PR branches, including those from forks.
+The two-workflow design separates trust boundaries. The validate workflow runs with read-only permissions in the PR context, acting as a lightweight gate. The submit workflow runs with write permissions via `workflow_run` (which uses the base branch's permissions) and performs all generation and commit operations in a trusted context. This follows the [standard pattern](https://securitylab.github.com/research/github-actions-preventing-pwn-requests/) for safely handling PR branches, including those from forks.
 
 ### 3. Create the labels
 
@@ -92,30 +91,41 @@ Make sure the GitHub labels referenced in your `docs/changelog.yml` exist in you
 
 ```
 PR opened/labeled/title edited
-       |
+       │
        v
-generate workflow (read-only)
-       |
-       +-- skip if labels match rules.create exclusion rules
-       +-- skip if last commit is from the bot (prevents loops)
-       +-- skip if changelog file was manually edited
-       +-- skip if only the PR body was edited (not the title)
-       |
-       +-- resolves title and type from PR metadata + config
-       +-- runs: docs-builder changelog add
-       +-- uploads result as artifact
-       |
+validate workflow (read-only, lightweight gate)
+       │
+       ├── runs docs-builder changelog evaluate-pr
+       │     with PR-event-specific context (event action, title changes)
+       │
+       ├── pass (exit 0): proceed, no-label, skipped, manually-edited
+       └── fail (exit 1): no-title, error
+              → submit workflow does NOT run
+
+       │ (exit 0)
        v
 submit workflow (write permissions, via workflow_run)
-       |
-       +-- downloads artifact
-       +-- re-validates PR state (labels, head SHA, fork detection)
-       +-- commits changelog file to PR branch
-       +-- posts PR comment with view/edit links
-       |
-       +-- fork PRs: posts changelog as comment instead
-       +-- no-label PRs: posts comment listing available labels
+       │
+       ├── resolves PR number from workflow_run context
+       ├── fetches current PR data (title, labels, state) from API
+       ├── checks out PR branch (or base repo for forks)
+       ├── verifies checkout SHA matches expected head
+       │
+       ├── re-runs docs-builder changelog evaluate-pr
+       │     (without event-specific flags — gate already handled those)
+       │
+       ├── if "proceed":
+       │     ├── runs docs-builder changelog add
+       │     ├── commits changelog file to PR branch
+       │     └── posts PR comment with view/edit links
+       │
+       ├── if "no-label":
+       │     └── posts PR comment listing available labels
+       │
+       └── otherwise (skipped, manually-edited): no-op
 ```
+
+The evaluate logic runs twice — once as a gate (with event-specific checks like body-only edit and bot-loop detection), and once in the trusted submit context to drive behavior. This is intentional: the second evaluation uses fresh PR data from the API, so it correctly handles label or title changes between the two runs.
 
 ### Comment-only mode
 
@@ -141,12 +151,12 @@ rules:
     exclude: "changelog:skip"
 ```
 
-When all products are blocked by the create rules, the generate action will exit early and no artifact or commit is produced. You can also use `include` mode or per-product overrides. See [Rules for creation and publishing](https://elastic.github.io/docs-builder/contribute/changelog/#rules-for-creation-and-publishing) for the full reference.
+When all products are blocked by the create rules, the validate action passes (so CI stays green) but the submit action detects the same condition and exits without generating. You can also use `include` mode or per-product overrides. See [Rules for creation and publishing](https://elastic.github.io/docs-builder/contribute/changelog/#rules-for-creation-and-publishing) for the full reference.
 
 ## Manual edits
 
-If a human edits the changelog file directly (i.e., the last commit on that file is not from `github-actions[bot]`), the automation will not overwrite it. This lets authors customize the generated entry without it being regenerated on the next push.
+If a human edits the changelog file directly (i.e., the last commit to the changelog file is not from `github-actions[bot]`), the automation will not overwrite it. This lets authors customize the generated entry without it being regenerated on the next push.
 
 ## Output
 
-Each PR produces a change file (for example, `docs/changelog/{PR_NUMBER}.yaml`) on the PR branch. These files are consumed by `docs-builder` during documentation builds to produce a rendered changelog page.
+Each PR produces a file at `docs/changelog/{filename}.yaml` on the PR branch (where the filename is determined by the `docs-builder changelog add` command). These files are consumed by `docs-builder` during documentation builds to produce a rendered changelog page.
