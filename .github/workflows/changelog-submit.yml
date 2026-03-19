@@ -22,6 +22,9 @@ jobs:
       github.event.workflow_run.event == 'pull_request'
       && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Submit changelog
         uses: elastic/docs-actions/changelog/submit@v1

@@ -16,6 +16,8 @@ jobs:
   validate:
     if: github.event.pull_request.state == 'open'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Validate changelog
         uses: elastic/docs-actions/changelog/validate@v1
