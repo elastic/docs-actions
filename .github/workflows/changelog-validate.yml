@@ -20,6 +20,6 @@ jobs:
       contents: read
     steps:
       - name: Validate changelog
-        uses: elastic/docs-actions/changelog/validate@v1
+        uses: elastic/docs-actions/changelog/validate@action/changelog-test
         with:
           config: ${{ inputs.config }}

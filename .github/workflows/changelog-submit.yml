@@ -27,7 +27,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Submit changelog
-        uses: elastic/docs-actions/changelog/submit@v1
+        uses: elastic/docs-actions/changelog/submit@action/changelog-test
         with:
           config: ${{ inputs.config }}
           comment-only: ${{ inputs.comment-only }}
