@@ -76,6 +76,7 @@ runs:
           core.setOutput('title', pr.title);
           core.setOutput('labels', pr.labels.map(l => l.name).join(','));
           core.setOutput('is-fork', String(pr.head.repo?.full_name !== pr.base.repo?.full_name));
+          core.setOutput('base-ref', pr.base.ref);
           core.setOutput('head-ref', pr.head.ref);
           core.setOutput('head-sha', pr.head.sha);
           core.setOutput('proceed', 'true');
@@ -93,6 +94,20 @@ runs:
     - name: Checkout base repo
       if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork == 'true'
       uses: actions/checkout@v6
+
+    - name: Read config from base branch
+      id: config
+      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+      shell: bash
+      env:
+        CONFIG_FILE: ${{ inputs.config }}
+        BASE_REF: ${{ steps.pr-data.outputs.base-ref }}
+      run: |
+        if git show "origin/${BASE_REF}:${CONFIG_FILE}" > /tmp/changelog-config.yml 2>/dev/null; then
+          echo "config-path=/tmp/changelog-config.yml" >> "$GITHUB_OUTPUT"
+        else
+          echo "config-path=${CONFIG_FILE}" >> "$GITHUB_OUTPUT"
+        fi
 
     - name: Verify checkout SHA
       if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
