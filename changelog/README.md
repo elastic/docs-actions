@@ -79,6 +79,24 @@ jobs:
     uses: elastic/docs-actions/.github/workflows/changelog-submit.yml@v1
 ```
 
+If your changelog configuration is not at `docs/changelog.yml`, pass the path explicitly to both workflows:
+
+```yaml
+# In the validate job:
+jobs:
+  validate:
+    uses: elastic/docs-actions/.github/workflows/changelog-validate.yml@v1
+    with:
+      config: path/to/changelog.yml
+
+# In the submit job:
+jobs:
+  submit:
+    uses: elastic/docs-actions/.github/workflows/changelog-submit.yml@v1
+    with:
+      config: path/to/changelog.yml
+```
+
 > **Important:** The `name` in the validate workflow (`changelog-validate`) must match the `workflows:` reference in the submit workflow. If you rename one, rename the other.
 
 The two-workflow design separates trust boundaries. The validate workflow runs with read-only permissions in the PR context, acting as a lightweight gate. The submit workflow runs with write permissions via `workflow_run` (which uses the base branch's permissions) and performs all generation and commit operations in a trusted context. This follows the [standard pattern](https://securitylab.github.com/research/github-actions-preventing-pwn-requests/) for safely handling PR branches, including those from forks.
@@ -109,6 +127,7 @@ submit workflow (write permissions, via workflow_run)
        ├── resolves PR number from workflow_run context
        ├── fetches current PR data (title, labels, state) from API
        ├── checks out PR branch (or base repo for forks)
+       ├── reads changelog config from base branch
        ├── verifies checkout SHA matches expected head
        │
        ├── re-runs docs-builder changelog evaluate-pr
