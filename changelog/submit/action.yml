@@ -35,27 +35,8 @@ runs:
       with:
         github-token: ${{ inputs.github-token }}
         script: |
-          const run = context.payload.workflow_run;
-          if (run.pull_requests?.length > 0) {
-            core.setOutput('number', run.pull_requests[0].number);
-            core.info(`Resolved PR #${run.pull_requests[0].number} from workflow_run.pull_requests`);
-            return;
-          }
-          // Fallback for fork PRs: search by head branch
-          const headRepo = run.head_repository;
-          const headLabel = `${headRepo.owner.login}:${run.head_branch}`;
-          const { data: prs } = await github.rest.pulls.list({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            state: 'open',
-            head: headLabel,
-          });
-          if (prs.length > 0) {
-            core.setOutput('number', prs[0].number);
-            core.info(`Resolved PR #${prs[0].number} from pulls.list (head=${headLabel})`);
-          } else {
-            core.info('No open PR found — skipping');
-          }
+          const script = require('${{ github.action_path }}/scripts/resolve-pr.js');
+          await script({ github, context, core });
 
     - name: Fetch PR data
       id: pr-data
@@ -64,22 +45,8 @@ runs:
       with:
         github-token: ${{ inputs.github-token }}
         script: |
-          const { data: pr } = await github.rest.pulls.get({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: parseInt(process.env.PR_NUMBER, 10),
-          });
-          if (pr.state !== 'open') {
-            core.info(`PR #${pr.number} is ${pr.state} — skipping`);
-            return;
-          }
-          core.setOutput('title', pr.title);
-          core.setOutput('labels', pr.labels.map(l => l.name).join(','));
-          core.setOutput('is-fork', String(pr.head.repo?.full_name !== pr.base.repo?.full_name));
-          core.setOutput('base-ref', pr.base.ref);
-          core.setOutput('head-ref', pr.head.ref);
-          core.setOutput('head-sha', pr.head.sha);
-          core.setOutput('proceed', 'true');
+          const script = require('${{ github.action_path }}/scripts/fetch-pr-data.js');
+          await script({ github, context, core });
       env:
         PR_NUMBER: ${{ steps.pr.outputs.number }}
 
