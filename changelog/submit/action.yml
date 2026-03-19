@@ -89,7 +89,7 @@ runs:
       with:
         ref: ${{ steps.pr-data.outputs.head-ref }}
         token: ${{ inputs.github-token }}
-        persist-credentials: true
+        persist-credentials: false
 
     - name: Checkout base repo
       if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork == 'true'
@@ -188,6 +188,8 @@ runs:
         PR_NUMBER: ${{ steps.pr.outputs.number }}
         CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
         EXISTING_FILENAME: ${{ steps.evaluate.outputs.existing-changelog-filename }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        GIT_REPOSITORY: ${{ github.repository }}
       run: |
         GENERATED=$(ls /tmp/changelog-staging/*.yaml 2>/dev/null | head -1)
         if [ -z "$GENERATED" ]; then
@@ -220,7 +222,9 @@ runs:
           echo "committed=false" >> "$GITHUB_OUTPUT"
         else
           git commit -m "${VERB} changelog for PR #${PR_NUMBER}"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GIT_REPOSITORY}.git"
           git push
+          git remote set-url origin "https://github.com/${GIT_REPOSITORY}.git"
           echo "committed=true" >> "$GITHUB_OUTPUT"
         fi
 
