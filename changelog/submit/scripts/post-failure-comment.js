@@ -1,0 +1,30 @@
+const { TITLE, upsertComment } = require('./comment-helper');
+
+module.exports = async ({ github, context, core }) => {
+  const prNumber = parseInt(process.env.PR_NUMBER, 10);
+  const configFile = process.env.CONFIG_FILE || 'docs/changelog.yml';
+  const labelRows = process.env.LABEL_TABLE || '';
+
+  let labelSection;
+  if (labelRows.trim()) {
+    labelSection = [
+      '',
+      '🔖 Add one of these labels to your PR:',
+      '',
+      labelRows,
+    ].join('\n');
+  } else {
+    labelSection = `\nAdd a type label that matches your \`pivot.types\` configuration in \`${configFile}\`.`;
+  }
+
+  const body = [
+    TITLE,
+    '',
+    '⚠️ **Cannot generate changelog:** no matching type label found on this PR.',
+    labelSection,
+    '',
+    `🔖 To skip changelog generation or configure label rules, see \`${configFile}\`.`,
+  ].join('\n');
+
+  await upsertComment({ github, context, prNumber, body });
+};

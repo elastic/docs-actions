@@ -1,0 +1,89 @@
+name: Changelog validate
+description: >
+  Lightweight gate that evaluates whether a PR needs changelog generation.
+  Runs PR-event-specific checks (body-only edits, bot loops) and signals
+  proceed/stop via exit code for the downstream submit workflow.
+
+inputs:
+  config:
+    description: 'Path to changelog.yml configuration file'
+    default: 'docs/changelog.yml'
+  strip-title-prefix:
+    description: 'Remove [Prefix]: from PR titles'
+    default: 'true'
+  github-token:
+    description: 'GitHub token for API access'
+    default: '${{ github.token }}'
+
+outputs:
+  status:
+    description: 'Evaluation result: proceed, no-label, no-title, error, manually-edited, or skipped'
+    value: ${{ steps.evaluate.outputs.status }}
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Setup docs-builder
+      uses: elastic/docs-actions/docs-builder/setup@v1
+      with:
+        version: edge
+        github-token: ${{ inputs.github-token }}
+
+    - name: Evaluate PR
+      id: evaluate
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        CONFIG_FILE: ${{ inputs.config }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_TITLE: ${{ github.event.pull_request.title }}
+        PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        EVENT_ACTION: ${{ github.event.action }}
+        TITLE_CHANGED: ${{ github.event.changes.title != null }}
+        STRIP_PREFIX: ${{ inputs.strip-title-prefix }}
+      run: |
+        TITLE_FLAG=""
+        if [ "$TITLE_CHANGED" = "true" ]; then
+          TITLE_FLAG="--title-changed"
+        fi
+
+        PREFIX_FLAG=""
+        if [ "$STRIP_PREFIX" = "true" ]; then
+          PREFIX_FLAG="--strip-title-prefix"
+        fi
+
+        docs-builder changelog evaluate-pr \
+          --config "$CONFIG_FILE" \
+          --owner "${{ github.repository_owner }}" \
+          --repo "${{ github.event.repository.name }}" \
+          --pr-number "$PR_NUMBER" \
+          --pr-title "$PR_TITLE" \
+          --pr-labels "$PR_LABELS" \
+          --head-ref "$HEAD_REF" \
+          --head-sha "$HEAD_SHA" \
+          --event-action "$EVENT_ACTION" \
+          $TITLE_FLAG \
+          $PREFIX_FLAG
+
+    - name: Gate
+      shell: bash
+      run: |
+        STATUS="${{ steps.evaluate.outputs.status }}"
+        case "$STATUS" in
+          proceed|no-label|skipped|manually-edited)
+            echo "::notice::Changelog validation: $STATUS"
+            ;;
+          no-title)
+            echo "::error::PR has no title. Cannot generate a changelog entry."
+            exit 1
+            ;;
+          *)
+            echo "::error::Changelog validation failed: $STATUS"
+            exit 1
+            ;;
+        esac

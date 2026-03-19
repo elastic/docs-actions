@@ -1,0 +1,33 @@
+name: Changelog submit
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        description: 'Path to changelog.yml configuration file'
+        type: string
+        default: 'docs/changelog.yml'
+      comment-only:
+        description: 'Post changelog as a PR comment instead of committing to the branch'
+        type: boolean
+        default: false
+
+concurrency:
+  group: changelog-submit-${{ github.event.workflow_run.head_branch || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  submit:
+    if: >
+      github.event.workflow_run.event == 'pull_request'
+      && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Submit changelog
+        uses: elastic/docs-actions/changelog/submit@v1
+        with:
+          config: ${{ inputs.config }}
+          comment-only: ${{ inputs.comment-only }}

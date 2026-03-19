@@ -1,0 +1,239 @@
+name: Changelog submit
+description: >
+  Self-contained action that generates a changelog entry and either commits it
+  to the PR branch or posts it as a PR comment. Runs in the trusted workflow_run
+  context with write permissions — no artifact from the validate workflow is needed.
+
+inputs:
+  config:
+    description: 'Path to changelog.yml configuration file'
+    default: 'docs/changelog.yml'
+  strip-title-prefix:
+    description: 'Remove [Prefix]: from PR titles'
+    default: 'true'
+  github-token:
+    description: 'GitHub token with contents:write and pull-requests:write'
+    default: '${{ github.token }}'
+  comment-only:
+    description: 'Post changelog as a PR comment instead of committing to the branch'
+    default: 'false'
+
+outputs:
+  committed:
+    description: 'Whether a changelog was committed (true/false)'
+    value: ${{ steps.commit.outputs.committed || 'false' }}
+  pr-number:
+    description: 'The PR number'
+    value: ${{ steps.pr.outputs.number }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve PR
+      id: pr
+      uses: actions/github-script@v8
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/resolve-pr.js');
+          await script({ github, context, core });
+
+    - name: Fetch PR data
+      id: pr-data
+      if: steps.pr.outputs.number != ''
+      uses: actions/github-script@v8
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/fetch-pr-data.js');
+          await script({ github, context, core });
+      env:
+        PR_NUMBER: ${{ steps.pr.outputs.number }}
+
+    - name: Checkout PR branch
+      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ steps.pr-data.outputs.head-ref }}
+        token: ${{ inputs.github-token }}
+        persist-credentials: false
+
+    - name: Checkout base repo
+      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork == 'true'
+      uses: actions/checkout@v6
+
+    - name: Read config from base branch
+      id: config
+      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+      shell: bash
+      env:
+        CONFIG_FILE: ${{ inputs.config }}
+        BASE_REF: ${{ steps.pr-data.outputs.base-ref }}
+      run: |
+        if git show "origin/${BASE_REF}:${CONFIG_FILE}" > /tmp/changelog-config.yml 2>/dev/null; then
+          echo "config-path=/tmp/changelog-config.yml" >> "$GITHUB_OUTPUT"
+        else
+          echo "config-path=${CONFIG_FILE}" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Verify checkout SHA
+      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+      shell: bash
+      env:
+        EXPECTED_SHA: ${{ steps.pr-data.outputs.head-sha }}
+      run: |
+        ACTUAL_SHA=$(git rev-parse HEAD)
+        if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+          echo "::error::Checkout SHA mismatch (expected $EXPECTED_SHA, got $ACTUAL_SHA). Aborting."
+          exit 1
+        fi
+
+    - name: Setup docs-builder
+      if: steps.pr-data.outputs.proceed == 'true'
+      uses: elastic/docs-actions/docs-builder/setup@v1
+      with:
+        version: edge
+        github-token: ${{ inputs.github-token }}
+
+    - name: Evaluate PR
+      id: evaluate
+      if: steps.pr-data.outputs.proceed == 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        CONFIG_FILE: ${{ steps.config.outputs.config-path || inputs.config }}
+        PR_NUMBER: ${{ steps.pr.outputs.number }}
+        PR_TITLE: ${{ steps.pr-data.outputs.title }}
+        PR_LABELS: ${{ steps.pr-data.outputs.labels }}
+        HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
+        HEAD_SHA: ${{ steps.pr-data.outputs.head-sha }}
+        STRIP_PREFIX: ${{ inputs.strip-title-prefix }}
+      run: |
+        PREFIX_FLAG=""
+        if [ "$STRIP_PREFIX" = "true" ]; then
+          PREFIX_FLAG="--strip-title-prefix"
+        fi
+
+        docs-builder changelog evaluate-pr \
+          --config "$CONFIG_FILE" \
+          --owner "${{ github.repository_owner }}" \
+          --repo "${{ github.event.repository.name }}" \
+          --pr-number "$PR_NUMBER" \
+          --pr-title "$PR_TITLE" \
+          --pr-labels "$PR_LABELS" \
+          --head-ref "$HEAD_REF" \
+          --head-sha "$HEAD_SHA" \
+          $PREFIX_FLAG
+
+    - name: Generate changelog
+      id: generate
+      if: steps.evaluate.outputs.should-generate == 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        CONFIG_FILE: ${{ steps.config.outputs.config-path || inputs.config }}
+        CHANGELOG_PR_NUMBER: ${{ steps.pr.outputs.number }}
+        CHANGELOG_TITLE: ${{ steps.evaluate.outputs.title }}
+        CHANGELOG_TYPE: ${{ steps.evaluate.outputs.type }}
+        CHANGELOG_OWNER: ${{ github.repository_owner }}
+        CHANGELOG_REPO: ${{ github.event.repository.name }}
+      run: |
+        mkdir -p /tmp/changelog-staging
+        docs-builder changelog add \
+          --concise \
+          --config "$CONFIG_FILE" \
+          --output /tmp/changelog-staging
+
+    - name: Commit changelog
+      if: >
+        steps.generate.outcome == 'success'
+        && steps.pr-data.outputs.is-fork != 'true'
+        && inputs.comment-only != 'true'
+      id: commit
+      shell: bash
+      env:
+        PR_NUMBER: ${{ steps.pr.outputs.number }}
+        CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
+        EXISTING_FILENAME: ${{ steps.evaluate.outputs.existing-changelog-filename }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        GIT_REPOSITORY: ${{ github.repository }}
+      run: |
+        GENERATED=$(ls /tmp/changelog-staging/*.yaml 2>/dev/null | head -1)
+        if [ -z "$GENERATED" ]; then
+          echo "::error::No changelog YAML found in staging directory"
+          exit 1
+        fi
+
+        if [ -n "$EXISTING_FILENAME" ]; then
+          TARGET_FILENAME="$EXISTING_FILENAME"
+        else
+          TARGET_FILENAME=$(basename "$GENERATED")
+        fi
+        CHANGELOG_FILE="$CHANGELOG_DIR/$TARGET_FILENAME"
+
+        if [ -f "$CHANGELOG_FILE" ]; then
+          VERB="Update"
+        else
+          VERB="Add"
+        fi
+
+        mkdir -p "$CHANGELOG_DIR"
+        cp "$GENERATED" "$CHANGELOG_FILE"
+
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add "$CHANGELOG_FILE"
+
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+          echo "committed=false" >> "$GITHUB_OUTPUT"
+        else
+          git commit -m "${VERB} changelog for PR #${PR_NUMBER}"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GIT_REPOSITORY}.git"
+          git push
+          git remote set-url origin "https://github.com/${GIT_REPOSITORY}.git"
+          echo "committed=true" >> "$GITHUB_OUTPUT"
+        fi
+
+        echo "changelog-file=$CHANGELOG_FILE" >> "$GITHUB_OUTPUT"
+
+    - name: Post success comment
+      if: steps.commit.outputs.committed == 'true'
+      uses: actions/github-script@v8
+      env:
+        PR_NUMBER: ${{ steps.pr.outputs.number }}
+        HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
+        CHANGELOG_FILE: ${{ steps.commit.outputs.changelog-file }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/post-success-comment.js');
+          await script({ github, context, core });
+
+    - name: Post comment-only changelog
+      if: >
+        steps.generate.outcome == 'success'
+        && (steps.pr-data.outputs.is-fork == 'true' || inputs.comment-only == 'true')
+      uses: actions/github-script@v8
+      env:
+        PR_NUMBER: ${{ steps.pr.outputs.number }}
+        CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
+        STAGING_DIR: /tmp/changelog-staging
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/post-comment-only.js');
+          await script({ github, context, core });
+
+    - name: Post failure comment
+      if: steps.evaluate.outputs.status == 'no-label'
+      uses: actions/github-script@v8
+      env:
+        PR_NUMBER: ${{ steps.pr.outputs.number }}
+        LABEL_TABLE: ${{ steps.evaluate.outputs.label-table }}
+        CONFIG_FILE: ${{ inputs.config }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/post-failure-comment.js');
+          await script({ github, context, core });
