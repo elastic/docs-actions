@@ -134,7 +134,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-        CONFIG_FILE: ${{ inputs.config }}
+        CONFIG_FILE: ${{ steps.config.outputs.config-path || inputs.config }}
         PR_NUMBER: ${{ steps.pr.outputs.number }}
         PR_TITLE: ${{ steps.pr-data.outputs.title }}
         PR_LABELS: ${{ steps.pr-data.outputs.labels }}
@@ -164,7 +164,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-        CONFIG_FILE: ${{ inputs.config }}
+        CONFIG_FILE: ${{ steps.config.outputs.config-path || inputs.config }}
         CHANGELOG_PR_NUMBER: ${{ steps.pr.outputs.number }}
         CHANGELOG_TITLE: ${{ steps.evaluate.outputs.title }}
         CHANGELOG_TYPE: ${{ steps.evaluate.outputs.type }}
