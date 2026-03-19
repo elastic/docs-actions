@@ -2,7 +2,7 @@ const TITLE = '### 📋 Changelog';
 
 async function upsertComment({ github, context, prNumber, body }) {
   const { owner, repo } = context.repo;
-  const { data: comments } = await github.rest.issues.listComments({
+  const comments = await github.paginate(github.rest.issues.listComments, {
     owner, repo, issue_number: prNumber, per_page: 100,
   });
   const existing = comments.find(c =>
