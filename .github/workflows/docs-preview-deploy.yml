@@ -1,0 +1,517 @@
+name: Docs Preview Deploy
+
+on:
+  workflow_call:
+    inputs:
+      strict:
+        description: 'Treat warnings as errors'
+        type: string
+        default: 'true'
+      continue-on-error:
+        description: 'Do not fail if build fails'
+        type: string
+        required: false
+        default: 'false'
+      path-pattern:
+        description: 'Path pattern to filter files (should match Phase 1 setting)'
+        type: string
+        default: '**'
+        required: false
+      path-pattern-ignore:
+        description: 'Path pattern to ignore files (should match Phase 1 setting)'
+        type: string
+        default: ''
+        required: false
+      disable-comments:
+        description: 'Disable PR preview comments'
+        type: boolean
+        default: false
+        required: false
+      enable-cumulative-comment:
+        description: 'Enable the cumulative docs versioning reminder comment'
+        type: boolean
+        default: false
+        required: false
+
+permissions:
+  contents: read
+  deployments: write
+  id-token: write
+  pull-requests: write
+
+concurrency:
+  group: docs-deploy-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    if: >
+      github.event.workflow_run.conclusion == 'success'
+      && github.event.repository.fork == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+      pull-requests: read
+    outputs:
+      should-deploy: ${{ steps.evaluate.outputs.should-deploy }}
+      content-source-match: ${{ steps.match.outputs.content-source-match }}
+      event: ${{ steps.context.outputs.event }}
+      pr-number: ${{ steps.context.outputs.pr-number }}
+      head-sha: ${{ steps.context.outputs.head-sha }}
+      head-branch: ${{ steps.context.outputs.head-branch }}
+      head-repo: ${{ steps.context.outputs.head-repo }}
+      is-fork: ${{ steps.context.outputs.is-fork }}
+      base-ref: ${{ steps.context.outputs.base-ref }}
+    steps:
+      - name: Resolve workflow run context
+        id: context
+        uses: actions/github-script@v8
+        env:
+          PATH_PATTERN: ${{ inputs.path-pattern }}
+          IGNORE_PATTERNS: |
+            ${{ inputs.path-pattern-ignore }}
+            .github/**
+            README.md
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const event = run.event;
+            const headSha = run.head_sha;
+            const headBranch = run.head_branch;
+            const headRepo = run.head_repository.full_name;
+            const { owner, repo } = context.repo;
+            const isFork = headRepo !== `${owner}/${repo}`;
+
+            core.setOutput('event', event);
+            core.setOutput('head-sha', headSha);
+            core.setOutput('head-branch', headBranch);
+            core.setOutput('head-repo', headRepo);
+            core.setOutput('is-fork', isFork ? 'true' : 'false');
+
+            if (event === 'push') {
+              core.setOutput('base-ref', headBranch);
+              core.setOutput('has-changes', 'true');
+              return;
+            }
+
+            if (event !== 'pull_request') {
+              core.info(`Event '${event}' is not deployable — skipping`);
+              core.setOutput('has-changes', 'false');
+              return;
+            }
+
+            // --- PR resolution ---
+            let prNumber;
+            if (run.pull_requests?.length > 0) {
+              prNumber = run.pull_requests[0].number;
+              core.info(`Resolved PR #${prNumber} from workflow_run.pull_requests`);
+            } else {
+              const headLabel = `${run.head_repository.owner.login}:${headBranch}`;
+              const { data: prs } = await github.rest.pulls.list({
+                owner, repo, state: 'open', head: headLabel
+              });
+              const match = prs.find(pr => pr.head.sha === headSha);
+              if (match) {
+                prNumber = match.number;
+                core.info(`Resolved PR #${prNumber} via pulls.list fallback`);
+              }
+            }
+
+            if (!prNumber) {
+              core.warning('Could not resolve PR number — skipping deployment');
+              core.setOutput('has-changes', 'false');
+              return;
+            }
+
+            core.setOutput('pr-number', prNumber);
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner, repo, pull_number: prNumber
+            });
+            core.setOutput('base-ref', pr.base.ref);
+
+            // --- Changed-files check (docs-relevant files only) ---
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner, repo, pull_number: prNumber
+            });
+
+            const pathPattern = process.env.PATH_PATTERN || '**';
+            const ignoreLines = (process.env.IGNORE_PATTERNS || '')
+              .split('\n').map(s => s.trim()).filter(Boolean);
+
+            const matchesPattern = (filename) => {
+              if (pathPattern === '**' || pathPattern === '') return true;
+              if (pathPattern.endsWith('/**')) {
+                return filename.startsWith(pathPattern.slice(0, -3) + '/');
+              }
+              return true;
+            };
+
+            const isIgnored = (filename) => {
+              for (const pattern of ignoreLines) {
+                if (pattern.endsWith('/**')) {
+                  if (filename.startsWith(pattern.slice(0, -3) + '/')) return true;
+                } else if (pattern.endsWith('/*')) {
+                  const dir = pattern.slice(0, -2);
+                  if (filename.startsWith(dir + '/') && !filename.slice(dir.length + 1).includes('/')) return true;
+                } else if (filename === pattern) {
+                  return true;
+                }
+              }
+              return false;
+            };
+
+            const hasChanges = files.some(f => matchesPattern(f.filename) && !isIgnored(f.filename));
+            core.setOutput('has-changes', hasChanges ? 'true' : 'false');
+
+      - name: Match content source
+        id: match
+        if: steps.context.outputs.has-changes == 'true'
+        uses: elastic/docs-builder/actions/assembler-match@main
+        with:
+          ref_name: ${{ steps.context.outputs.base-ref }}
+          repository: ${{ github.repository }}
+
+      - name: Evaluate
+        id: evaluate
+        run: |
+          MATCH="${{ steps.match.outputs.content-source-match }}"
+          CHANGES="${{ steps.context.outputs.has-changes }}"
+          IS_FORK="${{ steps.context.outputs.is-fork }}"
+          EVENT="${{ steps.context.outputs.event }}"
+
+          if [[ "$EVENT" == "pull_request" && "$IS_FORK" == "true" ]]; then
+            echo "should-deploy=false" >> $GITHUB_OUTPUT
+            echo "::notice::Deploy skipped — fork PRs are not deployed"
+          elif [[ "$MATCH" == "true" && "$CHANGES" == "true" ]]; then
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "should-deploy=false" >> $GITHUB_OUTPUT
+            echo "::notice::Deploy skipped (match=${MATCH}, changes=${CHANGES})"
+          fi
+
+  build-and-deploy:
+    needs: preflight
+    if: needs.preflight.outputs.should-deploy == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
+    outputs:
+      deployed: ${{ steps.s3-upload.outcome == 'success' && 'true' || 'false' }}
+      path_prefix: ${{ steps.generate-path-prefix.outputs.result }}
+    env:
+      EVENT: ${{ needs.preflight.outputs.event }}
+      PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
+      HEAD_SHA: ${{ needs.preflight.outputs.head-sha }}
+      HEAD_BRANCH: ${{ needs.preflight.outputs.head-branch }}
+      HEAD_REPO: ${{ needs.preflight.outputs.head-repo }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ needs.preflight.outputs.head-repo }}
+          ref: ${{ needs.preflight.outputs.head-sha }}
+          persist-credentials: false
+
+      - name: Generate env.PATH_PREFIX
+        id: generate-path-prefix
+        run: |
+          case "${EVENT}" in
+            "pull_request")
+              path_prefix="/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}"
+              ;;
+            "push" | "workflow_dispatch")
+              path_prefix="/${GITHUB_REPOSITORY}/tree/${HEAD_BRANCH}"
+              ;;
+            *)
+              echo "Unsupported event: '${EVENT}'";
+              exit 1;
+              ;;
+          esac
+          echo "PATH_PREFIX=${path_prefix}" >> $GITHUB_ENV
+          echo "result=${path_prefix}" >> $GITHUB_OUTPUT
+
+      - name: Build documentation
+        uses: elastic/docs-builder@main
+        id: docs-build
+        continue-on-error: ${{ fromJSON(inputs.continue-on-error != '' && inputs.continue-on-error || 'false') }}
+        with:
+          prefix: ${{ env.PATH_PREFIX }}
+          strict: ${{ fromJSON(inputs.strict != '' && inputs.strict || 'true') }}
+
+      - name: Upload links artifact
+        if: >
+          env.EVENT == 'push'
+          && steps.docs-build.outcome == 'success'
+          && steps.docs-build.outputs.skip != 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: links
+          path: .artifacts/docs/html/links.json
+          compression-level: 1
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Create Deployment
+        if: >
+          env.EVENT == 'pull_request'
+          && steps.docs-build.outcome == 'success'
+          && steps.docs-build.outputs.skip != 'true'
+        uses: actions/github-script@v8
+        id: deployment
+        with:
+          result-encoding: string
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = process.env.PR_NUMBER;
+            const environment = 'docs-preview';
+            const task = prNumber ? `docs-preview-${prNumber}` : undefined;
+            const deployment = await github.rest.repos.createDeployment({
+              owner,
+              repo,
+              environment,
+              task,
+              ref: process.env.HEAD_SHA,
+              auto_merge: false,
+              transient_environment: true,
+              required_contexts: [],
+            })
+            await github.rest.repos.createDeploymentStatus({
+              deployment_id: deployment.data.id,
+              owner,
+              repo,
+              state: "in_progress",
+              log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            })
+            return deployment.data.id
+
+      - uses: elastic/docs-actions/aws/auth@v1
+        if: >
+          !cancelled()
+          && steps.docs-build.outcome == 'success'
+          && steps.docs-build.outputs.skip != 'true'
+
+      - name: Upload to S3
+        id: s3-upload
+        if: >
+          !cancelled()
+          && steps.docs-build.outcome == 'success'
+          && steps.docs-build.outputs.skip != 'true'
+        env:
+          AWS_RETRY_MODE: standard
+          AWS_MAX_ATTEMPTS: 6
+        run: |
+          aws s3 sync .artifacts/docs/html "s3://elastic-docs-v3-website-preview${PATH_PREFIX}" --delete --no-follow-symlinks
+          aws cloudfront create-invalidation \
+            --distribution-id EKT7LT5PM8RKS \
+            --paths "${PATH_PREFIX}" "${PATH_PREFIX}/*"
+
+      - name: Update deployment status
+        if: always() && steps.deployment.outputs.result
+        uses: actions/github-script@v8
+        env:
+          LANDING_PAGE_PATH: ${{ steps.docs-build.outputs.landing-page-path || env.PATH_PREFIX }}
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.result }},
+              state: "${{ steps.docs-build.outputs.skip == 'true' && 'inactive' || (steps.s3-upload.outcome == 'success' && 'success' || 'failure') }}",
+              environment_url: `https://docs-v3-preview.elastic.dev${process.env.LANDING_PAGE_PATH}`,
+              log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            })
+
+  comment:
+    if: >
+      needs.preflight.outputs.event == 'pull_request'
+      && needs.build-and-deploy.outputs.deployed == 'true'
+      && inputs.disable-comments != true
+    needs:
+      - preflight
+      - build-and-deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+      deployments: none
+      id-token: none
+      pull-requests: write
+    steps:
+      - name: Comment on PR
+        continue-on-error: true
+        uses: actions/github-script@v8
+        env:
+          PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
+          PATH_PREFIX: ${{ needs.build-and-deploy.outputs.path_prefix }}
+        with:
+          script: |
+            const title = '## 🔍 Preview links for changed docs'
+            const { owner, repo } = context.repo;
+            const prNumber = parseInt(process.env.PR_NUMBER);
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner, repo, pull_number: prNumber
+            });
+
+            const changedMdFiles = files
+              .map(f => f.filename)
+              .filter(i => i.endsWith('.md'))
+              .filter(i => !i.includes('/_snippets/'));
+
+            if (changedMdFiles.length === 0) return;
+
+            const toMarkdownLink = (file) => {
+              const path = file
+                .replace(/^docs\//, '')
+                .replace(/\/index.md$/, '')
+                .replace(/\.md$/, '');
+              return `[${file}](https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path})`;
+            }
+
+            const links = changedMdFiles.map(toMarkdownLink)
+
+            const body = [
+              title,
+              ...links.slice(0, 10).map(i => `- ${i}`),
+            ]
+
+            if (links.length > 10) {
+              body.push('<details>');
+              body.push('<summary> More links … </summary>');
+              body.push('');
+              for (const link of links.slice(10, 100)) {
+                body.push(`- ${link}`);
+              }
+              body.push('');
+              body.push('</details>');
+            }
+
+            if (links.length > 100) {
+              body.push('');
+              body.push(`<sub> In total, ${links.length} files changed. </sub>`);
+            }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number: prNumber
+            });
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.startsWith(title)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo,
+                comment_id: existing.id,
+                body: body.join('\n'),
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo,
+                issue_number: prNumber,
+                body: body.join('\n'),
+              });
+            }
+
+      - name: Comment on docs changes about versioning requirements
+        if: inputs.enable-cumulative-comment == true
+        continue-on-error: true
+        uses: actions/github-script@v8
+        env:
+          PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
+        with:
+          script: |
+            const prNum = parseInt(process.env.PR_NUMBER);
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number: prNum
+            });
+
+            const title = '## ℹ️ Important: Docs version tagging';
+
+            const existingComment = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.startsWith(title)
+            );
+
+            if (existingComment) return;
+
+            const body = `${title}
+
+            👋 Thanks for updating the docs! Just a friendly reminder that our docs are now **cumulative**. This means all 9.x versions are documented on the same page and published off of the main branch, instead of creating separate pages for each minor version.
+
+            We use [applies_to tags](https://elastic.github.io/docs-builder/syntax/applies) to mark version-specific features and changes.
+
+            <details>
+            <summary>Expand for a quick overview</summary>
+
+            ### When to use applies_to tags:
+            ✅ At the page level to indicate which products/deployments the content applies to (mandatory)
+            ✅ When features change state (e.g. preview, ga) in a specific version
+            ✅ When availability differs across deployments and environments
+
+            ### What NOT to do:
+            ❌ Don't remove or replace information that applies to an older version
+            ❌ Don't add new information that applies to a specific version without an applies_to tag
+            ❌ Don't forget that applies_to tags can be used at the page, section, and inline level
+
+            </details>
+
+            ### 🤔 Need help?
+            - Check out the [cumulative docs guidelines](https://www.elastic.co/docs/contribute-docs/how-to/cumulative-docs/)
+            - Reach out in the [#docs](https://elastic.slack.com/archives/C0JF80CJZ) Slack channel`;
+
+            await github.rest.issues.createComment({
+              owner, repo,
+              issue_number: prNum,
+              body
+            });
+
+  update-link-index:
+    if: >
+      needs.preflight.outputs.event == 'push'
+      && needs.preflight.outputs.content-source-match == 'true'
+      && needs.preflight.outputs.head-branch == github.event.repository.default_branch
+    needs:
+      - preflight
+      - build-and-deploy
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    env:
+      REF_NAME: ${{ needs.preflight.outputs.head-branch }}
+    steps:
+      - name: Generate AWS Role ARN
+        id: role_arn
+        shell: python
+        run: |
+          import hashlib
+          import os
+
+          prefix = "elastic-docs-link-index-uploader-"
+          m = hashlib.sha256()
+          m.update(os.environ["GITHUB_REPOSITORY"].encode('utf-8'))
+          hash = m.hexdigest()[:64-len(prefix)]
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+            f.write(f"result=arn:aws:iam::197730964718:role/{prefix}{hash}")
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+        with:
+          role-to-assume: ${{ steps.role_arn.outputs.result }}
+          aws-region: us-east-1
+
+      - name: Download links artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: links
+          path: /tmp/link-index-upload
+
+      - name: Upload link reference to S3
+        run: |
+          aws s3 cp --checksum-algorithm "SHA256" \
+            "/tmp/link-index-upload/links.json" \
+            "s3://elastic-docs-link-index/${GITHUB_REPOSITORY}/${REF_NAME}/links.json"
