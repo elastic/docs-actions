@@ -32,6 +32,16 @@ on:
         type: boolean
         default: false
         required: false
+      enable-vale-linting:
+        description: 'Enable vale linting report (Phase 1 must also enable vale linting)'
+        type: boolean
+        default: false
+        required: false
+      include-paths:
+        description: 'Paths to include for Vale linting (multi-line)'
+        type: string
+        default: ''
+        required: false
 
 permissions:
   contents: read
@@ -327,6 +337,7 @@ jobs:
   comment:
     if: >
       needs.preflight.outputs.event == 'pull_request'
+      && needs.preflight.outputs.is-fork == 'false'
       && needs.build-and-deploy.outputs.deployed == 'true'
       && inputs.disable-comments != true
     needs:
@@ -469,6 +480,23 @@ jobs:
               issue_number: prNum,
               body
             });
+
+  vale-report:
+    if: >
+      needs.preflight.outputs.event == 'pull_request'
+      && needs.preflight.outputs.is-fork == 'false'
+      && inputs.enable-vale-linting == true
+    needs:
+      - preflight
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+      pull-requests: write
+    steps:
+      - name: Post Vale Results
+        uses: elastic/vale-rules/report@main
+        with:
+          download_artifacts: true
 
   update-link-index:
     if: >
