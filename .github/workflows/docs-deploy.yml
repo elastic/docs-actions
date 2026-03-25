@@ -83,6 +83,7 @@ jobs:
             .github/**
             README.md
         with:
+          # language=js
           script: |
             const run = context.payload.workflow_run;
             const event = run.event;
@@ -189,6 +190,7 @@ jobs:
           CHANGES: ${{ steps.context.outputs.has-changes }}
           IS_FORK: ${{ steps.context.outputs.is-fork }}
           EVENT: ${{ steps.context.outputs.event }}
+        # language=bash
         run: |
           if [[ "$EVENT" == "pull_request" && "$IS_FORK" == "true" ]]; then
             echo "should-deploy=false" >> $GITHUB_OUTPUT
@@ -199,6 +201,65 @@ jobs:
             echo "should-deploy=false" >> $GITHUB_OUTPUT
             echo "::notice::Deploy skipped (match=${MATCH}, changes=${CHANGES})"
           fi
+
+  # Updates (or creates) the preview PR comment to show an in-progress indicator.
+  # Runs in parallel with build so reviewers see feedback immediately — the
+  # deploy workflow isn't visible as a PR check since it triggers on workflow_run.
+  pre-comment:
+    needs: preflight
+    if: >
+      needs.preflight.outputs.event == 'pull_request'
+      && needs.preflight.outputs.is-fork == 'false'
+      && needs.preflight.outputs.should-deploy == 'true'
+      && inputs.disable-comments != true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+      deployments: none
+      id-token: none
+      pull-requests: write
+    steps:
+      - name: Update comment to in-progress
+        continue-on-error: true
+        uses: actions/github-script@v8
+        env:
+          PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
+        with:
+          # language=js
+          script: |
+            const title = '## 🔍 Preview links for changed docs'
+            const { owner, repo } = context.repo;
+            const prNumber = parseInt(process.env.PR_NUMBER);
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+
+            const body = [
+              title,
+              '',
+              `⏳ Building and deploying preview... [View progress](${runUrl})`,
+              '',
+              '_This comment will be updated with preview links when the build is complete._',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number: prNumber
+            });
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.startsWith(title)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
 
   # Builds documentation in an unprivileged context. This job has NO access to
   # id-token, deployments, or secrets. Even if docs-builder has an RCE triggered
@@ -228,6 +289,7 @@ jobs:
     steps:
       - name: Reject fork checkout
         if: needs.preflight.outputs.is-fork == 'true'
+        # language=bash
         run: |
           echo "::error::Fork code must never be checked out in the deploy workflow"
           exit 1
@@ -240,6 +302,7 @@ jobs:
           persist-credentials: false
 
       - name: Validate checkout SHA
+        # language=bash
         run: |
           ACTUAL_SHA=$(git rev-parse HEAD)
           if [[ "$ACTUAL_SHA" != "$HEAD_SHA" ]]; then
@@ -249,6 +312,7 @@ jobs:
 
       - name: Generate env.PATH_PREFIX
         id: generate-path-prefix
+        # language=bash
         run: |
           if [[ "$HEAD_BRANCH" == *".."* ]]; then
             echo "::error::Branch name contains path traversal characters: ${HEAD_BRANCH}"
@@ -280,6 +344,7 @@ jobs:
       - name: Build documentation
         id: docs-build
         continue-on-error: ${{ fromJSON(inputs.continue-on-error != '' && inputs.continue-on-error || 'false') }}
+        # language=bash
         run: |
           CONTAINER_OUTPUT=$(mktemp)
           EXIT_CODE=0
@@ -373,6 +438,7 @@ jobs:
         id: deployment
         with:
           result-encoding: string
+          # language=js
           script: |
             const { owner, repo } = context.repo;
             const prNumber = process.env.PR_NUMBER;
@@ -404,6 +470,7 @@ jobs:
         env:
           AWS_RETRY_MODE: standard
           AWS_MAX_ATTEMPTS: 6
+        # language=bash
         run: |
           aws s3 sync docs-html "s3://elastic-docs-v3-website-preview${PATH_PREFIX}" --delete --no-follow-symlinks
           aws cloudfront create-invalidation \
@@ -416,6 +483,7 @@ jobs:
         env:
           LANDING_PAGE_PATH: ${{ needs.build.outputs.landing_page_path }}
         with:
+          # language=js
           script: |
             await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
@@ -436,6 +504,7 @@ jobs:
       - preflight
       - build
       - deploy-preview
+      - pre-comment
     runs-on: ubuntu-latest
     permissions:
       contents: none
@@ -450,6 +519,7 @@ jobs:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
         with:
+          # language=js
           script: |
             const title = '## 🔍 Preview links for changed docs'
             const { owner, repo } = context.repo;
@@ -525,6 +595,7 @@ jobs:
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
         with:
+          # language=js
           script: |
             const prNum = parseInt(process.env.PR_NUMBER);
             const owner = context.repo.owner;
@@ -615,6 +686,7 @@ jobs:
       - name: Generate AWS Role ARN
         id: role_arn
         shell: python
+        # language=python
         run: |
           import hashlib
           import os
