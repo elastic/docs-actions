@@ -184,12 +184,12 @@ jobs:
 
       - name: Evaluate
         id: evaluate
+        env:
+          MATCH: ${{ steps.match.outputs.content-source-match }}
+          CHANGES: ${{ steps.context.outputs.has-changes }}
+          IS_FORK: ${{ steps.context.outputs.is-fork }}
+          EVENT: ${{ steps.context.outputs.event }}
         run: |
-          MATCH="${{ steps.match.outputs.content-source-match }}"
-          CHANGES="${{ steps.context.outputs.has-changes }}"
-          IS_FORK="${{ steps.context.outputs.is-fork }}"
-          EVENT="${{ steps.context.outputs.event }}"
-
           if [[ "$EVENT" == "pull_request" && "$IS_FORK" == "true" ]]; then
             echo "should-deploy=false" >> $GITHUB_OUTPUT
             echo "::notice::Deploy skipped — fork PRs are not deployed"
@@ -219,6 +219,15 @@ jobs:
       HEAD_BRANCH: ${{ needs.preflight.outputs.head-branch }}
       HEAD_REPO: ${{ needs.preflight.outputs.head-repo }}
     steps:
+      # Defense-in-depth: the preflight evaluate step already blocks forks, but
+      # if that logic is ever accidentally weakened this prevents privileged
+      # operations (AWS auth, S3 upload, deployments) from running on fork code.
+      - name: Reject fork checkout
+        if: needs.preflight.outputs.is-fork == 'true'
+        run: |
+          echo "::error::Fork code must never be checked out in the deploy workflow"
+          exit 1
+
       - name: Checkout
         uses: actions/checkout@v6
         with:
@@ -229,6 +238,11 @@ jobs:
       - name: Generate env.PATH_PREFIX
         id: generate-path-prefix
         run: |
+          if [[ "$HEAD_BRANCH" == *".."* ]]; then
+            echo "::error::Branch name contains path traversal characters: ${HEAD_BRANCH}"
+            exit 1
+          fi
+
           case "${EVENT}" in
             "pull_request")
               path_prefix="/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}"
@@ -298,6 +312,18 @@ jobs:
               log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             })
             return deployment.data.id
+
+      - name: Reject symlinks in build output
+        if: >
+          !cancelled()
+          && steps.docs-build.outcome == 'success'
+          && steps.docs-build.outputs.skip != 'true'
+        run: |
+          if find .artifacts/docs/html -type l | grep -q .; then
+            echo "::error::Symlinks found in build output — refusing to deploy"
+            find .artifacts/docs/html -type l -ls
+            exit 1
+          fi
 
       - uses: elastic/docs-actions/aws/auth@v1
         if: >

@@ -59,8 +59,10 @@ jobs:
       - name: Find merge-group base branch
         if: github.event_name == 'merge_group'
         id: merge-group-base-branch
+        env:
+          MERGE_GROUP_BASE_REF: ${{ github.event.merge_group.base_ref }}
         run: |
-          BASE_BRANCH=$(basename "${{ github.event.merge_group.base_ref }}")
+          BASE_BRANCH=$(basename "$MERGE_GROUP_BASE_REF")
           echo "base_ref=${BASE_BRANCH}" >> $GITHUB_OUTPUT
       - name: Match for merge-group events
         id: merge-group-check
@@ -181,6 +183,11 @@ jobs:
             core.setOutput('deleted_files', deleted.join(' '));
             core.setOutput('renamed_files', renamed.join(' '));
 
+  # This check skips the job when the workflow runs on a fork repo itself (e.g.
+  # user/kibana), not when a fork PR targets upstream. Fork PRs to upstream run
+  # fine because github.event.repository is the upstream repo (not a fork).
+  # This is a runner-cost optimization: fork repos aren't registered content
+  # sources, so assembler-match would return false and the build would skip anyway.
   build:
     if: github.event.repository.fork == false
     runs-on: ubuntu-latest
