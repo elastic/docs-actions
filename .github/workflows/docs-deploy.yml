@@ -262,13 +262,37 @@ jobs:
           echo "PATH_PREFIX=${path_prefix}" >> $GITHUB_ENV
           echo "result=${path_prefix}" >> $GITHUB_OUTPUT
 
+      # Run docs-builder in Docker isolation. Only explicitly listed env vars are
+      # passed to the container — ACTIONS_RUNTIME_TOKEN, ACTIONS_CACHE_URL, and
+      # OIDC env vars are excluded to prevent cache poisoning and credential
+      # theft if the build tool is compromised via malicious content.
+      #
+      # Future: add --network none once docs-builder has an init command to
+      # preload the link index before the build.
       - name: Build documentation
-        uses: elastic/docs-builder@main
         id: docs-build
         continue-on-error: ${{ fromJSON(inputs.continue-on-error != '' && inputs.continue-on-error || 'false') }}
-        with:
-          prefix: ${{ env.PATH_PREFIX }}
-          strict: ${{ fromJSON(inputs.strict != '' && inputs.strict || 'true') }}
+        run: |
+          CONTAINER_OUTPUT=$(mktemp)
+          EXIT_CODE=0
+
+          docker run --rm \
+            -v "${PWD}:/github/workspace" \
+            -w /github/workspace \
+            -v "${CONTAINER_OUTPUT}:/github_output" \
+            -e GITHUB_OUTPUT=/github_output \
+            -e GITHUB_WORKSPACE=/github/workspace \
+            -e INPUT_PREFIX="${PATH_PREFIX}" \
+            -e INPUT_STRICT="${STRICT_FLAG}" \
+            ghcr.io/elastic/docs-builder:edge || EXIT_CODE=$?
+
+          if [ -s "$CONTAINER_OUTPUT" ]; then
+            cat "$CONTAINER_OUTPUT" >> "$GITHUB_OUTPUT"
+          fi
+
+          exit $EXIT_CODE
+        env:
+          STRICT_FLAG: ${{ fromJSON(inputs.strict != '' && inputs.strict || 'true') }}
 
       - name: Upload links artifact
         id: upload-links
