@@ -709,20 +709,17 @@ jobs:
         uses: elastic/vale-rules/report@main
 
   # Uploads links.json to the shared link index S3 bucket.
-  # Uses !cancelled() so this runs even when deploy-preview fails — the link
-  # index is more important than the preview.
+  # Runs concurrently with deploy-preview — both depend only on build.
   # Requires links_uploaded == 'true' to confirm the build produced and uploaded
   # the links artifact before attempting download.
   update-link-index:
     if: >
-      !cancelled()
-      && needs.build.outputs.links_uploaded == 'true'
+      needs.build.outputs.links_uploaded == 'true'
       && needs.preflight.outputs.content-source-match == 'true'
       && needs.preflight.outputs.head-branch == github.event.repository.default_branch
     needs:
       - preflight
       - build
-      - deploy-preview
     runs-on: ubuntu-latest
     permissions:
       id-token: write
