@@ -211,6 +211,7 @@ jobs:
     outputs:
       deployed: ${{ steps.s3-upload.outcome == 'success' && 'true' || 'false' }}
       path_prefix: ${{ steps.generate-path-prefix.outputs.result }}
+      links_uploaded: ${{ steps.upload-links.outcome == 'success' && 'true' || 'false' }}
     env:
       EVENT: ${{ needs.preflight.outputs.event }}
       PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
@@ -252,6 +253,7 @@ jobs:
           strict: ${{ fromJSON(inputs.strict != '' && inputs.strict || 'true') }}
 
       - name: Upload links artifact
+        id: upload-links
         if: >
           env.EVENT == 'push'
           && steps.docs-build.outcome == 'success'
@@ -498,9 +500,15 @@ jobs:
         with:
           download_artifacts: true
 
+  # Uploads links.json to the shared link index S3 bucket.
+  # Uses !cancelled() so this runs even when the preview deploy (S3/CloudFront)
+  # fails — the link index is more important than the preview.
+  # Requires links_uploaded == 'true' to confirm the build produced and uploaded
+  # the links artifact before attempting download.
   update-link-index:
     if: >
-      needs.preflight.outputs.event == 'push'
+      !cancelled()
+      && needs.build-and-deploy.outputs.links_uploaded == 'true'
       && needs.preflight.outputs.content-source-match == 'true'
       && needs.preflight.outputs.head-branch == github.event.repository.default_branch
     needs:
