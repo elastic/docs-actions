@@ -1,4 +1,4 @@
-name: Docs Preview Build
+name: Docs Build
 
 on:
   workflow_call:

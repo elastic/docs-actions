@@ -1,4 +1,4 @@
-name: Docs Preview Deploy
+name: Docs Deploy
 
 on:
   workflow_call:
