@@ -1,0 +1,315 @@
+name: Docs Build
+
+on:
+  workflow_call:
+    inputs:
+      strict:
+        description: 'Treat warnings as errors'
+        type: string
+        default: 'true'
+      metadata-only:
+        description: 'Only generate documentation metadata files'
+        type: string
+        required: false
+        default: 'false'
+      continue-on-error:
+        description: 'Do not fail to publish if build fails'
+        type: string
+        required: false
+        default: 'false'
+      path-pattern:
+        description: 'Path pattern to filter files. Only if changed files match the pattern, the workflow will continue.'
+        type: string
+        default: '**'
+        required: false
+      path-pattern-ignore:
+        description: 'Path pattern to ignore files.'
+        type: string
+        default: ''
+        required: false
+      enable-vale-linting:
+        description: 'Enable vale linting'
+        type: boolean
+        default: false
+        required: false
+      include-paths:
+        description: 'Paths to include for Vale linting (multi-line). Only files matching these paths will be linted.'
+        type: string
+        default: ''
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  match:
+    if: github.event.repository.fork == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+      pull-requests: none
+    outputs:
+      content-source-match: ${{ format('{0}{1}{2}', steps.pr-check.outputs.content-source-match, steps.push-check.outputs.content-source-match, steps.merge-group-check.outputs.content-source-match) }}
+    steps:
+      - name: Find merge-group base branch
+        if: github.event_name == 'merge_group'
+        id: merge-group-base-branch
+        env:
+          MERGE_GROUP_BASE_REF: ${{ github.event.merge_group.base_ref }}
+        run: |
+          BASE_BRANCH=$(basename "$MERGE_GROUP_BASE_REF")
+          echo "base_ref=${BASE_BRANCH}" >> $GITHUB_OUTPUT
+      - name: Match for merge-group events
+        id: merge-group-check
+        if: github.event_name == 'merge_group'
+        uses: elastic/docs-builder/actions/assembler-match@main
+        with:
+          ref_name: ${{ steps.merge-group-base-branch.outputs.base_ref }}
+          repository: ${{ github.repository }}
+      - name: Match for PR events
+        id: pr-check
+        if: github.event_name == 'pull_request'
+        uses: elastic/docs-builder/actions/assembler-match@main
+        with:
+          ref_name: ${{ github.base_ref }}
+          repository: ${{ github.repository }}
+      - name: Match for push events
+        id: push-check
+        if: github.event_name == 'push'
+        uses: elastic/docs-builder/actions/assembler-match@main
+        with:
+          ref_name: ${{ github.ref_name }}
+          repository: ${{ github.repository }}
+
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      any_modified: ${{ steps.check-files.outputs.any_modified }}
+      all_changed_files: ${{ steps.check-files.outputs.all_changed_files }}
+      added_files: ${{ steps.check-modified-file-detail.outputs.added_files }}
+      modified_files: ${{ steps.check-modified-file-detail.outputs.modified_files }}
+      deleted_files: ${{ steps.check-modified-file-detail.outputs.deleted_files }}
+      renamed_files: ${{ steps.check-modified-file-detail.outputs.renamed_files }}
+    steps:
+      - name: Checkout
+        if: contains(fromJSON('["push", "merge_group", "workflow_dispatch"]'), github.event_name)
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          persist-credentials: false
+
+      - name: Get changed files
+        if: contains(fromJSON('["push", "merge_group", "pull_request"]'), github.event_name)
+        id: check-files
+        uses: tj-actions/changed-files@2f7c5bfce28377bc069a65ba478de0a74aa0ca32 # v46.0.1
+        with:
+          files: ${{ inputs.path-pattern != '' && inputs.path-pattern || '**' }}
+          files_ignore: |
+            ${{ inputs.path-pattern-ignore != '' && inputs.path-pattern-ignore || '' }}
+            .github/**
+            README.md
+
+      - name: Get modified file detail
+        if: contains(fromJSON('["merge_group", "pull_request"]'), github.event_name)
+        id: check-modified-file-detail
+        uses: actions/github-script@v8
+        env:
+          PATH_PATTERN: "${{ inputs.path-pattern != '' && inputs.path-pattern || '**' }}"
+          IGNORE_PATTERNS: |
+            ${{ inputs.path-pattern-ignore }}
+            .github/**
+            README.md
+        with:
+          script: |
+            const ignorePatterns = process.env.IGNORE_PATTERNS;
+            const ignoreGlobber = await glob.create(ignorePatterns);
+            const ignoredPaths = new Set(await ignoreGlobber.glob());
+
+            const { owner, repo } = context.repo;
+
+            let allFiles;
+            if (context.eventName === 'merge_group') {
+              const baseSha = context.payload.merge_group.base_sha;
+              const headSha = context.payload.merge_group.head_sha;
+              const comparison = await github.rest.repos.compareCommitsWithBasehead({
+                owner,
+                repo,
+                basehead: `${baseSha}...${headSha}`,
+              });
+              allFiles = comparison.data.files || [];
+            } else {
+              const pull_number = context.payload.pull_request.number;
+              allFiles = await github.paginate(github.rest.pulls.listFiles, {
+                owner,
+                repo,
+                pull_number,
+              });
+            }
+
+            const filteredFiles = allFiles.filter(file => !ignoredPaths.has(file.filename));
+
+            const added = [];
+            const modified = [];
+            const deleted = [];
+            const renamed = [];
+
+            for (const file of filteredFiles) {
+              switch (file.status) {
+                case 'added':
+                  added.push(file.filename);
+                  break;
+                case 'modified':
+                  modified.push(file.filename);
+                  break;
+                case 'removed':
+                  deleted.push(file.filename);
+                  break;
+                case 'renamed':
+                  renamed.push(`${file.previous_filename}:${file.filename}`);
+                  break;
+              }
+            }
+
+            core.setOutput('added_files', added.join(' '));
+            core.setOutput('modified_files', modified.join(' '));
+            core.setOutput('deleted_files', deleted.join(' '));
+            core.setOutput('renamed_files', renamed.join(' '));
+
+  # This check skips the job when the workflow runs on a fork repo itself (e.g.
+  # user/kibana), not when a fork PR targets upstream. Fork PRs to upstream run
+  # fine because github.event.repository is the upstream repo (not a fork).
+  # This is a runner-cost optimization: fork repos aren't registered content
+  # sources, so assembler-match would return false and the build would skip anyway.
+  build:
+    if: github.event.repository.fork == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs:
+      - check
+      - match
+    outputs:
+      build_outcome: ${{ steps.docs-build.outcome == 'success' && 'success' || '' }}
+      skip: ${{ steps.docs-build.outputs.skip }}
+      path_prefix: ${{ steps.generate-path-prefix.outputs.result }}
+      landing_page_path: ${{ steps.docs-build.outputs.landing-page-path || steps.generate-path-prefix.outputs.result }}
+    env:
+      MATCH: ${{ needs.match.outputs.content-source-match }}
+      ADDED_FILES: ${{ needs.check.outputs.added_files }}
+      MODIFIED_FILES: ${{ needs.check.outputs.modified_files }}
+      DELETED_FILES: ${{ needs.check.outputs.deleted_files }}
+      RENAMED_FILES: ${{ needs.check.outputs.renamed_files }}
+    steps:
+      - name: Checkout
+        if: >
+          env.MATCH == 'true'
+          && needs.check.outputs.any_modified != 'false'
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          persist-credentials: false
+
+      - name: Generate env.PATH_PREFIX
+        id: generate-path-prefix
+        if: >
+          env.MATCH == 'true'
+          && needs.check.outputs.any_modified != 'false'
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          case "${GITHUB_EVENT_NAME}" in
+            "pull_request")
+              path_prefix="/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}"
+              ;;
+            "push" | "workflow_dispatch" | "merge_group")
+              path_prefix="/${GITHUB_REPOSITORY}/tree/${GITHUB_REF_NAME}"
+              ;;
+            *)
+              echo "Unsupported event: '${GITHUB_EVENT_NAME}'";
+              exit 1;
+              ;;
+          esac
+          echo "PATH_PREFIX=${path_prefix}" >> $GITHUB_ENV
+          echo "result=${path_prefix}" >> $GITHUB_OUTPUT
+
+      - name: 'Validate redirect rules'
+        if: >
+          env.MATCH == 'true'
+          && needs.check.outputs.any_modified != 'false'
+        uses: elastic/docs-builder/actions/diff-validate@main
+
+      - name: Build documentation
+        if: >
+          env.MATCH == 'true'
+          && needs.check.outputs.any_modified != 'false'
+        uses: elastic/docs-builder@main
+        id: docs-build
+        continue-on-error: ${{ fromJSON(inputs.continue-on-error != '' && inputs.continue-on-error || 'false') }}
+        with:
+          prefix: ${{ env.PATH_PREFIX }}
+          strict: ${{ fromJSON(inputs.strict != '' && inputs.strict || 'true') }}
+          metadata-only: ${{ fromJSON(inputs.metadata-only != '' && inputs.metadata-only || 'false') }}
+
+      - name: 'Validate inbound links'
+        if: >
+          env.MATCH == 'true'
+          && !cancelled()
+          && needs.check.outputs.any_modified != 'false'
+          && steps.docs-build.outputs.skip != 'true'
+        uses: elastic/docs-builder/actions/validate-inbound-local@main
+
+      - name: 'Validate local path prefixes'
+        if: >
+          env.MATCH == 'true'
+          && !cancelled()
+          && needs.check.outputs.any_modified != 'false'
+          && steps.docs-build.outputs.skip != 'true'
+          && steps.docs-build.outcome != 'skipped'
+        uses: elastic/docs-builder/actions/validate-path-prefixes-local@main
+
+      - name: Warn about fork PR
+        if: >
+          github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name != github.repository
+          && needs.check.outputs.any_modified == 'true'
+        run: |
+          echo "::warning::Preview deployments are only available for PRs from the same repository, not from forks."
+
+      - name: Skip build
+        if: env.MATCH != 'true' || needs.check.outputs.any_modified == 'false'
+        run: |
+          echo "::notice::Build skipped (match=${{ env.MATCH }}, any_modified=${{ needs.check.outputs.any_modified }})"
+
+  vale:
+    if: >
+      github.event_name == 'pull_request'
+      && inputs.enable-vale-linting == true
+      && needs.check.outputs.any_modified == 'true'
+    runs-on: ubuntu-latest
+    needs: check
+    permissions:
+      contents: read
+      pull-requests: none
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          fetch-tags: false
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          persist-credentials: false
+      - name: Run Vale Linter
+        uses: elastic/vale-rules/lint@main
+        with:
+          files: ${{ needs.check.outputs.all_changed_files }}
+          include-paths: ${{ inputs.include-paths }}
