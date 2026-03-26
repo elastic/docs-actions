@@ -3,25 +3,6 @@ name: Docs Deploy
 on:
   workflow_call:
     inputs:
-      strict:
-        description: 'Treat warnings as errors'
-        type: string
-        default: 'true'
-      continue-on-error:
-        description: 'Do not fail if build fails'
-        type: string
-        required: false
-        default: 'false'
-      path-pattern:
-        description: 'Path pattern to filter files (should match Phase 1 setting)'
-        type: string
-        default: '**'
-        required: false
-      path-pattern-ignore:
-        description: 'Path pattern to ignore files (should match Phase 1 setting)'
-        type: string
-        default: ''
-        required: false
       disable-comments:
         description: 'Disable PR preview comments'
         type: boolean
@@ -29,11 +10,6 @@ on:
         required: false
       enable-cumulative-comment:
         description: 'Enable the cumulative docs versioning reminder comment'
-        type: boolean
-        default: false
-        required: false
-      enable-vale-linting:
-        description: 'Enable vale linting report'
         type: boolean
         default: false
         required: false
@@ -51,6 +27,7 @@ jobs:
       && github.event.repository.fork == false
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: none
       pull-requests: read
     outputs:
@@ -64,14 +41,31 @@ jobs:
       is-fork: ${{ steps.context.outputs.is-fork }}
       base-ref: ${{ steps.context.outputs.base-ref }}
       author-association: ${{ steps.context.outputs.author-association }}
+      cfg: ${{ steps.build-config.outputs.config }}
     steps:
+      - name: Download build config
+        uses: actions/download-artifact@v8
+        with:
+          name: docs-build-config
+          path: /tmp/build-config
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Read build config
+        id: build-config
+        run: |
+          {
+            echo "config<<GHEOF"
+            cat /tmp/build-config/docs-build-config.json
+            echo "GHEOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Resolve workflow run context
         id: context
         uses: actions/github-script@v8
         env:
-          PATH_PATTERN: ${{ inputs.path-pattern }}
+          PATH_PATTERN: ${{ fromJSON(steps.build-config.outputs.config).path-pattern }}
           IGNORE_PATTERNS: |
-            ${{ inputs.path-pattern-ignore }}
+            ${{ fromJSON(steps.build-config.outputs.config).path-pattern-ignore }}
             .github/**
             README.md
         with:
@@ -352,7 +346,7 @@ jobs:
       # preload the link index before the build.
       - name: Build documentation
         id: docs-build
-        continue-on-error: ${{ fromJSON(inputs.continue-on-error != '' && inputs.continue-on-error || 'false') }}
+        continue-on-error: ${{ fromJSON(needs.preflight.outputs.cfg).continue-on-error == 'true' }}
         # language=bash
         run: |
           CONTAINER_OUTPUT=$(mktemp)
@@ -374,7 +368,7 @@ jobs:
 
           exit $EXIT_CODE
         env:
-          STRICT_FLAG: ${{ fromJSON(inputs.strict != '' && inputs.strict || 'true') }}
+          STRICT_FLAG: ${{ fromJSON(needs.preflight.outputs.cfg).strict == 'true' }}
 
       - name: Upload links artifact
         id: upload-links
@@ -664,7 +658,7 @@ jobs:
       needs.preflight.outputs.event == 'pull_request'
       && (needs.preflight.outputs.is-fork == 'false'
           || contains(fromJSON('["MEMBER","OWNER"]'), needs.preflight.outputs.author-association))
-      && inputs.enable-vale-linting == true
+      && fromJSON(needs.preflight.outputs.cfg).enable-vale-linting == true
     needs:
       - preflight
     runs-on: ubuntu-latest
