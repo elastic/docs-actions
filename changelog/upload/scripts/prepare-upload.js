@@ -5,6 +5,9 @@
 'use strict';
 
 const fs = require('fs');
+const yaml = require('js-yaml');
+
+const PRODUCT_RE = /^[a-zA-Z0-9_-]+$/;
 
 module.exports = async ({ github, context, core }) => {
   const configFile = process.env.CONFIG_FILE;
@@ -12,7 +15,7 @@ module.exports = async ({ github, context, core }) => {
 
   const changelogDir = readChangelogDir(configFile);
 
-  const { data: prFiles } = await github.rest.pulls.listFiles({
+  const prFiles = await github.paginate(github.rest.pulls.listFiles, {
     owner: context.repo.owner,
     repo: context.repo.repo,
     pull_number: prNumber,
@@ -37,6 +40,13 @@ module.exports = async ({ github, context, core }) => {
       continue;
     }
     for (const product of products) {
+      if (!PRODUCT_RE.test(product)) {
+        core.warning(
+          `Skipping invalid product name "${product}" in ${fragmentPath} ` +
+          '(must match [a-zA-Z0-9_-]+)'
+        );
+        continue;
+      }
       pairs.push(`${fragmentPath} ${product}`);
     }
   }
@@ -63,28 +73,18 @@ function readChangelogDir(configFile) {
   } catch (_) {
     return 'docs/changelog';
   }
-  let inBundle = false;
-  for (const line of content.split('\n')) {
-    if (/^bundle:\s*$/.test(line)) { inBundle = true; continue; }
-    if (inBundle) {
-      const m = line.match(/^\s+directory:\s*(\S+)/);
-      if (m) return m[1];
-      if (/^\S/.test(line) && !line.startsWith('#')) inBundle = false;
-    }
+  try {
+    const config = yaml.load(content);
+    return config?.bundle?.directory || 'docs/changelog';
+  } catch (_) {
+    return 'docs/changelog';
   }
-  return 'docs/changelog';
 }
 
 function readProducts(content) {
-  const products = [];
-  let inProducts = false;
-  for (const line of content.split('\n')) {
-    if (/^products:\s*$/.test(line)) { inProducts = true; continue; }
-    if (inProducts) {
-      const m = line.match(/^\s+product:\s*(\S+)/);
-      if (m) { products.push(m[1]); continue; }
-      if (/^\S/.test(line) && !line.startsWith('#')) inProducts = false;
-    }
-  }
-  return products;
+  const doc = yaml.load(content);
+  if (!doc || !Array.isArray(doc.products)) return [];
+  return doc.products
+    .map(entry => (typeof entry === 'string' ? entry : entry?.product))
+    .filter(Boolean);
 }

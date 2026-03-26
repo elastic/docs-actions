@@ -25,6 +25,10 @@ runs:
         ref: ${{ github.event.pull_request.merge_commit_sha }}
         persist-credentials: false
     
+    - name: Install upload dependencies
+      shell: bash
+      run: npm ci --prefix ${{ github.action_path }}
+
     - name: Find changelog files and prepare upload targets
       id: prepare
       uses: actions/github-script@v8
