@@ -391,7 +391,7 @@ jobs:
           env.EVENT == 'push'
           && steps.docs-build.outcome == 'success'
           && steps.docs-build.outputs.skip != 'true'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: links
           path: .artifacts/docs/html/links.json
@@ -404,7 +404,7 @@ jobs:
         if: >
           steps.docs-build.outcome == 'success'
           && steps.docs-build.outputs.skip != 'true'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: docs-html
           path: .artifacts/docs/html
@@ -437,7 +437,7 @@ jobs:
       PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
     steps:
       - name: Download docs artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: docs-html
           path: docs-html
@@ -770,7 +770,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Download links artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: links
           path: /tmp/link-index-upload

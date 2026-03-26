@@ -31,7 +31,7 @@ runs:
           repository: elastic/codex-link-index
           token: ${{ steps.fetch-ephemeral-token.outputs.token }}
     - name: Download artifact
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v8
       with:
         name: links
         path: ${{ inputs.codex-env }}/${{ github.repository }}
