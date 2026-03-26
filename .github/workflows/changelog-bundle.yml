@@ -25,16 +25,16 @@ on:
         description: 'GitHub repository name; falls back to bundle.repo in changelog.yml'
         type: string
       owner:
-        description: 'GitHub repository owner; falls back to bundle.owner in changelog.yml, then elastic'
+        description: 'GitHub repository owner; falls back to bundle.owner in changelog.yml'
         type: string
 
 jobs:
-  bundle:
+  generate:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
-      - uses: elastic/docs-actions/changelog/bundle@v1
+      - uses: elastic/docs-actions/changelog/bundle-create@v1
         with:
           config: ${{ inputs.config }}
           release-version: ${{ inputs.release-version }}
@@ -42,4 +42,16 @@ jobs:
           output: ${{ inputs.output }}
           repo: ${{ inputs.repo }}
           owner: ${{ inputs.owner }}
+          github-token: ${{ github.token }}
+
+  create-pr:
+    needs: generate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: elastic/docs-actions/changelog/bundle-pr@v1
+        with:
+          output: ${{ inputs.output }}
           github-token: ${{ github.token }}

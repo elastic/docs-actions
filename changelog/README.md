@@ -256,6 +256,8 @@ bundle:
   owner: elastic
 ```
 
+The reusable workflow splits into two jobs with separate permissions: `generate` (read-only, produces the bundle artifact) and `create-pr` (write access, opens a pull request with the bundle file).
+
 ### Setup
 
 The bundle action supports two trigger patterns depending on your release process.
@@ -275,6 +277,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   bundle:
@@ -309,6 +312,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   discover-report:
@@ -341,4 +345,4 @@ If your changelog configuration is not at `docs/changelog.yml`, pass the path ex
 
 ### Output
 
-The bundle file is written to the path specified by the `output` input (e.g. `docs/releases/v9.2.0.yaml`). It contains the full content of every matching changelog entry — title, type, PR links, areas, description, and all other fields are inlined. If nothing has changed since the last run, no commit is made.
+The reusable workflow opens a pull request on a branch named `changelog-bundle/<bundle-name>` (e.g. `changelog-bundle/v9.2.0`). The PR contains the fully-resolved bundle file at the path specified by the `output` input. If a PR already exists for that branch, the bundle is updated in place. If the generated bundle is identical to what's already in the repository, no commit or PR is created.

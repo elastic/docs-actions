@@ -1,0 +1,94 @@
+name: Changelog bundle create
+description: >
+  Checks out the repository, runs docs-builder changelog bundle in Docker
+  to generate a fully-resolved bundle file, and uploads the result as an
+  artifact. Supports filtering by GitHub release version or Buildkite
+  promotion report. Uses --network none for report mode.
+
+inputs:
+  config:
+    description: 'Path to changelog.yml configuration file'
+    default: 'docs/changelog.yml'
+  release-version:
+    description: >
+      GitHub release tag used as the PR filter source (e.g. v9.2.0).
+      Mutually exclusive with report. Requires repo to be set in
+      changelog.yml (bundle.repo) or passed via the repo input.
+  report:
+    description: >
+      Buildkite promotion report URL or local file path used as the
+      PR filter source. Mutually exclusive with release-version.
+      Local paths must be relative to the repo root.
+  output:
+    description: >
+      Output file path for the bundle, relative to the repo root
+      (e.g. docs/releases/v9.2.0.yaml). Must end in .yml or .yaml.
+    required: true
+  repo:
+    description: >
+      GitHub repository name. Falls back to bundle.repo in changelog.yml.
+  owner:
+    description: >
+      GitHub repository owner. Falls back to bundle.owner in changelog.yml,
+      then to elastic.
+  github-token:
+    description: 'GitHub token (needed for release-version to access GitHub API)'
+    default: '${{ github.token }}'
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        persist-credentials: false
+
+    - name: Generate changelog bundle
+      shell: bash
+      env:
+        CONFIG: ${{ inputs.config }}
+        RELEASE_VERSION: ${{ inputs.release-version }}
+        REPORT: ${{ inputs.report }}
+        OUTPUT: ${{ inputs.output }}
+        REPO: ${{ inputs.repo }}
+        OWNER: ${{ inputs.owner }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        if [ -n "$RELEASE_VERSION" ] && [ -n "$REPORT" ]; then
+          echo "::error::Only one of 'release-version' or 'report' may be provided"
+          exit 1
+        fi
+
+        if [ -z "$RELEASE_VERSION" ] && [ -z "$REPORT" ]; then
+          echo "::error::Either 'release-version' or 'report' must be provided"
+          exit 1
+        fi
+
+        docker_args=(--rm -v "${PWD}:/github/workspace" -w /github/workspace)
+        bundle_args=(changelog bundle --config "$CONFIG" --resolve --output "$OUTPUT")
+
+        if [ -n "$RELEASE_VERSION" ]; then
+          bundle_args+=(--release-version "$RELEASE_VERSION")
+          docker_args+=(-e GITHUB_TOKEN)
+          if [ -n "$REPO" ]; then bundle_args+=(--repo "$REPO"); fi
+          if [ -n "$OWNER" ]; then bundle_args+=(--owner "$OWNER"); fi
+        fi
+
+        if [ -n "$REPORT" ]; then
+          if [[ "$REPORT" == http://* ]] || [[ "$REPORT" == https://* ]]; then
+            curl -fsSL "$REPORT" -o .bundle-report.html
+            REPORT=".bundle-report.html"
+          fi
+          bundle_args+=(--report "$REPORT")
+          docker_args+=(--network none)
+        fi
+
+        docker run "${docker_args[@]}" ghcr.io/elastic/docs-builder:edge "${bundle_args[@]}"
+
+    - name: Upload bundle artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: changelog-bundle
+        path: ${{ inputs.output }}
+        if-no-files-found: error
+        retention-days: 1

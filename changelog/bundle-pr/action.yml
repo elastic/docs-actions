@@ -1,0 +1,69 @@
+name: Changelog bundle PR
+description: >
+  Downloads a changelog bundle artifact and opens a pull request to add it
+  to the repository. If a PR already exists for the same bundle, it is
+  updated in place.
+
+inputs:
+  output:
+    description: >
+      Output file path for the bundle, relative to the repo root
+      (e.g. docs/releases/v9.2.0.yaml). Must match the path used
+      by the bundle-create action.
+    required: true
+  github-token:
+    description: 'GitHub token with contents:write and pull-requests:write permissions'
+    default: '${{ github.token }}'
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        persist-credentials: false
+
+    - name: Download bundle artifact
+      uses: actions/download-artifact@v6
+      with:
+        name: changelog-bundle
+        path: .bundle-artifact
+
+    - name: Create pull request
+      shell: bash
+      env:
+        OUTPUT: ${{ inputs.output }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        GIT_REPOSITORY: ${{ github.repository }}
+      run: |
+        BUNDLE_NAME=$(basename "$OUTPUT" .yaml)
+        BRANCH="changelog-bundle/${BUNDLE_NAME}"
+
+        mkdir -p "$(dirname "$OUTPUT")"
+        cp ".bundle-artifact/$(basename "$OUTPUT")" "$OUTPUT"
+
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+        git checkout -b "$BRANCH"
+        git add "$OUTPUT"
+
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+
+        git commit -m "Add changelog bundle ${BUNDLE_NAME}"
+        git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GIT_REPOSITORY}.git"
+        git push -f origin "$BRANCH"
+        git remote set-url origin "https://github.com/${GIT_REPOSITORY}.git"
+
+        EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number // empty')
+        if [ -n "$EXISTING_PR" ]; then
+          echo "PR #${EXISTING_PR} already exists for branch ${BRANCH}, updated with latest bundle"
+        else
+          gh pr create \
+            --title "Add changelog bundle ${BUNDLE_NAME}" \
+            --body "Auto-generated changelog bundle for ${BUNDLE_NAME}." \
+            --head "$BRANCH"
+        fi
