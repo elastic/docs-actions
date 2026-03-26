@@ -57,7 +57,7 @@ jobs:
         env:
           INPUTS_JSON: ${{ toJSON(inputs) }}
         run: |
-          jq '{version: 1, inputs: .}' <<< "$INPUTS_JSON" > docs-build-config.json
+          printenv INPUTS_JSON > docs-build-config.json
       - name: Upload config artifact
         uses: actions/upload-artifact@v7
         with:

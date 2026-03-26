@@ -75,24 +75,17 @@ jobs:
             exit 1
           fi
 
-          # Validate schema version
-          VERSION=$(jq -r '.version // empty' "$CONFIG_FILE")
-          if [[ "$VERSION" != "1" ]]; then
-            echo "::error::Unsupported config version: ${VERSION}"
-            exit 1
-          fi
-
-          # Reject nested objects/arrays in inputs (only scalars allowed)
-          HAS_COMPLEX=$(jq '[.inputs | to_entries[].value | type] | map(select(. == "object" or . == "array")) | length' "$CONFIG_FILE")
+          # Reject nested objects/arrays (only scalars allowed)
+          HAS_COMPLEX=$(jq '[to_entries[].value | type] | map(select(. == "object" or . == "array")) | length' "$CONFIG_FILE")
           if [[ "$HAS_COMPLEX" != "0" ]]; then
-            echo "::error::Config inputs contain unexpected complex values"
+            echo "::error::Config contains unexpected complex values"
             exit 1
           fi
 
-          # Output the inputs object as compact JSON for fromJSON() consumption
+          # Output as compact JSON for fromJSON() consumption
           {
             echo "config<<GHEOF"
-            jq -c '.inputs' "$CONFIG_FILE"
+            jq -c '.' "$CONFIG_FILE"
             echo "GHEOF"
           } >> "$GITHUB_OUTPUT"
 
