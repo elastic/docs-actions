@@ -54,13 +54,27 @@ runs:
       if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
       uses: actions/checkout@v6
       with:
-        ref: ${{ steps.pr-data.outputs.head-ref }}
+        ref: ${{ steps.pr-data.outputs.head-sha }}
         token: ${{ inputs.github-token }}
         persist-credentials: false
 
     - name: Checkout base repo
       if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork == 'true'
       uses: actions/checkout@v6
+
+    - name: Validate ref names
+      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+      shell: bash
+      env:
+        HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
+        BASE_REF: ${{ steps.pr-data.outputs.base-ref }}
+      run: |
+        for ref_name in "$HEAD_REF" "$BASE_REF"; do
+          if [[ ! "$ref_name" =~ ^[a-zA-Z0-9._/+-]+$ ]]; then
+            echo "::error::Ref name contains disallowed characters: ${ref_name}"
+            exit 1
+          fi
+        done
 
     - name: Read config from base branch
       id: config
@@ -102,6 +116,8 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         CONFIG_FILE: ${{ steps.config.outputs.config-path || inputs.config }}
+        REPO_OWNER: ${{ github.repository_owner }}
+        REPO_NAME: ${{ github.event.repository.name }}
         PR_NUMBER: ${{ steps.pr.outputs.number }}
         PR_TITLE: ${{ steps.pr-data.outputs.title }}
         PR_LABELS: ${{ steps.pr-data.outputs.labels }}
@@ -116,8 +132,8 @@ runs:
 
         docs-builder changelog evaluate-pr \
           --config "$CONFIG_FILE" \
-          --owner "${{ github.repository_owner }}" \
-          --repo "${{ github.event.repository.name }}" \
+          --owner "$REPO_OWNER" \
+          --repo "$REPO_NAME" \
           --pr-number "$PR_NUMBER" \
           --pr-title "$PR_TITLE" \
           --pr-labels "$PR_LABELS" \
