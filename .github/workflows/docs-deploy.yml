@@ -43,14 +43,10 @@ on:
         default: ''
         required: false
 
-permissions:
-  contents: read
-  deployments: write
-  id-token: write
-  pull-requests: write
+permissions: {}
 
 concurrency:
-  group: docs-deploy-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  group: docs-deploy-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}-${{ github.event.workflow_run.id }}
   cancel-in-progress: true
 
 jobs:
@@ -316,7 +312,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: ${{ needs.preflight.outputs.head-repo }}
-          ref: ${{ env.HEAD_BRANCH }}
+          ref: ${{ needs.preflight.outputs.head-sha }}
           persist-credentials: false
 
       - name: Validate checkout SHA
@@ -332,8 +328,8 @@ jobs:
         id: generate-path-prefix
         # language=bash
         run: |
-          if [[ "$HEAD_BRANCH" == *".."* ]]; then
-            echo "::error::Branch name contains path traversal characters: ${HEAD_BRANCH}"
+          if [[ ! "$HEAD_BRANCH" =~ ^[a-zA-Z0-9._/+-]+$ ]]; then
+            echo "::error::Branch name contains disallowed characters: ${HEAD_BRANCH}"
             exit 1
           fi
 
@@ -470,6 +466,9 @@ jobs:
               ref: process.env.HEAD_SHA,
               auto_merge: false,
               transient_environment: true,
+              // Required: preview deployments target in-progress PR SHAs that
+              // won't have passing status checks yet. Without this override
+              // the API rejects the deployment when branch protection is enabled.
               required_contexts: [],
             })
             await github.rest.repos.createDeploymentStatus({
@@ -555,12 +554,13 @@ jobs:
 
             if (changedMdFiles.length === 0) return;
 
+            const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
             const toMarkdownLink = (file) => {
               const path = file
                 .replace(/^docs\//, '')
                 .replace(/\/index.md$/, '')
                 .replace(/\.md$/, '');
-              return `[${file}](https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path})`;
+              return `[${escapeMarkdown(file)}](https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path})`;
             }
 
             const links = changedMdFiles.map(toMarkdownLink)
@@ -694,7 +694,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: ${{ env.HEAD_REPO }}
-          ref: ${{ env.HEAD_BRANCH }}
+          ref: ${{ needs.preflight.outputs.head-sha }}
           fetch-depth: 0
           filter: blob:none
           fetch-tags: false
