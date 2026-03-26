@@ -24,7 +24,7 @@ jobs:
         run: |
           mkdir -p docs
           cd docs
-          
+
           cat << EOF > docset.yml
           icon: asterisk
 
@@ -43,6 +43,6 @@ jobs:
           EOF
       - name: verify
         run: tree -a
-          
+
       - uses: ./codex/build
         id: codex-build
