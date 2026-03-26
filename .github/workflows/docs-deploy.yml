@@ -37,11 +37,6 @@ on:
         type: boolean
         default: false
         required: false
-      include-paths:
-        description: 'Paths to include for Vale linting (multi-line)'
-        type: string
-        default: ''
-        required: false
 
 permissions: {}
 
@@ -674,59 +669,10 @@ jobs:
       - preflight
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      actions: read
+      contents: none
       pull-requests: write
-    env:
-      PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
-      HEAD_SHA: ${{ needs.preflight.outputs.head-sha }}
-      HEAD_BRANCH: ${{ needs.preflight.outputs.head-branch }}
-      HEAD_REPO: ${{ needs.preflight.outputs.head-repo }}
     steps:
-      - name: Reject fork checkout
-        if: >
-          needs.preflight.outputs.is-fork == 'true'
-          && !contains(fromJSON('["MEMBER","OWNER"]'), needs.preflight.outputs.author-association)
-        run: |
-          echo "::error::Fork code must never be checked out in the deploy workflow"
-          exit 1
-
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          repository: ${{ env.HEAD_REPO }}
-          ref: ${{ needs.preflight.outputs.head-sha }}
-          fetch-depth: 0
-          filter: blob:none
-          fetch-tags: false
-          persist-credentials: false
-
-      - name: Validate checkout SHA
-        run: |
-          ACTUAL_SHA=$(git rev-parse HEAD)
-          if [[ "$ACTUAL_SHA" != "$HEAD_SHA" ]]; then
-            echo "::error::Checkout SHA mismatch: expected ${HEAD_SHA}, got ${ACTUAL_SHA}."
-            exit 1
-          fi
-
-      - name: Get changed files
-        id: changed-files
-        uses: actions/github-script@v8
-        with:
-          result-encoding: string
-          script: |
-            const { owner, repo } = context.repo;
-            const prNumber = parseInt(process.env.PR_NUMBER);
-            const files = await github.paginate(github.rest.pulls.listFiles, {
-              owner, repo, pull_number: prNumber
-            });
-            return files.map(f => f.filename).join(' ');
-
-      - name: Run Vale Linter
-        uses: elastic/vale-rules/lint@main
-        with:
-          files: ${{ steps.changed-files.outputs.result }}
-          include-paths: ${{ inputs.include-paths }}
-
       - name: Post Vale Results
         uses: elastic/vale-rules/report@main
 
