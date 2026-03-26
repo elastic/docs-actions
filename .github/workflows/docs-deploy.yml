@@ -44,8 +44,6 @@ jobs:
       cfg: ${{ steps.parse-config.outputs.config }}
     steps:
       - name: Download build config
-        id: download-config
-        continue-on-error: true
         uses: actions/download-artifact@v8
         with:
           name: docs-build-config
@@ -58,16 +56,6 @@ jobs:
         # language=bash
         run: |
           CONFIG_FILE="/tmp/build-config/docs-build-config.json"
-          if [[ ! -f "$CONFIG_FILE" ]]; then
-            echo "::notice::No build config artifact found — using defaults"
-            DEFAULT='{"strict":"true","continue-on-error":"false","path-pattern":"**","path-pattern-ignore":"","enable-vale-linting":false}'
-            {
-              echo "config<<GHEOF"
-              echo "$DEFAULT"
-              echo "GHEOF"
-            } >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
 
           # Validate JSON structure
           if ! jq empty "$CONFIG_FILE" 2>/dev/null; then
