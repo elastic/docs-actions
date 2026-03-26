@@ -179,3 +179,55 @@ If a human edits the changelog file directly (i.e., the last commit to the chang
 ## Output
 
 Each PR produces a file at `docs/changelog/{filename}.yaml` on the PR branch (where the filename is determined by the `docs-builder changelog add` command). These files are consumed by `docs-builder` during documentation builds to produce a rendered changelog page.
+
+## Uploading to S3
+
+When a PR is merged, the committed changelog file can be uploaded to the `elastic-docs-v3-changelog-bundles` S3 bucket under `{product}/changelogs/{filename}.yaml`, preserving the original filename as determined by the repository's `filename` strategy in `changelog.yml`. This makes it available for release bundling workflows.
+
+### 1. Add the upload workflow
+
+**`.github/workflows/changelog-upload.yml`**
+
+```yaml
+name: changelog-upload
+
+on:
+  pull_request:
+    types:
+      - closed
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  upload:
+    if: github.event.pull_request.merged == true
+    uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
+```
+
+If your changelog configuration is not at `docs/changelog.yml`, pass the path explicitly:
+
+```yaml
+jobs:
+  upload:
+    if: github.event.pull_request.merged == true
+    uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
+    with:
+      config: path/to/changelog.yml
+```
+
+### 2. Enable OIDC access
+
+The upload workflow authenticates to AWS via GitHub Actions OIDC. Your repository must be listed in the `elastic-docs-v3-changelog-bundles` infrastructure to have an IAM role provisioned. Contact the docs-engineering team to add your repository.
+
+### How it works
+
+When a PR is merged, the upload workflow:
+
+1. Checks out the merge commit
+2. Reads `bundle.directory` from your `changelog.yml` to locate the changelog folder
+3. Queries the GitHub API for YAML files that were added or modified in that folder during the PR
+4. For each file found, reads the `products` list and uploads the file to `{product}/changelogs/{filename}.yaml` in the bucket, preserving the original filename
+
+If the PR has no changelog file (for example, because changelog generation was skipped), the workflow exits silently without error.

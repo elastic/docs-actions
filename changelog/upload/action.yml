@@ -1,0 +1,60 @@
+name: Changelog upload
+description: >
+  Uploads the changelog entry committed for a merged PR to the
+  elastic-docs-v3-changelog-bundles S3 bucket under {product}/changelogs/{filename}.
+  Preserves the original filename as set by the repository's changelog configuration.
+  Exits silently when no changelog file is found in the bundle.directory for this PR.
+
+inputs:
+  config:
+    description: 'Path to changelog.yml configuration file'
+    default: 'docs/changelog.yml'
+  github-token:
+    description: 'GitHub token with contents:read'
+    default: '${{ github.token }}'
+  aws-account-id:
+    description: 'The AWS account ID'
+    default: '197730964718'
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.merge_commit_sha }}
+        persist-credentials: false
+    
+    - name: Find changelog files and prepare upload targets
+      id: prepare
+      uses: actions/github-script@v8
+      env:
+        CONFIG_FILE: ${{ inputs.config }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/prepare-upload.js');
+          await script({ github, context, core });
+
+    - name: Authenticate with AWS
+      if: steps.prepare.outputs.has-uploads == 'true'
+      uses: elastic/docs-actions/aws/auth@v1
+      with:
+        aws_account_id: ${{ inputs.aws-account-id }}
+        aws_role_name_prefix: elastic-docs-v3-changelog-
+
+    - name: Upload changelogs to S3
+      if: steps.prepare.outputs.has-uploads == 'true'
+      shell: bash
+      env:
+        UPLOAD_PAIRS: ${{ steps.prepare.outputs.upload-pairs }}
+        AWS_RETRY_MODE: standard
+        AWS_MAX_ATTEMPTS: 6
+      run: |
+        while IFS=' ' read -r FRAGMENT PRODUCT; do
+          S3_KEY="${PRODUCT}/changelogs/$(basename "${FRAGMENT}")"
+          echo "Uploading ${FRAGMENT} → s3://elastic-docs-v3-changelog-bundles/${S3_KEY}"
+          aws s3 cp "${FRAGMENT}" "s3://elastic-docs-v3-changelog-bundles/${S3_KEY}" \
+            --checksum-algorithm SHA256
+        done <<< "${UPLOAD_PAIRS}"
