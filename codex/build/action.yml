@@ -47,7 +47,7 @@ runs:
       env:
         PATH_PREFIX: ${{ env.PATH_PREFIX }}
     - name: Upload docs
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: docs
         path: .artifacts/docs/html
@@ -56,7 +56,7 @@ runs:
         if-no-files-found: error
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: links
         path: .artifacts/docs/html/links.json

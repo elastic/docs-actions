@@ -48,7 +48,7 @@ jobs:
         uses: actions/checkout@v6
       - name: Check changes
         id: check-files
-        uses: tj-actions/changed-files@v47
+        uses: tj-actions/changed-files@v47.0.5
         with:
           files: ${{ inputs.path-pattern }}
           files_ignore: |
@@ -133,7 +133,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REF: ${{ startsWith(github.event_name, 'pull_request') && github.event.pull_request.head.sha || github.ref_name }}
       - name: Download artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: docs
           path: docs
