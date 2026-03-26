@@ -1,5 +1,7 @@
 const TITLE = '### 📋 Changelog';
 
+const escapeMarkdown = (s) => s.replace(/([[\]()\\`*_{}#+\-.!|])/g, '\\$1');
+
 async function upsertComment({ github, context, prNumber, body }) {
   const { owner, repo } = context.repo;
   const comments = await github.paginate(github.rest.issues.listComments, {
@@ -15,4 +17,4 @@ async function upsertComment({ github, context, prNumber, body }) {
   }
 }
 
-module.exports = { TITLE, upsertComment };
+module.exports = { TITLE, upsertComment, escapeMarkdown };

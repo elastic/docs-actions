@@ -8,6 +8,8 @@ on:
         type: string
         default: 'docs/changelog.yml'
 
+permissions: {}
+
 concurrency:
   group: changelog-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
