@@ -235,3 +235,110 @@ The workflow uses a per-repository concurrency group so that rapid successive pu
 > **Note:** The composite action accepts an `aws-account-id` input (default: the Elastic docs account). Overriding this is only valid when OIDC trust and IAM roles have been provisioned for the target account. In practice, most repositories should use the default.
 
 > **Note:** The `github-token` input defaults to the workflow's `GITHUB_TOKEN`, which is scoped to the job's declared permissions. Do not substitute a broader PAT unless `docs-builder/setup` explicitly requires it.
+
+## Bundling changelogs
+
+Individual changelog files accumulate on the default branch as PRs merge. The bundle action generates a fully-resolved YAML file containing only the changelog entries that match a given filter. Two filter sources are supported:
+
+- **GitHub release version** (`release-version`) — pulls PR references directly from GitHub release notes. Used for stack and product releases triggered by `on: release`.
+- **Buildkite promotion report** (`report`) — extracts PR URLs from a promotion report. Used for serverless releases discovered by a scheduled workflow.
+
+Exactly one filter source must be provided per invocation. The bundle always includes the full content of each matching entry (`--resolve`), so downstream consumers can render changelogs without access to the original files.
+
+### Prerequisites
+
+Your `docs/changelog.yml` must include a `bundle` section so docs-builder knows where to find changelog files. Setting `bundle.repo` and `bundle.owner` ensures PR and issue links are generated correctly in the bundle output.
+
+```yaml
+bundle:
+  directory: docs/changelog
+  repo: my-repo
+  owner: elastic
+```
+
+### Setup
+
+The bundle action supports two trigger patterns depending on your release process.
+
+#### Stack / product releases (`on: release`)
+
+When a GitHub release is published, the action uses `--release-version` to pull PR references directly from the release notes and filter changelog entries accordingly. The release tag provides the version for the output filename.
+
+**`.github/workflows/changelog-bundle.yml`**
+
+```yaml
+name: changelog-bundle
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  bundle:
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
+    with:
+      release-version: ${{ github.event.release.tag_name }}
+      output: docs/releases/${{ github.event.release.tag_name }}.yaml
+```
+
+The `github.event.release.tag_name` (e.g. `v9.2.0`) is passed as the release version filter and used to construct the output filename. If you prefer to strip the `v` prefix, you can do so in an earlier job step and pass the result as an input.
+
+#### Serverless / scheduled releases (`on: schedule`)
+
+When a Buildkite promotion report provides the list of PRs in a release, a scheduled workflow discovers the report and passes it to the bundle action. The output filename typically uses a date or timestamp.
+
+**`.github/workflows/changelog-bundle.yml`**
+
+```yaml
+name: changelog-bundle
+
+on:
+  schedule:
+    - cron: '0 8 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      report:
+        description: 'Buildkite promotion report URL'
+        required: true
+      output:
+        description: 'Output file path for the bundle'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  discover-report:
+    runs-on: ubuntu-latest
+    outputs:
+      report-url: ${{ steps.discover.outputs.report-url }}
+      release-date: ${{ steps.discover.outputs.release-date }}
+    steps:
+      - id: discover
+        run: echo "# your logic to find the latest promotion report"
+
+  bundle:
+    needs: discover-report
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
+    with:
+      report: ${{ needs.discover-report.outputs.report-url }}
+      output: docs/releases/${{ needs.discover-report.outputs.release-date }}.yaml
+```
+
+#### Custom config path
+
+If your changelog configuration is not at `docs/changelog.yml`, pass the path explicitly:
+
+```yaml
+    with:
+      config: path/to/changelog.yml
+      release-version: ${{ github.event.release.tag_name }}
+      output: docs/releases/${{ github.event.release.tag_name }}.yaml
+```
+
+### Output
+
+The bundle file is written to the path specified by the `output` input (e.g. `docs/releases/v9.2.0.yaml`). It contains the full content of every matching changelog entry — title, type, PR links, areas, description, and all other fields are inlined. If nothing has changed since the last run, no commit is made.
