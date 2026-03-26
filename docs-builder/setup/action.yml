@@ -4,12 +4,10 @@ description: 'Set up elastic/docs-builder CLI for use in actions'
 inputs:
   version:
     description: 'docs-builer version'
-    type: string
     required: false
     default: 'latest'
   github-token:
     description: 'GitHub token'
-    type: string
     required: false
     default: '${{ github.token }}'
 
@@ -42,7 +40,7 @@ runs:
         echo "${INSTALL_DIR}" >> $GITHUB_PATH
 
         echo "::notice title=Builder version::$(${INSTALL_DIR}/docs-builder --version)"
-        
+
       env:
         DOCS_BUILDER_VERSION: '${{ inputs.version }}'
         GH_TOKEN: '${{ inputs.github-token }}'

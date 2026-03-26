@@ -63,7 +63,7 @@ jobs:
           MERGE_GROUP_BASE_REF: ${{ github.event.merge_group.base_ref }}
         run: |
           BASE_BRANCH=$(basename "$MERGE_GROUP_BASE_REF")
-          echo "base_ref=${BASE_BRANCH}" >> $GITHUB_OUTPUT
+          echo "base_ref=${BASE_BRANCH}" >> "$GITHUB_OUTPUT"
       - name: Match for merge-group events
         id: merge-group-check
         if: github.event_name == 'merge_group'
@@ -238,8 +238,8 @@ jobs:
               exit 1;
               ;;
           esac
-          echo "PATH_PREFIX=${path_prefix}" >> $GITHUB_ENV
-          echo "result=${path_prefix}" >> $GITHUB_OUTPUT
+          echo "PATH_PREFIX=${path_prefix}" >> "$GITHUB_ENV"
+          echo "result=${path_prefix}" >> "$GITHUB_OUTPUT"
 
       - name: 'Validate redirect rules'
         if: >

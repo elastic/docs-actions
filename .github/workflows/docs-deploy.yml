@@ -203,7 +203,7 @@ jobs:
               MEMBER|OWNER)
                 ;;
               *)
-                echo "should-deploy=false" >> $GITHUB_OUTPUT
+                echo "should-deploy=false" >> "$GITHUB_OUTPUT"
                 echo "::notice::Deploy skipped — fork PRs from non-members are not deployed"
                 exit 0
                 ;;
@@ -211,9 +211,9 @@ jobs:
           fi
 
           if [[ "$MATCH" == "true" && "$CHANGES" == "true" ]]; then
-            echo "should-deploy=true" >> $GITHUB_OUTPUT
+            echo "should-deploy=true" >> "$GITHUB_OUTPUT"
           else
-            echo "should-deploy=false" >> $GITHUB_OUTPUT
+            echo "should-deploy=false" >> "$GITHUB_OUTPUT"
             echo "::notice::Deploy skipped (match=${MATCH}, changes=${CHANGES})"
           fi
 
@@ -349,8 +349,8 @@ jobs:
               exit 1;
               ;;
           esac
-          echo "PATH_PREFIX=${path_prefix}" >> $GITHUB_ENV
-          echo "result=${path_prefix}" >> $GITHUB_OUTPUT
+          echo "PATH_PREFIX=${path_prefix}" >> "$GITHUB_ENV"
+          echo "result=${path_prefix}" >> "$GITHUB_OUTPUT"
 
       # Run docs-builder in Docker isolation. Only explicitly listed env vars are
       # passed to the container — ACTIONS_RUNTIME_TOKEN, ACTIONS_CACHE_URL, and

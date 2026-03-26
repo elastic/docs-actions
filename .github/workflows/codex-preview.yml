@@ -95,13 +95,13 @@ jobs:
     permissions:
       id-token: write
       deployments: write
-    needs: 
+    needs:
       - check
       - build
     runs-on: ubuntu-latest
     steps:
       - name: Create Deployment
-        if: contains(fromJSON('["pull_request", "pull_request_target", "workflow_dispatch"]'), github.event_name) 
+        if: contains(fromJSON('["pull_request", "pull_request_target", "workflow_dispatch"]'), github.event_name)
         uses: actions/github-script@v8
         id: deployment
         with:
@@ -169,7 +169,7 @@ jobs:
             })
 
   update-link-index:
-    needs: 
+    needs:
       - build
       - check
     permissions:

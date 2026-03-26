@@ -6,7 +6,6 @@ inputs:
     description: The version of docs-builder to use
     required: false
     default: "edge"
-    type: string
 
 outputs:
   path-prefix:

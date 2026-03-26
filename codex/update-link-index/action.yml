@@ -58,7 +58,7 @@ runs:
 
           Workflow run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo "::endgroup::"
-          
+
           echo "::group::Push"
           for i in {1..5}; do
             if git push; then
