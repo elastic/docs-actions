@@ -41,7 +41,7 @@ jobs:
       is-fork: ${{ steps.context.outputs.is-fork }}
       base-ref: ${{ steps.context.outputs.base-ref }}
       author-association: ${{ steps.context.outputs.author-association }}
-      cfg: ${{ steps.parse-config.outputs.config }}
+      cfg: ${{ steps.build-config.outputs.config }}
     steps:
       - name: Download build config
         uses: actions/download-artifact@v8
@@ -51,29 +51,12 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
 
-      - name: Parse and validate config
-        id: parse-config
-        # language=bash
+      - name: Read build config
+        id: build-config
         run: |
-          CONFIG_FILE="/tmp/build-config/docs-build-config.json"
-
-          # Validate JSON structure
-          if ! jq empty "$CONFIG_FILE" 2>/dev/null; then
-            echo "::error::Build config artifact contains invalid JSON"
-            exit 1
-          fi
-
-          # Reject nested objects/arrays (only scalars allowed)
-          HAS_COMPLEX=$(jq '[to_entries[].value | type] | map(select(. == "object" or . == "array")) | length' "$CONFIG_FILE")
-          if [[ "$HAS_COMPLEX" != "0" ]]; then
-            echo "::error::Config contains unexpected complex values"
-            exit 1
-          fi
-
-          # Output as compact JSON for fromJSON() consumption
           {
             echo "config<<GHEOF"
-            jq -c '.' "$CONFIG_FILE"
+            cat /tmp/build-config/docs-build-config.json
             echo "GHEOF"
           } >> "$GITHUB_OUTPUT"
 
@@ -81,9 +64,9 @@ jobs:
         id: context
         uses: actions/github-script@v8
         env:
-          PATH_PATTERN: ${{ fromJSON(steps.parse-config.outputs.config).path-pattern }}
+          PATH_PATTERN: ${{ fromJSON(steps.build-config.outputs.config).path-pattern }}
           IGNORE_PATTERNS: |
-            ${{ fromJSON(steps.parse-config.outputs.config).path-pattern-ignore }}
+            ${{ fromJSON(steps.build-config.outputs.config).path-pattern-ignore }}
             .github/**
             README.md
         with:
