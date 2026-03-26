@@ -3,25 +3,6 @@ name: Docs Deploy
 on:
   workflow_call:
     inputs:
-      strict:
-        description: 'Treat warnings as errors'
-        type: string
-        default: 'true'
-      continue-on-error:
-        description: 'Do not fail if build fails'
-        type: string
-        required: false
-        default: 'false'
-      path-pattern:
-        description: 'Path pattern to filter files (should match Phase 1 setting)'
-        type: string
-        default: '**'
-        required: false
-      path-pattern-ignore:
-        description: 'Path pattern to ignore files (should match Phase 1 setting)'
-        type: string
-        default: ''
-        required: false
       disable-comments:
         description: 'Disable PR preview comments'
         type: boolean
@@ -29,11 +10,6 @@ on:
         required: false
       enable-cumulative-comment:
         description: 'Enable the cumulative docs versioning reminder comment'
-        type: boolean
-        default: false
-        required: false
-      enable-vale-linting:
-        description: 'Enable vale linting report'
         type: boolean
         default: false
         required: false
@@ -51,6 +27,7 @@ jobs:
       && github.event.repository.fork == false
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: none
       pull-requests: read
     outputs:
@@ -64,14 +41,114 @@ jobs:
       is-fork: ${{ steps.context.outputs.is-fork }}
       base-ref: ${{ steps.context.outputs.base-ref }}
       author-association: ${{ steps.context.outputs.author-association }}
+      cfg-strict: ${{ steps.parse-config.outputs.strict }}
+      cfg-continue-on-error: ${{ steps.parse-config.outputs.continue-on-error }}
+      cfg-path-pattern: ${{ steps.parse-config.outputs.path-pattern }}
+      cfg-path-pattern-ignore: ${{ steps.parse-config.outputs.path-pattern-ignore }}
+      cfg-enable-vale-linting: ${{ steps.parse-config.outputs.enable-vale-linting }}
     steps:
+      - name: Download build config
+        id: download-config
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: docs-build-config
+          path: /tmp/build-config
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Parse and validate config
+        id: parse-config
+        # language=bash
+        run: |
+          CONFIG_FILE="/tmp/build-config/docs-build-config.json"
+          if [[ ! -f "$CONFIG_FILE" ]]; then
+            echo "::notice::No build config artifact found — using defaults"
+            echo "strict=true" >> "$GITHUB_OUTPUT"
+            echo "continue-on-error=false" >> "$GITHUB_OUTPUT"
+            echo "path-pattern=**" >> "$GITHUB_OUTPUT"
+            echo "path-pattern-ignore=" >> "$GITHUB_OUTPUT"
+            echo "enable-vale-linting=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Validate JSON structure
+          if ! jq empty "$CONFIG_FILE" 2>/dev/null; then
+            echo "::error::Build config artifact contains invalid JSON"
+            exit 1
+          fi
+
+          # Validate schema version
+          VERSION=$(jq -r '.version // empty' "$CONFIG_FILE")
+          if [[ "$VERSION" != "1" ]]; then
+            echo "::error::Unsupported config version: ${VERSION}"
+            exit 1
+          fi
+
+          # Validate expected keys exist and types are correct
+          VALID=$(jq '
+            (.strict | type) == "string"
+            and (."continue-on-error" | type) == "string"
+            and (."path-pattern" | type) == "string"
+            and (."path-pattern-ignore" | type) == "string"
+            and (."enable-vale-linting" | type) == "boolean"
+          ' "$CONFIG_FILE")
+
+          if [[ "$VALID" != "true" ]]; then
+            echo "::error::Build config artifact has invalid schema"
+            exit 1
+          fi
+
+          # Extract values safely with jq
+          STRICT=$(jq -r '.strict' "$CONFIG_FILE")
+          COE=$(jq -r '."continue-on-error"' "$CONFIG_FILE")
+          PATH_PAT=$(jq -r '."path-pattern"' "$CONFIG_FILE")
+          PATH_IGN=$(jq -r '."path-pattern-ignore"' "$CONFIG_FILE")
+          VALE=$(jq -r '."enable-vale-linting"' "$CONFIG_FILE")
+
+          # Allowlist: strict and continue-on-error must be exactly "true" or "false"
+          if [[ "$STRICT" != "true" && "$STRICT" != "false" ]]; then
+            echo "::error::Invalid strict value: must be 'true' or 'false'"
+            exit 1
+          fi
+          if [[ "$COE" != "true" && "$COE" != "false" ]]; then
+            echo "::error::Invalid continue-on-error value: must be 'true' or 'false'"
+            exit 1
+          fi
+
+          # Denylist: reject shell metacharacters in path patterns
+          DENY_RE='[;|&$`(){}\\]'
+          if [[ "$PATH_PAT" =~ $DENY_RE ]]; then
+            echo "::error::path-pattern contains disallowed characters"
+            exit 1
+          fi
+          if [[ "$PATH_IGN" =~ $DENY_RE ]]; then
+            echo "::error::path-pattern-ignore contains disallowed characters"
+            exit 1
+          fi
+
+          echo "strict=${STRICT}" >> "$GITHUB_OUTPUT"
+          echo "continue-on-error=${COE}" >> "$GITHUB_OUTPUT"
+          echo "enable-vale-linting=${VALE}" >> "$GITHUB_OUTPUT"
+          # Use heredoc for path values that may contain newlines
+          {
+            echo "path-pattern<<GHEOF"
+            echo "$PATH_PAT"
+            echo "GHEOF"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "path-pattern-ignore<<GHEOF"
+            echo "$PATH_IGN"
+            echo "GHEOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Resolve workflow run context
         id: context
         uses: actions/github-script@v8
         env:
-          PATH_PATTERN: ${{ inputs.path-pattern }}
+          PATH_PATTERN: ${{ steps.parse-config.outputs.path-pattern }}
           IGNORE_PATTERNS: |
-            ${{ inputs.path-pattern-ignore }}
+            ${{ steps.parse-config.outputs.path-pattern-ignore }}
             .github/**
             README.md
         with:
@@ -352,7 +429,7 @@ jobs:
       # preload the link index before the build.
       - name: Build documentation
         id: docs-build
-        continue-on-error: ${{ fromJSON(inputs.continue-on-error != '' && inputs.continue-on-error || 'false') }}
+        continue-on-error: ${{ fromJSON(needs.preflight.outputs.cfg-continue-on-error) }}
         # language=bash
         run: |
           CONTAINER_OUTPUT=$(mktemp)
@@ -374,7 +451,7 @@ jobs:
 
           exit $EXIT_CODE
         env:
-          STRICT_FLAG: ${{ fromJSON(inputs.strict != '' && inputs.strict || 'true') }}
+          STRICT_FLAG: ${{ fromJSON(needs.preflight.outputs.cfg-strict) }}
 
       - name: Upload links artifact
         id: upload-links
@@ -664,7 +741,7 @@ jobs:
       needs.preflight.outputs.event == 'pull_request'
       && (needs.preflight.outputs.is-fork == 'false'
           || contains(fromJSON('["MEMBER","OWNER"]'), needs.preflight.outputs.author-association))
-      && inputs.enable-vale-linting == true
+      && needs.preflight.outputs.cfg-enable-vale-linting == 'true'
     needs:
       - preflight
     runs-on: ubuntu-latest
