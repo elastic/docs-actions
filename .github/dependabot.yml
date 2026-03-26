@@ -3,6 +3,8 @@ updates:
   - package-ecosystem: "github-actions"
     directories:
       - "**/*"
+    schedule:
+      interval: "weekly"
     cooldown:
       default-days: 14
     labels:
