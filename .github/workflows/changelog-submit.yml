@@ -12,8 +12,10 @@ on:
         type: boolean
         default: false
 
+permissions: {}
+
 concurrency:
-  group: changelog-submit-${{ github.event.workflow_run.head_branch || github.run_id }}
+  group: changelog-submit-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}-${{ github.event.workflow_run.id }}
   cancel-in-progress: true
 
 jobs:
@@ -21,6 +23,7 @@ jobs:
     if: >
       github.event.workflow_run.event == 'pull_request'
       && github.event.workflow_run.conclusion == 'success'
+      && github.event.repository.fork == false
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { TITLE, upsertComment } = require('./comment-helper');
+const { TITLE, upsertComment, escapeMarkdown } = require('./comment-helper');
 
 module.exports = async ({ github, context, core }) => {
   const prNumber = parseInt(process.env.PR_NUMBER, 10);
@@ -14,7 +14,7 @@ module.exports = async ({ github, context, core }) => {
   const bodyParts = [TITLE, ''];
   if (content) {
     bodyParts.push(
-      `Generated changelog entry for \`${changelogDir}/${files[0]}\`:`,
+      `Generated changelog entry for \`${escapeMarkdown(changelogDir + '/' + files[0])}\`:`,
       '',
       '```yaml',
       content,

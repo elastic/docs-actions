@@ -38,6 +38,8 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         CONFIG_FILE: ${{ inputs.config }}
+        REPO_OWNER: ${{ github.repository_owner }}
+        REPO_NAME: ${{ github.event.repository.name }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         PR_TITLE: ${{ github.event.pull_request.title }}
         PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
@@ -59,8 +61,8 @@ runs:
 
         docs-builder changelog evaluate-pr \
           --config "$CONFIG_FILE" \
-          --owner "${{ github.repository_owner }}" \
-          --repo "${{ github.event.repository.name }}" \
+          --owner "$REPO_OWNER" \
+          --repo "$REPO_NAME" \
           --pr-number "$PR_NUMBER" \
           --pr-title "$PR_TITLE" \
           --pr-labels "$PR_LABELS" \
@@ -72,8 +74,9 @@ runs:
 
     - name: Gate
       shell: bash
+      env:
+        STATUS: ${{ steps.evaluate.outputs.status }}
       run: |
-        STATUS="${{ steps.evaluate.outputs.status }}"
         case "$STATUS" in
           proceed|no-label|skipped|manually-edited)
             echo "::notice::Changelog validation: $STATUS"
