@@ -49,7 +49,6 @@ jobs:
           name: docs-build-config
           path: /tmp/build-config
           run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ github.token }}
 
       - name: Read build config
         id: build-config
