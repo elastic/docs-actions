@@ -53,28 +53,11 @@ jobs:
     permissions:
       contents: none
     steps:
-      - name: Write shared config
+      - name: Write build config
         env:
-          INPUT_STRICT: ${{ inputs.strict }}
-          INPUT_CONTINUE_ON_ERROR: ${{ inputs.continue-on-error }}
-          INPUT_PATH_PATTERN: ${{ inputs.path-pattern }}
-          INPUT_PATH_PATTERN_IGNORE: ${{ inputs.path-pattern-ignore }}
-          INPUT_ENABLE_VALE_LINTING: ${{ inputs.enable-vale-linting }}
+          INPUTS_JSON: ${{ toJSON(inputs) }}
         run: |
-          jq -n \
-            --arg strict "${INPUT_STRICT:-true}" \
-            --arg continue_on_error "${INPUT_CONTINUE_ON_ERROR:-false}" \
-            --arg path_pattern "${INPUT_PATH_PATTERN:-**}" \
-            --arg path_pattern_ignore "${INPUT_PATH_PATTERN_IGNORE:-}" \
-            --argjson enable_vale_linting "${INPUT_ENABLE_VALE_LINTING:-false}" \
-            '{
-              version: 1,
-              strict: $strict,
-              "continue-on-error": $continue_on_error,
-              "path-pattern": $path_pattern,
-              "path-pattern-ignore": $path_pattern_ignore,
-              "enable-vale-linting": $enable_vale_linting
-            }' > docs-build-config.json
+          jq '{version: 1, inputs: .}' <<< "$INPUTS_JSON" > docs-build-config.json
       - name: Upload config artifact
         uses: actions/upload-artifact@v7
         with:
