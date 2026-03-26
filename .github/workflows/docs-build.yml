@@ -281,8 +281,18 @@ jobs:
           github.event_name == 'pull_request'
           && github.event.pull_request.head.repo.full_name != github.repository
           && needs.check.outputs.any_modified == 'true'
+          && !contains(fromJSON('["MEMBER","OWNER"]'), github.event.pull_request.author_association)
         run: |
-          echo "::warning::Preview deployments are only available for PRs from the same repository, not from forks."
+          echo "::warning::Preview deployments are not available for fork PRs unless the author is an organization member or repository owner."
+
+      - name: Note fork PR preview for trusted authors
+        if: >
+          github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name != github.repository
+          && needs.check.outputs.any_modified == 'true'
+          && contains(fromJSON('["MEMBER","OWNER"]'), github.event.pull_request.author_association)
+        run: |
+          echo "::notice::Fork PRs from org members or repository owners may receive a docs preview after the deploy workflow runs."
 
       - name: Skip build
         if: env.MATCH != 'true' || needs.check.outputs.any_modified == 'false'

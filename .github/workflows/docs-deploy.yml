@@ -72,6 +72,7 @@ jobs:
       head-repo: ${{ steps.context.outputs.head-repo }}
       is-fork: ${{ steps.context.outputs.is-fork }}
       base-ref: ${{ steps.context.outputs.base-ref }}
+      author-association: ${{ steps.context.outputs.author-association }}
     steps:
       - name: Resolve workflow run context
         id: context
@@ -102,12 +103,14 @@ jobs:
             if (event === 'push') {
               core.setOutput('base-ref', headBranch);
               core.setOutput('has-changes', 'true');
+              core.setOutput('author-association', '');
               return;
             }
 
             if (event !== 'pull_request') {
               core.info(`Event '${event}' is not deployable — skipping`);
               core.setOutput('has-changes', 'false');
+              core.setOutput('author-association', '');
               return;
             }
 
@@ -131,6 +134,7 @@ jobs:
             if (!prNumber) {
               core.warning('Could not resolve PR number — skipping deployment');
               core.setOutput('has-changes', 'false');
+              core.setOutput('author-association', '');
               return;
             }
 
@@ -140,6 +144,7 @@ jobs:
               owner, repo, pull_number: prNumber
             });
             core.setOutput('base-ref', pr.base.ref);
+            core.setOutput('author-association', pr.author_association || '');
 
             // --- Changed-files check (docs-relevant files only) ---
             const files = await github.paginate(github.rest.pulls.listFiles, {
@@ -190,12 +195,22 @@ jobs:
           CHANGES: ${{ steps.context.outputs.has-changes }}
           IS_FORK: ${{ steps.context.outputs.is-fork }}
           EVENT: ${{ steps.context.outputs.event }}
+          AUTHOR_ASSOCIATION: ${{ steps.context.outputs.author-association }}
         # language=bash
         run: |
           if [[ "$EVENT" == "pull_request" && "$IS_FORK" == "true" ]]; then
-            echo "should-deploy=false" >> $GITHUB_OUTPUT
-            echo "::notice::Deploy skipped — fork PRs are not deployed"
-          elif [[ "$MATCH" == "true" && "$CHANGES" == "true" ]]; then
+            case "$AUTHOR_ASSOCIATION" in
+              MEMBER|OWNER)
+                ;;
+              *)
+                echo "should-deploy=false" >> $GITHUB_OUTPUT
+                echo "::notice::Deploy skipped — fork PRs from non-members are not deployed"
+                exit 0
+                ;;
+            esac
+          fi
+
+          if [[ "$MATCH" == "true" && "$CHANGES" == "true" ]]; then
             echo "should-deploy=true" >> $GITHUB_OUTPUT
           else
             echo "should-deploy=false" >> $GITHUB_OUTPUT
@@ -209,7 +224,8 @@ jobs:
     needs: preflight
     if: >
       needs.preflight.outputs.event == 'pull_request'
-      && needs.preflight.outputs.is-fork == 'false'
+      && (needs.preflight.outputs.is-fork == 'false'
+          || contains(fromJSON('["MEMBER","OWNER"]'), needs.preflight.outputs.author-association))
       && needs.preflight.outputs.should-deploy == 'true'
       && inputs.disable-comments != true
     runs-on: ubuntu-latest
@@ -288,7 +304,9 @@ jobs:
       HEAD_REPO: ${{ needs.preflight.outputs.head-repo }}
     steps:
       - name: Reject fork checkout
-        if: needs.preflight.outputs.is-fork == 'true'
+        if: >
+          needs.preflight.outputs.is-fork == 'true'
+          && !contains(fromJSON('["MEMBER","OWNER"]'), needs.preflight.outputs.author-association)
         # language=bash
         run: |
           echo "::error::Fork code must never be checked out in the deploy workflow"
@@ -497,7 +515,8 @@ jobs:
   comment:
     if: >
       needs.preflight.outputs.event == 'pull_request'
-      && needs.preflight.outputs.is-fork == 'false'
+      && (needs.preflight.outputs.is-fork == 'false'
+          || contains(fromJSON('["MEMBER","OWNER"]'), needs.preflight.outputs.author-association))
       && needs.deploy-preview.outputs.deployed == 'true'
       && inputs.disable-comments != true
     needs:
@@ -648,7 +667,8 @@ jobs:
   vale-report:
     if: >
       needs.preflight.outputs.event == 'pull_request'
-      && needs.preflight.outputs.is-fork == 'false'
+      && (needs.preflight.outputs.is-fork == 'false'
+          || contains(fromJSON('["MEMBER","OWNER"]'), needs.preflight.outputs.author-association))
       && inputs.enable-vale-linting == true
     needs:
       - preflight
@@ -663,7 +683,9 @@ jobs:
       HEAD_REPO: ${{ needs.preflight.outputs.head-repo }}
     steps:
       - name: Reject fork checkout
-        if: needs.preflight.outputs.is-fork == 'true'
+        if: >
+          needs.preflight.outputs.is-fork == 'true'
+          && !contains(fromJSON('["MEMBER","OWNER"]'), needs.preflight.outputs.author-association)
         run: |
           echo "::error::Fork code must never be checked out in the deploy workflow"
           exit 1
