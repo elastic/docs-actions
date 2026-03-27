@@ -14,19 +14,28 @@ on:
         type: string
       report:
         description: >
-          Buildkite promotion report URL or local file path.
+          Buildkite promotion report HTTPS URL or local file path.
           Mutually exclusive with release-version.
         type: string
       output:
         description: 'Output file path for the bundle (e.g. docs/releases/v9.2.0.yaml)'
         type: string
         required: true
+      base-branch:
+        description: 'Base branch for the pull request (defaults to repository default branch)'
+        type: string
       repo:
         description: 'GitHub repository name; falls back to bundle.repo in changelog.yml'
         type: string
       owner:
         description: 'GitHub repository owner; falls back to bundle.owner in changelog.yml'
         type: string
+
+permissions: {}
+
+concurrency:
+  group: changelog-bundle-${{ inputs.output }}
+  cancel-in-progress: false
 
 jobs:
   generate:
@@ -54,4 +63,5 @@ jobs:
       - uses: elastic/docs-actions/changelog/bundle-pr@v1
         with:
           output: ${{ inputs.output }}
+          base-branch: ${{ inputs.base-branch }}
           github-token: ${{ github.token }}

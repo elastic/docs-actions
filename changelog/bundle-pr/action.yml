@@ -11,6 +11,12 @@ inputs:
       (e.g. docs/releases/v9.2.0.yaml). Must match the path used
       by the bundle-create action.
     required: true
+  base-branch:
+    description: 'Base branch for the pull request (defaults to repository default branch)'
+    default: ''
+  artifact-name:
+    description: 'Name of the artifact uploaded by bundle-create'
+    default: 'changelog-bundle'
   github-token:
     description: 'GitHub token with contents:write and pull-requests:write permissions'
     default: '${{ github.token }}'
@@ -23,20 +29,46 @@ runs:
       with:
         persist-credentials: false
 
+    - name: Validate output path
+      shell: bash
+      env:
+        OUTPUT: ${{ inputs.output }}
+      run: |
+        if [[ "$OUTPUT" != *.yml && "$OUTPUT" != *.yaml ]]; then
+          echo "::error::Output path must end in .yml or .yaml: ${OUTPUT}"
+          exit 1
+        fi
+        if [[ "$OUTPUT" == /* ]]; then
+          echo "::error::Output path must be relative: ${OUTPUT}"
+          exit 1
+        fi
+        if [[ "$OUTPUT" == *..* ]]; then
+          echo "::error::Output path must not contain '..': ${OUTPUT}"
+          exit 1
+        fi
+
     - name: Download bundle artifact
       uses: actions/download-artifact@v6
       with:
-        name: changelog-bundle
+        name: ${{ inputs.artifact-name }}
         path: .bundle-artifact
 
     - name: Create pull request
       shell: bash
       env:
         OUTPUT: ${{ inputs.output }}
+        BASE_BRANCH: ${{ inputs.base-branch }}
         GH_TOKEN: ${{ inputs.github-token }}
         GIT_REPOSITORY: ${{ github.repository }}
       run: |
         BUNDLE_NAME=$(basename "$OUTPUT" .yaml)
+        BUNDLE_NAME=$(basename "$BUNDLE_NAME" .yml)
+
+        if [[ ! "$BUNDLE_NAME" =~ ^[a-zA-Z0-9._+-]+$ ]]; then
+          echo "::error::Bundle name contains disallowed characters: ${BUNDLE_NAME}"
+          exit 1
+        fi
+
         BRANCH="changelog-bundle/${BUNDLE_NAME}"
 
         mkdir -p "$(dirname "$OUTPUT")"
@@ -55,8 +87,14 @@ runs:
 
         git commit -m "Add changelog bundle ${BUNDLE_NAME}"
         git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GIT_REPOSITORY}.git"
+        # Force-push: branch is ephemeral and always rebuilt from scratch
         git push -f origin "$BRANCH"
         git remote set-url origin "https://github.com/${GIT_REPOSITORY}.git"
+
+        BASE_FLAG=()
+        if [ -n "$BASE_BRANCH" ]; then
+          BASE_FLAG=(--base "$BASE_BRANCH")
+        fi
 
         EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number // empty')
         if [ -n "$EXISTING_PR" ]; then
@@ -65,5 +103,6 @@ runs:
           gh pr create \
             --title "Add changelog bundle ${BUNDLE_NAME}" \
             --body "Auto-generated changelog bundle for ${BUNDLE_NAME}." \
-            --head "$BRANCH"
+            --head "$BRANCH" \
+            "${BASE_FLAG[@]}"
         fi

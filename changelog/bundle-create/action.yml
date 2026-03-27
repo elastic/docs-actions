@@ -31,6 +31,9 @@ inputs:
     description: >
       GitHub repository owner. Falls back to bundle.owner in changelog.yml,
       then to elastic.
+  artifact-name:
+    description: 'Name for the uploaded artifact (must match bundle-pr artifact-name)'
+    default: 'changelog-bundle'
   github-token:
     description: 'GitHub token (needed for release-version to access GitHub API)'
     default: '${{ github.token }}'
@@ -75,9 +78,12 @@ runs:
         fi
 
         if [ -n "$REPORT" ]; then
-          if [[ "$REPORT" == http://* ]] || [[ "$REPORT" == https://* ]]; then
+          if [[ "$REPORT" == https://* ]]; then
             curl -fsSL "$REPORT" -o .bundle-report.html
             REPORT=".bundle-report.html"
+          elif [[ "$REPORT" == http://* ]]; then
+            echo "::error::Report URL must use HTTPS: ${REPORT}"
+            exit 1
           fi
           bundle_args+=(--report "$REPORT")
           docker_args+=(--network none)
@@ -88,7 +94,7 @@ runs:
     - name: Upload bundle artifact
       uses: actions/upload-artifact@v6
       with:
-        name: changelog-bundle
+        name: ${{ inputs.artifact-name }}
         path: ${{ inputs.output }}
         if-no-files-found: error
         retention-days: 1

@@ -252,8 +252,6 @@ Your `docs/changelog.yml` must include a `bundle` section so docs-builder knows 
 ```yaml
 bundle:
   directory: docs/changelog
-  repo: my-repo
-  owner: elastic
 ```
 
 The reusable workflow splits into two jobs with separate permissions: `generate` (read-only, produces the bundle artifact) and `create-pr` (write access, opens a pull request with the bundle file).
@@ -300,6 +298,7 @@ name: changelog-bundle
 
 on:
   schedule:
+    # At 08:00 AM, Monday through Friday
     - cron: '0 8 * * 1-5'
   workflow_dispatch:
     inputs:
