@@ -14,5 +14,7 @@ module.exports = async ({ github, context, core }) => {
   core.setOutput('base-ref', pr.base.ref);
   core.setOutput('head-ref', pr.head.ref);
   core.setOutput('head-sha', pr.head.sha);
+  core.setOutput('author-login', pr.user?.login || '');
+  core.setOutput('head-repo-full-name', pr.head.repo?.full_name || '');
   core.setOutput('proceed', 'true');
 };

@@ -14,7 +14,7 @@ module.exports = async ({ github, context, core }) => {
   const bodyParts = [TITLE, ''];
   if (content) {
     bodyParts.push(
-      `Generated changelog entry for \`${escapeMarkdown(changelogDir + '/' + files[0])}\`:`,
+      `Generated changelog entry for \`${escapeMarkdown(changelogDir + '/' + files[0]).replace(/\\\./g, '.')}\`:`,
       '',
       '```yaml',
       content,
