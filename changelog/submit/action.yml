@@ -248,6 +248,7 @@ runs:
       env:
         PR_NUMBER: ${{ steps.pr.outputs.number }}
         LABEL_TABLE: ${{ steps.evaluate.outputs.label-table }}
+        PRODUCT_LABEL_TABLE: ${{ steps.evaluate.outputs.product-label-table }}
         CONFIG_FILE: ${{ inputs.config }}
       with:
         github-token: ${{ inputs.github-token }}
