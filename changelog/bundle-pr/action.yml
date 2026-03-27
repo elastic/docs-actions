@@ -87,8 +87,7 @@ runs:
 
         git commit -m "Add changelog bundle ${BUNDLE_NAME}"
         git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GIT_REPOSITORY}.git"
-        # Force-push: branch is ephemeral and always rebuilt from scratch
-        git push -f origin "$BRANCH"
+        git push --force-with-lease origin "$BRANCH"
         git remote set-url origin "https://github.com/${GIT_REPOSITORY}.git"
 
         BASE_FLAG=()
