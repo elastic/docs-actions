@@ -153,6 +153,7 @@ runs:
         CHANGELOG_TYPE: ${{ steps.evaluate.outputs.type }}
         CHANGELOG_OWNER: ${{ github.repository_owner }}
         CHANGELOG_REPO: ${{ github.event.repository.name }}
+        CHANGELOG_PRODUCTS: ${{ steps.evaluate.outputs.products }}
       run: |
         mkdir -p /tmp/changelog-staging
         docs-builder changelog add \
