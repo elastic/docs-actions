@@ -5,8 +5,7 @@ on:
     types:
       - published
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: create-major-tag
