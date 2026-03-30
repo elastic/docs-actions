@@ -15,7 +15,7 @@ on:
       path-pattern:
         description: 'Path pattern to filter files (should match Phase 1 setting)'
         type: string
-        default: '**'
+        default: 'docs/**'
         required: false
       path-pattern-ignore:
         description: 'Path pattern to ignore files (should match Phase 1 setting)'
