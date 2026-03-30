@@ -9,6 +9,7 @@ module.exports = async ({ github, context, core }) => {
     return;
   }
   core.setOutput('title', pr.title);
+  core.setOutput('body', pr.body || '');
   core.setOutput('labels', pr.labels.map(l => l.name).join(','));
   core.setOutput('is-fork', String(pr.head.repo?.full_name !== pr.base.repo?.full_name));
   core.setOutput('base-ref', pr.base.ref);
