@@ -19,12 +19,22 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Verify event context
+      shell: bash
+      env:
+        MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+      run: |
+        if [ -z "$MERGE_SHA" ]; then
+          echo "::error::merge_commit_sha is empty — must be triggered from a merged pull_request event"
+          exit 1
+        fi
+
     - name: Checkout
       uses: actions/checkout@v6
       with:
         ref: ${{ github.event.pull_request.merge_commit_sha }}
         persist-credentials: false
-    
+
     - name: Install upload dependencies
       shell: bash
       run: npm ci --prefix ${{ github.action_path }}
