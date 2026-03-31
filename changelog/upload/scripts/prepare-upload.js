@@ -47,7 +47,7 @@ module.exports = async ({ github, context, core }) => {
         );
         continue;
       }
-      pairs.push(`${fragmentPath} ${product}`);
+      pairs.push(`${fragmentPath}\t${product}`);
     }
   }
 

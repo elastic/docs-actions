@@ -56,9 +56,10 @@ runs:
         AWS_RETRY_MODE: standard
         AWS_MAX_ATTEMPTS: 6
       run: |
-        while IFS=' ' read -r FRAGMENT PRODUCT; do
+        while IFS=$'\t' read -r FRAGMENT PRODUCT; do
           S3_KEY="${PRODUCT}/changelogs/$(basename "${FRAGMENT}")"
           echo "Uploading ${FRAGMENT} → s3://elastic-docs-v3-changelog-bundles/${S3_KEY}"
           aws s3 cp "${FRAGMENT}" "s3://elastic-docs-v3-changelog-bundles/${S3_KEY}" \
+            --no-follow-symlinks \
             --checksum-algorithm SHA256
         done <<< "${UPLOAD_PAIRS}"
