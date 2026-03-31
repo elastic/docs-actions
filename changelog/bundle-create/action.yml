@@ -2,35 +2,44 @@ name: Changelog bundle create
 description: >
   Checks out the repository, runs docs-builder changelog bundle in Docker
   to generate a fully-resolved bundle file, and uploads the result as an
-  artifact. Supports filtering by GitHub release version, Buildkite
-  promotion report, or an explicit list of PR URLs/numbers.
-  Uses --network none for report and prs modes.
+  artifact. Supports option-based filtering (release-version, report, prs)
+  and profile-based bundling. Uses --network none where possible.
 
 inputs:
   config:
     description: 'Path to changelog.yml configuration file'
     default: 'docs/changelog.yml'
+  profile:
+    description: >
+      Bundle profile name from bundle.profiles in changelog.yml.
+      Mutually exclusive with release-version and prs. When set,
+      all paths and filters come from the config.
+  version:
+    description: >
+      Version string for profile mode (e.g. 9.2.0, 2026-03).
+      Used for {version} substitution in profile patterns.
+      Only valid with profile.
   release-version:
     description: >
       GitHub release tag used as the PR filter source (e.g. v9.2.0).
-      Mutually exclusive with report and prs. Requires repo to be set in
-      changelog.yml (bundle.repo) or passed via the repo input.
+      Mutually exclusive with profile, report, and prs.
   report:
     description: >
       Buildkite promotion report URL or local file path used as the
-      PR filter source. Mutually exclusive with release-version and prs.
-      Local paths must be relative to the repo root.
+      PR filter source. In option mode, mutually exclusive with
+      release-version and prs. In profile mode, passed as a positional
+      argument. Local paths must be relative to the repo root.
   prs:
     description: >
       Comma-separated PR URLs or numbers, or a path to a newline-delimited
-      file. Mutually exclusive with release-version and report.
-      Bare numbers require repo/owner to be set in changelog.yml or
-      passed via the repo and owner inputs.
+      file. Mutually exclusive with profile, release-version, and report.
+      Bare numbers require repo/owner to be set in changelog.yml or inputs.
   output:
     description: >
-      Output file path for the bundle, relative to the repo root
-      (e.g. docs/releases/v9.2.0.yaml). Must end in .yml or .yaml.
-    required: true
+      Output file path for the bundle, relative to the repo root.
+      Optional in both modes. When not provided, docs-builder writes
+      to the path determined by the config (bundle.output_directory)
+      and the action discovers the generated file automatically.
   repo:
     description: >
       GitHub repository name. Falls back to bundle.repo in changelog.yml.
@@ -42,8 +51,13 @@ inputs:
     description: 'Name for the uploaded artifact (must match bundle-pr artifact-name)'
     default: 'changelog-bundle'
   github-token:
-    description: 'GitHub token (needed for release-version to access GitHub API)'
+    description: 'GitHub token (needed for release-version and source: github_release profiles)'
     default: '${{ github.token }}'
+
+outputs:
+  output:
+    description: 'Resolved output file path for the bundle'
+    value: ${{ steps.discover.outputs.output }}
 
 runs:
   using: composite
@@ -53,11 +67,17 @@ runs:
       with:
         persist-credentials: false
 
+    - name: Install dependencies
+      shell: bash
+      run: npm ci --prefix "${{ github.action_path }}"
+
     - name: Prepare bundle arguments
       id: prepare
       shell: bash
       env:
         CONFIG: ${{ inputs.config }}
+        PROFILE: ${{ inputs.profile }}
+        VERSION: ${{ inputs.version }}
         RELEASE_VERSION: ${{ inputs.release-version }}
         REPORT: ${{ inputs.report }}
         PRS: ${{ inputs.prs }}
@@ -72,10 +92,18 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
       run: docker run ${{ steps.prepare.outputs.docker-args }} ghcr.io/elastic/docs-builder:edge ${{ steps.prepare.outputs.bundle-args }}
 
+    - name: Discover output path
+      id: discover
+      shell: bash
+      env:
+        CONFIG: ${{ inputs.config }}
+        OUTPUT: ${{ inputs.output }}
+      run: node "${{ github.action_path }}/scripts/discover-output.js"
+
     - name: Upload bundle artifact
       uses: actions/upload-artifact@v6
       with:
         name: ${{ inputs.artifact-name }}
-        path: ${{ inputs.output }}
+        path: ${{ steps.discover.outputs.output }}
         if-no-files-found: error
         retention-days: 1

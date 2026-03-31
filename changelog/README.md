@@ -238,13 +238,24 @@ The workflow uses a per-repository concurrency group so that rapid successive pu
 
 ## Bundling changelogs
 
-Individual changelog files accumulate on the default branch as PRs merge. The bundle action generates a fully-resolved YAML file containing only the changelog entries that match a given filter. Three filter sources are supported:
+Individual changelog files accumulate on the default branch as PRs merge. The bundle action generates a fully-resolved YAML file containing only the changelog entries that match a given filter. The action supports two modes:
+
+**Option mode** — you specify the filter and output path directly:
 
 - **GitHub release version** (`release-version`) — pulls PR references directly from GitHub release notes. Used for stack and product releases triggered by `on: release`.
 - **Buildkite promotion report** (`report`) — extracts PR URLs from a promotion report. Used for serverless releases discovered by a scheduled workflow.
 - **PR list** (`prs`) — an explicit list of PR URLs or numbers (comma-separated), or a path to a newline-delimited file. Used when the caller already knows which PRs to include.
 
-Exactly one filter source must be provided per invocation. The bundle always includes the full content of each matching entry (`--resolve`), so downstream consumers can render changelogs without access to the original files.
+Exactly one filter source must be provided. The `output` path is optional — when not provided, docs-builder writes to the config-driven path (`bundle.output_directory`) and the action discovers the file automatically.
+
+**Profile mode** — all configuration comes from `bundle.profiles` in `changelog.yml`:
+
+- **Profile** (`profile`) — a named profile that defines the product filter, output filename pattern, and other settings. The `version` input provides the value for `{version}` substitution in profile patterns.
+- An optional `report` can be passed as a positional argument to filter by promotion report.
+- The `output` path is optional — if not provided, it's discovered from `bundle.output_directory` in the config.
+- `bundle.resolve: true` must be set in the config (it cannot be forced via CLI in profile mode).
+
+The bundle always includes the full content of each matching entry, so downstream consumers can render changelogs without access to the original files.
 
 ### Prerequisites
 
@@ -389,6 +400,46 @@ jobs:
 ```
 
 When using a file, every line must be a fully-qualified GitHub PR URL (e.g. `https://github.com/owner/repo/pull/123`). Bare numbers are only supported in the comma-separated format.
+
+#### Profile-based bundling
+
+When your repository has `bundle.profiles` configured in `changelog.yml`, the profile drives which changelogs to include and where to write the bundle. Set `bundle.resolve: true` in the config so entry contents are inlined.
+
+```yaml
+bundle:
+  directory: docs/changelog
+  output_directory: docs/releases
+  resolve: true
+  repo: my-repo
+  owner: elastic
+  profiles:
+    my-release:
+      products: "my-product {version} {lifecycle}"
+      output: "{version}.yaml"
+```
+
+**`.github/workflows/changelog-bundle.yml`**
+
+```yaml
+name: changelog-bundle
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bundle:
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
+    with:
+      profile: my-release
+      version: ${{ github.event.release.tag_name }}
+```
+
+The `output` input is not needed — the action discovers the generated file from `bundle.output_directory` in the config. If a promotion report is also needed, pass it via the `report` input.
 
 #### Custom config path
 
