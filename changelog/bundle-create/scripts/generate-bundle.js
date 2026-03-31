@@ -16,6 +16,28 @@ const repo = process.env.REPO;
 const owner = process.env.OWNER;
 const githubOutput = process.env.GITHUB_OUTPUT;
 
+function validatePath(value, name) {
+  if (!value) return;
+  if (value.startsWith('/')) {
+    console.error(`::error::${name} must be a relative path: ${value}`);
+    process.exit(1);
+  }
+  if (value.includes('..')) {
+    console.error(`::error::${name} must not contain '..': ${value}`);
+    process.exit(1);
+  }
+}
+
+validatePath(config, 'config');
+validatePath(output, 'output');
+
+if (report && !report.startsWith('https://') && !report.startsWith('http://')) {
+  validatePath(report, 'report');
+}
+if (prs && (prs.includes('/') || prs.endsWith('.txt'))) {
+  validatePath(prs, 'prs');
+}
+
 function loadConfig(configPath) {
   try {
     return yaml.load(fs.readFileSync(configPath, 'utf8'));
@@ -90,6 +112,11 @@ async function buildOptionMode() {
 }
 
 async function buildProfileMode() {
+  if (!/^[a-zA-Z0-9._-]+$/.test(profile)) {
+    console.error(`::error::Profile name contains disallowed characters: ${profile}`);
+    process.exit(1);
+  }
+
   const optionFilters = [releaseVersion, prs].filter(Boolean);
   if (optionFilters.length > 0) {
     console.error('::error::release-version and prs cannot be used with profile mode');
