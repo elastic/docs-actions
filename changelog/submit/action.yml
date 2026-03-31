@@ -120,6 +120,7 @@ runs:
         REPO_NAME: ${{ github.event.repository.name }}
         PR_NUMBER: ${{ steps.pr.outputs.number }}
         PR_TITLE: ${{ steps.pr-data.outputs.title }}
+        PR_BODY: ${{ steps.pr-data.outputs.body }}
         PR_LABELS: ${{ steps.pr-data.outputs.labels }}
         HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
         HEAD_SHA: ${{ steps.pr-data.outputs.head-sha }}
@@ -150,9 +151,11 @@ runs:
         CONFIG_FILE: ${{ steps.config.outputs.config-path || inputs.config }}
         CHANGELOG_PR_NUMBER: ${{ steps.pr.outputs.number }}
         CHANGELOG_TITLE: ${{ steps.evaluate.outputs.title }}
+        CHANGELOG_DESCRIPTION: ${{ steps.evaluate.outputs.description }}
         CHANGELOG_TYPE: ${{ steps.evaluate.outputs.type }}
         CHANGELOG_OWNER: ${{ github.repository_owner }}
         CHANGELOG_REPO: ${{ github.event.repository.name }}
+        CHANGELOG_PRODUCTS: ${{ steps.evaluate.outputs.products }}
       run: |
         mkdir -p /tmp/changelog-staging
         docs-builder changelog add \
@@ -247,6 +250,7 @@ runs:
       env:
         PR_NUMBER: ${{ steps.pr.outputs.number }}
         LABEL_TABLE: ${{ steps.evaluate.outputs.label-table }}
+        PRODUCT_LABEL_TABLE: ${{ steps.evaluate.outputs.product-label-table }}
         CONFIG_FILE: ${{ inputs.config }}
       with:
         github-token: ${{ inputs.github-token }}
