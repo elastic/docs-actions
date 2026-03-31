@@ -90,7 +90,9 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-      run: docker run ${{ steps.prepare.outputs.docker-args }} ghcr.io/elastic/docs-builder:edge ${{ steps.prepare.outputs.bundle-args }}
+        DOCKER_ARGS: ${{ steps.prepare.outputs.docker-args }}
+        BUNDLE_ARGS: ${{ steps.prepare.outputs.bundle-args }}
+      run: docker run $DOCKER_ARGS ghcr.io/elastic/docs-builder:edge $BUNDLE_ARGS
 
     - name: Discover output path
       id: discover
