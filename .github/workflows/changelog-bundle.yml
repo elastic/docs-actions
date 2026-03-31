@@ -10,12 +10,17 @@ on:
       release-version:
         description: >
           GitHub release tag used as the PR filter source (e.g. v9.2.0).
-          Mutually exclusive with report.
+          Mutually exclusive with report and prs.
         type: string
       report:
         description: >
           Buildkite promotion report HTTPS URL or local file path.
-          Mutually exclusive with release-version.
+          Mutually exclusive with release-version and prs.
+        type: string
+      prs:
+        description: >
+          Comma-separated PR URLs or numbers, or a path to a newline-delimited file.
+          Mutually exclusive with release-version and report.
         type: string
       output:
         description: 'Output file path for the bundle (e.g. docs/releases/v9.2.0.yaml)'
@@ -48,6 +53,7 @@ jobs:
           config: ${{ inputs.config }}
           release-version: ${{ inputs.release-version }}
           report: ${{ inputs.report }}
+          prs: ${{ inputs.prs }}
           output: ${{ inputs.output }}
           repo: ${{ inputs.repo }}
           owner: ${{ inputs.owner }}

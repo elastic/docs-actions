@@ -238,10 +238,11 @@ The workflow uses a per-repository concurrency group so that rapid successive pu
 
 ## Bundling changelogs
 
-Individual changelog files accumulate on the default branch as PRs merge. The bundle action generates a fully-resolved YAML file containing only the changelog entries that match a given filter. Two filter sources are supported:
+Individual changelog files accumulate on the default branch as PRs merge. The bundle action generates a fully-resolved YAML file containing only the changelog entries that match a given filter. Three filter sources are supported:
 
 - **GitHub release version** (`release-version`) — pulls PR references directly from GitHub release notes. Used for stack and product releases triggered by `on: release`.
 - **Buildkite promotion report** (`report`) — extracts PR URLs from a promotion report. Used for serverless releases discovered by a scheduled workflow.
+- **PR list** (`prs`) — an explicit list of PR URLs or numbers (comma-separated), or a path to a newline-delimited file. Used when the caller already knows which PRs to include.
 
 Exactly one filter source must be provided per invocation. The bundle always includes the full content of each matching entry (`--resolve`), so downstream consumers can render changelogs without access to the original files.
 
@@ -258,7 +259,7 @@ The reusable workflow splits into two jobs with separate permissions: `generate`
 
 ### Setup
 
-The bundle action supports two trigger patterns depending on your release process.
+The bundle action supports multiple trigger patterns depending on your release process.
 
 #### Stack / product releases (`on: release`)
 
@@ -330,6 +331,64 @@ jobs:
       report: ${{ needs.discover-report.outputs.report-url }}
       output: docs/releases/${{ needs.discover-report.outputs.release-date }}.yaml
 ```
+
+#### Explicit PR list
+
+When the caller already knows which PRs to include, pass them directly. The `prs` input accepts either comma-separated values or a path to a newline-delimited file. PR numbers can be used instead of full URLs when `bundle.repo` and `bundle.owner` are set in the changelog config.
+
+**Inline PR numbers** — pass them directly in the workflow call:
+
+```yaml
+name: changelog-bundle
+
+on:
+  workflow_dispatch:
+    inputs:
+      prs:
+        description: 'Comma-separated PR URLs or numbers'
+        required: true
+      output:
+        description: 'Output file path for the bundle'
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bundle:
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
+    with:
+      prs: ${{ inputs.prs }}
+      output: ${{ inputs.output }}
+```
+
+For example, triggering this workflow with `prs: "12345,67890"` bundles the changelog entries whose `prs` field matches those PR numbers.
+
+**File-based PR list** — when a prior step produces the list, write it to a file (one PR URL per line) and pass the path:
+
+```yaml
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      prs-file: ${{ steps.generate.outputs.prs-file }}
+    steps:
+      - id: generate
+        run: |
+          echo "https://github.com/elastic/my-repo/pull/12345" > prs.txt
+          echo "https://github.com/elastic/my-repo/pull/67890" >> prs.txt
+          echo "prs-file=prs.txt" >> "$GITHUB_OUTPUT"
+
+  bundle:
+    needs: prepare
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
+    with:
+      prs: ${{ needs.prepare.outputs.prs-file }}
+      output: docs/releases/my-bundle.yaml
+```
+
+When using a file, every line must be a fully-qualified GitHub PR URL (e.g. `https://github.com/owner/repo/pull/123`). Bare numbers are only supported in the comma-separated format.
 
 #### Custom config path
 
