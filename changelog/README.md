@@ -116,11 +116,10 @@ validate workflow (read-only, lightweight gate)
        ├── runs docs-builder changelog evaluate-pr
        │     with PR-event-specific context (event action, title changes)
        │
-       ├── pass (exit 0): proceed, no-label, skipped, manually-edited
-       └── fail (exit 1): no-title, error
-              → submit workflow does NOT run
+       ├── pass (exit 0): proceed, skipped, manually-edited
+       └── fail (exit 1): no-label, no-title, error
 
-       │ (exit 0)
+       │ (any conclusion except cancelled)
        v
 submit workflow (write permissions, via workflow_run)
        │
@@ -144,7 +143,7 @@ submit workflow (write permissions, via workflow_run)
        └── otherwise (skipped, manually-edited): no-op
 ```
 
-The evaluate logic runs twice — once as a gate (with event-specific checks like body-only edit and bot-loop detection), and once in the trusted submit context to drive behavior. This is intentional: the second evaluation uses fresh PR data from the API, so it correctly handles label or title changes between the two runs.
+The evaluate logic runs twice — once as a gate (with event-specific checks like body-only edit and bot-loop detection), and once in the trusted submit context to drive behavior. This is intentional: the second evaluation uses fresh PR data from the API, so it correctly handles label or title changes between the two runs. The submit workflow runs for any non-cancelled validate conclusion, so it can post actionable feedback (e.g., listing available labels) even when validate fails.
 
 ### Comment-only mode
 
@@ -170,7 +169,7 @@ rules:
     exclude: "changelog:skip"
 ```
 
-When all products are blocked by the create rules, the validate action passes (so CI stays green) but the submit action detects the same condition and exits without generating. You can also use `include` mode or per-product overrides. See [Rules for creation and publishing](https://elastic.github.io/docs-builder/contribute/changelog/#rules-for-creation-and-publishing) for the full reference.
+When all products are blocked by the create rules, the validate action passes with `skipped` status (so CI stays green) and the submit action exits without generating. If no matching type label is found (including when labels exist but none correspond to a configured type or skip rule), validate fails with `no-label` and submit posts a comment listing the available labels. You can also use `include` mode or per-product overrides. See [Rules for creation and publishing](https://elastic.github.io/docs-builder/contribute/changelog/#rules-for-creation-and-publishing) for the full reference.
 
 ## Manual edits
 
