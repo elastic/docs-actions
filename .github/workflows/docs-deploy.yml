@@ -37,6 +37,11 @@ on:
         type: boolean
         default: false
         required: false
+      vale-paths:
+        description: 'Path patterns for Vale linting (must match docs-build include-paths). Only PRs touching matching files will trigger vale-report.'
+        type: string
+        default: ''
+        required: false
 
 permissions: {}
 
@@ -64,6 +69,7 @@ jobs:
       is-fork: ${{ steps.context.outputs.is-fork }}
       base-ref: ${{ steps.context.outputs.base-ref }}
       author-association: ${{ steps.context.outputs.author-association }}
+      vale-files-match: ${{ steps.context.outputs.vale-files-match }}
     steps:
       - name: Resolve workflow run context
         id: context
@@ -74,6 +80,7 @@ jobs:
             ${{ inputs.path-pattern-ignore }}
             .github/**
             README.md
+          VALE_PATHS: ${{ inputs.vale-paths }}
         with:
           # language=js
           script: |
@@ -94,6 +101,7 @@ jobs:
             if (event === 'push') {
               core.setOutput('base-ref', headBranch);
               core.setOutput('has-changes', 'true');
+              core.setOutput('vale-files-match', 'false');
               core.setOutput('author-association', '');
               return;
             }
@@ -101,6 +109,7 @@ jobs:
             if (event !== 'pull_request') {
               core.info(`Event '${event}' is not deployable — skipping`);
               core.setOutput('has-changes', 'false');
+              core.setOutput('vale-files-match', 'false');
               core.setOutput('author-association', '');
               return;
             }
@@ -125,6 +134,7 @@ jobs:
             if (!prNumber) {
               core.warning('Could not resolve PR number — skipping deployment');
               core.setOutput('has-changes', 'false');
+              core.setOutput('vale-files-match', 'false');
               core.setOutput('author-association', '');
               return;
             }
@@ -170,6 +180,33 @@ jobs:
 
             const hasChanges = files.some(f => matchesPattern(f.filename) && !isIgnored(f.filename));
             core.setOutput('has-changes', hasChanges ? 'true' : 'false');
+
+            // --- Vale files check (vale-paths filtering) ---
+            const valePathLines = (process.env.VALE_PATHS || '')
+              .split('\n').map(s => s.trim()).filter(Boolean);
+
+            let valeFilesMatch;
+            if (valePathLines.length === 0) {
+              valeFilesMatch = hasChanges;
+            } else {
+              const valeIncludes = valePathLines.filter(p => !p.startsWith('!'));
+              const valeExcludes = valePathLines.filter(p => p.startsWith('!')).map(p => p.slice(1));
+              const matchesVale = (filename) => {
+                const matchesGlob = (f, pattern) => {
+                  if (pattern.endsWith('/**')) return f.startsWith(pattern.slice(0, -3) + '/');
+                  if (pattern.endsWith('/*')) {
+                    const dir = pattern.slice(0, -2);
+                    return f.startsWith(dir + '/') && !f.slice(dir.length + 1).includes('/');
+                  }
+                  return f === pattern;
+                };
+                const included = valeIncludes.length === 0 || valeIncludes.some(p => matchesGlob(filename, p));
+                const excluded = valeExcludes.some(p => matchesGlob(filename, p));
+                return included && !excluded;
+              };
+              valeFilesMatch = files.some(f => matchesVale(f.filename) && !isIgnored(f.filename));
+            }
+            core.setOutput('vale-files-match', valeFilesMatch ? 'true' : 'false');
 
       - name: Match content source
         id: match
@@ -665,6 +702,7 @@ jobs:
       && (needs.preflight.outputs.is-fork == 'false'
           || contains(fromJSON('["MEMBER","OWNER"]'), needs.preflight.outputs.author-association))
       && inputs.enable-vale-linting == true
+      && needs.preflight.outputs.vale-files-match == 'true'
     needs:
       - preflight
     runs-on: ubuntu-latest
