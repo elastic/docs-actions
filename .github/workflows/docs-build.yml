@@ -32,8 +32,13 @@ on:
         type: boolean
         default: false
         required: false
+      vale-paths:
+        description: 'Path patterns for Vale linting (multi-line). Only files matching these paths will be linted.'
+        type: string
+        default: ''
+        required: false
       include-paths:
-        description: 'Paths to include for Vale linting (multi-line). Only files matching these paths will be linted.'
+        description: 'Deprecated: use vale-paths instead. Path patterns for Vale linting (multi-line).'
         type: string
         default: ''
         required: false
@@ -309,6 +314,8 @@ jobs:
     permissions:
       contents: read
       pull-requests: none
+    outputs:
+      artifact-uploaded: ${{ steps.lint.outputs.artifact_uploaded || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -319,7 +326,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
           persist-credentials: false
       - name: Run Vale Linter
+        id: lint
         uses: elastic/vale-rules/lint@main
         with:
           files: ${{ needs.check.outputs.all_changed_files }}
-          include-paths: ${{ inputs.include-paths }}
+          include-paths: ${{ inputs.vale-paths != '' && inputs.vale-paths || inputs.include-paths }}
