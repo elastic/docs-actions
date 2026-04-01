@@ -662,6 +662,7 @@ jobs:
   vale-report:
     if: >
       needs.preflight.outputs.event == 'pull_request'
+      && needs.preflight.outputs.content-source-match == 'true'
       && (needs.preflight.outputs.is-fork == 'false'
           || contains(fromJSON('["MEMBER","OWNER"]'), needs.preflight.outputs.author-association))
       && inputs.enable-vale-linting == true
