@@ -86,8 +86,12 @@ runs:
         STATUS: ${{ steps.evaluate.outputs.status }}
       run: |
         case "$STATUS" in
-          proceed|no-label|skipped|manually-edited)
+          proceed|skipped|manually-edited)
             echo "::notice::Changelog validation: $STATUS"
+            ;;
+          no-label)
+            echo "::error::No matching changelog type label found on this PR. Add a label from your changelog.yml pivot.types, or a skip label."
+            exit 1
             ;;
           no-title)
             echo "::error::PR has no title. Cannot generate a changelog entry."
