@@ -400,6 +400,8 @@ jobs:
             -w /github/workspace \
             -v "${CONTAINER_OUTPUT}:/github_output" \
             -e GITHUB_OUTPUT=/github_output \
+            -e GITHUB_ACTIONS=true \
+            -e CI=true \
             -e GITHUB_WORKSPACE=/github/workspace \
             -e INPUT_PREFIX="${PATH_PREFIX}" \
             -e INPUT_STRICT="${STRICT_FLAG}" \
