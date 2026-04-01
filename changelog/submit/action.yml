@@ -251,9 +251,22 @@ runs:
         PR_NUMBER: ${{ steps.pr.outputs.number }}
         LABEL_TABLE: ${{ steps.evaluate.outputs.label-table }}
         PRODUCT_LABEL_TABLE: ${{ steps.evaluate.outputs.product-label-table }}
+        SKIP_LABELS: ${{ steps.evaluate.outputs.skip-labels }}
         CONFIG_FILE: ${{ inputs.config }}
       with:
         github-token: ${{ inputs.github-token }}
         script: |
           const script = require('${{ github.action_path }}/scripts/post-failure-comment.js');
+          await script({ github, context, core });
+
+    - name: Post skipped comment
+      if: steps.evaluate.outputs.status == 'skipped'
+      uses: actions/github-script@v8
+      env:
+        PR_NUMBER: ${{ steps.pr.outputs.number }}
+        SKIP_LABELS: ${{ steps.evaluate.outputs.skip-labels }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/post-skipped-comment.js');
           await script({ github, context, core });
