@@ -203,6 +203,8 @@ jobs:
   upload:
     if: github.event.pull_request.merged == true
     uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
+    with:
+      pr-number: ${{ github.event.pull_request.number }}
 ```
 
 If your changelog configuration is not at `docs/changelog.yml`, pass the path explicitly:
@@ -213,6 +215,7 @@ jobs:
     if: github.event.pull_request.merged == true
     uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
     with:
+      pr-number: ${{ github.event.pull_request.number }}
       config: path/to/changelog.yml
 ```
 
@@ -225,8 +228,7 @@ The upload workflow authenticates to AWS via GitHub Actions OIDC. Your repositor
 When a PR is merged, the upload workflow:
 
 1. Checks out the merge commit
-2. Reads `bundle.directory` from your `changelog.yml` to locate the changelog folder
-3. Queries the GitHub API for YAML files that were added or modified in that folder during the PR
-4. For each file found, reads the `products` list and uploads the file to `{product}/changelogs/{filename}.yaml` in the bucket, preserving the original filename
+2. Sets up `docs-builder` and authenticates with AWS via OIDC
+3. Runs `docs-builder changelog upload`, which reads your `changelog.yml`, discovers changelog YAML files in the configured directory, and incrementally uploads them to `{product}/changelogs/{filename}.yaml` in the bucket — only files whose content has changed are transferred
 
-If the PR has no changelog file (for example, because changelog generation was skipped), the workflow exits silently without error.
+If the changelog directory has no files (for example, because changelog generation was skipped), the command exits silently without error.
