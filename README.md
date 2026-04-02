@@ -27,13 +27,13 @@ AI-powered [GitHub Agent Workflows](https://github.github.com/gh-aw/) for docume
 
 | Workflow | Description | Trigger | Safe Output |
 |----------|-------------|---------|-------------|
-| [docs-check](workflows/docs-check/) | Analyze a PR or commit for documentation impact | `/docs-check`, label, dispatch | `add-comment` |
+| [docs-check](agentic-workflows/docs-check/) | Analyze a PR or commit for documentation impact | `/docs-check`, label, dispatch | `add-comment` |
 
 Quick install:
 
 ```bash
 mkdir -p .github/workflows && curl -sL \
-  https://raw.githubusercontent.com/elastic/docs-actions/v1/workflows/docs-check/example.yml \
+  https://raw.githubusercontent.com/elastic/docs-actions/v1/agentic-workflows/docs-check/example.yml \
   -o .github/workflows/docs-check.yml
 ```
 
@@ -41,7 +41,7 @@ All agentic workflows require the `COPILOT_GITHUB_TOKEN` secret.
 
 ## Development
 
-See [workflows/DEVELOPING.md](workflows/DEVELOPING.md) for agentic workflow development.
+See [agentic-workflows/DEVELOPING.md](agentic-workflows/DEVELOPING.md) for agentic workflow development.
 
 ```bash
 make setup     # install gh-aw compiler + actionlint

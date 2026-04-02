@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Compile agentic workflow sources into lock files.
 #
-# Workflow .md sources live in workflows/ as a library. The gh-aw compiler
+# Workflow .md sources live in agentic-workflows/ as a library. The gh-aw compiler
 # expects them in .github/workflows/, so this script:
 #   1. Copies fragments and .md files into .github/workflows/
 #   2. Runs gh-aw compile
@@ -21,7 +21,7 @@ if ! gh aw --help >/dev/null 2>&1; then
   exit 1
 fi
 
-WORKFLOWS_DIR="$REPO_ROOT/workflows"
+WORKFLOWS_DIR="$REPO_ROOT/agentic-workflows"
 TARGET_DIR="$REPO_ROOT/.github/workflows"
 
 # Track what we copy so we can clean up

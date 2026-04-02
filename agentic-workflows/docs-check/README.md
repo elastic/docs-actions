@@ -14,7 +14,7 @@ Analyzes a public PR or commit to determine whether Elastic documentation needs 
 
 ```bash
 mkdir -p .github/workflows && curl -sL \
-  https://raw.githubusercontent.com/elastic/docs-actions/v1/workflows/docs-check/example.yml \
+  https://raw.githubusercontent.com/elastic/docs-actions/v1/agentic-workflows/docs-check/example.yml \
   -o .github/workflows/docs-check.yml
 ```
 

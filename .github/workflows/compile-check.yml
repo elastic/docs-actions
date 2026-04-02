@@ -3,7 +3,7 @@ name: Compile check
 on:
   pull_request:
     paths:
-      - 'workflows/**/*.md'
+      - 'agentic-workflows/**/*.md'
       - '.github/workflows/gh-aw-*.lock.yml'
 
 permissions:
