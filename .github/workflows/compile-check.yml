@@ -1,0 +1,33 @@
+name: Compile check
+
+on:
+  pull_request:
+    paths:
+      - 'agentic-workflows/**/*.md'
+      - '.github/workflows/gh-aw-*.lock.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  compile-check:
+    name: Verify lock files are up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install gh-aw
+        run: gh extension install github/gh-aw
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compile
+        run: ./scripts/compile.sh
+
+      - name: Check for uncommitted changes
+        run: |
+          if ! git diff --quiet .github/workflows/*.lock.yml; then
+            echo "::error::Lock files are out of date. Run 'make compile' and commit the changes."
+            git diff --stat .github/workflows/*.lock.yml
+            exit 1
+          fi
