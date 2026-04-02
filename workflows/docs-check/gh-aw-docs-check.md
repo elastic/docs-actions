@@ -11,6 +11,7 @@ imports:
 engine:
   id: copilot
 on:
+  roles: [admin, maintainer, write]
   slash_command: docs-check
   issues:
     types: [labeled]
@@ -68,7 +69,6 @@ network:
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
 strict: false
-roles: [admin, maintainer, write]
 safe-outputs:
   allowed-domains:
     - www.elastic.co

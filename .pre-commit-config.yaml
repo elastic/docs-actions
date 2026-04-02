@@ -7,8 +7,10 @@ repos:
       - id: check-yaml
         exclude: '\.lock\.yml$'
       - id: end-of-file-fixer
+        exclude: '\.lock\.yml$'
       - id: mixed-line-ending
       - id: trailing-whitespace
+        exclude: '\.lock\.yml$'
 
   - repo: https://github.com/reakaleek/gh-action-readme
     rev: v0.7.1
