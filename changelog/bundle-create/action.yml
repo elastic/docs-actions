@@ -39,7 +39,7 @@ inputs:
       Output file path for the bundle, relative to the repo root.
       Optional in both modes. When not provided, docs-builder writes
       to the path determined by the config (bundle.output_directory)
-      and the action discovers the generated file automatically.
+      and the plan resolves the generated file path automatically.
   repo:
     description: >
       GitHub repository name. Falls back to bundle.repo in changelog.yml.
@@ -57,7 +57,7 @@ inputs:
 outputs:
   output:
     description: 'Resolved output file path for the bundle'
-    value: ${{ steps.discover.outputs.output }}
+    value: ${{ steps.plan.outputs.output_path }}
 
 runs:
   using: composite
@@ -67,12 +67,45 @@ runs:
       with:
         persist-credentials: false
 
-    - name: Install dependencies
+    - name: Validate inputs
       shell: bash
-      run: npm ci --prefix "${{ github.action_path }}"
+      env:
+        CONFIG: ${{ inputs.config }}
+        PROFILE: ${{ inputs.profile }}
+        OUTPUT: ${{ inputs.output }}
+        REPORT: ${{ inputs.report }}
+        PRS: ${{ inputs.prs }}
+      run: |
+        validate_path() {
+          local value="$1" name="$2"
+          [ -z "$value" ] && return
+          if [[ "$value" == /* ]]; then
+            echo "::error::${name} must be a relative path: ${value}"; exit 1
+          fi
+          if [[ "$value" == *..* ]]; then
+            echo "::error::${name} must not contain '..': ${value}"; exit 1
+          fi
+        }
+        validate_path "$CONFIG" "config"
+        validate_path "$OUTPUT" "output"
 
-    - name: Prepare bundle arguments
-      id: prepare
+        if [ -n "$REPORT" ] && [[ "$REPORT" != https://* ]] && [[ "$REPORT" != http://* ]]; then
+          validate_path "$REPORT" "report"
+        fi
+        if [ -n "$PRS" ] && { [[ "$PRS" == */* ]] || [[ "$PRS" == *.txt ]]; }; then
+          validate_path "$PRS" "prs"
+        fi
+
+        if [ -n "$PROFILE" ] && [[ ! "$PROFILE" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+          echo "::error::Profile name contains disallowed characters: ${PROFILE}"; exit 1
+        fi
+
+        if [ -n "$REPORT" ] && [[ "$REPORT" == http://* ]]; then
+          echo "::error::Report URL must use HTTPS: ${REPORT}"; exit 1
+        fi
+
+    - name: Resolve bundle plan
+      id: plan
       shell: bash
       env:
         CONFIG: ${{ inputs.config }}
@@ -84,28 +117,105 @@ runs:
         OUTPUT: ${{ inputs.output }}
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
-      run: node "${{ github.action_path }}/scripts/generate-bundle.js"
+      run: |
+        ARGS=()
+        ARGS+=(changelog bundle)
+        if [ -n "$PROFILE" ]; then
+          ARGS+=("$PROFILE")
+          [ -n "$VERSION" ] && ARGS+=("$VERSION")
+          [ -n "$REPORT" ] && ARGS+=("$REPORT")
+        else
+          ARGS+=(--config "$CONFIG" --resolve)
+          [ -n "$RELEASE_VERSION" ] && ARGS+=(--release-version "$RELEASE_VERSION")
+          [ -n "$REPORT" ] && ARGS+=(--report "$REPORT")
+          [ -n "$PRS" ] && ARGS+=(--prs "$PRS")
+          [ -n "$OUTPUT" ] && ARGS+=(--output "$OUTPUT")
+          [ -n "$REPO" ] && ARGS+=(--repo "$REPO")
+          [ -n "$OWNER" ] && ARGS+=(--owner "$OWNER")
+        fi
+
+        PLAN_JSON=$(docker run --rm --network none \
+          -v "${PWD}:/github/workspace" \
+          -w /github/workspace \
+          ghcr.io/elastic/docs-builder:edge \
+          "${ARGS[@]}" --plan)
+
+        echo "$PLAN_JSON" | jq .
+
+        NEEDS_NETWORK=$(echo "$PLAN_JSON" | jq -r '.needs_network')
+        NEEDS_GITHUB_TOKEN=$(echo "$PLAN_JSON" | jq -r '.needs_github_token')
+        OUTPUT_PATH=$(echo "$PLAN_JSON" | jq -r '.output_path // empty')
+
+        echo "needs_network=$NEEDS_NETWORK" >> "$GITHUB_OUTPUT"
+        echo "needs_github_token=$NEEDS_GITHUB_TOKEN" >> "$GITHUB_OUTPUT"
+        echo "output_path=$OUTPUT_PATH" >> "$GITHUB_OUTPUT"
+
+        if [ -z "$OUTPUT_PATH" ]; then
+          echo "::error::Plan did not resolve an output path. Set 'output' input or configure bundle.output_directory in changelog.yml."
+          exit 1
+        fi
+
+    - name: Download report
+      if: inputs.report != '' && startsWith(inputs.report, 'https://')
+      shell: bash
+      env:
+        REPORT: ${{ inputs.report }}
+      run: curl --fail --silent --show-error --location --max-redirs 5 --max-time 30 "$REPORT" -o .bundle-report.html
 
     - name: Generate changelog bundle
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-        DOCKER_ARGS: ${{ steps.prepare.outputs.docker-args }}
-        BUNDLE_ARGS: ${{ steps.prepare.outputs.bundle-args }}
-      run: docker run $DOCKER_ARGS ghcr.io/elastic/docs-builder:edge $BUNDLE_ARGS
-
-    - name: Discover output path
-      id: discover
-      shell: bash
-      env:
+        NEEDS_NETWORK: ${{ steps.plan.outputs.needs_network }}
+        NEEDS_GITHUB_TOKEN: ${{ steps.plan.outputs.needs_github_token }}
         CONFIG: ${{ inputs.config }}
+        PROFILE: ${{ inputs.profile }}
+        VERSION: ${{ inputs.version }}
+        RELEASE_VERSION: ${{ inputs.release-version }}
+        REPORT: ${{ inputs.report }}
+        PRS: ${{ inputs.prs }}
         OUTPUT: ${{ inputs.output }}
-      run: node "${{ github.action_path }}/scripts/discover-output.js"
+        REPO: ${{ inputs.repo }}
+        OWNER: ${{ inputs.owner }}
+      run: |
+        DOCKER_ARGS=(--rm -v "${PWD}:/github/workspace" -w /github/workspace)
+
+        if [ "$NEEDS_NETWORK" = "true" ]; then
+          [ "$NEEDS_GITHUB_TOKEN" = "true" ] && DOCKER_ARGS+=(-e GITHUB_TOKEN)
+        else
+          DOCKER_ARGS+=(--network none)
+        fi
+
+        resolve_report() {
+          if [ -n "$1" ] && [[ "$1" == https://* ]]; then
+            echo ".bundle-report.html"
+          else
+            echo "$1"
+          fi
+        }
+
+        BUNDLE_ARGS=()
+        BUNDLE_ARGS+=(changelog bundle)
+        if [ -n "$PROFILE" ]; then
+          BUNDLE_ARGS+=("$PROFILE")
+          [ -n "$VERSION" ] && BUNDLE_ARGS+=("$VERSION")
+          [ -n "$REPORT" ] && BUNDLE_ARGS+=("$(resolve_report "$REPORT")")
+        else
+          BUNDLE_ARGS+=(--config "$CONFIG" --resolve)
+          [ -n "$RELEASE_VERSION" ] && BUNDLE_ARGS+=(--release-version "$RELEASE_VERSION")
+          [ -n "$REPORT" ] && BUNDLE_ARGS+=(--report "$(resolve_report "$REPORT")")
+          [ -n "$PRS" ] && BUNDLE_ARGS+=(--prs "$PRS")
+          [ -n "$OUTPUT" ] && BUNDLE_ARGS+=(--output "$OUTPUT")
+          [ -n "$REPO" ] && BUNDLE_ARGS+=(--repo "$REPO")
+          [ -n "$OWNER" ] && BUNDLE_ARGS+=(--owner "$OWNER")
+        fi
+
+        docker run "${DOCKER_ARGS[@]}" ghcr.io/elastic/docs-builder:edge "${BUNDLE_ARGS[@]}"
 
     - name: Upload bundle artifact
       uses: actions/upload-artifact@v6
       with:
         name: ${{ inputs.artifact-name }}
-        path: ${{ steps.discover.outputs.output }}
+        path: ${{ steps.plan.outputs.output_path }}
         if-no-files-found: error
         retention-days: 1
