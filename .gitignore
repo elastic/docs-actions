@@ -1,1 +1,7 @@
 .idea/
+bin/
+site/
+
+# gh-aw compiler copies (source lives in workflows/, these are temporary build artifacts)
+.github/workflows/gh-aw-fragments/
+.github/workflows/gh-aw-*.md

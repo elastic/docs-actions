@@ -1,0 +1,55 @@
+name: Check gh-aw updates
+
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Weekly on Mondays at 9am UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-updates:
+    name: Recompile lock files and open PR if changed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Save current lock file checksums
+        run: |
+          sha256sum .github/workflows/*.lock.yml > /tmp/lock-checksums-before.txt 2>/dev/null || true
+
+      - name: Install gh-aw and compile
+        run: |
+          gh extension install github/gh-aw
+          ./scripts/compile.sh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for changes
+        id: changes
+        run: |
+          sha256sum .github/workflows/*.lock.yml > /tmp/lock-checksums-after.txt 2>/dev/null || true
+          if diff -q /tmp/lock-checksums-before.txt /tmp/lock-checksums-after.txt > /dev/null 2>&1; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create pull request
+        if: steps.changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: |
+            Update gh-aw lock files
+
+            Automated recompilation of gh-aw workflow lock files.
+          branch: automated/gh-aw-update
+          title: Update gh-aw lock files
+          body: |
+            Automated weekly check detected updated gh-aw lock files after recompilation.
+
+            Review the lock file diffs to verify the changes are expected.
+          labels: automation
