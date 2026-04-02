@@ -104,6 +104,12 @@ runs:
           echo "::error::Report URL must use HTTPS: ${REPORT}"; exit 1
         fi
 
+    - name: Setup docs-builder
+      uses: elastic/docs-actions/docs-builder/setup@v1
+      with:
+        version: edge
+        github-token: ${{ inputs.github-token }}
+
     - name: Resolve bundle plan
       id: plan
       shell: bash
@@ -119,7 +125,7 @@ runs:
         OWNER: ${{ inputs.owner }}
       run: |
         ARGS=()
-        ARGS+=(changelog bundle)
+        ARGS+=(changelog bundle --plan)
         if [ -n "$PROFILE" ]; then
           ARGS+=("$PROFILE")
           [ -n "$VERSION" ] && ARGS+=("$VERSION")
@@ -134,22 +140,13 @@ runs:
           [ -n "$OWNER" ] && ARGS+=(--owner "$OWNER")
         fi
 
-        PLAN_JSON=$(docker run --rm --network none \
-          -v "${PWD}:/github/workspace" \
-          -w /github/workspace \
-          ghcr.io/elastic/docs-builder:edge \
-          "${ARGS[@]}" --plan)
+        docs-builder "${ARGS[@]}"
 
-        echo "$PLAN_JSON" | jq .
-
-        NEEDS_NETWORK=$(echo "$PLAN_JSON" | jq -r '.needs_network')
-        NEEDS_GITHUB_TOKEN=$(echo "$PLAN_JSON" | jq -r '.needs_github_token')
-        OUTPUT_PATH=$(echo "$PLAN_JSON" | jq -r '.output_path // empty')
-
-        echo "needs_network=$NEEDS_NETWORK" >> "$GITHUB_OUTPUT"
-        echo "needs_github_token=$NEEDS_GITHUB_TOKEN" >> "$GITHUB_OUTPUT"
-        echo "output_path=$OUTPUT_PATH" >> "$GITHUB_OUTPUT"
-
+    - name: Verify plan output
+      shell: bash
+      env:
+        OUTPUT_PATH: ${{ steps.plan.outputs.output_path }}
+      run: |
         if [ -z "$OUTPUT_PATH" ]; then
           echo "::error::Plan did not resolve an output path. Set 'output' input or configure bundle.output_directory in changelog.yml."
           exit 1
