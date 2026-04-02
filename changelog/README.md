@@ -246,13 +246,13 @@ Individual changelog files accumulate on the default branch as PRs merge. The bu
 - **Buildkite promotion report** (`report`) — extracts PR URLs from a promotion report. Used for serverless releases discovered by a scheduled workflow.
 - **PR list** (`prs`) — an explicit list of PR URLs or numbers (comma-separated), or a path to a newline-delimited file. Used when the caller already knows which PRs to include.
 
-Exactly one filter source must be provided. The `output` path is optional — when not provided, docs-builder writes to the config-driven path (`bundle.output_directory`) and the action discovers the file automatically.
+Exactly one filter source must be provided. The `output` path is optional — when not provided, the action runs `docs-builder changelog bundle --plan` to resolve the output path from the config (`bundle.output_directory`) before generating the bundle.
 
 **Profile mode** — all configuration comes from `bundle.profiles` in `changelog.yml`:
 
 - **Profile** (`profile`) — a named profile that defines the product filter, output filename pattern, and other settings. The `version` input provides the value for `{version}` substitution in profile patterns.
 - An optional `report` can be passed as a positional argument to filter by promotion report.
-- The `output` path is optional — if not provided, it's discovered from `bundle.output_directory` in the config.
+- The `output` path is optional — if not provided, it's resolved from `bundle.output_directory` in the config via the `--plan` step.
 - `bundle.resolve: true` must be set in the config (it cannot be forced via CLI in profile mode).
 
 The bundle always includes the full content of each matching entry, so downstream consumers can render changelogs without access to the original files.
@@ -439,7 +439,7 @@ jobs:
       version: ${{ github.event.release.tag_name }}
 ```
 
-The `output` input is not needed — the action discovers the generated file from `bundle.output_directory` in the config. If a promotion report is also needed, pass it via the `report` input.
+The `output` input is not needed — the action resolves the output path from `bundle.output_directory` and the profile's `output` pattern via the `--plan` step. If a promotion report is also needed, pass it via the `report` input.
 
 #### Custom config path
 
