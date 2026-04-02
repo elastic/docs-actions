@@ -325,4 +325,4 @@ jobs:
         uses: elastic/vale-rules/lint@main
         with:
           files: ${{ needs.check.outputs.all_changed_files }}
-          include-paths: ${{ inputs.vale-paths }}
+          vale-paths: ${{ inputs.vale-paths }}
