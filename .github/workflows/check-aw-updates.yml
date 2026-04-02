@@ -16,18 +16,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.23'
-
       - name: Save current lock file checksums
         run: |
           sha256sum .github/workflows/*.lock.yml > /tmp/lock-checksums-before.txt 2>/dev/null || true
 
       - name: Install gh-aw and compile
         run: |
-          GOBIN="$(pwd)/bin" go install github.com/github/gh-aw/cmd/gh-aw@v0.45.1
-          ./scripts/compile.sh bin/gh-aw
+          gh extension install github/gh-aw
+          ./scripts/compile.sh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check for changes
         id: changes

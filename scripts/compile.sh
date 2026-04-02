@@ -8,7 +8,7 @@
 #   3. Removes the copies (lock files remain)
 #
 # Usage:
-#   ./scripts/compile.sh [path-to-gh-aw-binary]
+#   ./scripts/compile.sh
 
 set -euo pipefail
 
@@ -16,11 +16,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
-GH_AW="${1:-bin/gh-aw}"
-
-if [ ! -x "$GH_AW" ]; then
-  echo "Error: gh-aw binary not found at $GH_AW"
-  echo "Run 'make setup' first, or pass the path: ./scripts/compile.sh /path/to/gh-aw"
+if ! gh aw --help >/dev/null 2>&1; then
+  echo "Error: gh-aw extension not installed. Run 'make setup' first."
   exit 1
 fi
 
@@ -62,7 +59,7 @@ fi
 # Step 3: Compile
 echo ""
 echo "Compiling..."
-"$GH_AW" compile
+gh aw compile
 
 # Cleanup happens via trap — .md copies and fragments are removed,
 # .lock.yml files remain in .github/workflows/
