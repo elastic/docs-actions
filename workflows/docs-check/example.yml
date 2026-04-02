@@ -1,0 +1,23 @@
+name: Docs Check
+on:
+  issue_comment:
+    types: [created]
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL of a public PR or commit to check"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  run:
+    uses: elastic/docs-actions/.github/workflows/gh-aw-docs-check.lock.yml@v1
+    secrets:
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
