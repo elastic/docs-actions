@@ -5,6 +5,7 @@ AI-powered workflows for Elastic documentation tasks. Each directory contains a 
 | Workflow | Description | Trigger | Safe Output |
 |----------|-------------|---------|-------------|
 | [docs-check](docs-check/) | Analyze a PR or commit for documentation impact | `/docs-check`, label, dispatch | `add-comment` |
+| [issue-triage](issue-triage/) | Triage issues by applying team labels | `/triage`, dispatch | `add-labels` |
 
 ## Installation
 
