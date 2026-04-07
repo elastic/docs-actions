@@ -6,13 +6,13 @@ description: >
 
 inputs:
   config:
-    description: 'Path to changelog.yml configuration file'
+    description: 'Path to changelog.yml configuration file (repo-relative, no ".." or absolute paths)'
     default: 'docs/changelog.yml'
   github-token:
-    description: 'GitHub token (used by docs-builder setup)'
+    description: 'GitHub token (used by docs-builder setup). Use the default GITHUB_TOKEN; do not substitute a broader PAT.'
     default: '${{ github.token }}'
   aws-account-id:
-    description: 'The AWS account ID'
+    description: 'The AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account.'
     default: '197730964718'
 
 runs:
@@ -25,6 +25,24 @@ runs:
       run: |
         if [[ "$REF" != "refs/heads/main" && "$REF" != "refs/heads/master" ]]; then
           echo "::error::changelog upload must run on a push to main or master (got $REF)"
+          exit 1
+        fi
+
+    - name: Validate config path
+      shell: bash
+      env:
+        CONFIG: ${{ inputs.config }}
+      run: |
+        if [[ "$CONFIG" == /* ]]; then
+          echo "::error::config path must be relative, not absolute: ${CONFIG}"
+          exit 1
+        fi
+        if [[ "$CONFIG" == *..* ]]; then
+          echo "::error::config path must not contain '..': ${CONFIG}"
+          exit 1
+        fi
+        if [[ "$CONFIG" == *$'\n'* || "$CONFIG" == *$'\r'* ]]; then
+          echo "::error::config path must not contain newlines"
           exit 1
         fi
 
