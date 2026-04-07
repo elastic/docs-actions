@@ -1,8 +1,8 @@
 name: Changelog upload
 description: >
-  Uploads changelog entries for a merged PR to the elastic-docs-v3-changelog-bundles
-  S3 bucket using docs-builder's incremental upload. Only files whose content has
-  changed are transferred.
+  Uploads changelog entries to the elastic-docs-v3-changelog-bundles S3 bucket
+  using docs-builder's incremental upload. Intended to run on push to the default
+  branch (main/master). Only files whose content has changed are transferred.
 
 inputs:
   config:
@@ -18,20 +18,20 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Verify event context
+    - name: Verify push to default branch
       shell: bash
       env:
-        MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        REF: ${{ github.ref }}
       run: |
-        if [ -z "$MERGE_SHA" ]; then
-          echo "::error::merge_commit_sha is empty — must be triggered from a merged pull_request event"
+        if [[ "$REF" != "refs/heads/main" && "$REF" != "refs/heads/master" ]]; then
+          echo "::error::changelog upload must run on a push to main or master (got $REF)"
           exit 1
         fi
 
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        ref: ${{ github.event.pull_request.merge_commit_sha }}
+        ref: ${{ github.sha }}
         persist-credentials: false
 
     - name: Setup docs-builder
