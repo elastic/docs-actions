@@ -203,21 +203,9 @@ jobs:
   upload:
     if: github.event.pull_request.merged == true
     uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
-    with:
-      pr-number: ${{ github.event.pull_request.number }}
 ```
 
-If your changelog configuration is not at `docs/changelog.yml`, pass the path explicitly:
-
-```yaml
-jobs:
-  upload:
-    if: github.event.pull_request.merged == true
-    uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
-    with:
-      pr-number: ${{ github.event.pull_request.number }}
-      config: path/to/changelog.yml
-```
+The `paths` filter is optional — it avoids running the workflow on pushes that don't touch changelog files. If your changelog directory or config lives elsewhere, adjust the paths accordingly.
 
 ### 2. Enable OIDC access
 

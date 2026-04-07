@@ -2,15 +2,6 @@ name: Changelog upload
 
 on:
   workflow_call:
-    inputs:
-      config:
-        description: 'Path to changelog.yml configuration file'
-        type: string
-        default: 'docs/changelog.yml'
-      pr-number:
-        description: 'Pull request number (required for concurrency deduplication)'
-        type: string
-        required: true
 
 permissions: {}
 
@@ -27,5 +18,3 @@ jobs:
     steps:
       - name: Upload changelog
         uses: elastic/docs-actions/changelog/upload@v1
-        with:
-          config: ${{ inputs.config }}
