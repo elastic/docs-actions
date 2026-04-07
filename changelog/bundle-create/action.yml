@@ -47,6 +47,11 @@ inputs:
     description: >
       GitHub repository owner. Falls back to bundle.owner in changelog.yml,
       then to elastic.
+  docs-builder-version:
+    description: >
+      docs-builder version to use (e.g. 0.1.100, latest, edge).
+      Non-edge versions are attestation-verified by the setup action.
+    default: 'edge'
   artifact-name:
     description: 'Name for the uploaded artifact (must match bundle-pr artifact-name)'
     default: 'changelog-bundle'
@@ -122,7 +127,7 @@ runs:
     - name: Setup docs-builder
       uses: elastic/docs-actions/docs-builder/setup@v1
       with:
-        version: edge
+        version: ${{ inputs.docs-builder-version }}
         github-token: ${{ inputs.github-token }}
 
     - name: Resolve bundle plan
@@ -174,12 +179,25 @@ runs:
         REPORT: ${{ inputs.report }}
       run: curl --fail --silent --show-error --location --max-redirs 5 --max-time 30 "$REPORT" -o .bundle-report.html
 
+    - name: Pull and pin Docker image
+      id: docker-image
+      shell: bash
+      env:
+        BUILDER_VERSION: ${{ inputs.docs-builder-version }}
+      run: |
+        IMAGE="ghcr.io/elastic/docs-builder:${BUILDER_VERSION}"
+        docker pull "$IMAGE"
+        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE")
+        echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+        echo "::notice title=Docker image digest::${DIGEST}"
+
     - name: Generate changelog bundle
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         NEEDS_NETWORK: ${{ steps.plan.outputs.needs_network }}
         NEEDS_GITHUB_TOKEN: ${{ steps.plan.outputs.needs_github_token }}
+        IMAGE_DIGEST: ${{ steps.docker-image.outputs.digest }}
         CONFIG: ${{ inputs.config }}
         PROFILE: ${{ inputs.profile }}
         VERSION: ${{ inputs.version }}
@@ -222,7 +240,7 @@ runs:
           [ -n "$OWNER" ] && BUNDLE_ARGS+=(--owner "$OWNER")
         fi
 
-        docker run "${DOCKER_ARGS[@]}" ghcr.io/elastic/docs-builder:edge "${BUNDLE_ARGS[@]}"
+        docker run "${DOCKER_ARGS[@]}" "$IMAGE_DIGEST" "${BUNDLE_ARGS[@]}"
 
     - name: Upload bundle artifact
       uses: actions/upload-artifact@v6
