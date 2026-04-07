@@ -6,7 +6,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: changelog-upload-${{ inputs.pr-number }}
+  group: changelog-s3-sync-${{ github.repository }}
   cancel-in-progress: true
 
 jobs:
