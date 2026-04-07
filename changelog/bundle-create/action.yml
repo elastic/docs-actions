@@ -124,6 +124,22 @@ runs:
           echo "::error::Report URL must use HTTPS: ${REPORT}"; exit 1
         fi
 
+        if [ -n "$REPORT" ] && [[ "$REPORT" == https://* ]]; then
+          REPORT_HOST=$(echo "$REPORT" | sed -E 's|^https://([^/:]+).*|\1|')
+          ALLOWED_DOMAINS="github.com buildkite.com"
+          DOMAIN_OK=false
+          for domain in $ALLOWED_DOMAINS; do
+            if [[ "$REPORT_HOST" == "$domain" || "$REPORT_HOST" == *."$domain" ]]; then
+              DOMAIN_OK=true
+              break
+            fi
+          done
+          if [ "$DOMAIN_OK" != "true" ]; then
+            echo "::error::Report URL domain not allowed: ${REPORT_HOST} (allowed: ${ALLOWED_DOMAINS})"
+            exit 1
+          fi
+        fi
+
     - name: Setup docs-builder
       uses: elastic/docs-actions/docs-builder/setup@v1
       with:
