@@ -181,7 +181,7 @@ Each PR produces a file at `docs/changelog/{filename}.yaml` on the PR branch (wh
 
 ## Uploading to S3
 
-When a PR is merged, the committed changelog file can be uploaded to the `elastic-docs-v3-changelog-bundles` S3 bucket under `{product}/changelogs/{filename}.yaml`, preserving the original filename as determined by the repository's `filename` strategy in `changelog.yml`. This makes it available for release bundling workflows.
+Changelog files on the default branch can be uploaded to the `elastic-docs-v3-changelog-bundles` S3 bucket under `{product}/changelogs/{filename}.yaml`, preserving the original filename as determined by the repository's `filename` strategy in `changelog.yml`. This makes them available for release bundling workflows.
 
 ### 1. Add the upload workflow
 
@@ -191,17 +191,16 @@ When a PR is merged, the committed changelog file can be uploaded to the `elasti
 name: changelog-upload
 
 on:
-  pull_request:
-    types:
-      - closed
+  push:
+    branches: [main, master]
+    paths:
+      - 'docs/changelog/**'
+      - 'docs/changelog.yml'
 
-permissions:
-  contents: read
-  id-token: write
+permissions: {}
 
 jobs:
   upload:
-    if: github.event.pull_request.merged == true
     uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
 ```
 
@@ -213,9 +212,9 @@ The upload workflow authenticates to AWS via GitHub Actions OIDC. Your repositor
 
 ### How it works
 
-When a PR is merged, the upload workflow:
+On each push to `main` or `master`, the upload workflow:
 
-1. Checks out the merge commit
+1. Checks out the pushed commit
 2. Sets up `docs-builder` and authenticates with AWS via OIDC
 3. Runs `docs-builder changelog upload`, which reads your `changelog.yml`, discovers changelog YAML files in the configured directory, and incrementally uploads them to `{product}/changelogs/{filename}.yaml` in the bucket — only files whose content has changed are transferred
 
