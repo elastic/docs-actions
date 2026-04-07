@@ -206,6 +206,16 @@ jobs:
 
 The `paths` filter is optional — it avoids running the workflow on pushes that don't touch changelog files. If your changelog directory or config lives elsewhere, adjust the paths accordingly.
 
+If your changelog configuration is not at `docs/changelog.yml`, pass the path explicitly:
+
+```yaml
+jobs:
+  upload:
+    uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
+    with:
+      config: path/to/changelog.yml
+```
+
 ### 2. Enable OIDC access
 
 The upload workflow authenticates to AWS via GitHub Actions OIDC. Your repository must be listed in the `elastic-docs-v3-changelog-bundles` infrastructure to have an IAM role provisioned. Contact the docs-engineering team to add your repository.

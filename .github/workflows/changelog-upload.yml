@@ -2,6 +2,11 @@ name: Changelog upload
 
 on:
   workflow_call:
+    inputs:
+      config:
+        description: 'Path to changelog.yml configuration file'
+        type: string
+        default: 'docs/changelog.yml'
 
 permissions: {}
 
@@ -18,3 +23,5 @@ jobs:
     steps:
       - name: Upload changelog
         uses: elastic/docs-actions/changelog/upload@v1
+        with:
+          config: ${{ inputs.config }}
