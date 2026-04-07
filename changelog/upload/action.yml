@@ -51,6 +51,8 @@ runs:
       env:
         CONFIG: ${{ inputs.config }}
       run: |
-        docs-builder changelog upload changelog s3 \
+        docs-builder changelog upload \
+          --artifact-type changelog \
+          --target s3 \
           --s3-bucket-name elastic-docs-v3-changelog-bundles \
           --config "$CONFIG"
