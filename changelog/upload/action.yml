@@ -1,0 +1,76 @@
+name: Changelog upload
+description: >
+  Uploads changelog entries to the elastic-docs-v3-changelog-bundles S3 bucket
+  using docs-builder's incremental upload. Intended to run on push to the default
+  branch (main/master). Only files whose content has changed are transferred.
+
+inputs:
+  config:
+    description: 'Path to changelog.yml configuration file (repo-relative, no ".." or absolute paths)'
+    default: 'docs/changelog.yml'
+  github-token:
+    description: 'GitHub token (used by docs-builder setup). Use the default GITHUB_TOKEN; do not substitute a broader PAT.'
+    default: '${{ github.token }}'
+  aws-account-id:
+    description: 'The AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account.'
+    default: '197730964718'
+
+runs:
+  using: composite
+  steps:
+    - name: Verify push to default branch
+      shell: bash
+      env:
+        REF: ${{ github.ref }}
+      run: |
+        if [[ "$REF" != "refs/heads/main" && "$REF" != "refs/heads/master" ]]; then
+          echo "::error::changelog upload must run on a push to main or master (got $REF)"
+          exit 1
+        fi
+
+    - name: Validate config path
+      shell: bash
+      env:
+        CONFIG: ${{ inputs.config }}
+      run: |
+        if [[ "$CONFIG" == /* ]]; then
+          echo "::error::config path must be relative, not absolute: ${CONFIG}"
+          exit 1
+        fi
+        if [[ "$CONFIG" == *..* ]]; then
+          echo "::error::config path must not contain '..': ${CONFIG}"
+          exit 1
+        fi
+        if [[ "$CONFIG" == *$'\n'* || "$CONFIG" == *$'\r'* ]]; then
+          echo "::error::config path must not contain newlines"
+          exit 1
+        fi
+
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.sha }}
+        persist-credentials: false
+
+    - name: Setup docs-builder
+      uses: elastic/docs-actions/docs-builder/setup@v1
+      with:
+        version: edge
+        github-token: ${{ inputs.github-token }}
+
+    - name: Authenticate with AWS
+      uses: elastic/docs-actions/aws/auth@v1
+      with:
+        aws_account_id: ${{ inputs.aws-account-id }}
+        aws_role_name_prefix: elastic-docs-v3-changelog-
+
+    - name: Upload changelogs
+      shell: bash
+      env:
+        CONFIG: ${{ inputs.config }}
+      run: |
+        docs-builder changelog upload \
+          --artifact-type changelog \
+          --target s3 \
+          --s3-bucket-name elastic-docs-v3-changelog-bundles \
+          --config "$CONFIG"
