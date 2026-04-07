@@ -6,11 +6,11 @@ Uploads changelog entries to the elastic-docs-v3-changelog-bundles S3 bucket usi
 
 ## Inputs
 <!--inputs-->
-| Name             | Description                               | Required | Default               |
-|------------------|-------------------------------------------|----------|-----------------------|
-| `config`         | Path to changelog.yml configuration file  | `false`  | `docs/changelog.yml`  |
-| `github-token`   | GitHub token (used by docs-builder setup) | `false`  | `${{ github.token }}` |
-| `aws-account-id` | The AWS account ID                        | `false`  | `197730964718`        |
+| Name             | Description                                                                                                 | Required | Default               |
+|------------------|-------------------------------------------------------------------------------------------------------------|----------|-----------------------|
+| `config`         | Path to changelog.yml configuration file (repo-relative, no ".." or absolute paths)                         | `false`  | `docs/changelog.yml`  |
+| `github-token`   | GitHub token (used by docs-builder setup). Use the default GITHUB_TOKEN; do not substitute a broader PAT.   | `false`  | `${{ github.token }}` |
+| `aws-account-id` | The AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account. | `false`  | `197730964718`        |
 <!--/inputs-->
 
 ## Outputs
