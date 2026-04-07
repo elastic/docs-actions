@@ -229,3 +229,7 @@ On each push to `main` or `master`, the upload workflow:
 3. Runs `docs-builder changelog upload`, which reads your `changelog.yml`, discovers changelog YAML files in the configured directory, and incrementally uploads them to `{product}/changelogs/{filename}.yaml` in the bucket — only files whose content has changed are transferred
 
 If the changelog directory has no files (for example, because changelog generation was skipped), the command exits silently without error.
+
+The workflow uses a per-repository concurrency group so that rapid successive pushes queue rather than run in parallel. If a run is already in progress when a new push arrives, the in-progress run completes before the next one starts. Since `docs-builder` performs incremental uploads (skipping unchanged objects), re-runs are cheap.
+
+> **Note:** The composite action accepts an `aws-account-id` input (default: the Elastic docs account). Overriding this is only valid when OIDC trust and IAM roles have been provisioned for the target account. In practice, most repositories should use the default.
