@@ -72,9 +72,13 @@ runs:
       env:
         CONFIG: ${{ inputs.config }}
         PROFILE: ${{ inputs.profile }}
+        VERSION: ${{ inputs.version }}
+        RELEASE_VERSION: ${{ inputs.release-version }}
         OUTPUT: ${{ inputs.output }}
         REPORT: ${{ inputs.report }}
         PRS: ${{ inputs.prs }}
+        REPO: ${{ inputs.repo }}
+        OWNER: ${{ inputs.owner }}
       run: |
         validate_path() {
           local value="$1" name="$2"
@@ -86,6 +90,15 @@ runs:
             echo "::error::${name} must not contain '..': ${value}"; exit 1
           fi
         }
+
+        validate_identifier() {
+          local value="$1" name="$2" pattern="$3"
+          [ -z "$value" ] && return
+          if [[ ! "$value" =~ $pattern ]]; then
+            echo "::error::${name} contains disallowed characters: ${value}"; exit 1
+          fi
+        }
+
         validate_path "$CONFIG" "config"
         validate_path "$OUTPUT" "output"
 
@@ -96,9 +109,11 @@ runs:
           validate_path "$PRS" "prs"
         fi
 
-        if [ -n "$PROFILE" ] && [[ ! "$PROFILE" =~ ^[a-zA-Z0-9._-]+$ ]]; then
-          echo "::error::Profile name contains disallowed characters: ${PROFILE}"; exit 1
-        fi
+        validate_identifier "$PROFILE" "profile" '^[a-zA-Z0-9._-]+$'
+        validate_identifier "$VERSION" "version" '^[a-zA-Z0-9._+-]+$'
+        validate_identifier "$RELEASE_VERSION" "release-version" '^[a-zA-Z0-9._+-]+$'
+        validate_identifier "$REPO" "repo" '^[a-zA-Z0-9._-]+$'
+        validate_identifier "$OWNER" "owner" '^[a-zA-Z0-9._-]+$'
 
         if [ -n "$REPORT" ] && [[ "$REPORT" == http://* ]]; then
           echo "::error::Report URL must use HTTPS: ${REPORT}"; exit 1
