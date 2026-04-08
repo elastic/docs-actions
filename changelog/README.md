@@ -238,22 +238,12 @@ The workflow uses a per-repository concurrency group so that rapid successive pu
 
 ## Bundling changelogs
 
-Individual changelog files accumulate on the default branch as PRs merge. The bundle action generates a fully-resolved YAML file containing only the changelog entries that match a given filter. The action supports two modes:
+Individual changelog files accumulate on the default branch as PRs merge. The bundle action generates a fully-resolved YAML file containing only the changelog entries that match a given filter, then uploads it to the `elastic-docs-v3-changelog-bundles` S3 bucket.
 
-**Option mode** — you specify the filter and output path directly:
+Two reusable workflows are available:
 
-- **GitHub release version** (`release-version`) — pulls PR references directly from GitHub release notes. Used for stack and product releases triggered by `on: release`.
-- **Buildkite promotion report** (`report`) — extracts PR URLs from a promotion report. Used for serverless releases discovered by a scheduled workflow.
-- **PR list** (`prs`) — an explicit list of PR URLs or numbers (comma-separated), or a path to a newline-delimited file. Used when the caller already knows which PRs to include.
-
-Exactly one filter source must be provided. The `output` path is optional — when not provided, the action runs `docs-builder changelog bundle --plan` to resolve the output path from the config (`bundle.output_directory`) before generating the bundle.
-
-**Profile mode** — all configuration comes from `bundle.profiles` in `changelog.yml`:
-
-- **Profile** (`profile`) — a named profile that defines the product filter, output filename pattern, and other settings. The `version` input provides the value for `{version}` substitution in profile patterns.
-- An optional `report` can be passed as a positional argument to filter by promotion report.
-- The `output` path is optional — if not provided, it's resolved from `bundle.output_directory` in the config via the `--plan` step.
-- `bundle.resolve: true` must be set in the config (it cannot be forced via CLI in profile mode).
+- **`changelog-bundle.yml`** (primary) — generates a bundle and uploads it to S3. Used for release-triggered workflows.
+- **`changelog-bundle-pr.yml`** (opt-in) — generates a bundle and opens a pull request. Used for teams that need a committed bundle before a tag exists.
 
 The bundle always includes the full content of each matching entry, so downstream consumers can render changelogs without access to the original files.
 
@@ -264,146 +254,18 @@ Your `docs/changelog.yml` must include a `bundle` section so docs-builder knows 
 ```yaml
 bundle:
   directory: docs/changelog
+  output_directory: docs/releases
+  repo: my-repo
+  owner: elastic
 ```
 
-The reusable workflow splits into two jobs with separate permissions: `generate` (read-only, produces the bundle artifact) and `create-pr` (write access, opens a pull request with the bundle file).
+Your repository must also be listed in the `elastic-docs-v3-changelog-bundles` infrastructure to have an IAM role provisioned for OIDC-based S3 uploads. Contact the docs-engineering team to add your repository.
 
 ### Setup
 
-The bundle action supports multiple trigger patterns depending on your release process.
+#### Profile-based bundling with S3 upload (`on: release`)
 
-#### Stack / product releases (`on: release`)
-
-When a GitHub release is published, the action uses `--release-version` to pull PR references directly from the release notes and filter changelog entries accordingly. The release tag provides the version for the output filename.
-
-**`.github/workflows/changelog-bundle.yml`**
-
-```yaml
-name: changelog-bundle
-
-on:
-  release:
-    types: [published]
-
-permissions:
-  contents: write
-  pull-requests: write
-
-jobs:
-  bundle:
-    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
-    with:
-      release-version: ${{ github.event.release.tag_name }}
-      output: docs/releases/${{ github.event.release.tag_name }}.yaml
-```
-
-The `github.event.release.tag_name` (e.g. `v9.2.0`) is passed as the release version filter and used to construct the output filename. If you prefer to strip the `v` prefix, you can do so in an earlier job step and pass the result as an input.
-
-#### Serverless / scheduled releases (`on: schedule`)
-
-When a Buildkite promotion report provides the list of PRs in a release, a scheduled workflow discovers the report and passes it to the bundle action. The output filename typically uses a date or timestamp.
-
-**`.github/workflows/changelog-bundle.yml`**
-
-```yaml
-name: changelog-bundle
-
-on:
-  schedule:
-    # At 08:00 AM, Monday through Friday
-    - cron: '0 8 * * 1-5'
-  workflow_dispatch:
-    inputs:
-      report:
-        description: 'Buildkite promotion report URL'
-        required: true
-      output:
-        description: 'Output file path for the bundle'
-        required: true
-
-permissions:
-  contents: write
-  pull-requests: write
-
-jobs:
-  discover-report:
-    runs-on: ubuntu-latest
-    outputs:
-      report-url: ${{ steps.discover.outputs.report-url }}
-      release-date: ${{ steps.discover.outputs.release-date }}
-    steps:
-      - id: discover
-        run: echo "# your logic to find the latest promotion report"
-
-  bundle:
-    needs: discover-report
-    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
-    with:
-      report: ${{ needs.discover-report.outputs.report-url }}
-      output: docs/releases/${{ needs.discover-report.outputs.release-date }}.yaml
-```
-
-#### Explicit PR list
-
-When the caller already knows which PRs to include, pass them directly. The `prs` input accepts either comma-separated values or a path to a newline-delimited file. PR numbers can be used instead of full URLs when `bundle.repo` and `bundle.owner` are set in the changelog config.
-
-**Inline PR numbers** — pass them directly in the workflow call:
-
-```yaml
-name: changelog-bundle
-
-on:
-  workflow_dispatch:
-    inputs:
-      prs:
-        description: 'Comma-separated PR URLs or numbers'
-        required: true
-      output:
-        description: 'Output file path for the bundle'
-        required: true
-
-permissions:
-  contents: write
-  pull-requests: write
-
-jobs:
-  bundle:
-    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
-    with:
-      prs: ${{ inputs.prs }}
-      output: ${{ inputs.output }}
-```
-
-For example, triggering this workflow with `prs: "12345,67890"` bundles the changelog entries whose `prs` field matches those PR numbers.
-
-**File-based PR list** — when a prior step produces the list, write it to a file (one PR URL per line) and pass the path:
-
-```yaml
-jobs:
-  prepare:
-    runs-on: ubuntu-latest
-    outputs:
-      prs-file: ${{ steps.generate.outputs.prs-file }}
-    steps:
-      - id: generate
-        run: |
-          echo "https://github.com/elastic/my-repo/pull/12345" > prs.txt
-          echo "https://github.com/elastic/my-repo/pull/67890" >> prs.txt
-          echo "prs-file=prs.txt" >> "$GITHUB_OUTPUT"
-
-  bundle:
-    needs: prepare
-    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
-    with:
-      prs: ${{ needs.prepare.outputs.prs-file }}
-      output: docs/releases/my-bundle.yaml
-```
-
-When using a file, every line must be a fully-qualified GitHub PR URL (e.g. `https://github.com/owner/repo/pull/123`). Bare numbers are only supported in the comma-separated format.
-
-#### Profile-based bundling
-
-When your repository has `bundle.profiles` configured in `changelog.yml`, the profile drives which changelogs to include and where to write the bundle. Set `bundle.resolve: true` in the config so entry contents are inlined.
+The recommended setup for stack and product releases. The caller triggers on `release`, passes a profile and version, and the bundle is uploaded to S3 automatically.
 
 ```yaml
 bundle:
@@ -427,9 +289,7 @@ on:
   release:
     types: [published]
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   bundle:
@@ -439,7 +299,84 @@ jobs:
       version: ${{ github.event.release.tag_name }}
 ```
 
-The `output` input is not needed — the action resolves the output path from `bundle.output_directory` and the profile's `output` pattern via the `--plan` step. If a promotion report is also needed, pass it via the `report` input.
+The `output` input is not needed — the action resolves the output path from `bundle.output_directory` and the profile's `output` pattern via the `--plan` step.
+
+#### GitHub release mode (`mode: gh-release`)
+
+For repositories that do not use the validate/submit workflow to accumulate individual changelog files, `gh-release` mode creates changelogs directly from a GitHub release's notes and bundles them in a single step.
+
+**`.github/workflows/changelog-bundle.yml`**
+
+```yaml
+name: changelog-bundle
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  bundle:
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
+    with:
+      mode: gh-release
+      repo: my-repo
+      version: ${{ github.event.release.tag_name }}
+```
+
+#### Option-based bundling with S3 upload
+
+You can also use option-based filtering instead of profiles. The `release-version`, `report`, and `prs` inputs are supported.
+
+**Stack / product releases:**
+
+```yaml
+name: changelog-bundle
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  bundle:
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
+    with:
+      release-version: ${{ github.event.release.tag_name }}
+      output: docs/releases/${{ github.event.release.tag_name }}.yaml
+```
+
+**Serverless / scheduled releases:**
+
+```yaml
+name: changelog-bundle
+
+on:
+  schedule:
+    # At 08:00 AM, Monday through Friday
+    - cron: '0 8 * * 1-5'
+
+permissions: {}
+
+jobs:
+  discover-report:
+    runs-on: ubuntu-latest
+    outputs:
+      report-url: ${{ steps.discover.outputs.report-url }}
+      release-date: ${{ steps.discover.outputs.release-date }}
+    steps:
+      - id: discover
+        run: echo "# your logic to find the latest promotion report"
+
+  bundle:
+    needs: discover-report
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
+    with:
+      report: ${{ needs.discover-report.outputs.report-url }}
+      output: docs/releases/${{ needs.discover-report.outputs.release-date }}.yaml
+```
 
 #### Custom config path
 
@@ -448,10 +385,40 @@ If your changelog configuration is not at `docs/changelog.yml`, pass the path ex
 ```yaml
     with:
       config: path/to/changelog.yml
-      release-version: ${{ github.event.release.tag_name }}
-      output: docs/releases/${{ github.event.release.tag_name }}.yaml
+      profile: my-release
+      version: ${{ github.event.release.tag_name }}
 ```
 
 ### Output
 
-The reusable workflow opens a pull request on a branch named `changelog-bundle/<bundle-name>` (e.g. `changelog-bundle/v9.2.0`). The PR contains the fully-resolved bundle file at the path specified by the `output` input. If a PR already exists for that branch, the bundle is updated in place. If the generated bundle is identical to what's already in the repository, no commit or PR is created.
+The primary workflow (`changelog-bundle.yml`) uploads the bundle to the `elastic-docs-v3-changelog-bundles` S3 bucket under `{product}/bundles/{filename}`. The bundle is available to downstream rendering workflows immediately after upload.
+
+### Bundle PR workflow (opt-in)
+
+For teams that need a committed bundle file before a tag exists (e.g. feature-freeze branches), use the PR workflow instead. This generates the bundle and opens a pull request.
+
+**`.github/workflows/changelog-bundle-pr.yml`**
+
+```yaml
+name: changelog-bundle-pr
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version string (e.g. 9.2.0)'
+        required: true
+
+permissions: {}
+
+jobs:
+  bundle:
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle-pr.yml@v1
+    with:
+      profile: my-release
+      version: ${{ inputs.version }}
+```
+
+The PR workflow opens a pull request on a branch named `changelog-bundle/<bundle-name>` (e.g. `changelog-bundle/v9.2.0`). If a PR already exists for that branch, the bundle is updated in place. If the generated bundle is identical to what's already in the repository, no commit or PR is created.
+
+> **Note:** The PR workflow does not upload to S3. If you need both S3 upload and a PR, run both workflows or use the composite actions (`bundle-create`, `bundle-upload`, `bundle-pr`) directly.

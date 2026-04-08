@@ -29,10 +29,12 @@ runs:
       with:
         persist-credentials: false
 
-    - name: Validate output path
+    - name: Validate inputs
       shell: bash
       env:
         OUTPUT: ${{ inputs.output }}
+        BASE_BRANCH: ${{ inputs.base-branch }}
+        ARTIFACT_NAME: ${{ inputs.artifact-name }}
       run: |
         if [[ "$OUTPUT" != *.yml && "$OUTPUT" != *.yaml ]]; then
           echo "::error::Output path must end in .yml or .yaml: ${OUTPUT}"
@@ -44,6 +46,18 @@ runs:
         fi
         if [[ "$OUTPUT" == *..* ]]; then
           echo "::error::Output path must not contain '..': ${OUTPUT}"
+          exit 1
+        fi
+        if [[ "$OUTPUT" == *$'\n'* || "$OUTPUT" == *$'\r'* ]]; then
+          echo "::error::Output path must not contain newlines"
+          exit 1
+        fi
+        if [ -n "$BASE_BRANCH" ] && [[ ! "$BASE_BRANCH" =~ ^[a-zA-Z0-9._/+-]+$ ]]; then
+          echo "::error::Base branch contains disallowed characters: ${BASE_BRANCH}"
+          exit 1
+        fi
+        if [[ ! "$ARTIFACT_NAME" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+          echo "::error::Artifact name contains disallowed characters: ${ARTIFACT_NAME}"
           exit 1
         fi
 

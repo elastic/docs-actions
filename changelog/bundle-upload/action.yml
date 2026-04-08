@@ -1,0 +1,110 @@
+name: Changelog bundle upload
+description: >
+  Downloads a changelog bundle artifact and uploads it to the
+  elastic-docs-v3-changelog-bundles S3 bucket. Uses OIDC for AWS
+  authentication and docs-builder's incremental upload.
+
+inputs:
+  output:
+    description: >
+      Output file path for the bundle, relative to the repo root
+      (e.g. docs/releases/v9.2.0.yaml). Must match the path used
+      by the bundle-create action.
+    required: true
+  config:
+    description: 'Path to changelog.yml configuration file (repo-relative, no ".." or absolute paths)'
+    default: 'docs/changelog.yml'
+  artifact-name:
+    description: 'Name of the artifact uploaded by bundle-create'
+    default: 'changelog-bundle'
+  docs-builder-version:
+    description: >
+      docs-builder version to use (e.g. 0.1.100, latest, edge).
+      Non-edge versions are attestation-verified by the setup action.
+    default: 'edge'
+  github-token:
+    description: 'GitHub token (used by docs-builder setup). Use the default GITHUB_TOKEN; do not substitute a broader PAT.'
+    default: '${{ github.token }}'
+  aws-account-id:
+    description: 'The AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account.'
+    default: '197730964718'
+
+runs:
+  using: composite
+  steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        OUTPUT: ${{ inputs.output }}
+        CONFIG: ${{ inputs.config }}
+        ARTIFACT_NAME: ${{ inputs.artifact-name }}
+      run: |
+        validate_path() {
+          local value="$1" name="$2"
+          [ -z "$value" ] && return
+          if [[ "$value" == /* ]]; then
+            echo "::error::${name} must be a relative path: ${value}"; exit 1
+          fi
+          if [[ "$value" == *..* ]]; then
+            echo "::error::${name} must not contain '..': ${value}"; exit 1
+          fi
+          if [[ "$value" == *$'\n'* || "$value" == *$'\r'* ]]; then
+            echo "::error::${name} must not contain newlines"; exit 1
+          fi
+        }
+
+        if [[ "$OUTPUT" != *.yml && "$OUTPUT" != *.yaml ]]; then
+          echo "::error::Output path must end in .yml or .yaml: ${OUTPUT}"
+          exit 1
+        fi
+        validate_path "$OUTPUT" "output"
+        validate_path "$CONFIG" "config"
+
+        if [[ ! "$ARTIFACT_NAME" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+          echo "::error::Artifact name contains disallowed characters: ${ARTIFACT_NAME}"
+          exit 1
+        fi
+
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        persist-credentials: false
+
+    - name: Download bundle artifact
+      uses: actions/download-artifact@v6
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: .bundle-artifact
+
+    - name: Place bundle in output path
+      shell: bash
+      env:
+        OUTPUT: ${{ inputs.output }}
+      run: |
+        mkdir -p "$(dirname "$OUTPUT")"
+        cp ".bundle-artifact/$(basename "$OUTPUT")" "$OUTPUT"
+
+    - name: Setup docs-builder
+      uses: elastic/docs-actions/docs-builder/setup@v1
+      with:
+        version: ${{ inputs.docs-builder-version }}
+        github-token: ${{ inputs.github-token }}
+
+    - name: Authenticate with AWS
+      uses: elastic/docs-actions/aws/auth@v1
+      with:
+        aws_account_id: ${{ inputs.aws-account-id }}
+        aws_role_name_prefix: elastic-docs-v3-changelog-
+
+    - name: Upload bundle to S3
+      shell: bash
+      env:
+        CONFIG: ${{ inputs.config }}
+        OUTPUT: ${{ inputs.output }}
+      run: |
+        docs-builder changelog upload \
+          --artifact-type bundle \
+          --target s3 \
+          --s3-bucket-name elastic-docs-v3-changelog-bundles \
+          --config "$CONFIG" \
+          --directory "$(dirname "$OUTPUT")"
