@@ -158,7 +158,7 @@ You also have access to **`gh api`** via bash. Use it to fetch CODEOWNERS from o
 4. **Use the Elastic Docs MCP server** to gather context. If the issue mentions a topic but no URL, use `search_docs` to find the relevant docs and determine which team owns that area.
 5. **When ambiguous, prefer the team that owns the most relevant page.** Do not guess — use the tools available to you to gather evidence.
 6. **Docs in other repos**: If the issue references documentation stored outside the current repository, use `gh api repos/{owner}/{repo}/contents/.github/CODEOWNERS` to fetch that repo's CODEOWNERS and identify the owning team. Map the result back to the team labels if possible.
-7. **Fallback to the default team** only if you genuinely cannot determine the owning team.
+7. **Fallback**: If you genuinely cannot determine the owning team, apply `cross-team` so the issue stays visible.
 8. **Do NOT add comments.** Only apply labels.
 
 ## Process
