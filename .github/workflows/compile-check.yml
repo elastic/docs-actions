@@ -16,8 +16,14 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Detect gh-aw version from lock files
+        id: detect-version
+        run: |
+          version=$(head -1 .github/workflows/gh-aw-*.lock.yml | grep -oP '"compiler_version":"v\K[^"]+' | head -1)
+          echo "version=v${version}" >> "$GITHUB_OUTPUT"
+
       - name: Install gh-aw
-        run: gh extension install github/gh-aw
+        run: gh extension install github/gh-aw --pin ${{ steps.detect-version.outputs.version }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
