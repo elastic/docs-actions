@@ -37,11 +37,6 @@ on:
         type: string
         default: ''
         required: false
-      include-paths:
-        description: 'Deprecated: use vale-paths instead. Path patterns for Vale linting (multi-line).'
-        type: string
-        default: ''
-        required: false
 
 permissions:
   contents: read
@@ -330,4 +325,4 @@ jobs:
         uses: elastic/vale-rules/lint@main
         with:
           files: ${{ needs.check.outputs.all_changed_files }}
-          include-paths: ${{ inputs.vale-paths != '' && inputs.vale-paths || inputs.include-paths }}
+          vale-paths: ${{ inputs.vale-paths }}
