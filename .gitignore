@@ -2,6 +2,6 @@
 bin/
 site/
 
-# gh-aw compiler copies (source lives in workflows/, these are temporary build artifacts)
+# gh-aw compiler temporary artifacts (fragments only — .md sources must be committed
+# for runtime lock-file verification)
 .github/workflows/gh-aw-fragments/
-.github/workflows/gh-aw-*.md

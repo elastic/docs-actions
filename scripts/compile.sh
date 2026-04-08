@@ -5,7 +5,7 @@
 # expects them in .github/workflows/, so this script:
 #   1. Copies fragments and .md files into .github/workflows/
 #   2. Runs gh-aw compile
-#   3. Removes the copies (lock files remain)
+#   3. Removes fragments (lock files and .md sources remain)
 #
 # Usage:
 #   ./scripts/compile.sh
@@ -24,13 +24,10 @@ fi
 WORKFLOWS_DIR="$REPO_ROOT/agentic-workflows"
 TARGET_DIR="$REPO_ROOT/.github/workflows"
 
-# Track what we copy so we can clean up
-COPIED_FILES=()
-
+# Fragments are only needed during compilation and can be removed after.
+# Workflow .md sources must remain — gh-aw verifies the lock file's
+# frontmatter hash against the .md source at runtime.
 cleanup() {
-  for f in "${COPIED_FILES[@]}"; do
-    rm -f "$f"
-  done
   rm -rf "$TARGET_DIR/gh-aw-fragments"
 }
 trap cleanup EXIT
@@ -47,21 +44,15 @@ for md_file in "$WORKFLOWS_DIR"/*/gh-aw-*.md; do
   [ -f "$md_file" ] || continue
   basename="$(basename "$md_file")"
   cp "$md_file" "$TARGET_DIR/$basename"
-  COPIED_FILES+=("$TARGET_DIR/$basename")
   echo "Copied $(basename "$(dirname "$md_file")")/$basename → .github/workflows/"
 done
-
-if [ ${#COPIED_FILES[@]} -eq 0 ]; then
-  echo "No workflow .md files found in $WORKFLOWS_DIR"
-  exit 0
-fi
 
 # Step 3: Compile
 echo ""
 echo "Compiling..."
 gh aw compile
 
-# Cleanup happens via trap — .md copies and fragments are removed,
-# .lock.yml files remain in .github/workflows/
+# Cleanup happens via trap — fragments are removed.
+# .md sources and .lock.yml files remain in .github/workflows/
 echo ""
 echo "Done. Lock files are in .github/workflows/"
