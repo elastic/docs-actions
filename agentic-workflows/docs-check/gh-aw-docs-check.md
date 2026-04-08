@@ -12,16 +12,6 @@ engine:
   id: copilot
 on:
   roles: [admin, maintainer, write]
-  slash_command: docs-check
-  issues:
-    types: [labeled]
-    names: [docs-check]
-  workflow_dispatch:
-    inputs:
-      url:
-        description: "URL of a public PR or commit to check"
-        required: true
-        type: string
   workflow_call:
     inputs:
       additional-instructions:
