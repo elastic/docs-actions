@@ -14,11 +14,6 @@ engine:
   id: copilot
 
 on:
-  roles: [admin, maintainer, write]
-  slash_command:
-    name: triage
-    events: [issue_comment, issues]
-  workflow_dispatch:
   workflow_call:
     inputs:
       additional-instructions:
