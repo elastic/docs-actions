@@ -30,7 +30,7 @@ jobs:
       - name: Install gh-aw and compile
         run: |
           gh extension install github/gh-aw
-          ./scripts/compile.sh
+          gh aw compile
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
