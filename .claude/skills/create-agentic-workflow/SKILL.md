@@ -65,13 +65,20 @@ Read an existing workflow for reference:
 - `.github/workflows/gh-aw-docs-check.md` — on-demand check pattern
 - `.github/workflows/gh-aw-issue-triage.md` — triage pattern with pre-steps
 
-Generate `.github/workflows/gh-aw-<name>.md` with all content inlined. **Do NOT use `imports:`** — the gh-aw runtime import mechanism does not work for cross-repo `workflow_call`, which is how consumer repos invoke these workflows. All prompt content, safe-output constraints, and MCP server docs must be directly in the `.md` file.
+Generate `.github/workflows/gh-aw-<name>.md`. Read the available fragments in `.github/workflows/gh-aw-fragments/` and import those relevant to the workflow. **Always include `inlined-imports: true`** — this embeds all imported content at compile time, which is required for cross-repo `workflow_call` invocation.
 
 ```yaml
 ---
 description: |
   <one-line description>
 
+inlined-imports: true
+imports:
+  - gh-aw-fragments/formatting.md
+  - gh-aw-fragments/rigor.md
+  - gh-aw-fragments/mcp-pagination.md
+  - gh-aw-fragments/messages-footer.md
+  - gh-aw-fragments/safe-output-<type>.md
 engine:
   id: copilot
 on:
@@ -116,8 +123,6 @@ network:
     - "www.elastic.co"
 strict: false
 safe-outputs:
-  messages:
-    footer: "${{ inputs.messages-footer || '---\n[Docs automation](https://github.com/elastic/docs-actions) | [From workflow: {workflow_name}]({run_url})\n\nReact with 👍 if helpful, 👎 if not.' }}"
   noop:
   <output-type>:
 timeout-minutes: 30
@@ -130,22 +135,17 @@ steps:
 ---
 ```
 
-Follow the frontmatter with the agent prompt in markdown. Structure it as:
+Follow the frontmatter with the agent prompt in markdown. The imported fragments provide formatting guidelines, rigor standards, MCP pagination tips, safe-output limitations, and the message footer note — so you don't need to repeat those. Structure the workflow-specific prompt as:
 1. **Role statement** — who the agent is and what it does
-2. **Formatting guidelines** — lead with key info, be concise, use `<details>` tags
-3. **Rigor** — evidence standards, noop-over-noise philosophy (for audit/check workflows)
-4. **MCP pagination** — token limit guidance if the workflow uses MCP tools
-5. **Data gathering** — what to read, search, or fetch
-6. **Analysis** — what to look for, how to evaluate findings
-7. **What to skip** — explicit exclusions to reduce noise
-8. **Quality gate** — when to noop vs. when to report (noop is the expected outcome)
-9. **Safe output limitations** — max body size, mention limits, allowed HTML for the output type
-10. **Message footer note** — "A footer is automatically appended to all comments and reviews. Do not add your own footer or sign-off — the runtime handles this."
-11. **Output format** — exact format for the issue body, PR body, or comment
+2. **Data gathering** — what to read, search, or fetch
+3. **Analysis** — what to look for, how to evaluate findings
+4. **What to skip** — explicit exclusions to reduce noise
+5. **Quality gate** — when to noop vs. when to report (noop is the expected outcome)
+6. **Output format** — exact format for the issue body, PR body, or comment
 
 End with `${{ inputs.additional-instructions }}` so callers can inject repo-specific guidance.
 
-Not every section is needed for every workflow — include what's relevant. Read the existing workflows for examples of what to include.
+Read the existing workflows for examples.
 
 ### Step 4: Generate the trigger template
 
