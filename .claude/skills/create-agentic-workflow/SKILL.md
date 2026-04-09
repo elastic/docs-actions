@@ -61,7 +61,7 @@ Use `AskUserQuestion` to collect:
 
 ### Step 3: Select fragments
 
-Before generating the workflow, read the available fragments in `agentic-workflows/fragments/` to decide which ones to import. Fragments are reusable prompt building blocks — they inject shared configuration (frontmatter) and instructions (markdown) into the compiled workflow.
+Before generating the workflow, read the available fragments in `.github/workflows/gh-aw-fragments/` to decide which ones to import. Fragments are reusable prompt building blocks — they inject shared configuration (frontmatter) and instructions (markdown) into the compiled workflow.
 
 **Available fragments** (read each one to understand what it provides):
 
@@ -84,14 +84,14 @@ Before generating the workflow, read the available fragments in `agentic-workflo
 - `safe-outputs:` in the workflow override imported defaults
 - `engine:`, `on:`, `concurrency:`, `timeout-minutes:`, `strict:` are NOT importable — they must be in the workflow `.md`
 
-**When to create a new fragment** instead of inlining: if the same prompt section or configuration would be copy-pasted across multiple workflows, extract it into `agentic-workflows/fragments/`. Name it descriptively. Give it frontmatter only if it contributes YAML config (tools, safe-outputs, steps, network, mcp-servers). Give it markdown only if it contributes prompt instructions. It can have both.
+**When to create a new fragment** instead of inlining: if the same prompt section or configuration would be copy-pasted across multiple workflows, extract it into `.github/workflows/gh-aw-fragments/`. Name it descriptively. Give it frontmatter only if it contributes YAML config (tools, safe-outputs, steps, network, mcp-servers). Give it markdown only if it contributes prompt instructions. It can have both.
 
 ### Step 4: Generate the workflow source
 
 Read an existing workflow for reference:
-- `agentic-workflows/docs-check/gh-aw-docs-check.md` — on-demand check pattern
+- `.github/workflows/gh-aw-docs-check.md` — on-demand check pattern
 
-Generate `agentic-workflows/<name>/gh-aw-<name>.md` with proper frontmatter. Only import fragments that are relevant — do not include all of them by default:
+Generate `.github/workflows/gh-aw-<name>.md` with proper frontmatter. Only import fragments that are relevant — do not include all of them by default:
 
 ```yaml
 ---

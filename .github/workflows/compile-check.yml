@@ -3,8 +3,9 @@ name: Compile check
 on:
   pull_request:
     paths:
-      - 'agentic-workflows/**/*.md'
+      - '.github/workflows/gh-aw-*.md'
       - '.github/workflows/gh-aw-*.lock.yml'
+      - '.github/workflows/gh-aw-fragments/**'
 
 permissions:
   contents: read
@@ -28,7 +29,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Compile
-        run: ./scripts/compile.sh
+        run: gh aw compile
 
       - name: Check for uncommitted changes
         run: |

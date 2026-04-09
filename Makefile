@@ -8,7 +8,7 @@ help:
 	@echo "  compile            - Compile workflow .md sources to .lock.yml files"
 	@echo "  lint               - Run all pre-commit hooks"
 	@echo ""
-	@echo "Workflow sources live in agentic-workflows/. Edit .md files there, then run 'make compile'."
+	@echo "Workflow sources live in .github/workflows/gh-aw-*.md. Edit those, then run 'make compile'."
 
 setup:
 	@if gh aw --help >/dev/null 2>&1; then \
@@ -19,7 +19,7 @@ setup:
 	fi
 
 compile: setup
-	@./scripts/compile.sh
+	@gh aw compile
 
 lint:
 	@pre-commit run --all-files
