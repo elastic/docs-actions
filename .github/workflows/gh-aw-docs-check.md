@@ -4,10 +4,6 @@ description: |
   Analyzes code changes against the Elastic docs corpus and reports
   which pages need updates, additions, or review.
 
-imports:
-  - gh-aw-fragments/docs-tools.md
-  - gh-aw-fragments/messages-footer.md
-  - gh-aw-fragments/safe-output-add-comment.md
 engine:
   id: copilot
 on:
@@ -60,12 +56,16 @@ network:
     - "docs-v3-preview.elastic.dev"
 strict: false
 safe-outputs:
+  messages:
+    footer: "${{ inputs.messages-footer || '---\n[Docs automation](https://github.com/elastic/docs-actions) | [From workflow: {workflow_name}]({run_url})\n\nReact with 👍 if helpful, 👎 if not.' }}"
   allowed-domains:
     - www.elastic.co
     - docs-v3-preview.elastic.dev
     - github.com
   noop:
   add-comment:
+    max: 1
+    discussions: false
 timeout-minutes: 30
 steps:
   - name: Repo-specific setup
@@ -159,6 +159,21 @@ Post a single, well-structured comment using `add_comment` with the following fo
 
 <For each affected page, a brief explanation of what needs to change and why.>
 ```
+
+## add-comment Limitations
+
+- **Body**: Max 65,536 characters (including any footer added by gh-aw). Keep well under this limit.
+- **Mentions**: Max 10 `@` mentions per comment.
+- **Links**: Max 50 URLs per comment.
+- **HTML**: Only safe tags allowed (`details`, `summary`, `code`, `pre`, `blockquote`, `table`, `b`, `em`, `strong`, `h1`-`h6`, `hr`, `br`, `li`, `ol`, `ul`, `p`, `sub`, `sup`). Other tags are converted to parentheses.
+- **URLs**: Only HTTPS URLs to allowed domains. Non-HTTPS and non-allowed domains are redacted.
+- **Bot triggers**: References like `fixes #123` or `closes #456` are neutralized to prevent unintended issue closures.
+
+If you exceed 10 mentions or 50 links, the comment will be rejected.
+
+## Message Footer
+
+A footer is automatically appended to all comments and reviews. Do not add your own footer or sign-off — the runtime handles this.
 
 ## Edge cases
 
