@@ -1,4 +1,4 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"6007122b5b8f0fadfe016c4449b69cf439f59ae2a6ba7d191b35fdd7cd1255fa","compiler_version":"v0.68.1","agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"135cbb41ac73404bd3e8d1483c10ca65cb4ee22e81d9849a9b27412048da3b18","compiler_version":"v0.68.1","agent_id":"copilot"}
 # gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9"},{"repo":"actions/upload-artifact","sha":"bbbca2ddaa5d8feaa63e36b76fdaad77386f024f","version":"v7"},{"repo":"github/gh-aw-actions/setup","sha":"2fe53acc038ba01c3bbdc767d4b25df31ca5bdfc","version":"v0.68.1"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
@@ -22,9 +22,9 @@
 #
 # For more information: https://github.github.com/gh-aw/introduction/overview/
 #
-# Checks whether a public PR or commit requires Elastic documentation changes.
-# Analyzes code changes against the Elastic docs corpus and reports
-# which pages need updates, additions, or review.
+# Scopes Elastic documentation work for an issue by using the issue context
+# together with linked public PRs and commits. Reports concise
+# recommendations for which pages should be updated, added, or reviewed.
 #
 # Resolved workflow manifest:
 #   Imports:
@@ -50,7 +50,7 @@
 #   - actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
 #   - github/gh-aw-actions/setup@2fe53acc038ba01c3bbdc767d4b25df31ca5bdfc # v0.68.1
 
-name: "Docs Change Detector"
+name: "Issue Scope Analyzer"
 "on":
   workflow_call:
     inputs:
@@ -86,7 +86,7 @@ concurrency:
   cancel-in-progress: true
   group: docs-issue-scope
 
-run-name: "Docs Change Detector"
+run-name: "Issue Scope Analyzer"
 
 jobs:
   activation:
@@ -127,7 +127,7 @@ jobs:
           GH_AW_INFO_VERSION: "1.0.21"
           GH_AW_INFO_AGENT_VERSION: "1.0.21"
           GH_AW_INFO_CLI_VERSION: "v0.68.1"
-          GH_AW_INFO_WORKFLOW_NAME: "Docs Change Detector"
+          GH_AW_INFO_WORKFLOW_NAME: "Issue Scope Analyzer"
           GH_AW_INFO_EXPERIMENTAL: "false"
           GH_AW_INFO_SUPPORTS_TOOLS_ALLOWLIST: "true"
           GH_AW_INFO_STAGED: "false"
@@ -194,7 +194,6 @@ jobs:
           GH_AW_GITHUB_ACTOR: ${{ github.actor }}
           GH_AW_GITHUB_EVENT_COMMENT_ID: ${{ github.event.comment.id }}
           GH_AW_GITHUB_EVENT_DISCUSSION_NUMBER: ${{ github.event.discussion.number }}
-          GH_AW_GITHUB_EVENT_INPUTS_URL: ${{ github.event.inputs.url }}
           GH_AW_GITHUB_EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
           GH_AW_GITHUB_EVENT_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
           GH_AW_GITHUB_REPOSITORY: ${{ github.repository }}
@@ -204,14 +203,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_afeaf045609c03c9_EOF'
+          cat << 'GH_AW_PROMPT_c2d29cdc3f17178f_EOF'
           <system>
-          GH_AW_PROMPT_afeaf045609c03c9_EOF
+          GH_AW_PROMPT_c2d29cdc3f17178f_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_afeaf045609c03c9_EOF'
+          cat << 'GH_AW_PROMPT_c2d29cdc3f17178f_EOF'
           <safe-output-tools>
           Tools: add_comment, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -243,9 +242,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_afeaf045609c03c9_EOF
+          GH_AW_PROMPT_c2d29cdc3f17178f_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_afeaf045609c03c9_EOF'
+          cat << 'GH_AW_PROMPT_c2d29cdc3f17178f_EOF'
           </system>
           ## Formatting Guidelines
           
@@ -299,44 +298,64 @@ jobs:
           - **Bot triggers**: References like `fixes #123` or `closes #456` are neutralized to prevent unintended issue closures.
           
           If you exceed 10 mentions or 50 links, the comment will be rejected.
-          # Docs Change Detector
+          # Issue Scope Analyzer
           
-          You are a documentation impact analyst for Elastic products. Your job is to determine whether a given PR or commit requires documentation changes, and if so, identify exactly which pages need updating.
+          You are a documentation scoping analyst for Elastic products. Your job is to determine whether an issue describes a docs change that can be scoped from the issue context plus linked public PRs or commits, and if so, identify which documentation pages should be updated, added, or reviewed.
           
           ## Invocation
           
-          This workflow is triggered in one of three ways:
+          This workflow is triggered only by a slash command:
           
-          1. **Slash command**: A user comments `/docs-issue-scope` on an issue or PR. The text after `/docs-issue-scope` may include a public PR or commit URL, and optionally additional context or a specific request (e.g. "please focus on the new API endpoints"). Extract the URL (if present) from the comment body. If no URL is provided in the comment, look for one in the issue or PR body/title.
-          2. **Label**: A user adds the `docs-issue-scope` label to an issue. Extract the PR or commit URL from the issue body or title.
-          3. **Manual dispatch**: The URL is provided via the `url` workflow input at `__GH_AW_GITHUB_EVENT_INPUTS_URL__`.
+          1. **Slash command**: A user comments `/docs-issue-scope` on an issue or PR. The text after `/docs-issue-scope` may include one or more public PR or commit URLs, and can include extra context about the requested documentation change.
           
-          If no URL can be found from any of these sources, post a comment explaining usage:
-          > Usage: `/docs-issue-scope <PR-or-commit-URL> [optional context]`
+          When invoked:
+          
+          - Read the slash-command comment, the issue or PR title, and the issue or PR body.
+          - Use both the issue description and any linked public PRs or commits you can discover from the slash-command comment, the issue or PR body, the title, and any obvious GitHub-linked development references.
+          - If there are no public PRs or commits to inspect, do not analyze documentation impact. Post a concise comment asking the user to add the relevant PR or commit links and rerun `/docs-issue-scope`.
+          - If the issue plus linked code changes still do not contain enough information to understand the requested documentation change, do not guess. Post a concise comment asking the user to add more detail to the issue or link more relevant PRs or commits, then rerun `/docs-issue-scope`.
+          
+          If the request is missing enough context to begin, post a comment explaining usage:
+          > Usage: `/docs-issue-scope [PR-or-commit-URL ...] [optional context]`
           > Example: `/docs-issue-scope https://github.com/elastic/elasticsearch/pull/12345`
           > Example with context: `/docs-issue-scope https://github.com/elastic/elasticsearch/pull/12345 focus on the new ingest pipeline options`
           
-          ## Step 1: Fetch the changes
+          ## Step 1: Gather issue context and code changes
           
-          Use the GitHub tools to retrieve the PR or commit:
+          Read the issue or PR description first to understand the requested docs change and any stated definition of done.
           
-          - If the URL points to a pull request, fetch the PR details and its diff.
-          - If the URL points to a commit, fetch the commit details and its patch.
-          - Identify the repository name, the list of changed files, and the overall nature of the changes.
+          Use the GitHub tools to retrieve the linked PRs or commits:
           
-          Produce a concise summary of what the changes do: new features, configuration changes, API additions or modifications, behavioral changes, bug fixes, deprecations, removals, etc.
+          - If a linked URL points to a pull request, fetch the PR details and its diff.
+          - If a linked URL points to a commit, fetch the commit details and its patch.
+          - Identify the repository name, the changed files, and the overall nature of the linked changes.
+          
+          Produce a concise summary of:
+          
+          - what the issue is asking for,
+          - what the linked changes do, and
+          - whether the issue and code together provide enough information to scope the documentation work.
           
           Skip files that are unlikely to affect documentation (test fixtures, CI configs, `.gitignore`, lockfiles, etc.) but do note them briefly.
           
+          If there is no usable linked code, or the linked code does not clarify the requested docs change enough to scope it responsibly, stop here and post a short comment asking for more detail and a retrigger.
+          
           ## Step 2: Search Elastic documentation
           
-          Using the Elastic docs MCP server tools, search for documentation related to the changes:
+          Using the Elastic docs MCP server tools, search for documentation related to the issue and linked changes:
           
           1. **SemanticSearch** — search for documentation related to the key concepts, features, APIs, or configuration options touched by the changes. Run multiple searches if the PR touches several distinct areas.
           2. **FindRelatedDocs** — for each major feature or component affected, find related documentation pages.
           3. **GetDocumentByUrl** — if the code changes reference specific documentation URLs (in comments, changelogs, or README files), fetch those pages to check if they need updating.
           
           Collect a list of all potentially affected documentation pages with their URLs and titles.
+          
+          As a side resource, apply Elastic documentation content-type guidance and content assembly best practices while evaluating candidate pages (also available from the Elastic docs MCP server):
+          
+          - Consider the role each page plays in its section, such as overview, how-to, tutorial, troubleshooting, changelog, or mixed-purpose page.
+          - Prefer recommending updates to the page that best matches the user's goal and the section's existing structure.
+          - A page can contain multiple content types if they are clearly delineated. Do not recommend splitting content solely because multiple content types appear on one page.
+          - When suggesting a new page, consider whether the content belongs in an existing section page, a new sibling page, or an existing mixed-purpose page in that section.
           
           ## Step 3: Analyze documentation impact
           
@@ -347,6 +366,7 @@ jobs:
           - **New docs needed**: Does the change introduce entirely new functionality with no existing documentation coverage?
           - **Deprecation/removal**: Do any existing docs reference features that are being deprecated or removed?
           - **Cross-references**: Are there links or cross-references in other pages that might be affected?
+          - **Page fit**: Does the suggested destination page make sense for the kind of information being added, given that page's role in the section?
           
           Categorize each finding by impact level:
           - **High** — documentation is wrong or missing for user-facing changes
@@ -356,17 +376,10 @@ jobs:
           
           ## Step 4: Report findings
           
-          Post a single, well-structured comment using `add_comment` with the following format:
+          Post a single, concise comment using `add_comment` with the following format:
           
           ```
           ## Documentation Impact Analysis
-          
-          ### Summary
-          <One-paragraph summary of the code changes and their overall documentation impact.>
-          
-          ### Impact: <High | Medium | Low | None>
-          
-          ### Affected Documentation
           
           | Page | URL | Action Needed | Impact |
           |------|-----|---------------|--------|
@@ -379,27 +392,29 @@ jobs:
           2. Create a new page under the Elasticsearch guide for the new feature X.
           3. Review [page title](url) — the deprecated `abc` option is still documented.
           
-          ### Details
+          ### Notes
           
-          <For each affected page, a brief explanation of what needs to change and why.>
+          <One short bullet or sentence per recommendation explaining why that page is the right fit in the section. Keep this concise.>
           ```
+          
+          Keep the full report concise. Avoid long per-page writeups. Prefer short tables, short recommendations, and brief notes that mention content-type fit or section role only when it materially affects the recommendation.
           
           ## Edge cases
           
           - If the URL is not a valid GitHub PR or commit URL, report the error and suggest the correct format.
           - If the PR or commit is not publicly accessible, report that the URL could not be fetched.
+          - If there are no linked PRs or commits, or not enough information to scope the docs change confidently, ask for more information and tell the user to rerun `/docs-issue-scope` after updating the issue.
           - If the changes are purely internal (tests, CI, refactoring, code style) with no user-facing impact, report "No documentation impact" with a brief explanation of why.
           - If the repository is not an Elastic product repository, still attempt the analysis but note that documentation coverage may be limited.
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_afeaf045609c03c9_EOF
+          GH_AW_PROMPT_c2d29cdc3f17178f_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
-          GH_AW_GITHUB_EVENT_INPUTS_URL: ${{ github.event.inputs.url }}
           GH_AW_EXPR_49B959F1: ${{ inputs.additional-instructions }}
         with:
           script: |
@@ -415,7 +430,6 @@ jobs:
           GH_AW_GITHUB_ACTOR: ${{ github.actor }}
           GH_AW_GITHUB_EVENT_COMMENT_ID: ${{ github.event.comment.id }}
           GH_AW_GITHUB_EVENT_DISCUSSION_NUMBER: ${{ github.event.discussion.number }}
-          GH_AW_GITHUB_EVENT_INPUTS_URL: ${{ github.event.inputs.url }}
           GH_AW_GITHUB_EVENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
           GH_AW_GITHUB_EVENT_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
           GH_AW_GITHUB_REPOSITORY: ${{ github.repository }}
@@ -437,7 +451,6 @@ jobs:
                 GH_AW_GITHUB_ACTOR: process.env.GH_AW_GITHUB_ACTOR,
                 GH_AW_GITHUB_EVENT_COMMENT_ID: process.env.GH_AW_GITHUB_EVENT_COMMENT_ID,
                 GH_AW_GITHUB_EVENT_DISCUSSION_NUMBER: process.env.GH_AW_GITHUB_EVENT_DISCUSSION_NUMBER,
-                GH_AW_GITHUB_EVENT_INPUTS_URL: process.env.GH_AW_GITHUB_EVENT_INPUTS_URL,
                 GH_AW_GITHUB_EVENT_ISSUE_NUMBER: process.env.GH_AW_GITHUB_EVENT_ISSUE_NUMBER,
                 GH_AW_GITHUB_EVENT_PULL_REQUEST_NUMBER: process.env.GH_AW_GITHUB_EVENT_PULL_REQUEST_NUMBER,
                 GH_AW_GITHUB_REPOSITORY: process.env.GH_AW_GITHUB_REPOSITORY,
@@ -574,9 +587,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_f06851eb59398a4c_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_fe1553e51dbc304a_EOF'
           {"add_comment":{"max":1},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_f06851eb59398a4c_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_fe1553e51dbc304a_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -756,7 +769,7 @@ jobs:
           export MCP_GATEWAY_DOCKER_COMMAND='docker run -i --rm --network host -v /var/run/docker.sock:/var/run/docker.sock -e MCP_GATEWAY_PORT -e MCP_GATEWAY_DOMAIN -e MCP_GATEWAY_API_KEY -e MCP_GATEWAY_PAYLOAD_DIR -e MCP_GATEWAY_PAYLOAD_SIZE_THRESHOLD -e DEBUG -e MCP_GATEWAY_LOG_DIR -e GH_AW_MCP_LOG_DIR -e GH_AW_SAFE_OUTPUTS -e GH_AW_SAFE_OUTPUTS_CONFIG_PATH -e GH_AW_SAFE_OUTPUTS_TOOLS_PATH -e GH_AW_ASSETS_BRANCH -e GH_AW_ASSETS_MAX_SIZE_KB -e GH_AW_ASSETS_ALLOWED_EXTS -e DEFAULT_BRANCH -e GITHUB_MCP_SERVER_TOKEN -e GITHUB_MCP_GUARD_MIN_INTEGRITY -e GITHUB_MCP_GUARD_REPOS -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA -e GITHUB_WORKSPACE -e GITHUB_TOKEN -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RUN_ATTEMPT -e GITHUB_JOB -e GITHUB_ACTION -e GITHUB_EVENT_NAME -e GITHUB_EVENT_PATH -e GITHUB_ACTOR -e GITHUB_ACTOR_ID -e GITHUB_TRIGGERING_ACTOR -e GITHUB_WORKFLOW -e GITHUB_WORKFLOW_REF -e GITHUB_WORKFLOW_SHA -e GITHUB_REF -e GITHUB_REF_NAME -e GITHUB_REF_TYPE -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e GH_AW_SAFE_OUTPUTS_PORT -e GH_AW_SAFE_OUTPUTS_API_KEY -v /tmp/gh-aw/mcp-payloads:/tmp/gh-aw/mcp-payloads:rw -v /opt:/opt:ro -v /tmp:/tmp:rw -v '"${GITHUB_WORKSPACE}"':'"${GITHUB_WORKSPACE}"':rw ghcr.io/github/gh-aw-mcpg:v0.2.17'
           
           mkdir -p /home/runner/.copilot
-          cat << GH_AW_MCP_CONFIG_1e918a31d1081526_EOF | bash "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.sh"
+          cat << GH_AW_MCP_CONFIG_7b5a59a7ebfce306_EOF | bash "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.sh"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -814,7 +827,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_1e918a31d1081526_EOF
+          GH_AW_MCP_CONFIG_7b5a59a7ebfce306_EOF
       - name: Download activation artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -1061,7 +1074,7 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_NOOP_MAX: "1"
-          GH_AW_WORKFLOW_NAME: "Docs Change Detector"
+          GH_AW_WORKFLOW_NAME: "Issue Scope Analyzer"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_NOOP_REPORT_AS_ISSUE: "true"
@@ -1078,7 +1091,7 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_MISSING_TOOL_CREATE_ISSUE: "true"
-          GH_AW_WORKFLOW_NAME: "Docs Change Detector"
+          GH_AW_WORKFLOW_NAME: "Issue Scope Analyzer"
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
@@ -1092,7 +1105,7 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_REPORT_INCOMPLETE_CREATE_ISSUE: "true"
-          GH_AW_WORKFLOW_NAME: "Docs Change Detector"
+          GH_AW_WORKFLOW_NAME: "Issue Scope Analyzer"
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
@@ -1106,7 +1119,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
-          GH_AW_WORKFLOW_NAME: "Docs Change Detector"
+          GH_AW_WORKFLOW_NAME: "Issue Scope Analyzer"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_WORKFLOW_ID: "gh-aw-docs-issue-scope"
@@ -1208,8 +1221,8 @@ jobs:
         if: always() && steps.detection_guard.outputs.run_detection == 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
-          WORKFLOW_NAME: "Docs Change Detector"
-          WORKFLOW_DESCRIPTION: "Checks whether a public PR or commit requires Elastic documentation changes.\nAnalyzes code changes against the Elastic docs corpus and reports\nwhich pages need updates, additions, or review."
+          WORKFLOW_NAME: "Issue Scope Analyzer"
+          WORKFLOW_DESCRIPTION: "Scopes Elastic documentation work for an issue by using the issue context\ntogether with linked public PRs and commits. Reports concise\nrecommendations for which pages should be updated, added, or reviewed."
           HAS_PATCH: ${{ needs.agent.outputs.has_patch }}
         with:
           script: |
@@ -1325,7 +1338,7 @@ jobs:
       GH_AW_ENGINE_MODEL: ${{ needs.agent.outputs.model }}
       GH_AW_SAFE_OUTPUT_MESSAGES: "{\"footer\":\"${{ inputs.messages-footer || '---\\n[Docs automation](https://github.com/elastic/docs-actions) | [From workflow: {workflow_name}]({run_url})\\n\\nReact with 👍 if helpful, 👎 if not.' }}\"}"
       GH_AW_WORKFLOW_ID: "gh-aw-docs-issue-scope"
-      GH_AW_WORKFLOW_NAME: "Docs Change Detector"
+      GH_AW_WORKFLOW_NAME: "Issue Scope Analyzer"
     outputs:
       code_push_failure_count: ${{ steps.process_safe_outputs.outputs.code_push_failure_count }}
       code_push_failure_errors: ${{ steps.process_safe_outputs.outputs.code_push_failure_errors }}

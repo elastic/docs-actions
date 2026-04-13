@@ -1,13 +1,12 @@
 # Docs Issue Scope
 
-Analyzes a public PR or commit to determine whether Elastic documentation needs updating. Posts a structured comment with findings, affected pages, and specific recommendations.
+Uses an issue description plus linked public PRs and commits to scope Elastic documentation work. Posts a concise comment with recommended doc targets and specific next steps, or asks for more information if the issue does not provide enough signal.
 
 ## Triggers
 
 | Event | Description |
 |-------|-------------|
-| `/docs-issue-scope <url>` | Slash command on an issue or PR |
-| `workflow_dispatch` | Manual trigger |
+| `/docs-issue-scope [url ...] [context]` | Slash command on an issue or PR |
 
 ## Install
 
@@ -32,7 +31,7 @@ Ensure the `COPILOT_GITHUB_TOKEN` secret is configured in your repository.
 | Output | Max | Description |
 |--------|-----|-------------|
 | `noop` | — | No documentation impact detected |
-| `add-comment` | 1 | Structured documentation impact analysis |
+| `add-comment` | 1 | Concise scope analysis or request for more information |
 
 ## Example
 
@@ -41,7 +40,6 @@ name: Docs Issue Scope
 on:
   issue_comment:
     types: [created]
-  workflow_dispatch:
 
 permissions:
   actions: read
@@ -52,13 +50,11 @@ permissions:
 
 jobs:
   run:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.comment.body, '/docs-issue-scope')
+    if: startsWith(github.event.comment.body, '/docs-issue-scope')
     uses: elastic/docs-actions/.github/workflows/gh-aw-docs-issue-scope.lock.yml@v1
     with:
       additional-instructions: |
-        This repo is the Elasticsearch Java client.
+        This repo is the {{product.elasticsearch}} Java client.
         Focus on REST API changes and client method signatures.
     secrets:
       COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
