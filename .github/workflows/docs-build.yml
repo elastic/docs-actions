@@ -191,8 +191,9 @@ jobs:
             core.setOutput('deleted_files', deleted.join(' '));
             core.setOutput('renamed_files', renamed.join(' '));
 
-      # After raw changed-files: optionally treat release-line pushes as "has docs work" for the build
-      # (see use-release-branches input). Vale still uses any_modified only.
+      # Why: On a release line (e.g. 9.4), months of pushes may touch only code or deps—never docs/. We still need a
+      # full docs build sometimes so links.json exists for the shared link index. Opt-in repos enable that with
+      # use-release-branches; Vale lint stays tied to real doc edits (any_modified), not this override.
       - name: Effective any_modified (release-branch opt-in)
         id: effective-any-modified
         if: always()
