@@ -42,6 +42,13 @@ on:
         type: string
         default: ''
         required: false
+      use-release-branches:
+        description: >
+          When true, update-link-index runs for semver release branches (e.g. 9.4) as well as the default branch.
+          Pair with the same flag on docs-build so links.json is produced on release pushes without docs/** changes.
+        type: boolean
+        default: false
+        required: false
 
 permissions: {}
 
@@ -70,6 +77,7 @@ jobs:
       base-ref: ${{ steps.context.outputs.base-ref }}
       author-association: ${{ steps.context.outputs.author-association }}
       vale-files-match: ${{ steps.context.outputs.vale-files-match }}
+      link-index-eligible: ${{ steps.link-index-branch.outputs.eligible }}
     steps:
       - name: Resolve workflow run context
         id: context
@@ -244,6 +252,21 @@ jobs:
             echo "should-deploy=false" >> "$GITHUB_OUTPUT"
             echo "::notice::Deploy skipped (match=${MATCH}, changes=${CHANGES})"
           fi
+
+      - name: Link index branch eligibility
+        id: link-index-branch
+        env:
+          HEAD_BRANCH: ${{ steps.context.outputs.head-branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          USE_RELEASE: ${{ inputs.use-release-branches }}
+        run: |
+          eligible=false
+          if [[ "$HEAD_BRANCH" == "$DEFAULT_BRANCH" ]]; then
+            eligible=true
+          elif [[ "${USE_RELEASE}" == "true" ]] && [[ "$HEAD_BRANCH" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            eligible=true
+          fi
+          echo "eligible=${eligible}" >> "$GITHUB_OUTPUT"
 
   # Updates (or creates) the preview PR comment to show an in-progress indicator.
   # Runs in parallel with build so reviewers see feedback immediately — the
@@ -725,7 +748,7 @@ jobs:
     if: >
       needs.build.outputs.links_uploaded == 'true'
       && needs.preflight.outputs.content-source-match == 'true'
-      && needs.preflight.outputs.head-branch == github.event.repository.default_branch
+      && needs.preflight.outputs.link-index-eligible == 'true'
     needs:
       - preflight
       - build
