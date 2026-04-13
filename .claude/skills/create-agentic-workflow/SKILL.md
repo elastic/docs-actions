@@ -62,7 +62,7 @@ Use `AskUserQuestion` to collect:
 ### Step 3: Generate the workflow source
 
 Read an existing workflow for reference:
-- `.github/workflows/gh-aw-docs-check.md` — on-demand check pattern
+- `.github/workflows/gh-aw-docs-issue-scope.md` — on-demand check pattern
 - `.github/workflows/gh-aw-issue-triage.md` — triage pattern with pre-steps
 
 Generate `.github/workflows/gh-aw-<name>.md`. Read the available fragments in `.github/workflows/gh-aw-fragments/` and import those relevant to the workflow. **Always include `inlined-imports: true`** — this embeds all imported content at compile time, which is required for cross-repo `workflow_call` invocation.
@@ -154,17 +154,30 @@ Create `agentic-workflows/<name>/example.yml`:
 ```yaml
 name: <Display Name>
 on:
-  <event triggers based on step 2>
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
 
 permissions:
-  <minimum required permissions>
+  actions: read
+  contents: read
+  discussions: write
+  issues: write
+  pull-requests: write
 
 jobs:
   run:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.comment.body, '/<slash-command>')
     uses: elastic/docs-actions/.github/workflows/gh-aw-<name>.lock.yml@v1
     secrets:
       COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
 ```
+
+**Required permissions**: Always include `discussions: write` — the reusable workflow's `conclusion` and `safe_outputs` jobs require it.
+
+**Slash command filtering**: Always add an `if` condition with `startsWith(github.event.comment.body, '/<command>')` — without it, every `issue_comment`-triggered workflow fires on every comment.
 
 For scheduled audits, add `issues: write` to permissions. For fixes, add `contents: write` and `pull-requests: write`.
 

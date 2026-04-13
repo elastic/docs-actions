@@ -1,12 +1,12 @@
 # Issue Triage
 
-Triages issues by analyzing content and applying the appropriate team label. Uses the Elastic Docs MCP server and CODEOWNERS to determine ownership.
+Triages issues by analyzing content and applying the appropriate team label. Uses the Elastic Docs MCP server and CODEOWNERS to determine ownership. Removes the `needs-team` label after applying a team label.
 
 ## Triggers
 
 | Event | Description |
 |-------|-------------|
-| `/triage` | Slash command on an issue comment |
+| `/docs-triage` | Slash command on an issue comment |
 | `workflow_dispatch` | Manual trigger (batch mode: triages all `needs-team` issues) |
 
 ## Install
@@ -14,7 +14,7 @@ Triages issues by analyzing content and applying the appropriate team label. Use
 ```bash
 mkdir -p .github/workflows && curl -sL \
   https://raw.githubusercontent.com/elastic/docs-actions/v1/agentic-workflows/issue-triage/example.yml \
-  -o .github/workflows/issue-triage.yml
+  -o .github/workflows/docs-triage.yml
 ```
 
 Ensure the `COPILOT_GITHUB_TOKEN` secret is configured in your repository.
@@ -33,8 +33,9 @@ Ensure the `COPILOT_GITHUB_TOKEN` secret is configured in your repository.
 |--------|-----|-------------|
 | `noop` | — | No issues to triage or no labels needed |
 | `add-labels` | 30 | Apply team labels to issues |
+| `remove-labels` | 25 | Remove the `needs-team` label after triage |
 
-Allowed labels: `Team:Admin`, `Team:Developer`, `Team:DocsEng`, `Team:Experience`, `Team:Ingest`, `Team:Projects`, `cross-team`.
+Allowed labels for `add-labels`: `Team:Admin`, `Team:Developer`, `Team:DocsEng`, `Team:Experience`, `Team:Ingest`, `Team:Projects`, `cross-team`.
 
 ## How it works
 
@@ -42,7 +43,8 @@ Allowed labels: `Team:Admin`, `Team:Developer`, `Team:DocsEng`, `Team:Experience
 2. The agent reads each issue, uses the Elastic Docs MCP server to gather context about referenced pages
 3. For docs stored outside the current repo, it fetches the relevant repo's CODEOWNERS via `gh api`
 4. It applies the best-fit team label via `add_labels`
+5. If the issue has a `needs-team` label, it removes it via `remove_labels`
 
 ## Example
 
-The `example.yml` includes the full docs-content team mapping via `additional-instructions`. Customize the mapping for your repo's team structure.
+The `example.yml` includes a sample team mapping via `additional-instructions`. Customize the mapping for your repo's team structure.

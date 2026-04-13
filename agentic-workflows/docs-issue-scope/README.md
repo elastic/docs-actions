@@ -1,4 +1,4 @@
-# Docs Check
+# Docs Issue Scope
 
 Analyzes a public PR or commit to determine whether Elastic documentation needs updating. Posts a structured comment with findings, affected pages, and specific recommendations.
 
@@ -6,16 +6,15 @@ Analyzes a public PR or commit to determine whether Elastic documentation needs 
 
 | Event | Description |
 |-------|-------------|
-| `/docs-check <url>` | Slash command on an issue or PR |
-| `docs-check` label | Added to an issue containing a PR/commit URL |
-| `workflow_dispatch` | Manual trigger with a `url` input |
+| `/docs-issue-scope <url>` | Slash command on an issue or PR |
+| `workflow_dispatch` | Manual trigger |
 
 ## Install
 
 ```bash
 mkdir -p .github/workflows && curl -sL \
-  https://raw.githubusercontent.com/elastic/docs-actions/v1/agentic-workflows/docs-check/example.yml \
-  -o .github/workflows/docs-check.yml
+  https://raw.githubusercontent.com/elastic/docs-actions/v1/agentic-workflows/docs-issue-scope/example.yml \
+  -o .github/workflows/docs-issue-scope.yml
 ```
 
 Ensure the `COPILOT_GITHUB_TOKEN` secret is configured in your repository.
@@ -38,27 +37,25 @@ Ensure the `COPILOT_GITHUB_TOKEN` secret is configured in your repository.
 ## Example
 
 ```yaml
-name: Docs Check
+name: Docs Issue Scope
 on:
   issue_comment:
     types: [created]
-  issues:
-    types: [labeled]
   workflow_dispatch:
-    inputs:
-      url:
-        description: "URL of a public PR or commit to check"
-        required: true
-        type: string
 
 permissions:
+  actions: read
   contents: read
-  issues: read
-  pull-requests: read
+  discussions: write
+  issues: write
+  pull-requests: write
 
 jobs:
   run:
-    uses: elastic/docs-actions/.github/workflows/gh-aw-docs-check.lock.yml@v1
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.comment.body, '/docs-issue-scope')
+    uses: elastic/docs-actions/.github/workflows/gh-aw-docs-issue-scope.lock.yml@v1
     with:
       additional-instructions: |
         This repo is the Elasticsearch Java client.
