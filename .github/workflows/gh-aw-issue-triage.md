@@ -120,6 +120,10 @@ safe-outputs:
       - "Team:Projects"
       - "cross-team"
     max: 30
+  remove-labels:
+    allowed:
+      - "needs-team"
+    max: 25
 
 timeout-minutes: 10
 ---
@@ -156,6 +160,7 @@ You also have access to **`gh api`** via bash. Use it to fetch CODEOWNERS from o
 6. **Docs in other repos**: If the issue references documentation stored outside the current repository, use `gh api repos/{owner}/{repo}/contents/.github/CODEOWNERS` to fetch that repo's CODEOWNERS and identify the owning team. Map the result back to the team labels if possible.
 7. **Fallback**: If you genuinely cannot determine the owning team, apply `cross-team` so the issue stays visible.
 8. **Do NOT add comments.** Only apply labels.
+9. **Remove the `needs-team` label** after applying a team label. If the issue has a `needs-team` label, remove it using `remove_labels` once you have applied the correct team label.
 
 ## Process
 
