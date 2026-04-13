@@ -49,6 +49,7 @@ tools:
   web-fetch:
 mcp-servers:
   elastic-docs:
+    type: http
     url: "https://www.elastic.co/docs/_mcp/"
     allowed:
       - "SemanticSearch"
