@@ -36,7 +36,7 @@ on:
       COPILOT_GITHUB_TOKEN:
         required: true
 concurrency:
-  group: docs-check
+  group: docs-issue-scope
   cancel-in-progress: true
 permissions:
   contents: read
@@ -87,14 +87,14 @@ You are a documentation impact analyst for Elastic products. Your job is to dete
 
 This workflow is triggered in one of three ways:
 
-1. **Slash command**: A user comments `/docs-check` on an issue or PR. The text after `/docs-check` may include a public PR or commit URL, and optionally additional context or a specific request (e.g. "please focus on the new API endpoints"). Extract the URL (if present) from the comment body. If no URL is provided in the comment, look for one in the issue or PR body/title.
-2. **Label**: A user adds the `docs-check` label to an issue. Extract the PR or commit URL from the issue body or title.
+1. **Slash command**: A user comments `/docs-issue-scope` on an issue or PR. The text after `/docs-issue-scope` may include a public PR or commit URL, and optionally additional context or a specific request (e.g. "please focus on the new API endpoints"). Extract the URL (if present) from the comment body. If no URL is provided in the comment, look for one in the issue or PR body/title.
+2. **Label**: A user adds the `docs-issue-scope` label to an issue. Extract the PR or commit URL from the issue body or title.
 3. **Manual dispatch**: The URL is provided via the `url` workflow input at `${{ github.event.inputs.url }}`.
 
 If no URL can be found from any of these sources, post a comment explaining usage:
-> Usage: `/docs-check <PR-or-commit-URL> [optional context]`
-> Example: `/docs-check https://github.com/elastic/elasticsearch/pull/12345`
-> Example with context: `/docs-check https://github.com/elastic/elasticsearch/pull/12345 focus on the new ingest pipeline options`
+> Usage: `/docs-issue-scope <PR-or-commit-URL> [optional context]`
+> Example: `/docs-issue-scope https://github.com/elastic/elasticsearch/pull/12345`
+> Example with context: `/docs-issue-scope https://github.com/elastic/elasticsearch/pull/12345 focus on the new ingest pipeline options`
 
 ## Step 1: Fetch the changes
 
