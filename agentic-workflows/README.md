@@ -4,8 +4,8 @@ AI-powered workflows for Elastic documentation tasks. Each directory contains a 
 
 | Workflow | Description | Trigger | Safe Output |
 |----------|-------------|---------|-------------|
-| [docs-check](docs-check/) | Analyze a PR or commit for documentation impact | `/docs-check`, label, dispatch | `add-comment` |
-| [issue-triage](issue-triage/) | Triage issues by applying team labels | `/triage`, dispatch | `add-labels` |
+| [docs-issue-scope](docs-issue-scope/) | Analyze a PR or commit for documentation impact | `/docs-issue-scope`, dispatch | `add-comment` |
+| [issue-triage](issue-triage/) | Triage issues by applying team labels | `/docs-triage`, dispatch | `add-labels`, `remove-labels` |
 
 ## Installation
 
@@ -13,8 +13,8 @@ Copy a workflow's `example.yml` into your repository's `.github/workflows/` dire
 
 ```bash
 mkdir -p .github/workflows && curl -sL \
-  https://raw.githubusercontent.com/elastic/docs-actions/v1/agentic-workflows/docs-check/example.yml \
-  -o .github/workflows/docs-check.yml
+  https://raw.githubusercontent.com/elastic/docs-actions/v1/agentic-workflows/docs-issue-scope/example.yml \
+  -o .github/workflows/docs-issue-scope.yml
 ```
 
 All workflows require the `COPILOT_GITHUB_TOKEN` secret.

@@ -10,8 +10,8 @@
 │   ├── mcp-pagination.md
 │   ├── messages-footer.md
 │   └── safe-output-add-comment.md
-├── gh-aw-docs-check.md                # Workflow source
-├── gh-aw-docs-check.lock.yml          # Compiled output
+├── gh-aw-docs-issue-scope.md          # Workflow source
+├── gh-aw-docs-issue-scope.lock.yml    # Compiled output
 ├── gh-aw-issue-triage.md              # Workflow source
 ├── gh-aw-issue-triage.lock.yml        # Compiled output
 ├── compile-check.yml                   # PR validation
@@ -19,7 +19,7 @@
 └── ... (other CI workflows)
 
 agentic-workflows/
-├── docs-check/
+├── docs-issue-scope/
 │   ├── example.yml                     # Trigger template for callers
 │   └── README.md                       # Usage docs
 ├── issue-triage/
@@ -76,10 +76,7 @@ make setup    # installs gh-aw extension
 ### Adding a new workflow
 
 1. Create `.github/workflows/gh-aw-<name>.md` with `inlined-imports: true`, imports, tools, network, safe-outputs, and prompt
-2. Create `agentic-workflows/<name>/example.yml` with event triggers and:
-   ```yaml
-   uses: elastic/docs-actions/.github/workflows/gh-aw-<name>.lock.yml@v1
-   ```
+2. Create `agentic-workflows/<name>/example.yml` — see [Writing trigger templates](#writing-trigger-templates) below
 3. Create `agentic-workflows/<name>/README.md` with trigger details, inputs, and safe outputs
 4. Run `make compile`
 5. Commit source files + generated `.lock.yml`
@@ -121,6 +118,44 @@ on:
 | `gh-aw-fragments/mcp-pagination.md` | MCP token limit guidance and pagination patterns |
 | `gh-aw-fragments/messages-footer.md` | Wires the `messages-footer` input to `safe-outputs.messages.footer` |
 | `gh-aw-fragments/safe-output-add-comment.md` | Limitations for `add-comment` |
+
+### Writing trigger templates
+
+Trigger templates (`agentic-workflows/<name>/example.yml`) are the files consumer repos copy into their `.github/workflows/`. They define event triggers and call the compiled `.lock.yml` via `uses:`. Two things to get right:
+
+#### Required permissions
+
+The reusable workflows' internal `conclusion` and `safe_outputs` jobs require `discussions: write`. Without it, GitHub rejects the workflow with an error like:
+
+> The nested job 'conclusion' is requesting 'discussions: write', but is only allowed 'discussions: none'.
+
+Always include these permissions in trigger templates:
+
+```yaml
+permissions:
+  actions: read
+  contents: read
+  discussions: write
+  issues: write
+  pull-requests: write
+```
+
+#### Slash command filtering
+
+Multiple workflows can trigger on `issue_comment`. Without filtering, **every** comment-triggered workflow fires on **every** comment. The reusable workflow's `pre_activation` step only checks team membership, not the slash command.
+
+Add an `if` condition to the job so it only runs when the comment matches the expected command:
+
+```yaml
+jobs:
+  run:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.comment.body, '/docs-issue-scope')
+    uses: elastic/docs-actions/.github/workflows/gh-aw-docs-issue-scope.lock.yml@v1
+```
+
+Without this, typing `/docs-issue-scope` would also trigger `/docs-triage` (and any other `issue_comment`-triggered workflow).
 
 ### CI
 
