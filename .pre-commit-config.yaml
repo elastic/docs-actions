@@ -5,9 +5,12 @@ repos:
     hooks:
       - id: check-merge-conflict
       - id: check-yaml
+        exclude: '\.lock\.yml$'
       - id: end-of-file-fixer
+        exclude: '\.lock\.yml$'
       - id: mixed-line-ending
       - id: trailing-whitespace
+        exclude: '\.lock\.yml$'
 
   - repo: https://github.com/reakaleek/gh-action-readme
     rev: v0.7.1
@@ -16,6 +19,16 @@ repos:
         verbose: true
 
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.11
+    rev: v1.7.12
     hooks:
       - id: actionlint
+        exclude: '\.lock\.yml$'
+
+  - repo: local
+    hooks:
+      - id: compile-workflows
+        name: compile gh-aw workflows
+        language: system
+        entry: gh aw compile
+        files: '\.github/workflows/gh-aw-.*\.md$|\.github/workflows/gh-aw-fragments/'
+        pass_filenames: false

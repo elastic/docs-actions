@@ -1,0 +1,34 @@
+name: Docs Triage
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  discussions: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  run:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.comment.body, '/docs-triage')
+    uses: elastic/docs-actions/.github/workflows/gh-aw-issue-triage.lock.yml@v1
+    with:
+      additional-instructions: |
+        ## Team Ownership Mapping
+
+        | Team Label | Owns | Keywords / URL paths |
+        |---|---|---|
+        | `Team:Admin` | Elasticsearch admin, cluster mgmt, cloud, deployment docs | Paths: `deploy-manage/`, `cloud-account/`, `manage-data/` |
+        | `Team:Experience` | Kibana, observability solution, security solution | Paths: `explore-analyze/`, `solutions/observability/`, `solutions/security/` |
+        | `Team:Developer` | Elasticsearch developer, search solution docs | Paths: `solutions/search/`, `reference/elasticsearch/clients/` |
+        | `Team:Ingest` | Data ingestion, Fleet, APM agents docs | Paths: `manage-data/ingest/`, `reference/fleet/` |
+        | `Team:DocsEng` | Docs infrastructure | Paths: `.github/workflows/` |
+
+        **Fallback**: If you genuinely cannot determine the owning team, apply `cross-team`.
+    secrets:
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}

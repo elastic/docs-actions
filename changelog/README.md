@@ -116,11 +116,10 @@ validate workflow (read-only, lightweight gate)
        ├── runs docs-builder changelog evaluate-pr
        │     with PR-event-specific context (event action, title changes)
        │
-       ├── pass (exit 0): proceed, no-label, skipped, manually-edited
-       └── fail (exit 1): no-title, error
-              → submit workflow does NOT run
+       ├── pass (exit 0): proceed, skipped, manually-edited
+       └── fail (exit 1): no-label, no-title, error
 
-       │ (exit 0)
+       │ (any conclusion except cancelled)
        v
 submit workflow (write permissions, via workflow_run)
        │
@@ -144,7 +143,7 @@ submit workflow (write permissions, via workflow_run)
        └── otherwise (skipped, manually-edited): no-op
 ```
 
-The evaluate logic runs twice — once as a gate (with event-specific checks like body-only edit and bot-loop detection), and once in the trusted submit context to drive behavior. This is intentional: the second evaluation uses fresh PR data from the API, so it correctly handles label or title changes between the two runs.
+The evaluate logic runs twice — once as a gate (with event-specific checks like body-only edit and bot-loop detection), and once in the trusted submit context to drive behavior. This is intentional: the second evaluation uses fresh PR data from the API, so it correctly handles label or title changes between the two runs. The submit workflow runs for any non-cancelled validate conclusion, so it can post actionable feedback (e.g., listing available labels) even when validate fails.
 
 ### Comment-only mode
 
@@ -170,7 +169,7 @@ rules:
     exclude: "changelog:skip"
 ```
 
-When all products are blocked by the create rules, the validate action passes (so CI stays green) but the submit action detects the same condition and exits without generating. You can also use `include` mode or per-product overrides. See [Rules for creation and publishing](https://elastic.github.io/docs-builder/contribute/changelog/#rules-for-creation-and-publishing) for the full reference.
+When all products are blocked by the create rules, the validate action passes with `skipped` status (so CI stays green) and the submit action exits without generating. If no matching type label is found (including when labels exist but none correspond to a configured type or skip rule), validate fails with `no-label` and submit posts a comment listing the available labels. You can also use `include` mode or per-product overrides. See [Rules for creation and publishing](https://elastic.github.io/docs-builder/contribute/changelog/#rules-for-creation-and-publishing) for the full reference.
 
 ## Manual edits
 
@@ -179,3 +178,60 @@ If a human edits the changelog file directly (i.e., the last commit to the chang
 ## Output
 
 Each PR produces a file at `docs/changelog/{filename}.yaml` on the PR branch (where the filename is determined by the `docs-builder changelog add` command). These files are consumed by `docs-builder` during documentation builds to produce a rendered changelog page.
+
+## Uploading to S3
+
+Changelog files on the default branch can be uploaded to the `elastic-docs-v3-changelog-bundles` S3 bucket under `{product}/changelogs/{filename}.yaml`, preserving the original filename as determined by the repository's `filename` strategy in `changelog.yml`. This makes them available for release bundling workflows.
+
+### 1. Add the upload workflow
+
+**`.github/workflows/changelog-upload.yml`**
+
+```yaml
+name: changelog-upload
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'docs/changelog/**'
+      - 'docs/changelog.yml'
+
+permissions: {}
+
+jobs:
+  upload:
+    uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
+```
+
+The `paths` filter is optional — it avoids running the workflow on pushes that don't touch changelog files. If your changelog directory or config lives elsewhere, adjust the paths accordingly.
+
+If your changelog configuration is not at `docs/changelog.yml`, pass the path explicitly:
+
+```yaml
+jobs:
+  upload:
+    uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
+    with:
+      config: path/to/changelog.yml
+```
+
+### 2. Enable OIDC access
+
+The upload workflow authenticates to AWS via GitHub Actions OIDC. Your repository must be listed in the `elastic-docs-v3-changelog-bundles` infrastructure to have an IAM role provisioned. Contact the docs-engineering team to add your repository.
+
+### How it works
+
+On each push to `main` or `master`, the upload workflow:
+
+1. Checks out the pushed commit
+2. Sets up `docs-builder` and authenticates with AWS via OIDC
+3. Runs `docs-builder changelog upload`, which reads your `changelog.yml`, discovers changelog YAML files in the configured directory, and incrementally uploads them to `{product}/changelogs/{filename}.yaml` in the bucket — only files whose content has changed are transferred
+
+If the changelog directory has no files (for example, because changelog generation was skipped), the command exits silently without error.
+
+The workflow uses a per-repository concurrency group so that rapid successive pushes queue rather than run in parallel. If a run is already in progress when a new push arrives, the in-progress run completes before the next one starts. Since `docs-builder` performs incremental uploads (skipping unchanged objects), re-runs are cheap.
+
+> **Note:** The composite action accepts an `aws-account-id` input (default: the Elastic docs account). Overriding this is only valid when OIDC trust and IAM roles have been provisioned for the target account. In practice, most repositories should use the default.
+
+> **Note:** The `github-token` input defaults to the workflow's `GITHUB_TOKEN`, which is scoped to the job's declared permissions. Do not substitute a broader PAT unless `docs-builder/setup` explicitly requires it.

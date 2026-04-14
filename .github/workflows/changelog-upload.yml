@@ -1,0 +1,27 @@
+name: Changelog upload
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        description: 'Path to changelog.yml configuration file'
+        type: string
+        default: 'docs/changelog.yml'
+
+permissions: {}
+
+concurrency:
+  group: changelog-s3-sync-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Upload changelog
+        uses: elastic/docs-actions/changelog/upload@v1
+        with:
+          config: ${{ inputs.config }}
