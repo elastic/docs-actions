@@ -1,13 +1,12 @@
 # Docs Issue Scope
 
-Analyzes a public PR or commit to determine whether Elastic documentation needs updating. Posts a structured comment with findings, affected pages, and specific recommendations.
+Uses an issue description plus linked public PRs and commits to scope Elastic documentation work. When the command runs on an issue, it maintains a concise bot-managed scope block in the issue body when that can be done safely. Otherwise, it falls back to a concise comment with recommended doc targets and next steps.
 
 ## Triggers
 
 | Event | Description |
 |-------|-------------|
-| `/docs-issue-scope <url>` | Slash command on an issue or PR |
-| `workflow_dispatch` | Manual trigger |
+| `/docs-issue-scope [url ...] [context]` | Slash command on an issue or PR |
 
 ## Install
 
@@ -32,7 +31,17 @@ Ensure the `COPILOT_GITHUB_TOKEN` secret is configured in your repository.
 | Output | Max | Description |
 |--------|-----|-------------|
 | `noop` | — | No documentation impact detected |
-| `add-comment` | 1 | Structured documentation impact analysis |
+| `add-comment` | 1 | Concise fallback comment when body updates are skipped or the command runs on a PR |
+| `update-issue` | 1 | Maintains a bot-managed scope block in the issue body |
+
+## Managed issue block
+
+When `/docs-issue-scope` runs on an issue, the workflow prefers to maintain a bot-managed block between:
+
+- `<!-- docs-issue-scope:start -->`
+- `<!-- docs-issue-scope:end -->`
+
+If the markers already exist exactly once, the workflow rewrites only that block. If the markers are missing, it appends a new block. If the markers are malformed or duplicated, it does not overwrite the issue body and falls back to a concise comment instead.
 
 ## Example
 
@@ -41,7 +50,6 @@ name: Docs Issue Scope
 on:
   issue_comment:
     types: [created]
-  workflow_dispatch:
 
 permissions:
   actions: read
@@ -52,13 +60,11 @@ permissions:
 
 jobs:
   run:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.comment.body, '/docs-issue-scope')
+    if: startsWith(github.event.comment.body, '/docs-issue-scope')
     uses: elastic/docs-actions/.github/workflows/gh-aw-docs-issue-scope.lock.yml@v1
     with:
       additional-instructions: |
-        This repo is the Elasticsearch Java client.
+        This repo is the {{product.elasticsearch}} Java client.
         Focus on REST API changes and client method signatures.
     secrets:
       COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
