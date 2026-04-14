@@ -23,3 +23,12 @@ repos:
     hooks:
       - id: actionlint
         exclude: '\.lock\.yml$'
+
+  - repo: local
+    hooks:
+      - id: compile-workflows
+        name: compile gh-aw workflows
+        language: system
+        entry: gh aw compile
+        files: '\.github/workflows/gh-aw-.*\.md$|\.github/workflows/gh-aw-fragments/'
+        pass_filenames: false
