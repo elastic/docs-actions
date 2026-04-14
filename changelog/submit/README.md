@@ -6,12 +6,13 @@ Self-contained action that generates a changelog entry and either commits it to 
 
 ## Inputs
 <!--inputs-->
-| Name                 | Description                                                        | Required | Default               |
-|----------------------|--------------------------------------------------------------------|----------|-----------------------|
-| `config`             | Path to changelog.yml configuration file                           | `false`  | `docs/changelog.yml`  |
-| `strip-title-prefix` | Remove [Prefix]: from PR titles                                    | `false`  | `true`                |
-| `github-token`       | GitHub token with contents:write and pull-requests:write           | `false`  | `${{ github.token }}` |
-| `comment-only`       | Post changelog as a PR comment instead of committing to the branch | `false`  | `false`               |
+| Name                 | Description                                                                                                                  | Required | Default               |
+|----------------------|------------------------------------------------------------------------------------------------------------------------------|----------|-----------------------|
+| `config`             | Path to changelog.yml configuration file                                                                                     | `false`  | `docs/changelog.yml`  |
+| `strip-title-prefix` | Remove [Prefix]: from PR titles                                                                                              | `false`  | `true`                |
+| `github-token`       | GitHub token with contents:write and pull-requests:write                                                                     | `false`  | `${{ github.token }}` |
+| `comment-only`       | Post changelog as a PR comment instead of committing to the branch                                                           | `false`  | `false`               |
+| `org-check-token`    | Token with read:org scope for checking elastic org membership (only org members get direct commits; others get comment-only) | `false`  | ` `                   |
 <!--/inputs-->
 
 ## Outputs
