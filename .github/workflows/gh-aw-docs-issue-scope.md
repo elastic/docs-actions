@@ -94,6 +94,7 @@ When invoked:
 - Read the slash-command comment, the issue or PR title, and the issue or PR body.
 - Discover linked work in this order: links in the slash-command comment, links in the issue or PR body, explicit GitHub development references, and then any other obvious linked public PRs or commits you can reliably identify from the issue context.
 - Use both the issue description and the linked public PRs or commits you discover. Treat the issue request and the code changes as separate sources of truth that need to be reconciled.
+- Verify that the issue request itself is accurate. Do not assume the issue premise is correct just because the request is clearly written.
 - If there are no public PRs or commits to inspect, do not analyze documentation impact. Post a concise comment asking the user to add the relevant PR or commit links and rerun `/docs-issue-scope`.
 - If the issue plus linked code changes still do not contain enough information to understand the requested documentation change, do not guess. Post a concise comment asking the user to add more detail to the issue or link more relevant PRs or commits, then rerun `/docs-issue-scope`.
 
@@ -124,9 +125,12 @@ Produce a concise summary of:
 
 - what the issue is asking for,
 - what the linked changes do, and
+- whether the issue premise appears accurate, partially accurate, stale, or unsupported by the linked changes, and
 - whether the issue and code together provide enough information to scope the documentation work.
 
 Keep the issue request separate from the code summary. If they differ, say so explicitly instead of blending them into one narrative.
+
+If the issue is based on an incorrect premise, a stale understanding of the implementation, or a user-facing change that the linked code does not actually make, say so directly. Treat that as a reason to narrow the recommendation, ask for clarification, or report no documentation action rather than forcing a docs scope from a faulty premise.
 
 Skip files that are unlikely to affect documentation, such as test fixtures, CI configs, `.gitignore`, and lockfiles, but do note them briefly.
 
@@ -205,6 +209,9 @@ Post a single, concise comment using `add_comment` with the following format:
 ### Summary
 <1 short paragraph separating what the issue asks for from what the linked code changes show.>
 
+### Request accuracy
+<1 short sentence: Accurate / Partially accurate / Stale / Unsupported by linked changes.>
+
 ### Next action for author
 <1 sentence, such as "Update the existing how-to page" or "Add more issue detail and rerun /docs-issue-scope".>
 
@@ -242,7 +249,7 @@ If the request does not have enough information, use this shorter response inste
 Add more issue detail or link the relevant public PRs or commits, then rerun `/docs-issue-scope`.
 
 ### Why this is blocked
-- <Missing linked PRs or commits / linked code appears unrelated / issue lacks user-facing details / conflicting signals>
+- <Missing linked PRs or commits / linked code appears unrelated / issue lacks user-facing details / conflicting signals / issue premise appears incorrect or stale>
 
 ### What to add
 1. <Relevant PR or commit links.>

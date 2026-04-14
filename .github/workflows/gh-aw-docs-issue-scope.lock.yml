@@ -1,4 +1,4 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"5303b9ddbacfb23ec081847a8e442e88e4d5aa30a127996eba1d6b5da74df302","compiler_version":"v0.68.1","agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"098a833b82e08c85512d2a5f0843f75d30d1e86cfcf70391316a1232cfbf1882","compiler_version":"v0.68.1","agent_id":"copilot"}
 # gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9"},{"repo":"actions/upload-artifact","sha":"bbbca2ddaa5d8feaa63e36b76fdaad77386f024f","version":"v7"},{"repo":"github/gh-aw-actions/setup","sha":"2fe53acc038ba01c3bbdc767d4b25df31ca5bdfc","version":"v0.68.1"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
@@ -203,14 +203,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_abb1d6c5ba346cd5_EOF'
+          cat << 'GH_AW_PROMPT_5c80064e207de34e_EOF'
           <system>
-          GH_AW_PROMPT_abb1d6c5ba346cd5_EOF
+          GH_AW_PROMPT_5c80064e207de34e_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_abb1d6c5ba346cd5_EOF'
+          cat << 'GH_AW_PROMPT_5c80064e207de34e_EOF'
           <safe-output-tools>
           Tools: add_comment, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -242,9 +242,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_abb1d6c5ba346cd5_EOF
+          GH_AW_PROMPT_5c80064e207de34e_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_abb1d6c5ba346cd5_EOF'
+          cat << 'GH_AW_PROMPT_5c80064e207de34e_EOF'
           </system>
           ## Formatting Guidelines
           
@@ -313,6 +313,7 @@ jobs:
           - Read the slash-command comment, the issue or PR title, and the issue or PR body.
           - Discover linked work in this order: links in the slash-command comment, links in the issue or PR body, explicit GitHub development references, and then any other obvious linked public PRs or commits you can reliably identify from the issue context.
           - Use both the issue description and the linked public PRs or commits you discover. Treat the issue request and the code changes as separate sources of truth that need to be reconciled.
+          - Verify that the issue request itself is accurate. Do not assume the issue premise is correct just because the request is clearly written.
           - If there are no public PRs or commits to inspect, do not analyze documentation impact. Post a concise comment asking the user to add the relevant PR or commit links and rerun `/docs-issue-scope`.
           - If the issue plus linked code changes still do not contain enough information to understand the requested documentation change, do not guess. Post a concise comment asking the user to add more detail to the issue or link more relevant PRs or commits, then rerun `/docs-issue-scope`.
           
@@ -343,9 +344,12 @@ jobs:
           
           - what the issue is asking for,
           - what the linked changes do, and
+          - whether the issue premise appears accurate, partially accurate, stale, or unsupported by the linked changes, and
           - whether the issue and code together provide enough information to scope the documentation work.
           
           Keep the issue request separate from the code summary. If they differ, say so explicitly instead of blending them into one narrative.
+          
+          If the issue is based on an incorrect premise, a stale understanding of the implementation, or a user-facing change that the linked code does not actually make, say so directly. Treat that as a reason to narrow the recommendation, ask for clarification, or report no documentation action rather than forcing a docs scope from a faulty premise.
           
           Skip files that are unlikely to affect documentation, such as test fixtures, CI configs, `.gitignore`, and lockfiles, but do note them briefly.
           
@@ -424,6 +428,9 @@ jobs:
           ### Summary
           <1 short paragraph separating what the issue asks for from what the linked code changes show.>
           
+          ### Request accuracy
+          <1 short sentence: Accurate / Partially accurate / Stale / Unsupported by linked changes.>
+          
           ### Next action for author
           <1 sentence, such as "Update the existing how-to page" or "Add more issue detail and rerun /docs-issue-scope".>
           
@@ -461,7 +468,7 @@ jobs:
           Add more issue detail or link the relevant public PRs or commits, then rerun `/docs-issue-scope`.
           
           ### Why this is blocked
-          - <Missing linked PRs or commits / linked code appears unrelated / issue lacks user-facing details / conflicting signals>
+          - <Missing linked PRs or commits / linked code appears unrelated / issue lacks user-facing details / conflicting signals / issue premise appears incorrect or stale>
           
           ### What to add
           1. <Relevant PR or commit links.>
@@ -478,7 +485,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_abb1d6c5ba346cd5_EOF
+          GH_AW_PROMPT_5c80064e207de34e_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
@@ -656,9 +663,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_f6337d0864a626d2_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_47f47e72a17cb1f7_EOF'
           {"add_comment":{"max":1},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_f6337d0864a626d2_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_47f47e72a17cb1f7_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -838,7 +845,7 @@ jobs:
           export MCP_GATEWAY_DOCKER_COMMAND='docker run -i --rm --network host -v /var/run/docker.sock:/var/run/docker.sock -e MCP_GATEWAY_PORT -e MCP_GATEWAY_DOMAIN -e MCP_GATEWAY_API_KEY -e MCP_GATEWAY_PAYLOAD_DIR -e MCP_GATEWAY_PAYLOAD_SIZE_THRESHOLD -e DEBUG -e MCP_GATEWAY_LOG_DIR -e GH_AW_MCP_LOG_DIR -e GH_AW_SAFE_OUTPUTS -e GH_AW_SAFE_OUTPUTS_CONFIG_PATH -e GH_AW_SAFE_OUTPUTS_TOOLS_PATH -e GH_AW_ASSETS_BRANCH -e GH_AW_ASSETS_MAX_SIZE_KB -e GH_AW_ASSETS_ALLOWED_EXTS -e DEFAULT_BRANCH -e GITHUB_MCP_SERVER_TOKEN -e GITHUB_MCP_GUARD_MIN_INTEGRITY -e GITHUB_MCP_GUARD_REPOS -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA -e GITHUB_WORKSPACE -e GITHUB_TOKEN -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RUN_ATTEMPT -e GITHUB_JOB -e GITHUB_ACTION -e GITHUB_EVENT_NAME -e GITHUB_EVENT_PATH -e GITHUB_ACTOR -e GITHUB_ACTOR_ID -e GITHUB_TRIGGERING_ACTOR -e GITHUB_WORKFLOW -e GITHUB_WORKFLOW_REF -e GITHUB_WORKFLOW_SHA -e GITHUB_REF -e GITHUB_REF_NAME -e GITHUB_REF_TYPE -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e GH_AW_SAFE_OUTPUTS_PORT -e GH_AW_SAFE_OUTPUTS_API_KEY -v /tmp/gh-aw/mcp-payloads:/tmp/gh-aw/mcp-payloads:rw -v /opt:/opt:ro -v /tmp:/tmp:rw -v '"${GITHUB_WORKSPACE}"':'"${GITHUB_WORKSPACE}"':rw ghcr.io/github/gh-aw-mcpg:v0.2.17'
           
           mkdir -p /home/runner/.copilot
-          cat << GH_AW_MCP_CONFIG_bd141e923f2a7fb3_EOF | bash "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.sh"
+          cat << GH_AW_MCP_CONFIG_c61c350beec2d296_EOF | bash "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.sh"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -896,7 +903,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_bd141e923f2a7fb3_EOF
+          GH_AW_MCP_CONFIG_c61c350beec2d296_EOF
       - name: Download activation artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
