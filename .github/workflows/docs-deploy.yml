@@ -229,7 +229,6 @@ jobs:
         uses: elastic/ci-gh-actions/fetch-github-token@v1
         with:
           vault-instance: "ci-prod"
-          vault-role: "token-policy-docs-deploy-org-member-check"
 
       - name: Check org membership
         id: check-org-membership
