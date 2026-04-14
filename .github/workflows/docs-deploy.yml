@@ -234,29 +234,10 @@ jobs:
       - name: Check org membership
         id: check-org-membership
         if: steps.context.outputs.is-fork == 'true' && steps.context.outputs.event == 'pull_request'
-        env:
-          GH_TOKEN: ${{ steps.fetch-ephemeral-token.outputs.token }}
-          PR_AUTHOR: ${{ steps.context.outputs.pr-author }}
-        # language=bash
-        run: |
-          if [[ -z "$GH_TOKEN" || -z "$PR_AUTHOR" ]]; then
-            echo "is-member=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Ephemeral token not available — cannot verify org membership"
-            exit 0
-          fi
-
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: token $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/orgs/elastic/members/${PR_AUTHOR}")
-
-          if [[ "$HTTP_CODE" == "204" ]]; then
-            echo "is-member=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::PR author is a member of the elastic org"
-          else
-            echo "is-member=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::PR author is not a confirmed member of the elastic org (HTTP ${HTTP_CODE})"
-          fi
+        uses: elastic/docs-actions/shared/check-org-membership@main
+        with:
+          username: ${{ steps.context.outputs.pr-author }}
+          token: ${{ steps.fetch-ephemeral-token.outputs.token }}
 
       - name: Evaluate
         id: evaluate
