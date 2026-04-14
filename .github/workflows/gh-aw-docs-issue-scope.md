@@ -70,6 +70,9 @@ safe-outputs:
     - github.com
   noop:
   add-comment:
+    hide-older-comments: true
+  update-issue:
+    body:
 timeout-minutes: 30
 steps:
   - name: Repo-specific setup
@@ -95,6 +98,12 @@ When invoked:
 - Discover linked work in this order: links in the slash-command comment, links in the issue or PR body, explicit GitHub development references, and then any other obvious linked public PRs or commits you can reliably identify from the issue context.
 - Use both the issue description and the linked public PRs or commits you discover. Treat the issue request and the code changes as separate sources of truth that need to be reconciled.
 - Verify that the issue request itself is accurate. Do not assume the issue premise is correct just because the request is clearly written.
+- If the triggering item is an issue, maintain a bot-managed scope summary in the issue body by using the `docs-issue-scope:start` and `docs-issue-scope:end` HTML comment markers shown in the managed block template below.
+- If both markers are present exactly once, update only that managed block using `update_issue` with `replace-island`.
+- If neither marker is present, append a new managed block to the end of the issue body using `update_issue` with `append`.
+- If only one marker is present, or multiple marker pairs are present, do not guess and do not overwrite the issue body. Skip the body update and use `add_comment` instead to explain that the issue body needs cleanup.
+- Never replace the entire issue body. If someone deleted the original issue template or other author-written content, append the managed block instead of overwriting anything.
+- If the slash command was posted on a pull request rather than an issue, do not rewrite the PR body. Keep the response in a concise comment instead.
 - If there are no public PRs or commits to inspect, do not analyze documentation impact. Post a concise comment asking the user to add the relevant PR or commit links and rerun `/docs-issue-scope`.
 - If the issue plus linked code changes still do not contain enough information to understand the requested documentation change, do not guess. Post a concise comment asking the user to add more detail to the issue or link more relevant PRs or commits, then rerun `/docs-issue-scope`.
 
@@ -199,12 +208,16 @@ Also assign a confidence level:
 - **Medium** — likely correct, but some ambiguity remains
 - **Low** — tentative recommendation based on partial evidence
 
-## Step 4: Report findings
+## Step 4: Publish findings
 
-Post a single, concise comment using `add_comment` with the following format:
+Prefer `update_issue` as the primary output when the triggering item is an issue and the body can be updated safely. Maintain one concise bot-managed block in the issue body instead of creating a chain of full analysis comments.
+
+Use this exact body-block format inside the managed markers:
 
 ```
-## Documentation Impact Analysis
+## Docs issue scope
+
+<!-- docs-issue-scope:start -->
 
 ### Summary
 <1 short paragraph separating what the issue asks for from what the linked code changes show.>
@@ -236,14 +249,27 @@ Post a single, concise comment using `add_comment` with the following format:
 ### Notes
 
 <One short bullet or sentence per recommendation explaining the page role, content-type fit, or follow-on assembly work only when it materially affects the recommendation.>
+
+<!-- docs-issue-scope:end -->
 ```
 
-Keep the full report concise. Avoid long per-page writeups. Prefer short tables, short recommendations, and brief notes that mention content-type fit or section role only when it materially affects the recommendation.
+Keep the managed block concise. Avoid long per-page writeups. Prefer short tables, short recommendations, and brief notes that mention content-type fit or section role only when it materially affects the recommendation.
 
-If the request does not have enough information, use this shorter response instead:
+If you successfully updated the issue body, do not also post a duplicate full analysis comment. Use `add_comment` only when:
+
+- the body cannot be updated safely,
+- the body markers are malformed or duplicated,
+- the command was run on a pull request, or
+- a short explanatory note is needed because the issue body update was skipped.
+
+When you do need `add_comment`, keep it brief and point the reader to the issue body when appropriate.
+
+If the request does not have enough information, use this shorter managed block for issue-body updates:
 
 ```
-## Documentation Impact Analysis
+## Docs issue scope
+
+<!-- docs-issue-scope:start -->
 
 ### Next action for author
 Add more issue detail or link the relevant public PRs or commits, then rerun `/docs-issue-scope`.
@@ -254,7 +280,11 @@ Add more issue detail or link the relevant public PRs or commits, then rerun `/d
 ### What to add
 1. <Relevant PR or commit links.>
 2. <A short description of the user-facing change or docs definition of done.>
+
+<!-- docs-issue-scope:end -->
 ```
+
+If you need to fall back to `add_comment` instead of updating the issue body, use the same blocked content in a concise comment.
 
 ## Edge cases
 
