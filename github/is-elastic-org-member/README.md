@@ -20,10 +20,10 @@ Checks whether a GitHub user is a member of the elastic org using a GitHub token
 <!--/outputs-->
 
 ## Usage
-<!--usage action="elastic/docs-actions/github/is-elastic-org-member" version="main"-->
+<!--usage action="elastic/docs-actions/github/is-elastic-org-member" version="v1"-->
 ```yaml
 on: push
 steps:
-  - uses: elastic/docs-actions/github/is-elastic-org-member@main
+  - uses: elastic/docs-actions/github/is-elastic-org-member@v1
 ```
 <!--/usage-->
