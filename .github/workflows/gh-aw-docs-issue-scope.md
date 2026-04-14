@@ -45,6 +45,7 @@ permissions:
 tools:
   github:
     lockdown: false
+    min-integrity: none
   bash: true
   web-fetch:
 mcp-servers:

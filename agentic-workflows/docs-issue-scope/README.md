@@ -34,6 +34,10 @@ Ensure the `COPILOT_GITHUB_TOKEN` secret is configured in your repository.
 | `add-comment` | 1 | Concise fallback comment when body updates are skipped or the command runs on a PR |
 | `update-issue` | 1 | Maintains a bot-managed scope block in the issue body |
 
+## Integrity model
+
+This workflow explicitly sets `tools.github.min-integrity: none` so it can scope docs work from public community issues in public repositories. Treat issue and comment content as untrusted input, and rely on the workflow prompt and safe outputs to keep the analysis constrained.
+
 ## Managed issue block
 
 When `/docs-issue-scope` runs on an issue, the workflow prefers to maintain a bot-managed block between:
