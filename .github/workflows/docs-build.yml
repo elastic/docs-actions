@@ -311,23 +311,13 @@ jobs:
           && steps.docs-build.outcome != 'skipped'
         uses: elastic/docs-builder/actions/validate-path-prefixes-local@main
 
-      - name: Warn about fork PR
+      - name: Note fork PR preview
         if: >
           github.event_name == 'pull_request'
           && github.event.pull_request.head.repo.full_name != github.repository
           && needs.check.outputs.any_modified == 'true'
-          && !contains(fromJSON('["MEMBER","OWNER"]'), github.event.pull_request.author_association)
         run: |
-          echo "::warning::Preview deployments are not available for fork PRs unless the author is an organization member or repository owner."
-
-      - name: Note fork PR preview for trusted authors
-        if: >
-          github.event_name == 'pull_request'
-          && github.event.pull_request.head.repo.full_name != github.repository
-          && needs.check.outputs.any_modified == 'true'
-          && contains(fromJSON('["MEMBER","OWNER"]'), github.event.pull_request.author_association)
-        run: |
-          echo "::notice::Fork PRs from org members or repository owners may receive a docs preview after the deploy workflow runs."
+          echo "::notice::Fork PR detected — org membership will be verified during the deploy workflow. Members of the elastic org will receive a documentation preview."
 
       - name: Skip build
         if: env.MATCH != 'true' || needs.check.outputs.effective_any_modified == 'false'
