@@ -1,4 +1,4 @@
-name: shared/check-org-membership
+name: github/is-elastic-org-member
 description: >
   Checks whether a GitHub user is a member of the elastic org using a
   GitHub token with read:org scope.

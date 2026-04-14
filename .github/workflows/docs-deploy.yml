@@ -234,7 +234,7 @@ jobs:
       - name: Check org membership
         id: check-org-membership
         if: steps.context.outputs.is-fork == 'true' && steps.context.outputs.event == 'pull_request'
-        uses: elastic/docs-actions/shared/check-org-membership@main
+        uses: elastic/docs-actions/github/is-elastic-org-member@main
         with:
           username: ${{ steps.context.outputs.pr-author }}
           token: ${{ steps.fetch-ephemeral-token.outputs.token }}
