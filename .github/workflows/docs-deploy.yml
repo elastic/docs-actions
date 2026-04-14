@@ -65,6 +65,7 @@ jobs:
     permissions:
       contents: none
       pull-requests: read
+      id-token: write
     outputs:
       should-deploy: ${{ steps.evaluate.outputs.should-deploy }}
       content-source-match: ${{ steps.match.outputs.content-source-match }}
@@ -75,7 +76,7 @@ jobs:
       head-repo: ${{ steps.context.outputs.head-repo }}
       is-fork: ${{ steps.context.outputs.is-fork }}
       base-ref: ${{ steps.context.outputs.base-ref }}
-      author-association: ${{ steps.context.outputs.author-association }}
+      is-org-member: ${{ steps.check-org-membership.outputs.is-member }}
       vale-files-match: ${{ steps.context.outputs.vale-files-match }}
       link-index-eligible: ${{ steps.link-index-branch.outputs.eligible }}
     steps:
@@ -110,7 +111,6 @@ jobs:
               core.setOutput('base-ref', headBranch);
               core.setOutput('has-changes', 'true');
               core.setOutput('vale-files-match', 'false');
-              core.setOutput('author-association', '');
               return;
             }
 
@@ -118,7 +118,6 @@ jobs:
               core.info(`Event '${event}' is not deployable — skipping`);
               core.setOutput('has-changes', 'false');
               core.setOutput('vale-files-match', 'false');
-              core.setOutput('author-association', '');
               return;
             }
 
@@ -143,7 +142,6 @@ jobs:
               core.warning('Could not resolve PR number — skipping deployment');
               core.setOutput('has-changes', 'false');
               core.setOutput('vale-files-match', 'false');
-              core.setOutput('author-association', '');
               return;
             }
 
@@ -153,7 +151,7 @@ jobs:
               owner, repo, pull_number: prNumber
             });
             core.setOutput('base-ref', pr.base.ref);
-            core.setOutput('author-association', pr.author_association || '');
+            core.setOutput('pr-author', pr.user.login);
 
             // --- Changed-files check (docs-relevant files only) ---
             const files = await github.paginate(github.rest.pulls.listFiles, {
@@ -224,6 +222,23 @@ jobs:
           ref_name: ${{ steps.context.outputs.base-ref }}
           repository: ${{ github.repository }}
 
+      - name: Fetch ephemeral GitHub token
+        if: steps.context.outputs.is-fork == 'true' && steps.context.outputs.event == 'pull_request'
+        continue-on-error: true
+        id: fetch-ephemeral-token
+        uses: elastic/ci-gh-actions/fetch-github-token@v1
+        with:
+          vault-instance: "ci-prod"
+          vault-role: "token-policy-docs-deploy-org-member-check"
+
+      - name: Check org membership
+        id: check-org-membership
+        if: steps.context.outputs.is-fork == 'true' && steps.context.outputs.event == 'pull_request'
+        uses: elastic/docs-actions/github/is-elastic-org-member@v1
+        with:
+          username: ${{ steps.context.outputs.pr-author }}
+          token: ${{ steps.fetch-ephemeral-token.outputs.token }}
+
       - name: Evaluate
         id: evaluate
         env:
@@ -231,19 +246,15 @@ jobs:
           CHANGES: ${{ steps.context.outputs.has-changes }}
           IS_FORK: ${{ steps.context.outputs.is-fork }}
           EVENT: ${{ steps.context.outputs.event }}
-          AUTHOR_ASSOCIATION: ${{ steps.context.outputs.author-association }}
+          IS_ORG_MEMBER: ${{ steps.check-org-membership.outputs.is-member }}
         # language=bash
         run: |
           if [[ "$EVENT" == "pull_request" && "$IS_FORK" == "true" ]]; then
-            case "$AUTHOR_ASSOCIATION" in
-              MEMBER|OWNER)
-                ;;
-              *)
-                echo "should-deploy=false" >> "$GITHUB_OUTPUT"
-                echo "::notice::Deploy skipped — fork PRs from non-members are not deployed"
-                exit 0
-                ;;
-            esac
+            if [[ "$IS_ORG_MEMBER" != "true" ]]; then
+              echo "should-deploy=false" >> "$GITHUB_OUTPUT"
+              echo "::notice::Deploy skipped — fork PRs from non-members are not deployed"
+              exit 0
+            fi
           fi
 
           if [[ "$MATCH" == "true" && "$CHANGES" == "true" ]]; then
@@ -276,7 +287,7 @@ jobs:
     if: >
       needs.preflight.outputs.event == 'pull_request'
       && (needs.preflight.outputs.is-fork == 'false'
-          || contains(fromJSON('["MEMBER","OWNER"]'), needs.preflight.outputs.author-association))
+          || needs.preflight.outputs.is-org-member == 'true')
       && needs.preflight.outputs.should-deploy == 'true'
       && inputs.disable-comments != true
     runs-on: ubuntu-latest
@@ -357,7 +368,7 @@ jobs:
       - name: Reject fork checkout
         if: >
           needs.preflight.outputs.is-fork == 'true'
-          && !contains(fromJSON('["MEMBER","OWNER"]'), needs.preflight.outputs.author-association)
+          && needs.preflight.outputs.is-org-member != 'true'
         # language=bash
         run: |
           echo "::error::Fork code must never be checked out in the deploy workflow"
@@ -572,7 +583,7 @@ jobs:
     if: >
       needs.preflight.outputs.event == 'pull_request'
       && (needs.preflight.outputs.is-fork == 'false'
-          || contains(fromJSON('["MEMBER","OWNER"]'), needs.preflight.outputs.author-association))
+          || needs.preflight.outputs.is-org-member == 'true')
       && needs.deploy-preview.outputs.deployed == 'true'
       && inputs.disable-comments != true
     needs:
@@ -726,7 +737,7 @@ jobs:
       needs.preflight.outputs.event == 'pull_request'
       && needs.preflight.outputs.content-source-match == 'true'
       && (needs.preflight.outputs.is-fork == 'false'
-          || contains(fromJSON('["MEMBER","OWNER"]'), needs.preflight.outputs.author-association))
+          || needs.preflight.outputs.is-org-member == 'true')
       && inputs.enable-vale-linting == true
       && needs.preflight.outputs.vale-files-match == 'true'
     needs:
