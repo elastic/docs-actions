@@ -4,7 +4,7 @@ AI-powered workflows for Elastic documentation tasks. Each directory contains a 
 
 | Workflow | Description | Trigger | Safe Output |
 |----------|-------------|---------|-------------|
-| [docs-issue-scope](docs-issue-scope/) | Analyze a PR or commit for documentation impact | `/docs-issue-scope`, dispatch | `add-comment` |
+| [docs-issue-scope](docs-issue-scope/) | Scope docs work from an issue plus linked PRs or commits | `/docs-issue-scope` | `add-comment`, `update-issue` |
 | [issue-triage](issue-triage/) | Triage issues by applying team labels | `/docs-triage`, dispatch | `add-labels`, `remove-labels` |
 
 ## Installation
