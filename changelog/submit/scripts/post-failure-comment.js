@@ -1,4 +1,4 @@
-const { TITLE, upsertComment } = require('./comment-helper');
+const { TITLE, upsertComment, escapeMarkdown } = require('./comment-helper');
 
 module.exports = async ({ github, context, core }) => {
   const prNumber = parseInt(process.env.PR_NUMBER, 10);
@@ -15,7 +15,7 @@ module.exports = async ({ github, context, core }) => {
       labelRows,
     ].join('\n');
   } else {
-    labelSection = `\nAdd a type label that matches your \`pivot.types\` configuration in \`${configFile}\`.`;
+    labelSection = `\nAdd a type label that matches your \`pivot.types\` configuration in \`${escapeMarkdown(configFile)}\`.`;
   }
 
   let productSection = '';
@@ -35,7 +35,7 @@ module.exports = async ({ github, context, core }) => {
     labelSection,
     productSection,
     '',
-    `🔖 To skip changelog generation or configure label rules, see \`${configFile}\`.`,
+    `🔖 To skip changelog generation or configure label rules, see \`${escapeMarkdown(configFile)}\`.`,
   ].join('\n');
 
   await upsertComment({ github, context, prNumber, body });

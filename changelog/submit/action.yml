@@ -17,11 +17,14 @@ inputs:
   comment-only:
     description: 'Post changelog as a PR comment instead of committing to the branch'
     default: 'false'
+  org-check-token:
+    description: 'Token with read:org scope for checking elastic org membership (only org members get direct commits; others get comment-only)'
+    default: ''
 
 outputs:
   committed:
     description: 'Whether a changelog was committed (true/false)'
-    value: ${{ steps.commit.outputs.committed || 'false' }}
+    value: ${{ steps.commit-result.outputs.committed || 'false' }}
   pr-number:
     description: 'The PR number'
     value: ${{ steps.pr.outputs.number }}
@@ -52,30 +55,22 @@ runs:
 
     - name: Check org membership
       id: check-org
-      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork == 'true'
-      uses: actions/github-script@v8
+      if: steps.pr-data.outputs.proceed == 'true' && inputs.org-check-token != ''
+      uses: elastic/docs-actions/github/is-elastic-org-member@v1
       with:
-        github-token: ${{ inputs.github-token }}
-        script: |
-          const script = require('${{ github.action_path }}/scripts/check-org-membership.js');
-          await script({ github, context, core });
-      env:
-        ORG: ${{ github.repository_owner }}
-        USERNAME: ${{ steps.pr-data.outputs.author-login }}
+        username: ${{ steps.pr-data.outputs.author-login }}
+        token: ${{ inputs.org-check-token }}
 
     - name: Determine commit strategy
       id: strategy
       if: steps.pr-data.outputs.proceed == 'true'
       shell: bash
       env:
-        IS_FORK: ${{ steps.pr-data.outputs.is-fork }}
-        IS_ORG_MEMBER: ${{ steps.check-org.outputs.is-org-member }}
+        IS_ORG_MEMBER: ${{ steps.check-org.outputs.is-member }}
         COMMENT_ONLY: ${{ inputs.comment-only }}
       run: |
         if [ "$COMMENT_ONLY" = "true" ]; then
           echo "can-commit=false" >> "$GITHUB_OUTPUT"
-        elif [ "$IS_FORK" != "true" ]; then
-          echo "can-commit=true" >> "$GITHUB_OUTPUT"
         elif [ "$IS_ORG_MEMBER" = "true" ]; then
           echo "can-commit=true" >> "$GITHUB_OUTPUT"
         else
@@ -93,6 +88,8 @@ runs:
     - name: Checkout base repo
       if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.can-commit != 'true'
       uses: actions/checkout@v6
+      with:
+        persist-credentials: false
 
     - name: Validate ref names
       if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.can-commit == 'true'
@@ -116,6 +113,11 @@ runs:
         CONFIG_FILE: ${{ inputs.config }}
         BASE_REF: ${{ steps.pr-data.outputs.base-ref }}
       run: |
+        if [[ "$CONFIG_FILE" == /* || "$CONFIG_FILE" == *..* ]]; then
+          echo "::error::Config path must be relative and must not contain '..': ${CONFIG_FILE}"
+          exit 1
+        fi
+
         if git show "origin/${BASE_REF}:${CONFIG_FILE}" > /tmp/changelog-config.yml 2>/dev/null; then
           echo "config-path=/tmp/changelog-config.yml" >> "$GITHUB_OUTPUT"
         else
@@ -199,6 +201,7 @@ runs:
       if: >
         steps.generate.outcome == 'success'
         && steps.strategy.outputs.can-commit == 'true'
+        && steps.pr-data.outputs.is-fork != 'true'
       id: commit
       shell: bash
       env:
@@ -207,10 +210,14 @@ runs:
         EXISTING_FILENAME: ${{ steps.evaluate.outputs.existing-changelog-filename }}
         GH_TOKEN: ${{ inputs.github-token }}
         GIT_REPOSITORY: ${{ github.repository }}
-        IS_FORK: ${{ steps.pr-data.outputs.is-fork }}
-        HEAD_REPO: ${{ steps.pr-data.outputs.head-repo-full-name }}
-        HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
       run: |
+        for path_val in "$CHANGELOG_DIR" "$EXISTING_FILENAME"; do
+          if [[ -n "$path_val" && ("$path_val" == /* || "$path_val" == *..*) ]]; then
+            echo "::error::Output path must be relative and not contain '..': ${path_val}"
+            exit 1
+          fi
+        done
+
         GENERATED=$(ls /tmp/changelog-staging/*.yaml 2>/dev/null | head -1)
         if [ -z "$GENERATED" ]; then
           echo "::error::No changelog YAML found in staging directory"
@@ -242,26 +249,62 @@ runs:
           echo "committed=false" >> "$GITHUB_OUTPUT"
         else
           git commit -m "${VERB} changelog for PR #${PR_NUMBER}"
-          if [ "$IS_FORK" = "true" ]; then
-            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${HEAD_REPO}.git"
-            git push origin "HEAD:refs/heads/${HEAD_REF}"
-          else
-            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GIT_REPOSITORY}.git"
-            git push
-          fi
-          git remote set-url origin "https://github.com/${GIT_REPOSITORY}.git"
+
+          cleanup() { git remote set-url origin "https://github.com/${GIT_REPOSITORY}.git"; }
+          trap cleanup EXIT
+
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GIT_REPOSITORY}.git"
+          git push
           echo "committed=true" >> "$GITHUB_OUTPUT"
         fi
 
         echo "changelog-file=$CHANGELOG_FILE" >> "$GITHUB_OUTPUT"
 
+    - name: Push changelog to fork via API
+      if: >
+        steps.generate.outcome == 'success'
+        && steps.strategy.outputs.can-commit == 'true'
+        && steps.pr-data.outputs.is-fork == 'true'
+      id: commit-fork
+      continue-on-error: true
+      uses: actions/github-script@v8
+      env:
+        HEAD_REPO: ${{ steps.pr-data.outputs.head-repo-full-name }}
+        HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
+        CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
+        EXISTING_FILENAME: ${{ steps.evaluate.outputs.existing-changelog-filename }}
+        PR_NUMBER: ${{ steps.pr.outputs.number }}
+        STAGING_DIR: /tmp/changelog-staging
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/push-changelog-to-fork.js');
+          await script({ github, context, core });
+
+    - name: Resolve commit outcome
+      id: commit-result
+      if: steps.generate.outcome == 'success'
+      shell: bash
+      env:
+        BASE_COMMITTED: ${{ steps.commit.outputs.committed }}
+        FORK_COMMITTED: ${{ steps.commit-fork.outputs.committed }}
+        BASE_FILE: ${{ steps.commit.outputs.changelog-file }}
+        FORK_FILE: ${{ steps.commit-fork.outputs.changelog-file }}
+      run: |
+        if [ "$BASE_COMMITTED" = "true" ] || [ "$FORK_COMMITTED" = "true" ]; then
+          echo "committed=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "committed=false" >> "$GITHUB_OUTPUT"
+        fi
+        echo "changelog-file=${BASE_FILE:-$FORK_FILE}" >> "$GITHUB_OUTPUT"
+
     - name: Post success comment
-      if: steps.commit.outputs.committed == 'true'
+      if: steps.commit-result.outputs.committed == 'true'
       uses: actions/github-script@v8
       env:
         PR_NUMBER: ${{ steps.pr.outputs.number }}
         HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
-        CHANGELOG_FILE: ${{ steps.commit.outputs.changelog-file }}
+        CHANGELOG_FILE: ${{ steps.commit-result.outputs.changelog-file }}
       with:
         github-token: ${{ inputs.github-token }}
         script: |
@@ -271,7 +314,8 @@ runs:
     - name: Post comment-only changelog
       if: >
         steps.generate.outcome == 'success'
-        && steps.strategy.outputs.can-commit != 'true'
+        && (steps.strategy.outputs.can-commit != 'true'
+            || steps.commit-result.outputs.committed != 'true')
       uses: actions/github-script@v8
       env:
         PR_NUMBER: ${{ steps.pr.outputs.number }}
