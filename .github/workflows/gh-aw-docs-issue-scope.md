@@ -216,9 +216,12 @@ Prefer `update_issue` as the primary output when the triggering item is an issue
 Use this exact body-block format inside the managed markers:
 
 ```
-## Docs issue scope
-
 <!-- docs-issue-scope:start -->
+
+## AI scoping 🤖
+
+<details>
+<summary>Docs issue scope</summary>
 
 ### Summary
 <1 short paragraph separating what the issue asks for from what the linked code changes show.>
@@ -251,6 +254,8 @@ Use this exact body-block format inside the managed markers:
 
 <One short bullet or sentence per recommendation explaining the page role, content-type fit, or follow-on assembly work only when it materially affects the recommendation.>
 
+</details>
+
 <!-- docs-issue-scope:end -->
 ```
 
@@ -268,9 +273,12 @@ When you do need `add_comment`, keep it brief and point the reader to the issue 
 If the request does not have enough information, use this shorter managed block for issue-body updates:
 
 ```
-## Docs issue scope
-
 <!-- docs-issue-scope:start -->
+
+## AI scoping 🤖
+
+<details>
+<summary>Docs issue scope</summary>
 
 ### Next action for author
 Add more issue detail or link the relevant public PRs or commits, then rerun `/docs-issue-scope`.
@@ -281,6 +289,8 @@ Add more issue detail or link the relevant public PRs or commits, then rerun `/d
 ### What to add
 1. <Relevant PR or commit links.>
 2. <A short description of the user-facing change or docs definition of done.>
+
+</details>
 
 <!-- docs-issue-scope:end -->
 ```

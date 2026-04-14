@@ -1,4 +1,5 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"c6110bfb441cdcfcfe933cc4387a974c84b62b9ff9ab3095093f7447df98e0cf","compiler_version":"v0.67.1","agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"e07dc4a695adf199f069f176175b64a03cf86b1258c863b1e714ee41a681488d","compiler_version":"v0.68.1","agent_id":"copilot"}
+# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9"},{"repo":"actions/upload-artifact","sha":"bbbca2ddaa5d8feaa63e36b76fdaad77386f024f","version":"v7"},{"repo":"github/gh-aw-actions/setup","sha":"2fe53acc038ba01c3bbdc767d4b25df31ca5bdfc","version":"v0.68.1"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
 #  | |_| | __ _  ___ _ __ | |_ _  ___ 
@@ -198,14 +199,14 @@ jobs:
         run: |
           bash ${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh
           {
-          cat << 'GH_AW_PROMPT_f890a03852a57d38_EOF'
+          cat << 'GH_AW_PROMPT_70c157fbc8a3b6b6_EOF'
           <system>
-          GH_AW_PROMPT_f890a03852a57d38_EOF
+          GH_AW_PROMPT_70c157fbc8a3b6b6_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_f890a03852a57d38_EOF'
+          cat << 'GH_AW_PROMPT_70c157fbc8a3b6b6_EOF'
           <safe-output-tools>
           Tools: add_comment, update_issue, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -237,9 +238,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_f890a03852a57d38_EOF
+          GH_AW_PROMPT_70c157fbc8a3b6b6_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_f890a03852a57d38_EOF'
+          cat << 'GH_AW_PROMPT_70c157fbc8a3b6b6_EOF'
           </system>
           ## Formatting Guidelines
           
@@ -426,9 +427,12 @@ jobs:
           Use this exact body-block format inside the managed markers:
           
           ```
-          ## Docs issue scope
-          
           <!-- docs-issue-scope:start -->
+          
+          ## AI scoping 🤖
+          
+          <details>
+          <summary>Docs issue scope</summary>
           
           ### Summary
           <1 short paragraph separating what the issue asks for from what the linked code changes show.>
@@ -461,6 +465,8 @@ jobs:
           
           <One short bullet or sentence per recommendation explaining the page role, content-type fit, or follow-on assembly work only when it materially affects the recommendation.>
           
+          </details>
+          
           <!-- docs-issue-scope:end -->
           ```
           
@@ -478,9 +484,12 @@ jobs:
           If the request does not have enough information, use this shorter managed block for issue-body updates:
           
           ```
-          ## Docs issue scope
-          
           <!-- docs-issue-scope:start -->
+          
+          ## AI scoping 🤖
+          
+          <details>
+          <summary>Docs issue scope</summary>
           
           ### Next action for author
           Add more issue detail or link the relevant public PRs or commits, then rerun `/docs-issue-scope`.
@@ -491,6 +500,8 @@ jobs:
           ### What to add
           1. <Relevant PR or commit links.>
           2. <A short description of the user-facing change or docs definition of done.>
+          
+          </details>
           
           <!-- docs-issue-scope:end -->
           ```
@@ -507,7 +518,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_f890a03852a57d38_EOF
+          GH_AW_PROMPT_70c157fbc8a3b6b6_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
@@ -682,9 +693,9 @@ jobs:
           mkdir -p ${RUNNER_TEMP}/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > ${RUNNER_TEMP}/gh-aw/safeoutputs/config.json << 'GH_AW_SAFE_OUTPUTS_CONFIG_7e472cabf7fa3a79_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_76ae2fe32268bf16_EOF'
           {"add_comment":{"hide_older_comments":true,"max":1},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{},"update_issue":{"allow_body":true,"max":1}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_7e472cabf7fa3a79_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_76ae2fe32268bf16_EOF
       - name: Write Safe Outputs Tools
         run: |
           cat > ${RUNNER_TEMP}/gh-aw/safeoutputs/tools_meta.json << 'GH_AW_SAFE_OUTPUTS_TOOLS_META_bd4d4777500416e9_EOF'
@@ -913,7 +924,7 @@ jobs:
           export MCP_GATEWAY_DOCKER_COMMAND='docker run -i --rm --network host -v /var/run/docker.sock:/var/run/docker.sock -e MCP_GATEWAY_PORT -e MCP_GATEWAY_DOMAIN -e MCP_GATEWAY_API_KEY -e MCP_GATEWAY_PAYLOAD_DIR -e MCP_GATEWAY_PAYLOAD_SIZE_THRESHOLD -e DEBUG -e MCP_GATEWAY_LOG_DIR -e GH_AW_MCP_LOG_DIR -e GH_AW_SAFE_OUTPUTS -e GH_AW_SAFE_OUTPUTS_CONFIG_PATH -e GH_AW_SAFE_OUTPUTS_TOOLS_PATH -e GH_AW_ASSETS_BRANCH -e GH_AW_ASSETS_MAX_SIZE_KB -e GH_AW_ASSETS_ALLOWED_EXTS -e DEFAULT_BRANCH -e GITHUB_MCP_SERVER_TOKEN -e GITHUB_MCP_GUARD_MIN_INTEGRITY -e GITHUB_MCP_GUARD_REPOS -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA -e GITHUB_WORKSPACE -e GITHUB_TOKEN -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RUN_ATTEMPT -e GITHUB_JOB -e GITHUB_ACTION -e GITHUB_EVENT_NAME -e GITHUB_EVENT_PATH -e GITHUB_ACTOR -e GITHUB_ACTOR_ID -e GITHUB_TRIGGERING_ACTOR -e GITHUB_WORKFLOW -e GITHUB_WORKFLOW_REF -e GITHUB_WORKFLOW_SHA -e GITHUB_REF -e GITHUB_REF_NAME -e GITHUB_REF_TYPE -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e GH_AW_SAFE_OUTPUTS_PORT -e GH_AW_SAFE_OUTPUTS_API_KEY -v /tmp/gh-aw/mcp-payloads:/tmp/gh-aw/mcp-payloads:rw -v /opt:/opt:ro -v /tmp:/tmp:rw -v '"${GITHUB_WORKSPACE}"':'"${GITHUB_WORKSPACE}"':rw ghcr.io/github/gh-aw-mcpg:v0.2.14'
           
           mkdir -p /home/runner/.copilot
-          cat << GH_AW_MCP_CONFIG_2c38098df03b726b_EOF | bash ${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.sh
+          cat << GH_AW_MCP_CONFIG_f8a1718193abdb02_EOF | bash "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.sh"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -974,7 +985,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_2c38098df03b726b_EOF
+          GH_AW_MCP_CONFIG_f8a1718193abdb02_EOF
       - name: Download activation artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
