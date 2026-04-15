@@ -10,46 +10,8 @@ permissions:
 
 jobs:
   destroy:
-    if: github.event.repository.fork == false
     runs-on: ubuntu-slim
     steps:
-      - name: Delete GitHub environment
-        uses: actions/github-script@v8
-        id: delete-deployment
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+      - uses: elastic/docs-actions/docs-builder/preview/cleanup@v1
         with:
-          script: |
-            const { owner, repo } = context.repo;
-            const prNumber = process.env.PR_NUMBER;
-            const deployments = await github.rest.repos.listDeployments({
-              owner,
-              repo,
-              environment: 'docs-preview',
-              task: `docs-preview-${prNumber}`,
-            });
-            core.setOutput('is-empty', deployments.data.length === 0)
-            for (const deployment of deployments.data) {
-              await github.rest.repos.createDeploymentStatus({
-                owner,
-                repo,
-                deployment_id: deployment.id,
-                state: 'inactive',
-                description: 'Marking deployment as inactive'
-              });
-              await github.rest.repos.deleteDeployment({
-                owner,
-                repo,
-                deployment_id: deployment.id
-              });
-            }
-
-      - uses: elastic/docs-actions/aws/auth@v1
-        if: steps.delete-deployment.outputs.is-empty == 'false'
-
-      - name: Delete S3 preview objects
-        if: steps.delete-deployment.outputs.is-empty == 'false'
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          aws s3 rm "s3://elastic-docs-v3-website-preview/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}" --recursive
+          pr-number: ${{ github.event.pull_request.number }}
