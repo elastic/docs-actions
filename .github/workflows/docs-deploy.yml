@@ -749,7 +749,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Post Vale Results
-        uses: elastic/vale-rules/report@main
+        uses: elastic/vale-rules/report@9def8caccddffa5980292e830f1a33d69b1b61b9 # main
 
   # Uploads links.json to the shared link index S3 bucket.
   # Runs concurrently with deploy-preview — both depend only on build.
