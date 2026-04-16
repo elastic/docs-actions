@@ -45,7 +45,7 @@ on:
       use-release-branches:
         description: >
           When true, update-link-index runs for semver release branches (e.g. 9.4) as well as the default branch.
-          Pair with the same flag on docs-build so links.json is produced on release pushes without docs/** changes.
+          Pair with the same flag on docs-build so links.json is produced when a release branch is first created.
         type: boolean
         default: false
         required: false
