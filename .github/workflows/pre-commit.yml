@@ -22,3 +22,5 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: pre-commit/action@v3.0.1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
