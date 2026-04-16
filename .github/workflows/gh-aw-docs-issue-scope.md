@@ -31,9 +31,7 @@ on:
         description: "Footer appended to all agent comments and reviews"
         type: string
         required: false
-        default: |
-          ---
-          [Docs automation](https://github.com/elastic/docs-actions) | [From workflow: {workflow_name}]({run_url})
+        default: ""
     secrets:
       COPILOT_GITHUB_TOKEN:
         required: true
