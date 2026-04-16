@@ -29,6 +29,6 @@ repos:
       - id: compile-workflows
         name: compile gh-aw workflows
         language: system
-        entry: gh aw compile
+        entry: ./scripts/run-gh-aw-compile.sh
         files: '\.github/workflows/gh-aw-.*\.md$|\.github/workflows/gh-aw-fragments/'
         pass_filenames: false

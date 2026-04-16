@@ -34,10 +34,10 @@ on:
     secrets:
       COPILOT_GITHUB_TOKEN:
         required: true
-
 concurrency:
-  group: issue-triage
+  group: gh-aw-${{ github.workflow }}-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
+  job-discriminator: ${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
 
 permissions:
   contents: read
@@ -103,10 +103,12 @@ steps:
       echo "CODEOWNERS fetched."
 
   - name: Repo-specific setup
-    if: ${{ inputs.setup-commands != '' }}
     env:
       SETUP_COMMANDS: ${{ inputs.setup-commands }}
-    run: eval "$SETUP_COMMANDS"
+    run: |
+      if [ -n "$SETUP_COMMANDS" ]; then
+        eval "$SETUP_COMMANDS"
+      fi
 
 safe-outputs:
   noop:
