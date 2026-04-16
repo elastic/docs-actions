@@ -103,10 +103,12 @@ steps:
       echo "CODEOWNERS fetched."
 
   - name: Repo-specific setup
-    if: ${{ inputs.setup-commands != '' }}
     env:
       SETUP_COMMANDS: ${{ inputs.setup-commands }}
-    run: eval "$SETUP_COMMANDS"
+    run: |
+      if [ -n "$SETUP_COMMANDS" ]; then
+        eval "$SETUP_COMMANDS"
+      fi
 
 safe-outputs:
   noop:
