@@ -85,7 +85,7 @@ permissions: {}
 
 concurrency:
   cancel-in-progress: true
-  group: issue-triage
+  group: gh-aw-${{ github.workflow }}-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
 
 run-name: "Issue Triage Agent"
 
@@ -420,7 +420,7 @@ jobs:
       contents: read
       issues: read
     concurrency:
-      group: "gh-aw-copilot-${{ github.workflow }}"
+      group: "gh-aw-copilot-${{ github.workflow }}-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}"
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       GH_AW_ASSETS_ALLOWED_EXTS: ""
@@ -1016,7 +1016,7 @@ jobs:
       issues: write
       pull-requests: write
     concurrency:
-      group: "gh-aw-conclusion-gh-aw-issue-triage"
+      group: "gh-aw-conclusion-gh-aw-issue-triage-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}"
       cancel-in-progress: false
     outputs:
       incomplete_count: ${{ steps.report_incomplete.outputs.incomplete_count }}
