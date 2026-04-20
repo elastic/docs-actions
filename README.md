@@ -28,6 +28,7 @@ AI-powered [GitHub Agent Workflows](https://github.github.com/gh-aw/) for docume
 | Workflow | Description | Trigger | Safe Output |
 |----------|-------------|---------|-------------|
 | [docs-check](agentic-workflows/docs-check/) | Analyze a PR or commit for documentation impact | `/docs-check`, label, dispatch | `add-comment` |
+| [issue-triage](agentic-workflows/issue-triage/) | Triage issues by applying team labels | `/triage`, dispatch | `add-labels` |
 
 Quick install:
 

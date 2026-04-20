@@ -1,0 +1,46 @@
+name: github/is-elastic-org-member
+description: >
+  Checks whether a GitHub user is a member of the elastic org using a
+  GitHub token with read:org scope.
+
+inputs:
+  username:
+    description: GitHub username to check
+    required: true
+  token:
+    description: GitHub token with the necessary scope
+    required: true
+
+outputs:
+  is-member:
+    description: "'true' if the user is a confirmed elastic org member, 'false' otherwise"
+    value: ${{ steps.check.outputs.is-member }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check org membership
+      id: check
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        USERNAME: ${{ inputs.username }}
+      run: |
+        if [[ -z "$GH_TOKEN" || -z "$USERNAME" ]]; then
+          echo "is-member=false" >> "$GITHUB_OUTPUT"
+          echo "::warning::Token or username not available — cannot verify org membership"
+          exit 0
+        fi
+
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+          -H "Authorization: token $GH_TOKEN" \
+          -H "Accept: application/vnd.github+json" \
+          "https://api.github.com/orgs/elastic/members/${USERNAME}")
+
+        if [[ "$HTTP_CODE" == "204" ]]; then
+          echo "is-member=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::${USERNAME} is a member of the elastic org"
+        else
+          echo "is-member=false" >> "$GITHUB_OUTPUT"
+          echo "::notice::${USERNAME} is not a confirmed member of the elastic org (HTTP ${HTTP_CODE})"
+        fi
