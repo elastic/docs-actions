@@ -99,6 +99,16 @@ Use the installed Elastic Docs Skills as dependencies during your review:
 - `docs-content-type-checker`
 - `docs-applies-to-tagging`
 
+When you invoke these imported skills under the Copilot engine, use the skill tool with the exact skill name, for example:
+
+- `skill(skill: docs-check-style)`
+- `skill(skill: docs-flag-jargon-skill)`
+- `skill(skill: docs-frontmatter-audit)`
+- `skill(skill: docs-content-type-checker)`
+- `skill(skill: docs-applies-to-tagging)`
+
+Do not guess alternate invocation formats.
+
 ## Scope
 
 This workflow is intended for pull request review flows triggered from a PR slash command such as `/docs-review` or from a consumer repository's PR checkbox menu.
@@ -144,6 +154,14 @@ Skip:
 
 Review each eligible file by applying the installed docs skills and your own judgment.
 
+Before falling back to your own judgment alone:
+
+1. Attempt to invoke the relevant imported skills using the exact skill names shown above.
+2. Check the actual result of each invocation.
+3. Only say a skill is unavailable if the skill tool explicitly fails after an exact-name attempt.
+
+If one or more skills succeed, use their output in your review and do not claim that the docs skills were unavailable.
+
 Focus on the categories below:
 
 1. **Style and clarity** using `docs-check-style`.
@@ -174,7 +192,7 @@ Report only findings that are:
 
 Use line-level review comments when you can point to an exact changed line or nearby changed hunk. Keep each inline comment narrowly scoped.
 
-When helpful, include a concrete replacement sentence, frontmatter snippet, or markdown wording in the comment body. Phrase suggestions as exact edits the author can apply, but do not rely on GitHub suggestion fences unless you are certain they fit the target line range.
+When helpful, include a concrete replacement sentence, frontmatter snippet, or markdown wording in the comment body. Prefer GitHub suggestion blocks whenever the proposed edit cleanly maps to the reviewed line or hunk and can be applied directly. Fall back to plain prose only when the change is too large, crosses multiple distant hunks, or the exact replacement range is ambiguous.
 
 The review comment safe output allows a maximum of 20 inline comments. Use that budget carefully:
 
@@ -182,6 +200,12 @@ The review comment safe output allows a maximum of 20 inline comments. Use that 
 - combine closely related findings into one inline comment when they affect the same hunk, and
 - keep broader issue-satisfaction observations in the final review body unless they clearly map to a specific line, and
 - reserve inline comments for higher-priority issues that deserve direct author attention during review.
+
+For inline comments with concrete replacements:
+
+- prefer one apply-ready GitHub suggestion over a prose description,
+- keep the suggested replacement as small as possible while still fixing the issue, and
+- avoid suggestion blocks only when GitHub would not be able to apply them cleanly.
 
 Treat low-priority nits differently:
 
@@ -237,6 +261,7 @@ Submit one final review body in this shape:
 
 ### Notes
 - <Optional short note about anything intentionally skipped or any review boundary that matters.>
+- <Only mention skill availability if one or more exact-name skill invocations actually failed and that materially affected the review. Otherwise omit any note about skills.>
 ```
 
 Keep the review body concise. Put file-specific detail into inline comments, not into a long summary.

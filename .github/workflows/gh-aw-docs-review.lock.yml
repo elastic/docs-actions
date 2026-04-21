@@ -1,4 +1,4 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"56385a912e6371456a0e9ea4a4fe7419cf28d3e6bf7561dea66fec29d8d7a36d","compiler_version":"v0.69.0","agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"5d62de8a1ef00eb0c2edbdb09ed7e50e72e66784e822999ec6b3e8f12a30ebde","compiler_version":"v0.69.0","agent_id":"copilot"}
 # gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GH_AW_PLUGINS_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"81b86c58b134601fc10d4745e276d7861cd12911","version":"v0.69.0"},{"repo":"microsoft/apm-action","sha":"a190b0b1a91031057144dc136acf9757a59c9e4d","version":"v1.4.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.25"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.25"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.25"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.2.26"},{"image":"ghcr.io/github/github-mcp-server:v1.0.0"},{"image":"node:lts-alpine"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
@@ -213,14 +213,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_f80bb9a32b316e40_EOF'
+          cat << 'GH_AW_PROMPT_f2bd8cddbfa4eca5_EOF'
           <system>
-          GH_AW_PROMPT_f80bb9a32b316e40_EOF
+          GH_AW_PROMPT_f2bd8cddbfa4eca5_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_f80bb9a32b316e40_EOF'
+          cat << 'GH_AW_PROMPT_f2bd8cddbfa4eca5_EOF'
           <safe-output-tools>
           Tools: create_pull_request_review_comment(max:20), submit_pull_request_review, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -252,9 +252,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_f80bb9a32b316e40_EOF
+          GH_AW_PROMPT_f2bd8cddbfa4eca5_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_f80bb9a32b316e40_EOF'
+          cat << 'GH_AW_PROMPT_f2bd8cddbfa4eca5_EOF'
           </system>
           
           
@@ -313,6 +313,16 @@ jobs:
           - `docs-content-type-checker`
           - `docs-applies-to-tagging`
           
+          When you invoke these imported skills under the Copilot engine, use the skill tool with the exact skill name, for example:
+          
+          - `skill(skill: docs-check-style)`
+          - `skill(skill: docs-flag-jargon-skill)`
+          - `skill(skill: docs-frontmatter-audit)`
+          - `skill(skill: docs-content-type-checker)`
+          - `skill(skill: docs-applies-to-tagging)`
+          
+          Do not guess alternate invocation formats.
+          
           ## Scope
           
           This workflow is intended for pull request review flows triggered from a PR slash command such as `/docs-review` or from a consumer repository's PR checkbox menu.
@@ -358,6 +368,14 @@ jobs:
           
           Review each eligible file by applying the installed docs skills and your own judgment.
           
+          Before falling back to your own judgment alone:
+          
+          1. Attempt to invoke the relevant imported skills using the exact skill names shown above.
+          2. Check the actual result of each invocation.
+          3. Only say a skill is unavailable if the skill tool explicitly fails after an exact-name attempt.
+          
+          If one or more skills succeed, use their output in your review and do not claim that the docs skills were unavailable.
+          
           Focus on the categories below:
           
           1. **Style and clarity** using `docs-check-style`.
@@ -388,7 +406,7 @@ jobs:
           
           Use line-level review comments when you can point to an exact changed line or nearby changed hunk. Keep each inline comment narrowly scoped.
           
-          When helpful, include a concrete replacement sentence, frontmatter snippet, or markdown wording in the comment body. Phrase suggestions as exact edits the author can apply, but do not rely on GitHub suggestion fences unless you are certain they fit the target line range.
+          When helpful, include a concrete replacement sentence, frontmatter snippet, or markdown wording in the comment body. Prefer GitHub suggestion blocks whenever the proposed edit cleanly maps to the reviewed line or hunk and can be applied directly. Fall back to plain prose only when the change is too large, crosses multiple distant hunks, or the exact replacement range is ambiguous.
           
           The review comment safe output allows a maximum of 20 inline comments. Use that budget carefully:
           
@@ -396,6 +414,12 @@ jobs:
           - combine closely related findings into one inline comment when they affect the same hunk, and
           - keep broader issue-satisfaction observations in the final review body unless they clearly map to a specific line, and
           - reserve inline comments for higher-priority issues that deserve direct author attention during review.
+          
+          For inline comments with concrete replacements:
+          
+          - prefer one apply-ready GitHub suggestion over a prose description,
+          - keep the suggested replacement as small as possible while still fixing the issue, and
+          - avoid suggestion blocks only when GitHub would not be able to apply them cleanly.
           
           Treat low-priority nits differently:
           
@@ -451,13 +475,14 @@ jobs:
           
           ### Notes
           - <Optional short note about anything intentionally skipped or any review boundary that matters.>
+          - <Only mention skill availability if one or more exact-name skill invocations actually failed and that materially affected the review. Otherwise omit any note about skills.>
           ```
           
           Keep the review body concise. Put file-specific detail into inline comments, not into a long summary.
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_f80bb9a32b316e40_EOF
+          GH_AW_PROMPT_f2bd8cddbfa4eca5_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
@@ -654,9 +679,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_bee1840d91d47b72_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_66a75334d792847f_EOF'
           {"create_pull_request_review_comment":{"max":20,"side":"RIGHT"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{},"submit_pull_request_review":{"allowed_events":["COMMENT","REQUEST_CHANGES"],"max":1,"target":"triggering"}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_bee1840d91d47b72_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_66a75334d792847f_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -876,7 +901,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_b79b9d98a33291d0_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_99ed55b32d1133e0_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -934,7 +959,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_b79b9d98a33291d0_EOF
+          GH_AW_MCP_CONFIG_99ed55b32d1133e0_EOF
       - name: Download activation artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
