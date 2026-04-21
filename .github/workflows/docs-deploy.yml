@@ -226,10 +226,10 @@ jobs:
         if: steps.context.outputs.is-fork == 'true' && steps.context.outputs.event == 'pull_request'
         continue-on-error: true
         id: fetch-ephemeral-token
-        uses: elastic/ci-gh-actions/fetch-github-token@v1
+        uses: elastic/ci-gh-actions/fetch-github-token@v1.3.0
         with:
           vault-instance: "ci-prod"
-          vault-role: "token-policy-docs-deploy-org-member-check"
+          vault-role: "token-policy-8c6a5ed19135"
 
       - name: Check org membership
         id: check-org-membership
@@ -785,7 +785,7 @@ jobs:
             f.write(f"result=arn:aws:iam::197730964718:role/{prefix}{hash}")
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
         with:
           role-to-assume: ${{ steps.role_arn.outputs.result }}
           aws-region: us-east-1
