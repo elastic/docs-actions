@@ -32,10 +32,10 @@ Configure the `COPILOT_GITHUB_TOKEN` secret before running the workflow.
 | Output | Max | Description |
 |--------|-----|-------------|
 | `noop` | — | Used when the trigger is not a pull request, or the PR has no changed `docs/**/*.md` files |
-| `create-pull-request-review-comment` | 10 | Adds focused inline review comments on changed markdown lines |
+| `create-pull-request-review-comment` | 15 | Adds focused inline review comments on changed markdown lines |
 | `submit-pull-request-review` | 1 | Submits the overall pull request review summary as `COMMENT` or `REQUEST_CHANGES` |
 
-The inline review comment cap of `10` comes from the current `gh-aw` safe output limit for `create-pull-request-review-comment`, so the workflow prioritizes the highest-signal comments and keeps broader observations in the summary review.
+The inline review comment cap for this workflow is set to `15`, so the workflow prioritizes the highest-signal comments and keeps broader observations in the summary review.
 
 ## Review scope
 
