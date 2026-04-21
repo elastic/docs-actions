@@ -180,7 +180,14 @@ The review comment safe output allows a maximum of 20 inline comments. Use that 
 
 - prioritize the highest-signal issues first,
 - combine closely related findings into one inline comment when they affect the same hunk, and
-- keep broader issue-satisfaction observations in the final review body unless they clearly map to a specific line.
+- keep broader issue-satisfaction observations in the final review body unless they clearly map to a specific line, and
+- reserve inline comments for higher-priority issues that deserve direct author attention during review.
+
+Treat low-priority nits differently:
+
+- avoid nits unless they are grounded in the Elastic style guide or another explicit review rule in this workflow,
+- do not spend inline comment slots on lower-priority nits when higher-priority issues still need review comments, and
+- summarize any remaining style-guide-based nits in a short `Nits` section of the final review body instead of posting more inline comments.
 
 ## What to skip
 
@@ -224,6 +231,9 @@ Submit one final review body in this shape:
 - Frontmatter and applies_to: <short result>.
 - Content type fit: <short result>.
 - Parent issue satisfaction: <Not applicable | Satisfied | Partially satisfied | Not satisfied>.
+
+### Nits
+- <Optional short bullet list of lower-priority, style-guide-based nits that did not merit inline comments. Omit this section if there are no such nits.>
 
 ### Notes
 - <Optional short note about anything intentionally skipped or any review boundary that matters.>

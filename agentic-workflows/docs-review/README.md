@@ -35,7 +35,7 @@ Configure the `COPILOT_GITHUB_TOKEN` secret before running the workflow.
 | `create-pull-request-review-comment` | 20 | Adds focused inline review comments on changed markdown lines |
 | `submit-pull-request-review` | 1 | Submits the overall pull request review summary as `COMMENT` or `REQUEST_CHANGES` |
 
-The inline review comment cap for this workflow is set to `20`, so the workflow prioritizes the highest-signal comments and keeps broader observations in the summary review.
+The inline review comment cap for this workflow is set to `20`, so the workflow prioritizes the highest-signal comments and keeps broader observations in the summary review. Lower-priority nits should only be reported when they are grounded in the Elastic style guide, and those nits should usually be summarized in the review body instead of consuming inline comment slots.
 
 ## Review scope
 

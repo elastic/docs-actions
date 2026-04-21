@@ -1,4 +1,4 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"4295ca9223b302ed901150aa78b18b915e1b7e07413b3ab986798c652d4bbc36","compiler_version":"v0.69.0","agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"56385a912e6371456a0e9ea4a4fe7419cf28d3e6bf7561dea66fec29d8d7a36d","compiler_version":"v0.69.0","agent_id":"copilot"}
 # gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GH_AW_PLUGINS_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"81b86c58b134601fc10d4745e276d7861cd12911","version":"v0.69.0"},{"repo":"microsoft/apm-action","sha":"a190b0b1a91031057144dc136acf9757a59c9e4d","version":"v1.4.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.25"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.25"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.25"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.2.26"},{"image":"ghcr.io/github/github-mcp-server:v1.0.0"},{"image":"node:lts-alpine"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
@@ -213,14 +213,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_42b42e6f36668f96_EOF'
+          cat << 'GH_AW_PROMPT_f80bb9a32b316e40_EOF'
           <system>
-          GH_AW_PROMPT_42b42e6f36668f96_EOF
+          GH_AW_PROMPT_f80bb9a32b316e40_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_42b42e6f36668f96_EOF'
+          cat << 'GH_AW_PROMPT_f80bb9a32b316e40_EOF'
           <safe-output-tools>
           Tools: create_pull_request_review_comment(max:20), submit_pull_request_review, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -252,9 +252,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_42b42e6f36668f96_EOF
+          GH_AW_PROMPT_f80bb9a32b316e40_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_42b42e6f36668f96_EOF'
+          cat << 'GH_AW_PROMPT_f80bb9a32b316e40_EOF'
           </system>
           
           
@@ -394,7 +394,14 @@ jobs:
           
           - prioritize the highest-signal issues first,
           - combine closely related findings into one inline comment when they affect the same hunk, and
-          - keep broader issue-satisfaction observations in the final review body unless they clearly map to a specific line.
+          - keep broader issue-satisfaction observations in the final review body unless they clearly map to a specific line, and
+          - reserve inline comments for higher-priority issues that deserve direct author attention during review.
+          
+          Treat low-priority nits differently:
+          
+          - avoid nits unless they are grounded in the Elastic style guide or another explicit review rule in this workflow,
+          - do not spend inline comment slots on lower-priority nits when higher-priority issues still need review comments, and
+          - summarize any remaining style-guide-based nits in a short `Nits` section of the final review body instead of posting more inline comments.
           
           ## What to skip
           
@@ -439,6 +446,9 @@ jobs:
           - Content type fit: <short result>.
           - Parent issue satisfaction: <Not applicable | Satisfied | Partially satisfied | Not satisfied>.
           
+          ### Nits
+          - <Optional short bullet list of lower-priority, style-guide-based nits that did not merit inline comments. Omit this section if there are no such nits.>
+          
           ### Notes
           - <Optional short note about anything intentionally skipped or any review boundary that matters.>
           ```
@@ -447,7 +457,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_42b42e6f36668f96_EOF
+          GH_AW_PROMPT_f80bb9a32b316e40_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
@@ -644,9 +654,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_c7c0dddc33379d32_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_bee1840d91d47b72_EOF'
           {"create_pull_request_review_comment":{"max":20,"side":"RIGHT"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{},"submit_pull_request_review":{"allowed_events":["COMMENT","REQUEST_CHANGES"],"max":1,"target":"triggering"}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_c7c0dddc33379d32_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_bee1840d91d47b72_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -866,7 +876,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_145f4d1c3e8ae80e_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_b79b9d98a33291d0_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -924,7 +934,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_145f4d1c3e8ae80e_EOF
+          GH_AW_MCP_CONFIG_b79b9d98a33291d0_EOF
       - name: Download activation artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
