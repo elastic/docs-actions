@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Create ephemeral GitHub token
         id: create-token
-        uses: elastic/oblt-actions/github/create-token@v1
+        uses: elastic/oblt-actions/github/create-token@v1.38.1
         with:
           token-policy: token-policy-8749eaab83f2
 
@@ -48,7 +48,7 @@ jobs:
 
       - name: Create pull request
         if: steps.changes.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8.1.0
         with:
           token: ${{ steps.create-token.outputs.token }}
           commit-message: |
