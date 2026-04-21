@@ -116,6 +116,7 @@ Read the pull request title, body, and changed files first.
 
 Use GitHub tools and local workspace inspection as needed to gather:
 
+- the pull request's linked issue context, if any, including closing keywords and directly referenced issues,
 - the list of changed files,
 - the diff hunks for each eligible markdown file,
 - the final contents of each eligible markdown file in the PR branch, and
@@ -150,6 +151,7 @@ Focus on the categories below:
 3. **Frontmatter quality** using `docs-frontmatter-audit`.
 4. **Content type fit and structure** using `docs-content-type-checker`.
 5. **`applies_to` correctness** using `docs-applies-to-tagging`.
+6. **Issue satisfaction** by checking whether the changed docs appear to satisfy the linked parent issue, if one exists.
 
 Treat this as a PR review, not a full repository audit:
 
@@ -157,6 +159,8 @@ Treat this as a PR review, not a full repository audit:
 - You may report a file-level metadata issue such as missing or incorrect frontmatter when the PR edits that file and the issue is directly relevant to the changed page.
 - Do not dump every possible style nit from a whole file solely because one paragraph changed.
 - Do not flag pre-existing unrelated problems in untouched sections unless the PR clearly makes that area worse.
+- If the pull request appears linked to a parent issue, assess whether the issue's documentation ask is fully satisfied, only partially satisfied, or still unsupported by the PR.
+- If the linked issue is not satisfied, explain the gap in the review summary and only leave inline comments where the gap maps to a specific changed file or hunk.
 
 ## What to report
 
@@ -171,6 +175,12 @@ Report only findings that are:
 Use line-level review comments when you can point to an exact changed line or nearby changed hunk. Keep each inline comment narrowly scoped.
 
 When helpful, include a concrete replacement sentence, frontmatter snippet, or markdown wording in the comment body. Phrase suggestions as exact edits the author can apply, but do not rely on GitHub suggestion fences unless you are certain they fit the target line range.
+
+The review comment safe output allows a maximum of 10 inline comments. Use that budget carefully:
+
+- prioritize the highest-signal issues first,
+- combine closely related findings into one inline comment when they affect the same hunk, and
+- keep broader issue-satisfaction observations in the final review body unless they clearly map to a specific line.
 
 ## What to skip
 
@@ -213,6 +223,7 @@ Submit one final review body in this shape:
 - Jargon: <short result>.
 - Frontmatter and applies_to: <short result>.
 - Content type fit: <short result>.
+- Parent issue satisfaction: <Not applicable | Satisfied | Partially satisfied | Not satisfied>.
 
 ### Notes
 - <Optional short note about anything intentionally skipped or any review boundary that matters.>

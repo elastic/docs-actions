@@ -1,4 +1,4 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"821ebda0731f423022ababe3cf96c6735dc3ee5ac0b59356ff69d19a846a20d2","compiler_version":"v0.69.0","agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"dae71e75005a7627e119caae9c3f0f360be6b3f3c990bf357f932b830e1c700c","compiler_version":"v0.69.0","agent_id":"copilot"}
 # gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GH_AW_PLUGINS_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"81b86c58b134601fc10d4745e276d7861cd12911","version":"v0.69.0"},{"repo":"microsoft/apm-action","sha":"a190b0b1a91031057144dc136acf9757a59c9e4d","version":"v1.4.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.25"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.25"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.25"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.2.26"},{"image":"ghcr.io/github/github-mcp-server:v1.0.0"},{"image":"node:lts-alpine"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
@@ -213,14 +213,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_6c6f5480f7767748_EOF'
+          cat << 'GH_AW_PROMPT_8753868c5ebcb81c_EOF'
           <system>
-          GH_AW_PROMPT_6c6f5480f7767748_EOF
+          GH_AW_PROMPT_8753868c5ebcb81c_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_6c6f5480f7767748_EOF'
+          cat << 'GH_AW_PROMPT_8753868c5ebcb81c_EOF'
           <safe-output-tools>
           Tools: create_pull_request_review_comment(max:10), submit_pull_request_review, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -252,9 +252,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_6c6f5480f7767748_EOF
+          GH_AW_PROMPT_8753868c5ebcb81c_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_6c6f5480f7767748_EOF'
+          cat << 'GH_AW_PROMPT_8753868c5ebcb81c_EOF'
           </system>
           
           
@@ -330,6 +330,7 @@ jobs:
           
           Use GitHub tools and local workspace inspection as needed to gather:
           
+          - the pull request's linked issue context, if any, including closing keywords and directly referenced issues,
           - the list of changed files,
           - the diff hunks for each eligible markdown file,
           - the final contents of each eligible markdown file in the PR branch, and
@@ -364,6 +365,7 @@ jobs:
           3. **Frontmatter quality** using `docs-frontmatter-audit`.
           4. **Content type fit and structure** using `docs-content-type-checker`.
           5. **`applies_to` correctness** using `docs-applies-to-tagging`.
+          6. **Issue satisfaction** by checking whether the changed docs appear to satisfy the linked parent issue, if one exists.
           
           Treat this as a PR review, not a full repository audit:
           
@@ -371,6 +373,8 @@ jobs:
           - You may report a file-level metadata issue such as missing or incorrect frontmatter when the PR edits that file and the issue is directly relevant to the changed page.
           - Do not dump every possible style nit from a whole file solely because one paragraph changed.
           - Do not flag pre-existing unrelated problems in untouched sections unless the PR clearly makes that area worse.
+          - If the pull request appears linked to a parent issue, assess whether the issue's documentation ask is fully satisfied, only partially satisfied, or still unsupported by the PR.
+          - If the linked issue is not satisfied, explain the gap in the review summary and only leave inline comments where the gap maps to a specific changed file or hunk.
           
           ## What to report
           
@@ -385,6 +389,12 @@ jobs:
           Use line-level review comments when you can point to an exact changed line or nearby changed hunk. Keep each inline comment narrowly scoped.
           
           When helpful, include a concrete replacement sentence, frontmatter snippet, or markdown wording in the comment body. Phrase suggestions as exact edits the author can apply, but do not rely on GitHub suggestion fences unless you are certain they fit the target line range.
+          
+          The review comment safe output allows a maximum of 10 inline comments. Use that budget carefully:
+          
+          - prioritize the highest-signal issues first,
+          - combine closely related findings into one inline comment when they affect the same hunk, and
+          - keep broader issue-satisfaction observations in the final review body unless they clearly map to a specific line.
           
           ## What to skip
           
@@ -427,6 +437,7 @@ jobs:
           - Jargon: <short result>.
           - Frontmatter and applies_to: <short result>.
           - Content type fit: <short result>.
+          - Parent issue satisfaction: <Not applicable | Satisfied | Partially satisfied | Not satisfied>.
           
           ### Notes
           - <Optional short note about anything intentionally skipped or any review boundary that matters.>
@@ -436,7 +447,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_6c6f5480f7767748_EOF
+          GH_AW_PROMPT_8753868c5ebcb81c_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
@@ -633,9 +644,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_12fc97214a1b9b8c_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_067170c5dd9fe7c1_EOF'
           {"create_pull_request_review_comment":{"max":10,"side":"RIGHT"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{},"submit_pull_request_review":{"allowed_events":["COMMENT","REQUEST_CHANGES"],"max":1,"target":"triggering"}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_12fc97214a1b9b8c_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_067170c5dd9fe7c1_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -855,7 +866,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_6cc2d3628d16a7c2_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_1de470a4fc694c52_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -913,7 +924,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_6cc2d3628d16a7c2_EOF
+          GH_AW_MCP_CONFIG_1de470a4fc694c52_EOF
       - name: Download activation artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:

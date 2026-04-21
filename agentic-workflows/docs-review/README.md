@@ -35,6 +35,8 @@ Configure the `COPILOT_GITHUB_TOKEN` secret before running the workflow.
 | `create-pull-request-review-comment` | 10 | Adds focused inline review comments on changed markdown lines |
 | `submit-pull-request-review` | 1 | Submits the overall pull request review summary as `COMMENT` or `REQUEST_CHANGES` |
 
+The inline review comment cap of `10` comes from the current `gh-aw` safe output limit for `create-pull-request-review-comment`, so the workflow prioritizes the highest-signal comments and keeps broader observations in the summary review.
+
 ## Review scope
 
 The workflow reviews only files that both:
@@ -43,6 +45,8 @@ The workflow reviews only files that both:
 - match `docs/**/*.md`.
 
 It ignores markdown outside `docs/`, non-markdown files, and unrelated pre-existing issues in untouched files.
+
+If the pull request is linked to a parent issue, the review also checks whether the PR appears to satisfy that issue's documentation ask and reports the result in the summary review.
 
 ## Skills used
 
