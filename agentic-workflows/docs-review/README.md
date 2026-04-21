@@ -1,0 +1,87 @@
+# Docs review
+
+Reviews changed markdown files in pull requests by using Copilot and Elastic Docs Skills. The workflow limits its scope to files under `docs/` and publishes a pull request review with a concise summary plus inline comments for actionable findings.
+
+## Triggers
+
+| Event | Description |
+|-------|-------------|
+| `/docs-review` | Slash command on a pull request comment |
+| PR checkbox menu | Consumer-managed PR menu workflow that calls the same reusable workflow when a checkbox is selected |
+
+## Install
+
+```bash
+mkdir -p .github/workflows && curl -sL \
+  https://raw.githubusercontent.com/elastic/docs-actions/v1/agentic-workflows/docs-review/example.yml \
+  -o .github/workflows/docs-review.yml
+```
+
+Configure the `COPILOT_GITHUB_TOKEN` secret before running the workflow.
+
+## Inputs
+
+| Input | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `additional-instructions` | string | No | `""` | Repo-specific instructions appended to the review prompt |
+| `setup-commands` | string | No | `""` | Shell commands to run before the agent starts |
+| `messages-footer` | string | No | _(default footer)_ | Footer appended to all review summaries |
+
+## Safe outputs
+
+| Output | Max | Description |
+|--------|-----|-------------|
+| `noop` | — | Used when the trigger is not a pull request, or the PR has no changed `docs/**/*.md` files |
+| `create-pull-request-review-comment` | 10 | Adds focused inline review comments on changed markdown lines |
+| `submit-pull-request-review` | 1 | Submits the overall pull request review summary as `COMMENT` or `REQUEST_CHANGES` |
+
+## Review scope
+
+The workflow reviews only files that both:
+
+- changed in the current pull request, and
+- match `docs/**/*.md`.
+
+It ignores markdown outside `docs/`, non-markdown files, and unrelated pre-existing issues in untouched files.
+
+## Skills used
+
+This workflow installs these Elastic Docs Skills through Agent Package Manager dependencies:
+
+- `docs-check-style`.
+- `docs-flag-jargon-skill`.
+- `docs-frontmatter-audit`.
+- `docs-content-type-checker`.
+- `docs-applies-to-tagging`.
+
+## Example
+
+```yaml
+name: Docs Review
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  actions: read
+  contents: read
+  discussions: write
+  pull-requests: write
+
+jobs:
+  run:
+    if: >-
+      github.event.issue.pull_request != null &&
+      startsWith(github.event.comment.body, '/docs-review')
+    uses: elastic/docs-actions/.github/workflows/gh-aw-docs-review.lock.yml@v1
+    with:
+      additional-instructions: |
+        This repository stores product documentation in `docs/`.
+        Prefer concise review comments with exact replacement text when possible.
+    secrets:
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+```
+
+## PR checkbox menus
+
+If your repository already uses a checkbox-driven AI menu, keep that workflow in the consumer repo and have the selected PR checkbox call `elastic/docs-actions/.github/workflows/gh-aw-docs-review.lock.yml@v1`. This keeps the reusable review logic in `docs-actions` while letting each repo decide how its PR menu is posted and refreshed.
