@@ -71,7 +71,7 @@ strict: false
 safe-outputs:
   noop:
   create-pull-request-review-comment:
-    max: 15
+    max: 20
   submit-pull-request-review:
     max: 1
     target: "triggering"
@@ -176,7 +176,7 @@ Use line-level review comments when you can point to an exact changed line or ne
 
 When helpful, include a concrete replacement sentence, frontmatter snippet, or markdown wording in the comment body. Phrase suggestions as exact edits the author can apply, but do not rely on GitHub suggestion fences unless you are certain they fit the target line range.
 
-The review comment safe output allows a maximum of 15 inline comments. Use that budget carefully:
+The review comment safe output allows a maximum of 20 inline comments. Use that budget carefully:
 
 - prioritize the highest-signal issues first,
 - combine closely related findings into one inline comment when they affect the same hunk, and
@@ -202,7 +202,7 @@ If you reviewed eligible files and found no actionable issues, submit a concise 
 
 If you found one or more high-confidence actionable issues:
 
-- create up to 15 focused inline review comments, and
+- create up to 20 focused inline review comments, and
 - submit one consolidated pull request review.
 
 Use `REQUEST_CHANGES` only when the issues are important enough that the PR should be revised before merge. Otherwise use `COMMENT`.
