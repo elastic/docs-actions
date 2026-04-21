@@ -58,6 +58,10 @@ This workflow installs these Elastic Docs Skills through Agent Package Manager d
 - `docs-content-type-checker`.
 - `docs-applies-to-tagging`.
 
+The review prompt instructs the Copilot agent to invoke these imported skills by exact name through the skill tool before falling back to manual judgment.
+
+When an inline comment can be expressed as a small, exact replacement for the reviewed line or hunk, the workflow should prefer an apply-ready GitHub suggestion block over prose-only guidance.
+
 ## Example
 
 ```yaml
