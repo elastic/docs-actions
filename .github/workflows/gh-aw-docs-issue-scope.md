@@ -36,8 +36,9 @@ on:
       COPILOT_GITHUB_TOKEN:
         required: true
 concurrency:
-  group: docs-issue-scope
+  group: gh-aw-docs-issue-scope-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
+  job-discriminator: ${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
 permissions:
   contents: read
   issues: read
@@ -77,10 +78,12 @@ safe-outputs:
 timeout-minutes: 30
 steps:
   - name: Repo-specific setup
-    if: ${{ inputs.setup-commands != '' }}
     env:
       SETUP_COMMANDS: ${{ inputs.setup-commands }}
-    run: eval "$SETUP_COMMANDS"
+    run: |
+      if [ -n "$SETUP_COMMANDS" ]; then
+        eval "$SETUP_COMMANDS"
+      fi
 ---
 
 # Issue Scope Analyzer
@@ -100,10 +103,11 @@ When invoked:
 - Use both the issue description and the linked public PRs or commits you discover. Treat the issue request and the code changes as separate sources of truth that need to be reconciled.
 - Verify that the issue request itself is accurate. Do not assume the issue premise is correct just because the request is clearly written.
 - If the triggering item is an issue, maintain a bot-managed scope summary in the issue body by using the `docs-issue-scope:start` and `docs-issue-scope:end` HTML comment markers shown in the managed block template below.
-- If both markers are present exactly once, update only that managed block using `update_issue` with `replace-island`.
+- If both markers are present exactly once, you must update only that managed block using `update_issue` with `replace-island`.
 - If neither marker is present, append a new managed block to the end of the issue body using `update_issue` with `append`.
 - If only one marker is present, or multiple marker pairs are present, do not guess and do not overwrite the issue body. Skip the body update and use `add_comment` instead to explain that the issue body needs cleanup.
 - Never replace the entire issue body. If someone deleted the original issue template or other author-written content, append the managed block instead of overwriting anything.
+- On subsequent runs for the same issue, update the existing managed block in place. Do not append another scoping block when a valid marker pair already exists.
 - If the slash command was posted on a pull request rather than an issue, do not rewrite the PR body. Keep the response in a concise comment instead.
 - If there are no public PRs or commits to inspect, do not analyze documentation impact. Post a concise comment asking the user to add the relevant PR or commit links and rerun `/docs-issue-scope`.
 - If the issue plus linked code changes still do not contain enough information to understand the requested documentation change, do not guess. Post a concise comment asking the user to add more detail to the issue or link more relevant PRs or commits, then rerun `/docs-issue-scope`.
@@ -218,7 +222,7 @@ Use this exact body-block format inside the managed markers:
 ```
 <!-- docs-issue-scope:start -->
 
-## AI scoping 🤖
+## Elastic Docs AI Scoping 🤖
 
 <details>
 <summary>Docs issue scope</summary>
@@ -261,6 +265,8 @@ Use this exact body-block format inside the managed markers:
 
 Keep the managed block concise. Avoid long per-page writeups. Prefer short tables, short recommendations, and brief notes that mention content-type fit or section role only when it materially affects the recommendation.
 
+On reruns for the same issue, update the existing managed block in place. Do not append a second copy when the issue body already contains one valid `docs-issue-scope:start` / `docs-issue-scope:end` marker pair.
+
 If you successfully updated the issue body, do not also post a duplicate full analysis comment. Use `add_comment` only when:
 
 - the body cannot be updated safely,
@@ -275,7 +281,7 @@ If the request does not have enough information, use this shorter managed block 
 ```
 <!-- docs-issue-scope:start -->
 
-## AI scoping 🤖
+## Elastic Docs AI Scoping 🤖
 
 <details>
 <summary>Docs issue scope</summary>

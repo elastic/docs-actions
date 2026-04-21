@@ -1,6 +1,6 @@
 # Docs Issue Scope
 
-Uses an issue description plus linked public PRs and commits to scope Elastic documentation work. When the command runs on an issue, it maintains a concise bot-managed scope block in the issue body when that can be done safely. The managed block is published under an `AI scoping 🤖` heading, and the details are wrapped in a collapsible section to keep the issue body compact. Otherwise, it falls back to a concise comment with recommended doc targets and next steps.
+Uses an issue description plus linked public PRs and commits to scope Elastic documentation work. When the command runs on an issue, it maintains a concise bot-managed scope block in the issue body when that can be done safely. The managed block is published under an `Elastic Docs AI Scoping 🤖` heading, and the details are wrapped in a collapsible section to keep the issue body compact. Otherwise, it falls back to a concise comment with recommended doc targets and next steps.
 
 ## Triggers
 
@@ -45,7 +45,7 @@ When `/docs-issue-scope` runs on an issue, the workflow prefers to maintain a bo
 - `<!-- docs-issue-scope:start -->`
 - `<!-- docs-issue-scope:end -->`
 
-If the markers already exist exactly once, the workflow rewrites only that block. If the markers are missing, it appends a new block. The managed block includes an `AI scoping 🤖` heading followed by a GitHub `<details>` section. If the markers are malformed or duplicated, it does not overwrite the issue body and falls back to a concise comment instead.
+If the markers already exist exactly once, the workflow rewrites only that block. If the markers are missing, it appends a new block. The managed block includes an `Elastic Docs AI Scoping 🤖` heading followed by a GitHub `<details>` section. If the markers are malformed or duplicated, it does not overwrite the issue body and falls back to a concise comment instead.
 
 ## Example
 
