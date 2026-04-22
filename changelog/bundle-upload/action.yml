@@ -1,8 +1,8 @@
 name: Changelog bundle upload
 description: >
-  Downloads a changelog bundle artifact and uploads it to the
-  elastic-docs-v3-changelog-bundles S3 bucket. Uses OIDC for AWS
-  authentication and docs-builder's incremental upload.
+  Downloads a changelog bundle artifact and uploads it to the private S3 bucket. A scrubber Lambda mirrors
+  sanitized copies to the public CDN bucket. Uses OIDC for AWS authentication
+  and docs-builder's incremental upload.
 
 inputs:
   output:
@@ -105,6 +105,6 @@ runs:
         docs-builder changelog upload \
           --artifact-type bundle \
           --target s3 \
-          --s3-bucket-name elastic-docs-v3-changelog-bundles \
+          --s3-bucket-name elastic-docs-v3-changelog-bundles-private \
           --config "$CONFIG" \
           --directory "$(dirname "$OUTPUT")"
