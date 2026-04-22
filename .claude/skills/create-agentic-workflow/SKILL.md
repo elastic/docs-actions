@@ -59,47 +59,21 @@ Use `AskUserQuestion` to collect:
 4. **MCP servers**: Does it need the Elastic Docs MCP server (`elastic-docs`)? Other MCP servers?
 5. **Tools**: Which tools? Default: `github` (toolsets: repos, issues, pull_requests, search), `bash`, `web-fetch`
 
-### Step 3: Select fragments
-
-Before generating the workflow, read the available fragments in `agentic-workflows/fragments/` to decide which ones to import. Fragments are reusable prompt building blocks — they inject shared configuration (frontmatter) and instructions (markdown) into the compiled workflow.
-
-**Available fragments** (read each one to understand what it provides):
-
-| Fragment | What it adds | When to include |
-|----------|-------------|-----------------|
-| `docs-tools.md` | Elastic Docs MCP server + `agents-md-generator` MCP server, plus network allows | When the workflow searches or reads Elastic documentation |
-| `formatting.md` | Response formatting rules (concise, scannable, no filler) | Always |
-| `rigor.md` | Evidence standards, noop-over-noise philosophy | Always for audit/check workflows |
-| `mcp-pagination.md` | MCP token limit guidance and pagination patterns | When using MCP tools that return large results |
-| `messages-footer.md` | Wires the `messages-footer` input to the safe-outputs footer | Always (enables caller footer customization) |
-| `runtime-setup.md` | Auto-detects and installs language runtimes (Go, Python, Node, Ruby) | When the workflow runs in repos that need build tooling |
-| `scheduled-report.md` | Full scheduled report agent framework (gather → analyze → quality gate → report) | For scheduled audit workflows that create issues |
-| `safe-output-create-issue.md` | Constraints for `create-issue` (title length, label limits, mention sanitization) | When safe-outputs includes `create-issue` |
-| `safe-output-create-pr.md` | Constraints for `create-pull-request` (patch size, file limits, draft mode) | When safe-outputs includes `create-pull-request` |
-| `safe-output-add-comment.md` | Constraints for `add-comment` (body length, mention/link limits, allowed HTML) | When safe-outputs includes `add-comment` |
-
-**Import rules:**
-- Import paths must be 2-level: `gh-aw-fragments/<file>.md`
-- `tools:` from fragments merge additively with the workflow's own `tools:`
-- `safe-outputs:` in the workflow override imported defaults
-- `engine:`, `on:`, `concurrency:`, `timeout-minutes:`, `strict:` are NOT importable — they must be in the workflow `.md`
-
-**When to create a new fragment** instead of inlining: if the same prompt section or configuration would be copy-pasted across multiple workflows, extract it into `agentic-workflows/fragments/`. Name it descriptively. Give it frontmatter only if it contributes YAML config (tools, safe-outputs, steps, network, mcp-servers). Give it markdown only if it contributes prompt instructions. It can have both.
-
-### Step 4: Generate the workflow source
+### Step 3: Generate the workflow source
 
 Read an existing workflow for reference:
-- `agentic-workflows/docs-check/gh-aw-docs-check.md` — on-demand check pattern
+- `.github/workflows/gh-aw-docs-issue-scope.md` — on-demand check pattern
+- `.github/workflows/gh-aw-issue-triage.md` — triage pattern with pre-steps
 
-Generate `agentic-workflows/<name>/gh-aw-<name>.md` with proper frontmatter. Only import fragments that are relevant — do not include all of them by default:
+Generate `.github/workflows/gh-aw-<name>.md`. Read the available fragments in `.github/workflows/gh-aw-fragments/` and import those relevant to the workflow. **Always include `inlined-imports: true`** — this embeds all imported content at compile time, which is required for cross-repo `workflow_call` invocation.
 
 ```yaml
 ---
 description: |
   <one-line description>
 
+inlined-imports: true
 imports:
-  - gh-aw-fragments/docs-tools.md
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
@@ -161,7 +135,7 @@ steps:
 ---
 ```
 
-Follow the frontmatter with the agent prompt in markdown. Structure it as:
+Follow the frontmatter with the agent prompt in markdown. The imported fragments provide formatting guidelines, rigor standards, MCP pagination tips, safe-output limitations, and the message footer note — so you don't need to repeat those. Structure the workflow-specific prompt as:
 1. **Role statement** — who the agent is and what it does
 2. **Data gathering** — what to read, search, or fetch
 3. **Analysis** — what to look for, how to evaluate findings
@@ -171,28 +145,43 @@ Follow the frontmatter with the agent prompt in markdown. Structure it as:
 
 End with `${{ inputs.additional-instructions }}` so callers can inject repo-specific guidance.
 
-### Step 5: Generate the trigger template
+Read the existing workflows for examples.
+
+### Step 4: Generate the trigger template
 
 Create `agentic-workflows/<name>/example.yml`:
 
 ```yaml
 name: <Display Name>
 on:
-  <event triggers based on step 2>
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
 
 permissions:
-  <minimum required permissions>
+  actions: read
+  contents: read
+  discussions: write
+  issues: write
+  pull-requests: write
 
 jobs:
   run:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.comment.body, '/<slash-command>')
     uses: elastic/docs-actions/.github/workflows/gh-aw-<name>.lock.yml@v1
     secrets:
       COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
 ```
 
+**Required permissions**: Always include `discussions: write` — the reusable workflow's `conclusion` and `safe_outputs` jobs require it.
+
+**Slash command filtering**: Always add an `if` condition with `startsWith(github.event.comment.body, '/<command>')` — without it, every `issue_comment`-triggered workflow fires on every comment.
+
 For scheduled audits, add `issues: write` to permissions. For fixes, add `contents: write` and `pull-requests: write`.
 
-### Step 6: Generate the README
+### Step 5: Generate the README
 
 Create `agentic-workflows/<name>/README.md` following the pattern in `agentic-workflows/docs-check/README.md`:
 - Description
@@ -202,13 +191,13 @@ Create `agentic-workflows/<name>/README.md` following the pattern in `agentic-wo
 - Safe outputs table
 - Example YAML with `additional-instructions`
 
-### Step 7: Review with the user
+### Step 6: Review with the user
 
 Present all three files and ask: **"Does this look right? Want me to change anything?"**
 
 Iterate until the user is happy.
 
-### Step 8: Next steps
+### Step 7: Next steps
 
 Tell the user:
 

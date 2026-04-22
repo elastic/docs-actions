@@ -27,7 +27,9 @@ AI-powered [GitHub Agent Workflows](https://github.github.com/gh-aw/) for docume
 
 | Workflow | Description | Trigger | Safe Output |
 |----------|-------------|---------|-------------|
+| [docs-review](agentic-workflows/docs-review/) | Review changed markdown files under `docs/` in pull requests | `/docs-review`, PR checkbox menu | `create-pull-request-review-comment`, `submit-pull-request-review` |
 | [docs-check](agentic-workflows/docs-check/) | Analyze a PR or commit for documentation impact | `/docs-check`, label, dispatch | `add-comment` |
+| [issue-triage](agentic-workflows/issue-triage/) | Triage issues by applying team labels | `/triage`, dispatch | `add-labels` |
 
 Quick install:
 
@@ -37,7 +39,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-check.yml
 ```
 
-All agentic workflows require the `COPILOT_GITHUB_TOKEN` secret.
+Agentic workflows in this repo use `COPILOT_GITHUB_TOKEN`.
 
 ## Development
 

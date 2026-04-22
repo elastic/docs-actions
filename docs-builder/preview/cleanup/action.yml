@@ -1,0 +1,87 @@
+name: docs-builder/preview/cleanup
+description: Delete GitHub deployments and S3 preview objects for a closed PR
+
+inputs:
+  pr-number:
+    description: 'Pull request number'
+    required: true
+  environment:
+    description: 'GitHub deployment environment name'
+    required: false
+    default: 'docs-preview'
+  s3-bucket-path:
+    description: 'S3 bucket path prefix (without trailing /pull/N)'
+    required: false
+    default: 's3://elastic-docs-v3-website-preview'
+  aws-role-name-prefix:
+    description: 'AWS IAM role name prefix for OIDC auth'
+    required: false
+    default: 'elastic-docs-v3-preview-'
+
+outputs:
+  had-deployments:
+    description: 'Whether any deployments were found and cleaned up'
+    value: ${{ steps.delete-deployments.outputs.had-deployments }}
+
+runs:
+  using: composite
+  steps:
+    - name: Delete GitHub deployments
+      uses: actions/github-script@v8
+      id: delete-deployments
+      env:
+        PR_NUMBER: ${{ inputs.pr-number }}
+        ENVIRONMENT: ${{ inputs.environment }}
+      with:
+        script: |
+          const { retryWithBackoff } = require('${{ github.action_path }}/scripts/retry.js');
+          const retry = (fn, label) => retryWithBackoff(fn, label, { core });
+
+          const { owner, repo } = context.repo;
+          const prNumber = parseInt(process.env.PR_NUMBER, 10);
+          if (!Number.isInteger(prNumber) || prNumber <= 0) {
+            throw new Error(`Invalid PR number: ${process.env.PR_NUMBER}`);
+          }
+          const environment = process.env.ENVIRONMENT;
+          if (!/^[a-zA-Z0-9._-]+$/.test(environment)) {
+            throw new Error(`Invalid environment name: ${environment}`);
+          }
+
+          const deployments = await retry(
+            () => github.rest.repos.listDeployments({ owner, repo, environment, task: `${environment}-${prNumber}` }),
+            'listDeployments'
+          );
+
+          core.setOutput('had-deployments', deployments.data.length > 0)
+
+          for (const deployment of deployments.data) {
+            await retry(
+              () => github.rest.repos.createDeploymentStatus({ owner, repo, deployment_id: deployment.id, state: 'inactive', description: 'Marking deployment as inactive' }),
+              `createDeploymentStatus(${deployment.id})`
+            );
+            await retry(
+              () => github.rest.repos.deleteDeployment({ owner, repo, deployment_id: deployment.id }),
+              `deleteDeployment(${deployment.id})`
+            );
+          }
+
+    - name: Authenticate to AWS
+      uses: elastic/docs-actions/aws/auth@v1
+      if: steps.delete-deployments.outputs.had-deployments == 'true'
+      with:
+        aws_role_name_prefix: ${{ inputs.aws-role-name-prefix }}
+
+    - name: Delete S3 preview objects
+      if: steps.delete-deployments.outputs.had-deployments == 'true'
+      shell: bash
+      env:
+        S3_PATH: ${{ inputs.s3-bucket-path }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+      run: |
+        if [[ ! "${PR_NUMBER}" =~ ^[0-9]+$ ]]; then
+          echo "::error::PR number must be numeric"; exit 1
+        fi
+        if [[ ! "${S3_PATH}" =~ ^s3://[a-zA-Z0-9._-]+$ ]]; then
+          echo "::error::S3 bucket path must match s3://<bucket-name>"; exit 1
+        fi
+        aws s3 rm "${S3_PATH}/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}" --recursive

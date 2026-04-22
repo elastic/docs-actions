@@ -37,10 +37,12 @@ on:
         type: string
         default: ''
         required: false
-      include-paths:
-        description: 'Deprecated: use vale-paths instead. Path patterns for Vale linting (multi-line).'
-        type: string
-        default: ''
+      use-release-branches:
+        description: >
+          When true, push events to semver release branches (e.g. 9.4) run the docs build even when no docs/** files
+          changed, so links.json can be produced for the link index. main keeps skip-when-no-docs-diff behavior.
+        type: boolean
+        default: false
         required: false
 
 permissions:
@@ -98,6 +100,7 @@ jobs:
       pull-requests: read
     outputs:
       any_modified: ${{ steps.check-files.outputs.any_modified }}
+      effective_any_modified: ${{ steps.effective-any-modified.outputs.effective_any_modified }}
       all_changed_files: ${{ steps.check-files.outputs.all_changed_files }}
       added_files: ${{ steps.check-modified-file-detail.outputs.added_files }}
       modified_files: ${{ steps.check-modified-file-detail.outputs.modified_files }}
@@ -188,6 +191,33 @@ jobs:
             core.setOutput('deleted_files', deleted.join(' '));
             core.setOutput('renamed_files', renamed.join(' '));
 
+      # Why: On a release line (e.g. 9.4), months of pushes may touch only code or deps—never docs/. We still need a
+      # full docs build sometimes so links.json exists for the shared link index. Opt-in repos enable that with
+      # use-release-branches; Vale lint stays tied to real doc edits (any_modified), not this override.
+      - name: Effective any_modified (release-branch opt-in)
+        id: effective-any-modified
+        if: always()
+        env:
+          ANY_MODIFIED: ${{ steps.check-files.outputs.any_modified }}
+          USE_RELEASE: ${{ inputs.use-release-branches }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          # Empty ANY_MODIFIED means "we did not run changed-files" (e.g. workflow_dispatch), not "no docs changed."
+          # We only want to skip the docs build when changed-files explicitly reports no matching paths (false).
+          # Treating empty as true keeps that contract: no diff result => do not infer skip; explicit false => skip
+          # unless use-release-branches forces a release-line build below.
+          effective="${ANY_MODIFIED}"
+          if [[ -z "${effective}" ]]; then
+            effective="true"
+          fi
+          if [[ "${USE_RELEASE}" == "true" && "${EVENT_NAME}" == "push" && "${REF_NAME}" != "${DEFAULT_BRANCH}" ]] \
+            && [[ "${REF_NAME}" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            effective="true"
+          fi
+          echo "effective_any_modified=${effective}" >> "$GITHUB_OUTPUT"
+
   # This check skips the job when the workflow runs on a fork repo itself (e.g.
   # user/kibana), not when a fork PR targets upstream. Fork PRs to upstream run
   # fine because github.event.repository is the upstream repo (not a fork).
@@ -216,7 +246,7 @@ jobs:
       - name: Checkout
         if: >
           env.MATCH == 'true'
-          && needs.check.outputs.any_modified != 'false'
+          && needs.check.outputs.effective_any_modified != 'false'
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
@@ -226,7 +256,7 @@ jobs:
         id: generate-path-prefix
         if: >
           env.MATCH == 'true'
-          && needs.check.outputs.any_modified != 'false'
+          && needs.check.outputs.effective_any_modified != 'false'
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
@@ -249,13 +279,13 @@ jobs:
       - name: 'Validate redirect rules'
         if: >
           env.MATCH == 'true'
-          && needs.check.outputs.any_modified != 'false'
+          && needs.check.outputs.effective_any_modified != 'false'
         uses: elastic/docs-builder/actions/diff-validate@main
 
       - name: Build documentation
         if: >
           env.MATCH == 'true'
-          && needs.check.outputs.any_modified != 'false'
+          && needs.check.outputs.effective_any_modified != 'false'
         uses: elastic/docs-builder@main
         id: docs-build
         continue-on-error: ${{ fromJSON(inputs.continue-on-error != '' && inputs.continue-on-error || 'false') }}
@@ -268,7 +298,7 @@ jobs:
         if: >
           env.MATCH == 'true'
           && !cancelled()
-          && needs.check.outputs.any_modified != 'false'
+          && needs.check.outputs.effective_any_modified != 'false'
           && steps.docs-build.outputs.skip != 'true'
         uses: elastic/docs-builder/actions/validate-inbound-local@main
 
@@ -276,33 +306,23 @@ jobs:
         if: >
           env.MATCH == 'true'
           && !cancelled()
-          && needs.check.outputs.any_modified != 'false'
+          && needs.check.outputs.effective_any_modified != 'false'
           && steps.docs-build.outputs.skip != 'true'
           && steps.docs-build.outcome != 'skipped'
         uses: elastic/docs-builder/actions/validate-path-prefixes-local@main
 
-      - name: Warn about fork PR
+      - name: Note fork PR preview
         if: >
           github.event_name == 'pull_request'
           && github.event.pull_request.head.repo.full_name != github.repository
           && needs.check.outputs.any_modified == 'true'
-          && !contains(fromJSON('["MEMBER","OWNER"]'), github.event.pull_request.author_association)
         run: |
-          echo "::warning::Preview deployments are not available for fork PRs unless the author is an organization member or repository owner."
-
-      - name: Note fork PR preview for trusted authors
-        if: >
-          github.event_name == 'pull_request'
-          && github.event.pull_request.head.repo.full_name != github.repository
-          && needs.check.outputs.any_modified == 'true'
-          && contains(fromJSON('["MEMBER","OWNER"]'), github.event.pull_request.author_association)
-        run: |
-          echo "::notice::Fork PRs from org members or repository owners may receive a docs preview after the deploy workflow runs."
+          echo "::notice::Fork PR detected — org membership will be verified during the deploy workflow. Members of the elastic org will receive a documentation preview."
 
       - name: Skip build
-        if: env.MATCH != 'true' || needs.check.outputs.any_modified == 'false'
+        if: env.MATCH != 'true' || needs.check.outputs.effective_any_modified == 'false'
         run: |
-          echo "::notice::Build skipped (match=${{ env.MATCH }}, any_modified=${{ needs.check.outputs.any_modified }})"
+          echo "::notice::Build skipped (match=${{ env.MATCH }}, any_modified=${{ needs.check.outputs.any_modified }}, effective_any_modified=${{ needs.check.outputs.effective_any_modified }})"
 
   vale:
     if: >
@@ -330,4 +350,4 @@ jobs:
         uses: elastic/vale-rules/lint@main
         with:
           files: ${{ needs.check.outputs.all_changed_files }}
-          include-paths: ${{ inputs.vale-paths != '' && inputs.vale-paths || inputs.include-paths }}
+          vale-paths: ${{ inputs.vale-paths }}

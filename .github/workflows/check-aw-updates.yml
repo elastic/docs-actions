@@ -5,16 +5,25 @@ on:
     - cron: '0 9 * * 1' # Weekly on Mondays at 9am UTC
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   check-updates:
     name: Recompile lock files and open PR if changed
     runs-on: ubuntu-latest
+    env:
+      GH_AW_VERSION: v0.69.0
+    permissions:
+      id-token: write
+      contents: read
     steps:
+      - name: Create ephemeral GitHub token
+        id: create-token
+        uses: elastic/oblt-actions/github/create-token@v1.38.1
+        with:
+          token-policy: token-policy-8749eaab83f2
+
       - uses: actions/checkout@v6
+        with:
+          token: ${{ steps.create-token.outputs.token }}
 
       - name: Save current lock file checksums
         run: |
@@ -22,8 +31,8 @@ jobs:
 
       - name: Install gh-aw and compile
         run: |
-          gh extension install github/gh-aw
-          ./scripts/compile.sh
+          gh extension install github/gh-aw --pin "$GH_AW_VERSION"
+          gh aw compile
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -39,9 +48,9 @@ jobs:
 
       - name: Create pull request
         if: steps.changes.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8.1.0
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.create-token.outputs.token }}
           commit-message: |
             Update gh-aw lock files
 
@@ -49,7 +58,7 @@ jobs:
           branch: automated/gh-aw-update
           title: Update gh-aw lock files
           body: |
-            Automated weekly check detected updated gh-aw lock files after recompilation.
+            Automated weekly check detected updated gh-aw lock files after recompilation with `${{ env.GH_AW_VERSION }}`.
 
             Review the lock file diffs to verify the changes are expected.
           labels: automation
