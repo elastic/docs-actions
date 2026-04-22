@@ -181,7 +181,7 @@ Each PR produces a file at `docs/changelog/{filename}.yaml` on the PR branch (wh
 
 ## Uploading to S3
 
-Changelog files on the default branch can be uploaded to the `elastic-docs-v3-changelog-bundles` S3 bucket under `{product}/changelogs/{filename}.yaml`, preserving the original filename as determined by the repository's `filename` strategy in `changelog.yml`. This makes them available for release bundling workflows.
+Changelog files on the default branch can be uploaded to S3. Files land in a **private bucket** (`elastic-docs-v3-changelog-bundles-private`), which is the internal source of truth. A scrubber Lambda automatically mirrors sanitized copies (with private repository references removed) to the **public bucket** served via CloudFront CDN. Changelogs are uploaded under `{product}/changelogs/{filename}.yaml`.
 
 ### 1. Add the upload workflow
 
@@ -218,7 +218,7 @@ jobs:
 
 ### 2. Enable OIDC access
 
-The upload workflow authenticates to AWS via GitHub Actions OIDC. Your repository must be listed in the `elastic-docs-v3-changelog-bundles` infrastructure to have an IAM role provisioned. Contact the docs-engineering team to add your repository.
+The upload workflow authenticates to AWS via GitHub Actions OIDC. Your repository must be listed in the changelog bundles infrastructure to have an IAM role provisioned. Contact the docs-engineering team to add your repository.
 
 ### How it works
 
@@ -226,9 +226,10 @@ On each push to `main` or `master`, the upload workflow:
 
 1. Checks out the pushed commit
 2. Sets up `docs-builder` and authenticates with AWS via OIDC
-3. Runs `docs-builder changelog upload`, which reads your `changelog.yml`, discovers changelog YAML files in the configured directory, and incrementally uploads them to `{product}/changelogs/{filename}.yaml` in the bucket — only files whose content has changed are transferred
+3. Runs `docs-builder changelog upload`, which reads your `changelog.yml`, discovers YAML files in the configured directory, and incrementally uploads them to the **private** S3 bucket — only files whose content has changed are transferred
+4. An SQS-triggered Lambda scrubs private repository references and writes sanitized copies to the **public** bucket behind CloudFront
 
-If the changelog directory has no files (for example, because changelog generation was skipped), the command exits silently without error.
+If the directory has no files (for example, because changelog generation was skipped), the command exits silently without error.
 
 The workflow uses a per-repository concurrency group so that rapid successive pushes queue rather than run in parallel. If a run is already in progress when a new push arrives, the in-progress run completes before the next one starts. Since `docs-builder` performs incremental uploads (skipping unchanged objects), re-runs are cheap.
 
