@@ -1,8 +1,10 @@
 name: Changelog upload
 description: >
-  Uploads changelog entries to the elastic-docs-v3-changelog-bundles S3 bucket
-  using docs-builder's incremental upload. Intended to run on push to the default
-  branch (main/master). Only files whose content has changed are transferred.
+  Uploads changelog entries to the private S3 bucket
+  (elastic-docs-v3-changelog-bundles-private) using docs-builder's incremental
+  upload. A scrubber Lambda mirrors sanitized copies to the public CDN bucket.
+  Intended to run on push to the default branch (main/master). Only files whose
+  content has changed are transferred.
 
 inputs:
   config:
@@ -72,5 +74,5 @@ runs:
         docs-builder changelog upload \
           --artifact-type changelog \
           --target s3 \
-          --s3-bucket-name elastic-docs-v3-changelog-bundles \
+          --s3-bucket-name elastic-docs-v3-changelog-bundles-private \
           --config "$CONFIG"
