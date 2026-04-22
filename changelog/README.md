@@ -138,7 +138,7 @@ submit workflow (write permissions, via workflow_run)
        │     └── posts PR comment with view/edit links
        │
        ├── if "no-label":
-       │     └── posts PR comment listing available labels
+       │     └── posts PR comment listing available type labels and skip labels
        │
        └── otherwise (skipped, manually-edited): no-op
 ```
@@ -169,7 +169,7 @@ rules:
     exclude: "changelog:skip"
 ```
 
-When all products are blocked by the create rules, the validate action passes with `skipped` status (so CI stays green) and the submit action exits without generating. If no matching type label is found (including when labels exist but none correspond to a configured type or skip rule), validate fails with `no-label` and submit posts a comment listing the available labels. You can also use `include` mode or per-product overrides. See [Rules for creation and publishing](https://elastic.github.io/docs-builder/contribute/changelog/#rules-for-creation-and-publishing) for the full reference.
+When all products are blocked by the create rules, the validate action passes with `skipped` status (so CI stays green) and the submit action exits without generating. If no matching type label is found (including when labels exist but none correspond to a configured type or skip rule), validate fails with `no-label` and submit posts a comment listing the available type labels and skip labels (if configured), so contributors know how to opt out of changelog generation. You can also use `include` mode or per-product overrides. See [Rules for creation and publishing](https://elastic.github.io/docs-builder/contribute/changelog/#rules-for-creation-and-publishing) for the full reference.
 
 ## Manual edits
 
