@@ -27,7 +27,7 @@ runs:
   using: composite
   steps:
     - name: Delete GitHub deployments
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       id: delete-deployments
       env:
         PR_NUMBER: ${{ inputs.pr-number }}
