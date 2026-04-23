@@ -102,7 +102,7 @@ jobs:
     steps:
       - name: Create Deployment
         if: contains(fromJSON('["pull_request", "pull_request_target", "workflow_dispatch"]'), github.event_name)
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: deployment
         with:
           result-encoding: string
@@ -152,7 +152,7 @@ jobs:
           AWS_RETRY_MODE: standard
           AWS_MAX_ATTEMPTS: 3
       - name: Update deployment status
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         if: always() && steps.deployment.outputs.result
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}

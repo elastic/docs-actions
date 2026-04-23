@@ -82,7 +82,7 @@ jobs:
     steps:
       - name: Resolve workflow run context
         id: context
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           PATH_PATTERN: ${{ inputs.path-pattern }}
           IGNORE_PATTERNS: |
@@ -226,7 +226,7 @@ jobs:
         if: steps.context.outputs.is-fork == 'true' && steps.context.outputs.event == 'pull_request'
         continue-on-error: true
         id: fetch-ephemeral-token
-        uses: elastic/ci-gh-actions/fetch-github-token@v1.3.0
+        uses: elastic/ci-gh-actions/fetch-github-token@v1.5.0
         with:
           vault-instance: "ci-prod"
           vault-role: "token-policy-8c6a5ed19135"
@@ -299,7 +299,7 @@ jobs:
     steps:
       - name: Update comment to in-progress
         continue-on-error: true
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
         with:
@@ -516,7 +516,7 @@ jobs:
 
       - name: Create Deployment
         if: env.EVENT == 'pull_request'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: deployment
         with:
           result-encoding: string
@@ -564,7 +564,7 @@ jobs:
 
       - name: Update deployment status
         if: always() && steps.deployment.outputs.result
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           LANDING_PAGE_PATH: ${{ needs.build.outputs.landing_page_path }}
         with:
@@ -600,7 +600,7 @@ jobs:
     steps:
       - name: Comment on PR
         continue-on-error: true
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
@@ -678,7 +678,7 @@ jobs:
       - name: Comment on docs changes about versioning requirements
         if: inputs.enable-cumulative-comment == true
         continue-on-error: true
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
         with:
