@@ -1,0 +1,337 @@
+name: Changelog bundle create
+description: >
+  Checks out the repository, runs docs-builder changelog bundle in Docker
+  to generate a fully-resolved bundle file, and uploads the result as an
+  artifact. Supports option-based filtering (release-version, report, prs),
+  profile-based bundling, and gh-release mode (creates changelogs from a
+  GitHub release). Uses --network none where possible.
+
+inputs:
+  mode:
+    description: >
+      Operation mode: 'bundle' (default) runs changelog bundle,
+      'gh-release' runs changelog gh-release to create changelogs
+      from a GitHub release. In gh-release mode, repo and version
+      are required; most other inputs are ignored.
+    default: 'bundle'
+  config:
+    description: 'Path to changelog.yml configuration file'
+    default: 'docs/changelog.yml'
+  profile:
+    description: >
+      Bundle profile name from bundle.profiles in changelog.yml.
+      Mutually exclusive with release-version and prs. When set,
+      all paths and filters come from the config.
+  version:
+    description: >
+      Version string for profile mode (e.g. 9.2.0, 2026-03).
+      Used for {version} substitution in profile patterns.
+      Only valid with profile.
+  release-version:
+    description: >
+      GitHub release tag used as the PR filter source (e.g. v9.2.0).
+      Mutually exclusive with profile, report, and prs.
+  report:
+    description: >
+      Buildkite promotion report URL or local file path used as the
+      PR filter source. In option mode, mutually exclusive with
+      release-version and prs. In profile mode, passed as a positional
+      argument. Local paths must be relative to the repo root.
+  prs:
+    description: >
+      Comma-separated PR URLs or numbers, or a path to a newline-delimited
+      file. Mutually exclusive with profile, release-version, and report.
+      Bare numbers require repo/owner to be set in changelog.yml or inputs.
+  output:
+    description: >
+      Output file path for the bundle, relative to the repo root.
+      Optional in both modes. When not provided, docs-builder writes
+      to the path determined by the config (bundle.output_directory)
+      and the plan resolves the generated file path automatically.
+  repo:
+    description: >
+      GitHub repository name. Falls back to bundle.repo in changelog.yml.
+  owner:
+    description: >
+      GitHub repository owner. Falls back to bundle.owner in changelog.yml,
+      then to elastic.
+  docs-builder-version:
+    description: >
+      docs-builder version to use (e.g. 0.1.100, latest, edge).
+      Non-edge versions are attestation-verified by the setup action.
+    default: 'edge'
+  artifact-name:
+    description: 'Name for the uploaded artifact (must match bundle-pr artifact-name)'
+    default: 'changelog-bundle'
+  strip-title-prefix:
+    description: 'Remove [Prefix]: from PR titles (gh-release mode only)'
+    default: 'false'
+  github-token:
+    description: 'GitHub token (needed for release-version and source: github_release profiles)'
+    default: '${{ github.token }}'
+
+outputs:
+  output:
+    description: 'Resolved output file path for the bundle'
+    value: ${{ steps.plan.outputs.output_path || steps.gh-release-output.outputs.output_path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        persist-credentials: false
+
+    - name: Validate inputs
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+        CONFIG: ${{ inputs.config }}
+        PROFILE: ${{ inputs.profile }}
+        VERSION: ${{ inputs.version }}
+        RELEASE_VERSION: ${{ inputs.release-version }}
+        OUTPUT: ${{ inputs.output }}
+        REPORT: ${{ inputs.report }}
+        PRS: ${{ inputs.prs }}
+        REPO: ${{ inputs.repo }}
+        OWNER: ${{ inputs.owner }}
+        ARTIFACT_NAME: ${{ inputs.artifact-name }}
+      run: |
+        if [[ "$MODE" != "bundle" && "$MODE" != "gh-release" ]]; then
+          echo "::error::mode must be 'bundle' or 'gh-release', got: ${MODE}"
+          exit 1
+        fi
+
+        if [[ "$MODE" == "gh-release" && -z "$REPO" ]]; then
+          echo "::error::repo is required in gh-release mode"
+          exit 1
+        fi
+
+        validate_path() {
+          local value="$1" name="$2"
+          [ -z "$value" ] && return
+          if [[ "$value" == /* ]]; then
+            echo "::error::${name} must be a relative path: ${value}"; exit 1
+          fi
+          if [[ "$value" == *..* ]]; then
+            echo "::error::${name} must not contain '..': ${value}"; exit 1
+          fi
+          if [[ "$value" == *$'\n'* || "$value" == *$'\r'* ]]; then
+            echo "::error::${name} must not contain newlines"; exit 1
+          fi
+        }
+
+        validate_identifier() {
+          local value="$1" name="$2" pattern="$3"
+          [ -z "$value" ] && return
+          if [[ ! "$value" =~ $pattern ]]; then
+            echo "::error::${name} contains disallowed characters: ${value}"; exit 1
+          fi
+        }
+
+        validate_path "$CONFIG" "config"
+        validate_path "$OUTPUT" "output"
+
+        if [ -n "$REPORT" ] && [[ "$REPORT" != https://* ]] && [[ "$REPORT" != http://* ]]; then
+          validate_path "$REPORT" "report"
+        fi
+        if [ -n "$PRS" ] && { [[ "$PRS" == */* ]] || [[ "$PRS" == *.txt ]]; }; then
+          validate_path "$PRS" "prs"
+        fi
+
+        validate_identifier "$PROFILE" "profile" '^[a-zA-Z0-9._-]+$'
+        validate_identifier "$VERSION" "version" '^[a-zA-Z0-9._+-]+$'
+        validate_identifier "$RELEASE_VERSION" "release-version" '^[a-zA-Z0-9._+-]+$'
+        validate_identifier "$REPO" "repo" '^[a-zA-Z0-9._-]+$'
+        validate_identifier "$OWNER" "owner" '^[a-zA-Z0-9._-]+$'
+        validate_identifier "$ARTIFACT_NAME" "artifact-name" '^[a-zA-Z0-9._-]+$'
+
+        if [ -n "$REPORT" ] && [[ "$REPORT" == http://* ]]; then
+          echo "::error::Report URL must use HTTPS: ${REPORT}"; exit 1
+        fi
+
+    - name: Setup docs-builder
+      uses: elastic/docs-actions/docs-builder/setup@v1
+      with:
+        version: ${{ inputs.docs-builder-version }}
+        github-token: ${{ inputs.github-token }}
+
+    - name: Resolve bundle plan
+      if: inputs.mode == 'bundle'
+      id: plan
+      shell: bash
+      env:
+        CONFIG: ${{ inputs.config }}
+        PROFILE: ${{ inputs.profile }}
+        VERSION: ${{ inputs.version }}
+        RELEASE_VERSION: ${{ inputs.release-version }}
+        REPORT: ${{ inputs.report }}
+        PRS: ${{ inputs.prs }}
+        OUTPUT: ${{ inputs.output }}
+        REPO: ${{ inputs.repo }}
+        OWNER: ${{ inputs.owner }}
+      run: |
+        ARGS=()
+        ARGS+=(changelog bundle --plan)
+        if [ -n "$PROFILE" ]; then
+          ARGS+=("$PROFILE")
+          [ -n "$VERSION" ] && ARGS+=("$VERSION")
+          [ -n "$REPORT" ] && ARGS+=("$REPORT")
+        else
+          ARGS+=(--config "$CONFIG" --resolve)
+          [ -n "$RELEASE_VERSION" ] && ARGS+=(--release-version "$RELEASE_VERSION")
+          [ -n "$REPORT" ] && ARGS+=(--report "$REPORT")
+          [ -n "$PRS" ] && ARGS+=(--prs "$PRS")
+          [ -n "$OUTPUT" ] && ARGS+=(--output "$OUTPUT")
+          [ -n "$REPO" ] && ARGS+=(--repo "$REPO")
+          [ -n "$OWNER" ] && ARGS+=(--owner "$OWNER")
+        fi
+
+        docs-builder "${ARGS[@]}"
+
+    - name: Verify plan output
+      if: inputs.mode == 'bundle'
+      shell: bash
+      env:
+        OUTPUT_PATH: ${{ steps.plan.outputs.output_path }}
+      run: |
+        if [ -z "$OUTPUT_PATH" ]; then
+          echo "::error::Plan did not resolve an output path. Set 'output' input or configure bundle.output_directory in changelog.yml."
+          exit 1
+        fi
+
+    - name: Download report
+      if: inputs.mode == 'bundle' && inputs.report != '' && startsWith(inputs.report, 'https://')
+      shell: bash
+      env:
+        REPORT: ${{ inputs.report }}
+      run: curl --fail --silent --show-error --location --max-redirs 5 --max-time 30 "$REPORT" -o .bundle-report.html
+
+    - name: Pull and pin Docker image
+      id: docker-image
+      shell: bash
+      env:
+        BUILDER_VERSION: ${{ inputs.docs-builder-version }}
+      run: |
+        IMAGE="ghcr.io/elastic/docs-builder:${BUILDER_VERSION}"
+        docker pull "$IMAGE"
+        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE")
+        echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+        echo "::notice title=Docker image digest::${DIGEST}"
+
+    - name: Generate changelog bundle
+      if: inputs.mode == 'bundle'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        NEEDS_NETWORK: ${{ steps.plan.outputs.needs_network }}
+        NEEDS_GITHUB_TOKEN: ${{ steps.plan.outputs.needs_github_token }}
+        IMAGE_DIGEST: ${{ steps.docker-image.outputs.digest }}
+        CONFIG: ${{ inputs.config }}
+        PROFILE: ${{ inputs.profile }}
+        VERSION: ${{ inputs.version }}
+        RELEASE_VERSION: ${{ inputs.release-version }}
+        REPORT: ${{ inputs.report }}
+        PRS: ${{ inputs.prs }}
+        OUTPUT: ${{ inputs.output }}
+        REPO: ${{ inputs.repo }}
+        OWNER: ${{ inputs.owner }}
+      run: |
+        DOCKER_ARGS=(--rm -v "${PWD}:/github/workspace" -w /github/workspace)
+
+        if [ "$NEEDS_NETWORK" = "true" ]; then
+          [ "$NEEDS_GITHUB_TOKEN" = "true" ] && DOCKER_ARGS+=(-e GITHUB_TOKEN)
+        else
+          DOCKER_ARGS+=(--network none)
+        fi
+
+        resolve_report() {
+          if [ -n "$1" ] && [[ "$1" == https://* ]]; then
+            echo ".bundle-report.html"
+          else
+            echo "$1"
+          fi
+        }
+
+        BUNDLE_ARGS=()
+        BUNDLE_ARGS+=(changelog bundle)
+        if [ -n "$PROFILE" ]; then
+          BUNDLE_ARGS+=("$PROFILE")
+          [ -n "$VERSION" ] && BUNDLE_ARGS+=("$VERSION")
+          [ -n "$REPORT" ] && BUNDLE_ARGS+=("$(resolve_report "$REPORT")")
+        else
+          BUNDLE_ARGS+=(--config "$CONFIG" --resolve)
+          [ -n "$RELEASE_VERSION" ] && BUNDLE_ARGS+=(--release-version "$RELEASE_VERSION")
+          [ -n "$REPORT" ] && BUNDLE_ARGS+=(--report "$(resolve_report "$REPORT")")
+          [ -n "$PRS" ] && BUNDLE_ARGS+=(--prs "$PRS")
+          [ -n "$OUTPUT" ] && BUNDLE_ARGS+=(--output "$OUTPUT")
+          [ -n "$REPO" ] && BUNDLE_ARGS+=(--repo "$REPO")
+          [ -n "$OWNER" ] && BUNDLE_ARGS+=(--owner "$OWNER")
+        fi
+
+        docker run "${DOCKER_ARGS[@]}" "$IMAGE_DIGEST" "${BUNDLE_ARGS[@]}"
+
+    - name: Generate changelogs from GitHub release
+      if: inputs.mode == 'gh-release'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        IMAGE_DIGEST: ${{ steps.docker-image.outputs.digest }}
+        CONFIG: ${{ inputs.config }}
+        VERSION: ${{ inputs.version }}
+        OUTPUT: ${{ inputs.output }}
+        REPO: ${{ inputs.repo }}
+        OWNER: ${{ inputs.owner }}
+        STRIP_TITLE_PREFIX: ${{ inputs.strip-title-prefix }}
+      run: |
+        DOCKER_ARGS=(--rm -v "${PWD}:/github/workspace" -w /github/workspace -e GITHUB_TOKEN)
+
+        GH_RELEASE_ARGS=(changelog gh-release)
+
+        REPO_ARG="$REPO"
+        if [ -n "$OWNER" ]; then
+          REPO_ARG="${OWNER}/${REPO}"
+        fi
+        GH_RELEASE_ARGS+=("$REPO_ARG")
+
+        [ -n "$VERSION" ] && GH_RELEASE_ARGS+=("$VERSION") || GH_RELEASE_ARGS+=("latest")
+        [ -n "$CONFIG" ] && GH_RELEASE_ARGS+=(--config "$CONFIG")
+        [ -n "$OUTPUT" ] && GH_RELEASE_ARGS+=(--output "$OUTPUT")
+        [ "$STRIP_TITLE_PREFIX" = "true" ] && GH_RELEASE_ARGS+=(--strip-title-prefix)
+
+        docker run "${DOCKER_ARGS[@]}" "$IMAGE_DIGEST" "${GH_RELEASE_ARGS[@]}"
+
+    - name: Discover gh-release output
+      if: inputs.mode == 'gh-release'
+      id: gh-release-output
+      shell: bash
+      env:
+        OUTPUT: ${{ inputs.output }}
+        CONFIG: ${{ inputs.config }}
+      run: |
+        SEARCH_DIR="${OUTPUT:-docs/releases}"
+        if [ -f "$SEARCH_DIR" ]; then
+          SEARCH_DIR="$(dirname "$SEARCH_DIR")"
+        fi
+
+        BUNDLE_DIR="${SEARCH_DIR}/bundles"
+        if [ ! -d "$BUNDLE_DIR" ]; then
+          BUNDLE_DIR="$SEARCH_DIR"
+        fi
+
+        BUNDLE_FILE=$(find "$BUNDLE_DIR" -maxdepth 1 -name '*.yaml' -o -name '*.yml' | head -1)
+        if [ -z "$BUNDLE_FILE" ]; then
+          echo "::error::No bundle file found in ${BUNDLE_DIR}"
+          exit 1
+        fi
+        echo "output_path=${BUNDLE_FILE}" >> "$GITHUB_OUTPUT"
+        echo "::notice title=Bundle output::${BUNDLE_FILE}"
+
+    - name: Upload bundle artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ steps.plan.outputs.output_path || steps.gh-release-output.outputs.output_path }}
+        if-no-files-found: error
+        retention-days: 1

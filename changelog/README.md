@@ -138,7 +138,7 @@ submit workflow (write permissions, via workflow_run)
        │     └── posts PR comment with view/edit links
        │
        ├── if "no-label":
-       │     └── posts PR comment listing available labels
+       │     └── posts PR comment listing available type labels and skip labels
        │
        └── otherwise (skipped, manually-edited): no-op
 ```
@@ -169,7 +169,7 @@ rules:
     exclude: "changelog:skip"
 ```
 
-When all products are blocked by the create rules, the validate action passes with `skipped` status (so CI stays green) and the submit action exits without generating. If no matching type label is found (including when labels exist but none correspond to a configured type or skip rule), validate fails with `no-label` and submit posts a comment listing the available labels. You can also use `include` mode or per-product overrides. See [Rules for creation and publishing](https://elastic.github.io/docs-builder/contribute/changelog/#rules-for-creation-and-publishing) for the full reference.
+When all products are blocked by the create rules, the validate action passes with `skipped` status (so CI stays green) and the submit action exits without generating. If no matching type label is found (including when labels exist but none correspond to a configured type or skip rule), validate fails with `no-label` and submit posts a comment listing the available type labels and skip labels (if configured), so contributors know how to opt out of changelog generation. You can also use `include` mode or per-product overrides. See [Rules for creation and publishing](https://elastic.github.io/docs-builder/contribute/changelog/#rules-for-creation-and-publishing) for the full reference.
 
 ## Manual edits
 
@@ -181,7 +181,7 @@ Each PR produces a file at `docs/changelog/{filename}.yaml` on the PR branch (wh
 
 ## Uploading to S3
 
-Changelog files on the default branch can be uploaded to the `elastic-docs-v3-changelog-bundles` S3 bucket under `{product}/changelogs/{filename}.yaml`, preserving the original filename as determined by the repository's `filename` strategy in `changelog.yml`. This makes them available for release bundling workflows.
+Changelog files on the default branch can be uploaded to S3. Files land in a **private bucket** (`elastic-docs-v3-changelog-bundles-private`), which is the internal source of truth. A scrubber Lambda automatically mirrors sanitized copies (with private repository references removed) to the **public bucket** served via CloudFront CDN. Changelogs are uploaded under `{product}/changelogs/{filename}.yaml`.
 
 ### 1. Add the upload workflow
 
@@ -218,7 +218,7 @@ jobs:
 
 ### 2. Enable OIDC access
 
-The upload workflow authenticates to AWS via GitHub Actions OIDC. Your repository must be listed in the `elastic-docs-v3-changelog-bundles` infrastructure to have an IAM role provisioned. Contact the docs-engineering team to add your repository.
+The upload workflow authenticates to AWS via GitHub Actions OIDC. Your repository must be listed in the changelog bundles infrastructure to have an IAM role provisioned. Contact the docs-engineering team to add your repository.
 
 ### How it works
 
@@ -226,12 +226,200 @@ On each push to `main` or `master`, the upload workflow:
 
 1. Checks out the pushed commit
 2. Sets up `docs-builder` and authenticates with AWS via OIDC
-3. Runs `docs-builder changelog upload`, which reads your `changelog.yml`, discovers changelog YAML files in the configured directory, and incrementally uploads them to `{product}/changelogs/{filename}.yaml` in the bucket — only files whose content has changed are transferred
+3. Runs `docs-builder changelog upload`, which reads your `changelog.yml`, discovers YAML files in the configured directory, and incrementally uploads them to the **private** S3 bucket — only files whose content has changed are transferred
+4. An SQS-triggered Lambda scrubs private repository references and writes sanitized copies to the **public** bucket behind CloudFront
 
-If the changelog directory has no files (for example, because changelog generation was skipped), the command exits silently without error.
+If the directory has no files (for example, because changelog generation was skipped), the command exits silently without error.
 
 The workflow uses a per-repository concurrency group so that rapid successive pushes queue rather than run in parallel. If a run is already in progress when a new push arrives, the in-progress run completes before the next one starts. Since `docs-builder` performs incremental uploads (skipping unchanged objects), re-runs are cheap.
 
 > **Note:** The composite action accepts an `aws-account-id` input (default: the Elastic docs account). Overriding this is only valid when OIDC trust and IAM roles have been provisioned for the target account. In practice, most repositories should use the default.
 
 > **Note:** The `github-token` input defaults to the workflow's `GITHUB_TOKEN`, which is scoped to the job's declared permissions. Do not substitute a broader PAT unless `docs-builder/setup` explicitly requires it.
+
+## Bundling changelogs
+
+Individual changelog files accumulate on the default branch as PRs merge. The bundle action generates a fully-resolved YAML file containing only the changelog entries that match a given filter, then uploads it to the `elastic-docs-v3-changelog-bundles` S3 bucket.
+
+Two reusable workflows are available:
+
+- **`changelog-bundle.yml`** (primary) — generates a bundle and uploads it to S3. Used for release-triggered workflows.
+- **`changelog-bundle-pr.yml`** (opt-in) — generates a bundle and opens a pull request. Used for teams that need a committed bundle before a tag exists.
+
+The bundle always includes the full content of each matching entry, so downstream consumers can render changelogs without access to the original files.
+
+### Prerequisites
+
+Your `docs/changelog.yml` must include a `bundle` section so docs-builder knows where to find changelog files. Setting `bundle.repo` and `bundle.owner` ensures PR and issue links are generated correctly in the bundle output.
+
+```yaml
+bundle:
+  directory: docs/changelog
+  output_directory: docs/releases
+  repo: my-repo
+  owner: elastic
+```
+
+Your repository must also be listed in the `elastic-docs-v3-changelog-bundles` infrastructure to have an IAM role provisioned for OIDC-based S3 uploads. Contact the docs-engineering team to add your repository.
+
+### Setup
+
+#### Profile-based bundling with S3 upload (`on: release`)
+
+The recommended setup for stack and product releases. The caller triggers on `release`, passes a profile and version, and the bundle is uploaded to S3 automatically.
+
+```yaml
+bundle:
+  directory: docs/changelog
+  output_directory: docs/releases
+  resolve: true
+  repo: my-repo
+  owner: elastic
+  profiles:
+    my-release:
+      products: "my-product {version} {lifecycle}"
+      output: "{version}.yaml"
+```
+
+**`.github/workflows/changelog-bundle.yml`**
+
+```yaml
+name: changelog-bundle
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  bundle:
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
+    with:
+      profile: my-release
+      version: ${{ github.event.release.tag_name }}
+```
+
+The `output` input is not needed — the action resolves the output path from `bundle.output_directory` and the profile's `output` pattern via the `--plan` step.
+
+#### GitHub release mode (`mode: gh-release`)
+
+For repositories that do not use the validate/submit workflow to accumulate individual changelog files, `gh-release` mode creates changelogs directly from a GitHub release's notes and bundles them in a single step.
+
+**`.github/workflows/changelog-bundle.yml`**
+
+```yaml
+name: changelog-bundle
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  bundle:
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
+    with:
+      mode: gh-release
+      repo: my-repo
+      version: ${{ github.event.release.tag_name }}
+```
+
+#### Option-based bundling with S3 upload
+
+You can also use option-based filtering instead of profiles. The `release-version`, `report`, and `prs` inputs are supported.
+
+**Stack / product releases:**
+
+```yaml
+name: changelog-bundle
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  bundle:
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
+    with:
+      release-version: ${{ github.event.release.tag_name }}
+      output: docs/releases/${{ github.event.release.tag_name }}.yaml
+```
+
+**Serverless / scheduled releases:**
+
+```yaml
+name: changelog-bundle
+
+on:
+  schedule:
+    # At 08:00 AM, Monday through Friday
+    - cron: '0 8 * * 1-5'
+
+permissions: {}
+
+jobs:
+  discover-report:
+    runs-on: ubuntu-latest
+    outputs:
+      report-url: ${{ steps.discover.outputs.report-url }}
+      release-date: ${{ steps.discover.outputs.release-date }}
+    steps:
+      - id: discover
+        run: echo "# your logic to find the latest promotion report"
+
+  bundle:
+    needs: discover-report
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
+    with:
+      report: ${{ needs.discover-report.outputs.report-url }}
+      output: docs/releases/${{ needs.discover-report.outputs.release-date }}.yaml
+```
+
+#### Custom config path
+
+If your changelog configuration is not at `docs/changelog.yml`, pass the path explicitly:
+
+```yaml
+    with:
+      config: path/to/changelog.yml
+      profile: my-release
+      version: ${{ github.event.release.tag_name }}
+```
+
+### Output
+
+The primary workflow (`changelog-bundle.yml`) uploads the bundle to the `elastic-docs-v3-changelog-bundles` S3 bucket under `{product}/bundles/{filename}`. The bundle is available to downstream rendering workflows immediately after upload.
+
+### Bundle PR workflow (opt-in)
+
+For teams that need a committed bundle file before a tag exists (e.g. feature-freeze branches), use the PR workflow instead. This generates the bundle and opens a pull request.
+
+**`.github/workflows/changelog-bundle-pr.yml`**
+
+```yaml
+name: changelog-bundle-pr
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version string (e.g. 9.2.0)'
+        required: true
+
+permissions: {}
+
+jobs:
+  bundle:
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle-pr.yml@v1
+    with:
+      profile: my-release
+      version: ${{ inputs.version }}
+```
+
+The PR workflow opens a pull request on a branch named `changelog-bundle/<bundle-name>` (e.g. `changelog-bundle/v9.2.0`). If a PR already exists for that branch, the bundle is updated in place. If the generated bundle is identical to what's already in the repository, no commit or PR is created.
+
+> **Note:** The PR workflow does not upload to S3. If you need both S3 upload and a PR, run both workflows or use the composite actions (`bundle-create`, `bundle-upload`, `bundle-pr`) directly.

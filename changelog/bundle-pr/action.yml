@@ -1,0 +1,121 @@
+name: Changelog bundle PR
+description: >
+  Downloads a changelog bundle artifact and opens a pull request to add it
+  to the repository. If a PR already exists for the same bundle, it is
+  updated in place.
+
+inputs:
+  output:
+    description: >
+      Output file path for the bundle, relative to the repo root
+      (e.g. docs/releases/v9.2.0.yaml). Must match the path used
+      by the bundle-create action.
+    required: true
+  base-branch:
+    description: 'Base branch for the pull request (defaults to repository default branch)'
+    default: ''
+  artifact-name:
+    description: 'Name of the artifact uploaded by bundle-create'
+    default: 'changelog-bundle'
+  github-token:
+    description: 'GitHub token with contents:write and pull-requests:write permissions'
+    default: '${{ github.token }}'
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        persist-credentials: false
+
+    - name: Validate inputs
+      shell: bash
+      env:
+        OUTPUT: ${{ inputs.output }}
+        BASE_BRANCH: ${{ inputs.base-branch }}
+        ARTIFACT_NAME: ${{ inputs.artifact-name }}
+      run: |
+        if [[ "$OUTPUT" != *.yml && "$OUTPUT" != *.yaml ]]; then
+          echo "::error::Output path must end in .yml or .yaml: ${OUTPUT}"
+          exit 1
+        fi
+        if [[ "$OUTPUT" == /* ]]; then
+          echo "::error::Output path must be relative: ${OUTPUT}"
+          exit 1
+        fi
+        if [[ "$OUTPUT" == *..* ]]; then
+          echo "::error::Output path must not contain '..': ${OUTPUT}"
+          exit 1
+        fi
+        if [[ "$OUTPUT" == *$'\n'* || "$OUTPUT" == *$'\r'* ]]; then
+          echo "::error::Output path must not contain newlines"
+          exit 1
+        fi
+        if [ -n "$BASE_BRANCH" ] && [[ ! "$BASE_BRANCH" =~ ^[a-zA-Z0-9._/+-]+$ ]]; then
+          echo "::error::Base branch contains disallowed characters: ${BASE_BRANCH}"
+          exit 1
+        fi
+        if [[ ! "$ARTIFACT_NAME" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+          echo "::error::Artifact name contains disallowed characters: ${ARTIFACT_NAME}"
+          exit 1
+        fi
+
+    - name: Download bundle artifact
+      uses: actions/download-artifact@v6
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: .bundle-artifact
+
+    - name: Create pull request
+      shell: bash
+      env:
+        OUTPUT: ${{ inputs.output }}
+        BASE_BRANCH: ${{ inputs.base-branch }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        GIT_REPOSITORY: ${{ github.repository }}
+      run: |
+        BUNDLE_NAME=$(basename "$OUTPUT" .yaml)
+        BUNDLE_NAME=$(basename "$BUNDLE_NAME" .yml)
+
+        if [[ ! "$BUNDLE_NAME" =~ ^[a-zA-Z0-9._+-]+$ ]]; then
+          echo "::error::Bundle name contains disallowed characters: ${BUNDLE_NAME}"
+          exit 1
+        fi
+
+        BRANCH="changelog-bundle/${BUNDLE_NAME}"
+
+        mkdir -p "$(dirname "$OUTPUT")"
+        cp ".bundle-artifact/$(basename "$OUTPUT")" "$OUTPUT"
+
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+        git checkout -b "$BRANCH"
+        git add "$OUTPUT"
+
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+
+        git commit -m "Add changelog bundle ${BUNDLE_NAME}"
+        git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GIT_REPOSITORY}.git"
+        git push --force-with-lease origin "$BRANCH"
+        git remote set-url origin "https://github.com/${GIT_REPOSITORY}.git"
+
+        BASE_FLAG=()
+        if [ -n "$BASE_BRANCH" ]; then
+          BASE_FLAG=(--base "$BASE_BRANCH")
+        fi
+
+        EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number // empty')
+        if [ -n "$EXISTING_PR" ]; then
+          echo "PR #${EXISTING_PR} already exists for branch ${BRANCH}, updated with latest bundle"
+        else
+          gh pr create \
+            --title "Add changelog bundle ${BUNDLE_NAME}" \
+            --body "Auto-generated changelog bundle for ${BUNDLE_NAME}." \
+            --head "$BRANCH" \
+            "${BASE_FLAG[@]}"
+        fi
