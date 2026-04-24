@@ -59,7 +59,6 @@ runs:
       with:
           vault-instance: "ci-prod"
           vault-role: "${{ steps.generate-vault-role.outputs.result }}"
-          skip-token-revoke: true
     - name: Build
       run: docs-builder --output ./.artifacts/docs/html --path-prefix ${{ env.PATH_PREFIX }}
       shell: bash
