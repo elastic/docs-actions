@@ -40,11 +40,31 @@ runs:
         echo "PATH_PREFIX=${path_prefix}" >> $GITHUB_ENV
         echo "result=${path_prefix}" >> $GITHUB_OUTPUT
       shell: bash
+    - name: Generate vault role
+      id: generate-vault-role
+      shell: bash
+      run: |
+          workflow_ref=$(echo "${GITHUB_WORKFLOW_REF}" | awk -F'@' '{print $1}')
+          echo "${workflow_ref}"
+          hash=$(echo -n "${workflow_ref}" | sha256sum | awk '{print substr($1, 1, 12)}')
+          echo "result=token-policy-${hash}" >> "${GITHUB_OUTPUT}"
+    # Fetch a token for reading elastic/codex-link-index (private). Non-fatal:
+    # callers without codex cross-links don't need it, and callers missing the
+    # policy registration (catalog-info) fall back to the same anonymous-HTTPS
+    # behavior that existed before this step was added.
+    - name: Fetch ephemeral GitHub token for codex-link-index read
+      id: fetch-ephemeral-token
+      uses: elastic/ci-gh-actions/fetch-github-token@v1
+      continue-on-error: true
+      with:
+          vault-instance: "ci-prod"
+          vault-role: "${{ steps.generate-vault-role.outputs.result }}"
     - name: Build
       run: docs-builder --output ./.artifacts/docs/html --path-prefix ${{ env.PATH_PREFIX }}
       shell: bash
       env:
         PATH_PREFIX: ${{ env.PATH_PREFIX }}
+        GITHUB_TOKEN: ${{ steps.fetch-ephemeral-token.outputs.token }}
     - name: Upload docs
       uses: actions/upload-artifact@v7
       with:

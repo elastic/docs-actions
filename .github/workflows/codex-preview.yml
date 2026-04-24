@@ -61,6 +61,7 @@ jobs:
       path_prefix: ${{ steps.codex-build.outputs.path-prefix }}
     permissions:
       contents: read
+      id-token: write
     runs-on: ${{ needs.check.outputs.any_modified == 'true' && 'ubuntu-latest' || 'ubuntu-slim' }}
     steps:
       - name: Checkout code
