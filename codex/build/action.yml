@@ -40,9 +40,14 @@ runs:
         echo "PATH_PREFIX=${path_prefix}" >> $GITHUB_ENV
         echo "result=${path_prefix}" >> $GITHUB_OUTPUT
       shell: bash
+    # Fetch a token for reading elastic/codex-link-index (private). Non-fatal:
+    # callers without codex cross-links don't need it, and callers missing the
+    # policy registration (catalog-info) fall back to the same anonymous-HTTPS
+    # behavior that existed before this step was added.
     - name: Fetch ephemeral GitHub token for codex-link-index read
       id: fetch-ephemeral-token
       uses: elastic/ci-gh-actions/fetch-github-token@v1
+      continue-on-error: true
       with:
           vault-instance: "ci-prod"
           vault-role: "token-policy-pull-codex-repositories"
