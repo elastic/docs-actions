@@ -40,6 +40,14 @@ runs:
         echo "PATH_PREFIX=${path_prefix}" >> $GITHUB_ENV
         echo "result=${path_prefix}" >> $GITHUB_OUTPUT
       shell: bash
+    - name: Generate vault role
+      id: generate-vault-role
+      shell: bash
+      run: |
+          workflow_ref=$(echo "${GITHUB_WORKFLOW_REF}" | awk -F'@' '{print $1}')
+          echo "${workflow_ref}"
+          hash=$(echo -n "${workflow_ref}" | sha256sum | awk '{print substr($1, 1, 12)}')
+          echo "result=token-policy-${hash}" >> "${GITHUB_OUTPUT}"
     # Fetch a token for reading elastic/codex-link-index (private). Non-fatal:
     # callers without codex cross-links don't need it, and callers missing the
     # policy registration (catalog-info) fall back to the same anonymous-HTTPS
@@ -50,7 +58,7 @@ runs:
       continue-on-error: true
       with:
           vault-instance: "ci-prod"
-          vault-role: "token-policy-pull-codex-repositories"
+          vault-role: "${{ steps.generate-vault-role.outputs.result }}"
           skip-token-revoke: true
     - name: Build
       run: docs-builder --output ./.artifacts/docs/html --path-prefix ${{ env.PATH_PREFIX }}
