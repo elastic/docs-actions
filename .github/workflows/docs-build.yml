@@ -128,7 +128,7 @@ jobs:
       - name: Get modified file detail
         if: contains(fromJSON('["merge_group", "pull_request"]'), github.event_name)
         id: check-modified-file-detail
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           PATH_PATTERN: "${{ inputs.path-pattern != '' && inputs.path-pattern || '**' }}"
           IGNORE_PATTERNS: |
