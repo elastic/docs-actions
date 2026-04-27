@@ -1,5 +1,20 @@
 {
   "entries": {
+    "actions/cache/restore@v5.0.5": {
+      "repo": "actions/cache/restore",
+      "version": "v5.0.5",
+      "sha": "27d5ce7f107fe9357f9df03efb73ab90386fccae"
+    },
+    "actions/cache/save@v5.0.5": {
+      "repo": "actions/cache/save",
+      "version": "v5.0.5",
+      "sha": "27d5ce7f107fe9357f9df03efb73ab90386fccae"
+    },
+    "actions/checkout@v6.0.2": {
+      "repo": "actions/checkout",
+      "version": "v6.0.2",
+      "sha": "de0fac2e4500dabe0009e67214ff5f5447ce83dd"
+    },
     "actions/download-artifact@v8.0.1": {
       "repo": "actions/download-artifact",
       "version": "v8.0.1",
@@ -20,10 +35,10 @@
       "version": "v7.0.1",
       "sha": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
     },
-    "github/gh-aw-actions/setup@v0.71.0": {
+    "github/gh-aw-actions/setup@v0.71.1": {
       "repo": "github/gh-aw-actions/setup",
-      "version": "v0.71.0",
-      "sha": "49157453228f9641824955e35cbeccbca74ee0fd"
+      "version": "v0.71.1",
+      "sha": "239aec45b78c8799417efdd5bc6d8cc036629ec1"
     },
     "microsoft/apm-action@v1.4.1": {
       "repo": "microsoft/apm-action",
