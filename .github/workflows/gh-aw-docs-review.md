@@ -1,6 +1,6 @@
 ---
 description: |
-  Reviews pull request documentation changes under docs/ by using Copilot plus
+  Reviews pull request documentation changes in markdown files by using Copilot plus
   Elastic Docs Skills. Reports a concise summary and line-level review comments
   for actionable markdown issues.
 
@@ -29,6 +29,11 @@ on:
         type: string
         required: false
         default: ""
+      review-scope:
+        description: "Markdown review scope: docs-subtree or repo-wide-markdown"
+        type: string
+        required: false
+        default: "docs-subtree"
       setup-commands:
         description: "Shell commands to run before the agent starts"
         type: string
@@ -113,12 +118,20 @@ Do not guess alternate invocation formats.
 
 This workflow is intended for pull request review flows triggered from a PR slash command such as `/docs-review` or from a consumer repository's PR checkbox menu.
 
+This workflow supports two repository layouts through `inputs.review-scope`:
+
+- `docs-subtree` — review changed markdown files only under `docs/`
+- `repo-wide-markdown` — review changed markdown files anywhere in the repository
+
+If `inputs.review-scope` is omitted, use `docs-subtree`.
+
 When the workflow runs:
 
 - Confirm that the triggering item is a pull request or a PR comment context. If this is not a PR context, call `noop` with a short explanation.
-- Review only files that both changed in the PR and match `docs/**/*.md`.
-- Ignore every other changed file, including markdown outside `docs/`.
-- If no eligible files match `docs/**/*.md`, call `noop` with a short explanation.
+- Validate `inputs.review-scope`. If it is not `docs-subtree` or `repo-wide-markdown`, call `noop` with a short explanation.
+- Review only files that both changed in the PR and match the configured review scope.
+- Ignore every other changed file outside the configured review scope.
+- If no eligible files match the configured review scope, call `noop` with a short explanation.
 
 ## Step 1: Gather review context
 
@@ -138,16 +151,20 @@ Prefer conservative pagination when reading file lists, review comments, or diff
 
 Build the review set from changed files that satisfy all of these rules:
 
-- path starts with `docs/`,
 - path ends with `.md`, and
 - the file is part of the current pull request diff.
+
+Then apply the configured scope filter:
+
+- If `inputs.review-scope` is `docs-subtree`, keep only paths that start with `docs/`.
+- If `inputs.review-scope` is `repo-wide-markdown`, keep all changed `.md` paths in the repository.
 
 Skip:
 
 - deleted files unless the deletion itself is the problem you are reporting,
 - generated files,
 - images, data files, YAML files, and non-markdown assets,
-- markdown files outside `docs/`,
+- markdown files outside the configured review scope,
 - pre-existing issues in untouched files.
 
 ## Step 3: Review the changes
@@ -227,7 +244,7 @@ Do not report:
 
 ## Quality gate
 
-If there are no eligible markdown files under `docs/`, call `noop`.
+If there are no eligible markdown files in the configured review scope, call `noop`.
 
 If you reviewed eligible files and found no actionable issues, submit a concise `COMMENT` review with a short summary and no inline comments.
 
@@ -245,7 +262,8 @@ Submit one final review body in this shape:
 ```markdown
 ## Docs review summary
 
-- Reviewed `<N>` changed markdown file(s) under `docs/`.
+- Reviewed `<N>` changed markdown file(s) in scope.
+- Reviewed scope: `<docs-subtree | repo-wide-markdown>`.
 - Ignored `<N>` non-eligible changed file(s) outside the review scope.
 - Outcome: `<No actionable issues | Commented suggestions | Changes requested>`.
 
