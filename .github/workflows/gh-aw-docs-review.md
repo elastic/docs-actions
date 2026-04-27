@@ -224,6 +224,8 @@ For inline comments with concrete replacements:
 - keep the suggested replacement as small as possible while still fixing the issue, and
 - avoid suggestion blocks only when GitHub would not be able to apply them cleanly.
 
+Do not use GitHub suggestion blocks when the proposed replacement contains Elastic substitution syntax such as `{{...}}`. Safe-output sanitization may escape the braces before GitHub applies the suggestion. In those cases, provide the exact replacement as prose, or suggest only the part of the line that does not include the substitution.
+
 Treat low-priority nits differently:
 
 - avoid nits unless they are grounded in the Elastic style guide or another explicit review rule in this workflow,
