@@ -31,7 +31,7 @@ runs:
   steps:
     - name: Resolve PR
       id: pr
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         github-token: ${{ inputs.github-token }}
         script: |
@@ -41,7 +41,7 @@ runs:
     - name: Fetch PR data
       id: pr-data
       if: steps.pr.outputs.number != ''
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         github-token: ${{ inputs.github-token }}
         script: |
@@ -218,7 +218,7 @@ runs:
 
     - name: Post success comment
       if: steps.commit.outputs.committed == 'true'
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       env:
         PR_NUMBER: ${{ steps.pr.outputs.number }}
         HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
@@ -233,7 +233,7 @@ runs:
       if: >
         steps.generate.outcome == 'success'
         && (steps.pr-data.outputs.is-fork == 'true' || inputs.comment-only == 'true')
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       env:
         PR_NUMBER: ${{ steps.pr.outputs.number }}
         CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
@@ -246,7 +246,7 @@ runs:
 
     - name: Post failure comment
       if: steps.evaluate.outputs.status == 'no-label'
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       env:
         PR_NUMBER: ${{ steps.pr.outputs.number }}
         LABEL_TABLE: ${{ steps.evaluate.outputs.label-table }}

@@ -329,7 +329,7 @@ runs:
         echo "::notice title=Bundle output::${BUNDLE_FILE}"
 
     - name: Upload bundle artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}
         path: ${{ steps.plan.outputs.output_path || steps.gh-release-output.outputs.output_path }}
