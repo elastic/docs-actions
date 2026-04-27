@@ -80,7 +80,7 @@ safe-outputs:
   submit-pull-request-review:
     max: 1
     target: "triggering"
-    allowed-events: [COMMENT, REQUEST_CHANGES]
+    allowed-events: [COMMENT]
 timeout-minutes: 30
 steps:
   - name: Repo-specific setup
@@ -253,7 +253,7 @@ If you found one or more high-confidence actionable issues:
 - create up to 20 focused inline review comments, and
 - submit one consolidated pull request review.
 
-Use `REQUEST_CHANGES` only when the issues are important enough that the PR should be revised before merge. Otherwise use `COMMENT`.
+Always use `COMMENT` for the final review. This workflow is advisory and must not block merging through a `REQUEST_CHANGES` review state.
 
 ## Review body format
 
@@ -261,11 +261,6 @@ Submit one final review body in this shape:
 
 ```markdown
 ## Docs review summary
-
-- Reviewed `<N>` changed markdown file(s) in scope.
-- Reviewed scope: `<docs-subtree | repo-wide-markdown>`.
-- Ignored `<N>` non-eligible changed file(s) outside the review scope.
-- Outcome: `<No actionable issues | Commented suggestions | Changes requested>`.
 
 ### Focus areas
 - Style and clarity: <short result>.
