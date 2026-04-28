@@ -96,17 +96,33 @@ jobs:
             echo "should-submit=true" >> "$GITHUB_OUTPUT"
           fi
 
-  submit:
+  generate:
     needs: preflight
     if: needs.preflight.outputs.should-submit == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      proceed: ${{ steps.evaluate.outputs.proceed }}
+    steps:
+      - name: Evaluate and generate changelog
+        id: evaluate
+        uses: elastic/docs-actions/changelog/submit/evaluate@v1
+        with:
+          config: ${{ inputs.config }}
+          is-org-member: ${{ needs.preflight.outputs.is-org-member }}
+          comment-only: ${{ inputs.comment-only }}
+
+  apply:
+    needs: [preflight, generate]
+    if: needs.generate.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
     steps:
-      - name: Submit changelog
-        uses: elastic/docs-actions/changelog/submit@v1
+      - name: Apply changelog
+        uses: elastic/docs-actions/changelog/submit/apply@v1
         with:
           config: ${{ inputs.config }}
-          comment-only: ${{ inputs.comment-only }}
-          is-org-member: ${{ needs.preflight.outputs.is-org-member }}
