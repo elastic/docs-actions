@@ -796,6 +796,14 @@ jobs:
           name: links
           path: /tmp/link-index-upload
 
+      - name: Reject symlinks in link index artifact
+        run: |
+          if find /tmp/link-index-upload -type l | grep -q .; then
+            echo "::error::Symlinks found in link index artifact — refusing to upload"
+            find /tmp/link-index-upload -type l -ls
+            exit 1
+          fi
+
       - name: Upload link reference to S3
         run: |
           aws s3 cp --checksum-algorithm "SHA256" \
