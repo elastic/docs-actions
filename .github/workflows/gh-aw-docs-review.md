@@ -207,7 +207,7 @@ Report only findings that are:
 
 Use line-level review comments when you can point to an exact changed line or nearby changed hunk. Keep each inline comment narrowly scoped.
 
-When helpful, include a concrete replacement sentence, frontmatter snippet, or markdown wording in the comment body. Prefer GitHub suggestion blocks whenever the proposed edit cleanly maps to the reviewed line or hunk and can be applied directly. Fall back to plain prose only when the change is too large, crosses multiple distant hunks, or the exact replacement range is ambiguous.
+When helpful, include a concrete replacement sentence, frontmatter snippet, or markdown wording in the comment body. Prefer GitHub suggestion blocks only after passing the pre-output checklist below, and only when the proposed edit cleanly maps to the reviewed line or hunk and can be applied directly. Fall back to plain prose when the change is too large, crosses multiple distant hunks, includes protected substitution syntax, or the exact replacement range is ambiguous.
 
 The review comment safe output allows a maximum of 20 inline comments. Use that budget carefully:
 
@@ -218,11 +218,25 @@ The review comment safe output allows a maximum of 20 inline comments. Use that 
 
 For inline comments with concrete replacements:
 
-- prefer one apply-ready GitHub suggestion over a prose description,
+- prefer one apply-ready GitHub suggestion over a prose description only after passing the pre-output checklist below,
 - keep the suggested replacement as small as possible while still fixing the issue, and
 - avoid suggestion blocks only when GitHub would not be able to apply them cleanly.
 
-Do not use GitHub suggestion blocks when the proposed replacement contains Elastic substitution syntax such as `{{...}}`. Safe-output sanitization may escape the braces before GitHub applies the suggestion. In those cases, provide the exact replacement as prose, or suggest only the part of the line that does not include the substitution.
+Before creating any inline review comment, inspect the exact comment body you are about to send.
+
+If the comment body would contain a GitHub suggestion block and either the original reviewed line or the proposed replacement contains Elastic substitution syntax such as `{{...}}`, do not create the suggestion block. This is a hard rule. Safe-output sanitization can escape curly braces and corrupt substitutions when GitHub applies the suggestion.
+
+For these cases, use one of these alternatives instead:
+
+- Leave a prose-only inline comment with the exact replacement text outside a suggestion block.
+- If only part of the line needs changing, suggest only the substring that does not include `{{`, `}}`, or escaped variants such as `\{\{`.
+- If every useful replacement would include substitution syntax, do not include an apply-ready suggestion.
+
+Pre-output checklist for every `create_pull_request_review_comment` call:
+
+1. Does the comment body include a fenced `suggestion` block?
+2. Does the original reviewed line or suggested replacement include `{{`, `}}`, `\{\{`, or `\}\}`?
+3. If both are true, rewrite the comment before calling the tool so it has no `suggestion` block.
 
 Treat low-priority nits differently:
 
