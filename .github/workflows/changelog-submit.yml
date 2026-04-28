@@ -19,11 +19,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  submit:
+  preflight:
     if: >
       github.event.workflow_run.event == 'pull_request'
       && github.event.workflow_run.conclusion != 'cancelled'
       && github.event.repository.fork == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+      id-token: write
+    outputs:
+      should-submit: ${{ steps.evaluate.outputs.should-submit }}
+      is-org-member: ${{ steps.check-org-membership.outputs.is-member }}
+    steps:
+      - name: Fetch ephemeral GitHub token
+        if: github.event.workflow_run.head_repository.full_name != github.repository
+        continue-on-error: true
+        id: fetch-ephemeral-token
+        uses: elastic/ci-gh-actions/fetch-github-token@v1.5.0
+        with:
+          vault-instance: "ci-prod"
+          vault-role: "token-policy-a71b1f2b88ec"
+
+      - name: Check org membership
+        id: check-org-membership
+        if: github.event.workflow_run.head_repository.full_name != github.repository
+        uses: elastic/docs-actions/github/is-elastic-org-member@v1
+        with:
+          username: ${{ github.event.workflow_run.actor.login }}
+          token: ${{ steps.fetch-ephemeral-token.outputs.token }}
+
+      - name: Evaluate
+        id: evaluate
+        env:
+          IS_FORK: ${{ github.event.workflow_run.head_repository.full_name != github.repository }}
+          IS_ORG_MEMBER: ${{ steps.check-org-membership.outputs.is-member }}
+        # language=bash
+        run: |
+          if [[ "$IS_FORK" == "true" && "$IS_ORG_MEMBER" != "true" ]]; then
+            echo "should-submit=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Changelog submit skipped — fork PRs from non-members are not processed"
+          else
+            echo "should-submit=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  submit:
+    needs: preflight
+    if: needs.preflight.outputs.should-submit == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -34,3 +76,4 @@ jobs:
         with:
           config: ${{ inputs.config }}
           comment-only: ${{ inputs.comment-only }}
+          is-org-member: ${{ needs.preflight.outputs.is-org-member }}

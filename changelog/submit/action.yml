@@ -17,6 +17,9 @@ inputs:
   comment-only:
     description: 'Post changelog as a PR comment instead of committing to the branch'
     default: 'false'
+  is-org-member:
+    description: 'Whether the PR author is a verified elastic org member (enables commit for fork PRs)'
+    default: 'false'
 
 outputs:
   committed:
@@ -50,20 +53,53 @@ runs:
       env:
         PR_NUMBER: ${{ steps.pr.outputs.number }}
 
+    - name: Resolve commit strategy
+      id: strategy
+      if: steps.pr-data.outputs.proceed == 'true'
+      shell: bash
+      env:
+        IS_FORK: ${{ steps.pr-data.outputs.is-fork }}
+        IS_ORG_MEMBER: ${{ inputs.is-org-member }}
+        MAINTAINER_CAN_MODIFY: ${{ steps.pr-data.outputs.maintainer-can-modify }}
+        COMMENT_ONLY: ${{ inputs.comment-only }}
+      run: |
+        trusted=false
+        can_commit=false
+
+        if [[ "$IS_FORK" != "true" ]]; then
+          trusted=true
+          can_commit=true
+        elif [[ "$IS_ORG_MEMBER" == "true" ]]; then
+          trusted=true
+          if [[ "$MAINTAINER_CAN_MODIFY" == "true" ]]; then
+            can_commit=true
+          else
+            echo "::notice::Fork PR does not allow maintainer edits — changelog will be posted as comment"
+          fi
+        fi
+
+        if [[ "$COMMENT_ONLY" == "true" ]]; then
+          can_commit=false
+        fi
+
+        echo "trusted=${trusted}" >> "$GITHUB_OUTPUT"
+        echo "can-commit=${can_commit}" >> "$GITHUB_OUTPUT"
+
     - name: Checkout PR branch
-      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+      if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted == 'true'
       uses: actions/checkout@v6
       with:
+        repository: ${{ steps.pr-data.outputs.head-repo }}
         ref: ${{ steps.pr-data.outputs.head-sha }}
         token: ${{ inputs.github-token }}
         persist-credentials: false
 
     - name: Checkout base repo
-      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork == 'true'
+      if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted != 'true'
       uses: actions/checkout@v6
 
     - name: Validate ref names
-      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+      if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted == 'true'
       shell: bash
       env:
         HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
@@ -78,7 +114,7 @@ runs:
 
     - name: Read config from base branch
       id: config
-      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+      if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted == 'true'
       shell: bash
       env:
         CONFIG_FILE: ${{ inputs.config }}
@@ -91,7 +127,7 @@ runs:
         fi
 
     - name: Verify checkout SHA
-      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+      if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted == 'true'
       shell: bash
       env:
         EXPECTED_SHA: ${{ steps.pr-data.outputs.head-sha }}
@@ -166,8 +202,7 @@ runs:
     - name: Commit changelog
       if: >
         steps.generate.outcome == 'success'
-        && steps.pr-data.outputs.is-fork != 'true'
-        && inputs.comment-only != 'true'
+        && steps.strategy.outputs.can-commit == 'true'
       id: commit
       shell: bash
       env:
@@ -176,6 +211,9 @@ runs:
         EXISTING_FILENAME: ${{ steps.evaluate.outputs.existing-changelog-filename }}
         GH_TOKEN: ${{ inputs.github-token }}
         GIT_REPOSITORY: ${{ github.repository }}
+        IS_FORK: ${{ steps.pr-data.outputs.is-fork }}
+        HEAD_REPO: ${{ steps.pr-data.outputs.head-repo }}
+        HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
       run: |
         GENERATED=$(ls /tmp/changelog-staging/*.yaml 2>/dev/null | head -1)
         if [ -z "$GENERATED" ]; then
@@ -208,8 +246,13 @@ runs:
           echo "committed=false" >> "$GITHUB_OUTPUT"
         else
           git commit -m "${VERB} changelog for PR #${PR_NUMBER}"
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GIT_REPOSITORY}.git"
-          git push
+          if [[ "$IS_FORK" == "true" ]]; then
+            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${HEAD_REPO}.git"
+            git push origin "HEAD:refs/heads/${HEAD_REF}"
+          else
+            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GIT_REPOSITORY}.git"
+            git push
+          fi
           git remote set-url origin "https://github.com/${GIT_REPOSITORY}.git"
           echo "committed=true" >> "$GITHUB_OUTPUT"
         fi
@@ -232,7 +275,7 @@ runs:
     - name: Post comment-only changelog
       if: >
         steps.generate.outcome == 'success'
-        && (steps.pr-data.outputs.is-fork == 'true' || inputs.comment-only == 'true')
+        && steps.strategy.outputs.can-commit != 'true'
       uses: actions/github-script@v9
       env:
         PR_NUMBER: ${{ steps.pr.outputs.number }}
