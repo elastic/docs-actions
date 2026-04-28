@@ -80,7 +80,7 @@ safe-outputs:
   submit-pull-request-review:
     max: 1
     target: "triggering"
-    allowed-events: [COMMENT, REQUEST_CHANGES]
+    allowed-events: [COMMENT]
 timeout-minutes: 30
 steps:
   - name: Repo-specific setup
@@ -224,6 +224,8 @@ For inline comments with concrete replacements:
 - keep the suggested replacement as small as possible while still fixing the issue, and
 - avoid suggestion blocks only when GitHub would not be able to apply them cleanly.
 
+Do not use GitHub suggestion blocks when the proposed replacement contains Elastic substitution syntax such as `{{...}}`. Safe-output sanitization may escape the braces before GitHub applies the suggestion. In those cases, provide the exact replacement as prose, or suggest only the part of the line that does not include the substitution.
+
 Treat low-priority nits differently:
 
 - avoid nits unless they are grounded in the Elastic style guide or another explicit review rule in this workflow,
@@ -253,7 +255,7 @@ If you found one or more high-confidence actionable issues:
 - create up to 20 focused inline review comments, and
 - submit one consolidated pull request review.
 
-Use `REQUEST_CHANGES` only when the issues are important enough that the PR should be revised before merge. Otherwise use `COMMENT`.
+Always use `COMMENT` for the final review. This workflow is advisory and must not block merging through a `REQUEST_CHANGES` review state.
 
 ## Review body format
 
@@ -261,11 +263,6 @@ Submit one final review body in this shape:
 
 ```markdown
 ## Docs review summary
-
-- Reviewed `<N>` changed markdown file(s) in scope.
-- Reviewed scope: `<docs-subtree | repo-wide-markdown>`.
-- Ignored `<N>` non-eligible changed file(s) outside the review scope.
-- Outcome: `<No actionable issues | Commented suggestions | Changes requested>`.
 
 ### Focus areas
 - Style and clarity: <short result>.

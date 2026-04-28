@@ -34,7 +34,7 @@ Configure the `COPILOT_GITHUB_TOKEN` secret before running the workflow.
 |--------|-----|-------------|
 | `noop` | — | Used when the trigger is not a pull request, or the PR has no changed `docs/**/*.md` files |
 | `create-pull-request-review-comment` | 20 | Adds focused inline review comments on changed markdown lines |
-| `submit-pull-request-review` | 1 | Submits the overall pull request review summary as `COMMENT` or `REQUEST_CHANGES` |
+| `submit-pull-request-review` | 1 | Submits the overall pull request review summary as a non-blocking `COMMENT` |
 
 The inline review comment cap for this workflow is set to `20`, so the workflow prioritizes the highest-signal comments and keeps broader observations in the summary review. Lower-priority nits should only be reported when they are grounded in the Elastic style guide, and those nits should usually be summarized in the review body instead of consuming inline comment slots.
 
@@ -67,6 +67,8 @@ This workflow installs these Elastic Docs Skills through Agent Package Manager d
 The review prompt instructs the Copilot agent to invoke these imported skills by exact name through the skill tool before falling back to manual judgment.
 
 When an inline comment can be expressed as a small, exact replacement for the reviewed line or hunk, the workflow should prefer an apply-ready GitHub suggestion block over prose-only guidance.
+
+Only `docs-check-style` explicitly references Vale. That skill tries the `vale_lint` MCP tool first and otherwise falls back to the `vale` CLI when available. The reusable workflow itself does not install Vale, so if the runtime environment lacks a `vale` binary and no Vale MCP tool is present, that skill falls back to manual style review.
 
 ## Example
 
