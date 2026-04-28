@@ -26,7 +26,6 @@ Configure the `COPILOT_GITHUB_TOKEN` secret before running the workflow.
 | `additional-instructions` | string | No | `""` | Repo-specific instructions appended to the review prompt |
 | `review-scope` | string | No | `"docs-subtree"` | Markdown review scope: `docs-subtree` or `repo-wide-markdown` |
 | `setup-commands` | string | No | `""` | Shell commands to run before the agent starts |
-| `messages-footer` | string | No | _(default footer)_ | Footer appended to all review summaries |
 
 ## Safe outputs
 

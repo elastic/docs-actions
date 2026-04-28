@@ -1,4 +1,4 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"5b7018a203219870ebd51c384e62b9d6fc0e76720bf467e2dd367143154b4cbc","compiler_version":"v0.71.1","agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"3624ad27f59a13e7b5519d0c33f6d7db801f62b30c179685dfd8a44571ccb271","compiler_version":"v0.71.1","agent_id":"copilot"}
 # gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GH_AW_PLUGINS_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/cache/restore","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/cache/save","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"239aec45b78c8799417efdd5bc6d8cc036629ec1","version":"v0.71.1"},{"repo":"microsoft/apm-action","sha":"a190b0b1a91031057144dc136acf9757a59c9e4d","version":"v1.4.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28","digest":"sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28","digest":"sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28","digest":"sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.0"},{"image":"ghcr.io/github/github-mcp-server:v1.0.2"},{"image":"node:lts-alpine","digest":"sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f","pinned_image":"node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
@@ -30,7 +30,6 @@
 #   Imports:
 #     - gh-aw-fragments/formatting.md
 #     - gh-aw-fragments/mcp-pagination.md
-#     - gh-aw-fragments/messages-footer.md
 #     - gh-aw-fragments/rigor.md
 #     - github/gh-aw/.github/workflows/shared/apm.md@v0.71.1
 #
@@ -73,11 +72,6 @@ name: "Docs review agent"
       additional-instructions:
         default: ""
         description: Repo-specific instructions appended to the agent prompt
-        required: false
-        type: string
-      messages-footer:
-        default: ""
-        description: Footer appended to all agent comments and reviews
         required: false
         type: string
       review-scope:
@@ -223,14 +217,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_fb4cf12cdc60bda9_EOF'
+          cat << 'GH_AW_PROMPT_db015165fa495ee9_EOF'
           <system>
-          GH_AW_PROMPT_fb4cf12cdc60bda9_EOF
+          GH_AW_PROMPT_db015165fa495ee9_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_fb4cf12cdc60bda9_EOF'
+          cat << 'GH_AW_PROMPT_db015165fa495ee9_EOF'
           <safe-output-tools>
           Tools: create_pull_request_review_comment(max:20), submit_pull_request_review, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -262,9 +256,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_fb4cf12cdc60bda9_EOF
+          GH_AW_PROMPT_db015165fa495ee9_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_fb4cf12cdc60bda9_EOF'
+          cat << 'GH_AW_PROMPT_db015165fa495ee9_EOF'
           </system>
           
           
@@ -308,9 +302,6 @@ jobs:
           
           If you see `MCP tool response exceeds maximum allowed tokens`, retry with a smaller `perPage` value (halve it).
           
-          ## Message Footer
-          
-          A footer is automatically appended to all comments and reviews. Do not add your own footer or sign-off — the runtime handles this.
           # Docs review agent
           
           You are a documentation pull request reviewer for Elastic documentation repositories. Your job is to review the documentation changes in the triggering pull request like a careful human code reviewer: identify actionable problems, leave line-level comments when you have exact evidence, and submit a concise overall review summary.
@@ -359,6 +350,7 @@ jobs:
           Use GitHub tools and local workspace inspection as needed to gather:
           
           - the pull request's linked issue context, if any, including closing keywords and directly referenced issues,
+          - existing automated review comments or check summaries that could duplicate this review, especially docs build failures and Vale lint comments,
           - the list of changed files,
           - the diff hunks for each eligible markdown file,
           - the final contents of each eligible markdown file in the PR branch, and
@@ -400,10 +392,10 @@ jobs:
           
           Focus on the categories below:
           
-          1. **Style and clarity** using `docs-check-style`.
+          1. **Style and clarity** using `docs-check-style`, but only report wording when it creates ambiguity, changes meaning, or is not already covered by Vale linting comments.
           2. **Elastic-internal jargon** using `docs-flag-jargon-skill`.
           3. **Frontmatter quality** using `docs-frontmatter-audit`.
-          4. **Content type fit and structure** using `docs-content-type-checker`.
+          4. **Content type fit and structure** using `docs-content-type-checker` as contextual guidance, not as a strict template.
           5. **`applies_to` correctness** using `docs-applies-to-tagging`.
           6. **Issue satisfaction** by checking whether the changed docs appear to satisfy the linked parent issue, if one exists.
           
@@ -413,6 +405,9 @@ jobs:
           - You may report a file-level metadata issue such as missing or incorrect frontmatter when the PR edits that file and the issue is directly relevant to the changed page.
           - Do not dump every possible style nit from a whole file solely because one paragraph changed.
           - Do not flag pre-existing unrelated problems in untouched sections unless the PR clearly makes that area worse.
+          - Do not duplicate docs build failures, broken-link reports, or Vale lint comments with separate inline review comments.
+          - Treat content-type guidance as a reader-centered heuristic. Report content-type issues only when the mismatch materially makes the page harder to use, conflicts with the surrounding section's established pattern, or risks sending the author toward the wrong kind of documentation.
+          - Allow mixed-purpose pages and reasonable structural exceptions. For example, do not object to a prerequisites section on a troubleshooting page solely because the troubleshooting content type does not require one; report it only when the requirements are inaccurate, unsupported, confusing, or disruptive to the troubleshooting flow.
           - If the pull request appears linked to a parent issue, assess whether the issue's documentation ask is fully satisfied, only partially satisfied, or still unsupported by the PR.
           - If the linked issue is not satisfied, explain the gap in the review summary and only leave inline comments where the gap maps to a specific changed file or hunk.
           
@@ -457,7 +452,10 @@ jobs:
           
           - speculative preferences,
           - repository-wide cleanup opportunities,
-          - comments about files outside `docs/**/*.md`,
+          - comments about markdown files outside the configured review scope,
+          - broken links, missing anchors, missing image targets, or other link existence issues that the docs build already validates,
+          - trailing spaces or trailing whitespace,
+          - routine wording suggestions that duplicate Vale linting comments, unless the wording creates ambiguity or changes the technical meaning,
           - issues you cannot tie back to the changed content,
           - duplicate comments on the same underlying problem,
           - approval reviews,
@@ -502,7 +500,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_fb4cf12cdc60bda9_EOF
+          GH_AW_PROMPT_db015165fa495ee9_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
@@ -724,9 +722,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_962121e1803406d6_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_fc67deba9358c368_EOF'
           {"create_pull_request_review_comment":{"max":20,"side":"RIGHT"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{},"submit_pull_request_review":{"allowed_events":["COMMENT"],"max":1,"target":"triggering"}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_962121e1803406d6_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_fc67deba9358c368_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -946,7 +944,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_d8e2299152cb1077_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_82f96d9e922511b6_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -1004,7 +1002,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_d8e2299152cb1077_EOF
+          GH_AW_MCP_CONFIG_82f96d9e922511b6_EOF
       - name: Clean git credentials
         continue-on-error: true
         run: bash "${RUNNER_TEMP}/gh-aw/actions/clean_git_credentials.sh"
@@ -1395,7 +1393,6 @@ jobs:
           GH_AW_MODEL_NOT_SUPPORTED_ERROR: ${{ needs.agent.outputs.model_not_supported_error }}
           GH_AW_LOCKDOWN_CHECK_FAILED: ${{ needs.activation.outputs.lockdown_check_failed }}
           GH_AW_STALE_LOCK_FILE_FAILED: ${{ needs.activation.outputs.stale_lock_file_failed }}
-          GH_AW_SAFE_OUTPUT_MESSAGES: "{\"footer\":\"${{ inputs.messages-footer || '---\\n[Docs automation](https://github.com/elastic/docs-actions) | [From workflow: {workflow_name}]({run_url})\\n\\nReact with 👍 if helpful, 👎 if not.' }}\"}"
           GH_AW_GROUP_REPORTS: "false"
           GH_AW_FAILURE_REPORT_AS_ISSUE: "true"
           GH_AW_TIMEOUT_MINUTES: "30"
@@ -1618,7 +1615,6 @@ jobs:
       GH_AW_ENGINE_ID: "copilot"
       GH_AW_ENGINE_MODEL: ${{ needs.agent.outputs.model }}
       GH_AW_ENGINE_VERSION: "1.0.35"
-      GH_AW_SAFE_OUTPUT_MESSAGES: "{\"footer\":\"${{ inputs.messages-footer || '---\\n[Docs automation](https://github.com/elastic/docs-actions) | [From workflow: {workflow_name}]({run_url})\\n\\nReact with 👍 if helpful, 👎 if not.' }}\"}"
       GH_AW_WORKFLOW_ID: "gh-aw-docs-review"
       GH_AW_WORKFLOW_NAME: "Docs review agent"
     outputs:
