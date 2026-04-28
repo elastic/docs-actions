@@ -25,7 +25,6 @@ Ensure the `COPILOT_GITHUB_TOKEN` secret is configured in your repository.
 |-------|------|----------|---------|-------------|
 | `additional-instructions` | string | No | `""` | Team mapping, label rules, CODEOWNERS paths |
 | `setup-commands` | string | No | `""` | Shell commands to run before the agent starts |
-| `messages-footer` | string | No | _(default footer)_ | Footer appended to all agent comments |
 
 ## Safe Outputs
 

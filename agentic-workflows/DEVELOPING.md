@@ -8,7 +8,6 @@
 │   ├── formatting.md
 │   ├── rigor.md
 │   ├── mcp-pagination.md
-│   ├── messages-footer.md
 │   └── safe-output-add-comment.md
 ├── gh-aw-docs-issue-scope.md          # Workflow source
 ├── gh-aw-docs-issue-scope.lock.yml    # Compiled output
@@ -101,11 +100,6 @@ on:
         type: string
         required: false
         default: ""
-      messages-footer:
-        description: "Footer appended to all agent comments and reviews"
-        type: string
-        required: false
-        default: ""
     secrets:
       COPILOT_GITHUB_TOKEN:
         required: true
@@ -118,7 +112,6 @@ on:
 | `gh-aw-fragments/formatting.md` | Response formatting rules |
 | `gh-aw-fragments/rigor.md` | Accuracy & evidence standards |
 | `gh-aw-fragments/mcp-pagination.md` | MCP token limit guidance and pagination patterns |
-| `gh-aw-fragments/messages-footer.md` | Wires the `messages-footer` input to `safe-outputs.messages.footer` |
 | `gh-aw-fragments/safe-output-add-comment.md` | Limitations for `add-comment` |
 
 ### Writing trigger templates
