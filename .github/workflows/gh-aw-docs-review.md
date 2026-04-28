@@ -9,7 +9,6 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-  - gh-aw-fragments/messages-footer.md
   - uses: github/gh-aw/.github/workflows/shared/apm.md@v0.71.1
     with:
       packages:
@@ -36,11 +35,6 @@ on:
         default: "docs-subtree"
       setup-commands:
         description: "Shell commands to run before the agent starts"
-        type: string
-        required: false
-        default: ""
-      messages-footer:
-        description: "Footer appended to all agent comments and reviews"
         type: string
         required: false
         default: ""
@@ -140,6 +134,7 @@ Read the pull request title, body, and changed files first.
 Use GitHub tools and local workspace inspection as needed to gather:
 
 - the pull request's linked issue context, if any, including closing keywords and directly referenced issues,
+- existing automated review comments or check summaries that could duplicate this review, especially docs build failures and Vale lint comments,
 - the list of changed files,
 - the diff hunks for each eligible markdown file,
 - the final contents of each eligible markdown file in the PR branch, and
@@ -181,10 +176,10 @@ If one or more skills succeed, use their output in your review and do not claim 
 
 Focus on the categories below:
 
-1. **Style and clarity** using `docs-check-style`.
+1. **Style and clarity** using `docs-check-style`, but only report wording when it creates ambiguity, changes meaning, or is not already covered by Vale linting comments.
 2. **Elastic-internal jargon** using `docs-flag-jargon-skill`.
 3. **Frontmatter quality** using `docs-frontmatter-audit`.
-4. **Content type fit and structure** using `docs-content-type-checker`.
+4. **Content type fit and structure** using `docs-content-type-checker` as contextual guidance, not as a strict template.
 5. **`applies_to` correctness** using `docs-applies-to-tagging`.
 6. **Issue satisfaction** by checking whether the changed docs appear to satisfy the linked parent issue, if one exists.
 
@@ -194,6 +189,9 @@ Treat this as a PR review, not a full repository audit:
 - You may report a file-level metadata issue such as missing or incorrect frontmatter when the PR edits that file and the issue is directly relevant to the changed page.
 - Do not dump every possible style nit from a whole file solely because one paragraph changed.
 - Do not flag pre-existing unrelated problems in untouched sections unless the PR clearly makes that area worse.
+- Do not duplicate docs build failures, broken-link reports, or Vale lint comments with separate inline review comments.
+- Treat content-type guidance as a reader-centered heuristic. Report content-type issues only when the mismatch materially makes the page harder to use, conflicts with the surrounding section's established pattern, or risks sending the author toward the wrong kind of documentation.
+- Allow mixed-purpose pages and reasonable structural exceptions. For example, do not object to a prerequisites section on a troubleshooting page solely because the troubleshooting content type does not require one; report it only when the requirements are inaccurate, unsupported, confusing, or disruptive to the troubleshooting flow.
 - If the pull request appears linked to a parent issue, assess whether the issue's documentation ask is fully satisfied, only partially satisfied, or still unsupported by the PR.
 - If the linked issue is not satisfied, explain the gap in the review summary and only leave inline comments where the gap maps to a specific changed file or hunk.
 
@@ -238,7 +236,10 @@ Do not report:
 
 - speculative preferences,
 - repository-wide cleanup opportunities,
-- comments about files outside `docs/**/*.md`,
+- comments about markdown files outside the configured review scope,
+- broken links, missing anchors, missing image targets, or other link existence issues that the docs build already validates,
+- trailing spaces or trailing whitespace,
+- routine wording suggestions that duplicate Vale linting comments, unless the wording creates ambiguity or changes the technical meaning,
 - issues you cannot tie back to the changed content,
 - duplicate comments on the same underlying problem,
 - approval reviews,

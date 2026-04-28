@@ -77,7 +77,6 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-  - gh-aw-fragments/messages-footer.md
   - gh-aw-fragments/safe-output-<type>.md
 engine:
   id: copilot
@@ -93,11 +92,6 @@ on:
         default: ""
       setup-commands:
         description: "Shell commands to run before the agent starts"
-        type: string
-        required: false
-        default: ""
-      messages-footer:
-        description: "Footer appended to all agent comments and reviews"
         type: string
         required: false
         default: ""
@@ -135,7 +129,7 @@ steps:
 ---
 ```
 
-Follow the frontmatter with the agent prompt in markdown. The imported fragments provide formatting guidelines, rigor standards, MCP pagination tips, safe-output limitations, and the message footer note — so you don't need to repeat those. Structure the workflow-specific prompt as:
+Follow the frontmatter with the agent prompt in markdown. The imported fragments provide formatting guidelines, rigor standards, MCP pagination tips, and safe-output limitations, so you don't need to repeat those. Structure the workflow-specific prompt as:
 1. **Role statement** — who the agent is and what it does
 2. **Data gathering** — what to read, search, or fetch
 3. **Analysis** — what to look for, how to evaluate findings
