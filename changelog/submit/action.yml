@@ -150,7 +150,7 @@ runs:
       if: steps.pr-data.outputs.proceed == 'true'
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_TOKEN: ${{ steps.pr-data.outputs.is-fork != 'true' && inputs.github-token || '' }}
         CONFIG_FILE: ${{ steps.config.outputs.config-path || inputs.config }}
         REPO_OWNER: ${{ github.repository_owner }}
         REPO_NAME: ${{ github.event.repository.name }}
@@ -183,7 +183,6 @@ runs:
       if: steps.evaluate.outputs.should-generate == 'true'
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
         CONFIG_FILE: ${{ steps.config.outputs.config-path || inputs.config }}
         CHANGELOG_PR_NUMBER: ${{ steps.pr.outputs.number }}
         CHANGELOG_TITLE: ${{ steps.evaluate.outputs.title }}
