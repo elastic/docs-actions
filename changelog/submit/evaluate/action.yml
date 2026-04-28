@@ -192,57 +192,48 @@ runs:
         CHANGELOG_REPO: ${{ github.event.repository.name }}
         CHANGELOG_PRODUCTS: ${{ steps.evaluate.outputs.products }}
       run: |
-        mkdir -p /tmp/changelog-staging
+        mkdir -p .artifacts/changelog-staging
         docs-builder changelog add \
           --concise \
           --config "$CONFIG_FILE" \
-          --output /tmp/changelog-staging
+          --output .artifacts/changelog-staging
 
-    - name: Write metadata
+    - name: Prepare artifact
       if: steps.pr-data.outputs.proceed == 'true'
       shell: bash
       env:
+        STATUS: ${{ steps.evaluate.outputs.status }}
+        GENERATE_OUTCOME: ${{ steps.generate.outcome }}
         PR_NUMBER: ${{ steps.pr.outputs.number }}
-        CAN_COMMIT: ${{ steps.strategy.outputs.can-commit }}
-        IS_FORK: ${{ steps.pr-data.outputs.is-fork }}
-        HEAD_REPO: ${{ steps.pr-data.outputs.head-repo }}
         HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
         HEAD_SHA: ${{ steps.pr-data.outputs.head-sha }}
-        BASE_REF: ${{ steps.pr-data.outputs.base-ref }}
-        CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
-        EXISTING_FILENAME: ${{ steps.evaluate.outputs.existing-changelog-filename }}
-        STATUS: ${{ steps.evaluate.outputs.status }}
+        IS_FORK: ${{ steps.pr-data.outputs.is-fork }}
+        HEAD_REPO: ${{ steps.pr-data.outputs.head-repo }}
+        CAN_COMMIT: ${{ steps.strategy.outputs.can-commit }}
+        MAINTAINER_CAN_MODIFY: ${{ steps.pr-data.outputs.maintainer-can-modify }}
         LABEL_TABLE: ${{ steps.evaluate.outputs.label-table }}
         PRODUCT_LABEL_TABLE: ${{ steps.evaluate.outputs.product-label-table }}
         SKIP_LABELS: ${{ steps.evaluate.outputs.skip-labels }}
-        SHOULD_GENERATE: ${{ steps.evaluate.outputs.should-generate }}
-        GENERATE_OUTCOME: ${{ steps.generate.outcome }}
+        EXISTING_FILENAME: ${{ steps.evaluate.outputs.existing-changelog-filename }}
         CONFIG_FILE: ${{ inputs.config }}
       run: |
-        mkdir -p /tmp/changelog-staging
-        python3 -c "
-        import json, os
-        meta = {
-          'pr-number': os.environ['PR_NUMBER'],
-          'can-commit': os.environ['CAN_COMMIT'],
-          'is-fork': os.environ['IS_FORK'],
-          'head-repo': os.environ['HEAD_REPO'],
-          'head-ref': os.environ['HEAD_REF'],
-          'head-sha': os.environ['HEAD_SHA'],
-          'base-ref': os.environ['BASE_REF'],
-          'changelog-dir': os.environ['CHANGELOG_DIR'],
-          'existing-changelog-filename': os.environ['EXISTING_FILENAME'],
-          'status': os.environ['STATUS'],
-          'label-table': os.environ['LABEL_TABLE'],
-          'product-label-table': os.environ['PRODUCT_LABEL_TABLE'],
-          'skip-labels': os.environ['SKIP_LABELS'],
-          'should-generate': os.environ['SHOULD_GENERATE'],
-          'generate-outcome': os.environ['GENERATE_OUTCOME'],
-          'config-file': os.environ['CONFIG_FILE'],
-        }
-        with open('/tmp/changelog-staging/metadata.json', 'w') as f:
-          json.dump(meta, f, indent=2)
-        "
+        docs-builder changelog prepare-artifact \
+          --staging-dir .artifacts/changelog-staging \
+          --output-dir .artifacts/changelog-artifact \
+          --evaluate-status "$STATUS" \
+          --generate-outcome "$GENERATE_OUTCOME" \
+          --pr-number "$PR_NUMBER" \
+          --head-ref "$HEAD_REF" \
+          --head-sha "$HEAD_SHA" \
+          --is-fork "$IS_FORK" \
+          --head-repo "$HEAD_REPO" \
+          --can-commit "$CAN_COMMIT" \
+          --maintainer-can-modify "$MAINTAINER_CAN_MODIFY" \
+          --label-table "$LABEL_TABLE" \
+          --product-label-table "$PRODUCT_LABEL_TABLE" \
+          --skip-labels "$SKIP_LABELS" \
+          --config "$CONFIG_FILE" \
+          --existing-changelog-filename "$EXISTING_FILENAME"
 
     - name: Upload staging artifact
       id: upload
@@ -250,6 +241,6 @@ runs:
       uses: actions/upload-artifact@v7
       with:
         name: changelog-staging
-        path: /tmp/changelog-staging
+        path: .artifacts/changelog-artifact
         retention-days: 1
         if-no-files-found: error
