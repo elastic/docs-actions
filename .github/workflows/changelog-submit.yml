@@ -56,7 +56,7 @@ jobs:
             }
 
             if (!prNumber) {
-              core.warning('Could not resolve PR — cannot verify org membership');
+              core.setFailed('Could not resolve PR number for fork — cannot verify org membership. Failing closed.');
               return;
             }
 
@@ -67,7 +67,6 @@ jobs:
 
       - name: Fetch ephemeral GitHub token
         if: github.event.workflow_run.head_repository.full_name != github.repository
-        continue-on-error: true
         id: fetch-ephemeral-token
         uses: elastic/ci-gh-actions/fetch-github-token@v1.5.0
         with:
@@ -111,7 +110,10 @@ jobs:
         uses: elastic/docs-actions/changelog/submit/evaluate@v1
         with:
           config: ${{ inputs.config }}
-          is-org-member: ${{ needs.preflight.outputs.is-org-member }}
+          # For same-repo PRs the fork-only org-membership steps are skipped,
+          # so the output is empty. Default to 'false' to ensure it is never
+          # interpreted as 'true'.
+          is-org-member: ${{ needs.preflight.outputs.is-org-member || 'false' }}
           comment-only: ${{ inputs.comment-only }}
 
   apply:
