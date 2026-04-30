@@ -19,18 +19,112 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  submit:
+  preflight:
     if: >
       github.event.workflow_run.event == 'pull_request'
       && github.event.workflow_run.conclusion != 'cancelled'
       && github.event.repository.fork == false
     runs-on: ubuntu-latest
     permissions:
+      contents: none
+      pull-requests: read
+      id-token: write
+    outputs:
+      should-submit: ${{ steps.evaluate.outputs.should-submit }}
+      is-org-member: ${{ steps.check-org-membership.outputs.is-member }}
+    steps:
+      - name: Resolve PR author
+        id: pr-author
+        if: github.event.workflow_run.head_repository.full_name != github.repository
+        uses: actions/github-script@v9
+        with:
+          # language=js
+          script: |
+            const run = context.payload.workflow_run;
+            const { owner, repo } = context.repo;
+
+            let prNumber;
+            if (run.pull_requests?.length > 0) {
+              prNumber = run.pull_requests[0].number;
+            } else {
+              const headLabel = `${run.head_repository.owner.login}:${run.head_branch}`;
+              const { data: prs } = await github.rest.pulls.list({
+                owner, repo, state: 'open', head: headLabel
+              });
+              const match = prs.find(pr => pr.head.sha === run.head_sha);
+              if (match) prNumber = match.number;
+            }
+
+            if (!prNumber) {
+              core.setFailed('Could not resolve PR number for fork — cannot verify org membership. Failing closed.');
+              return;
+            }
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner, repo, pull_number: prNumber
+            });
+            core.setOutput('login', pr.user.login);
+
+      - name: Fetch ephemeral GitHub token
+        if: github.event.workflow_run.head_repository.full_name != github.repository
+        id: fetch-ephemeral-token
+        uses: elastic/ci-gh-actions/fetch-github-token@v1.5.0
+        with:
+          vault-instance: "ci-prod"
+          vault-role: "token-policy-a71b1f2b88ec"
+
+      - name: Check org membership
+        id: check-org-membership
+        if: github.event.workflow_run.head_repository.full_name != github.repository
+        uses: elastic/docs-actions/github/is-elastic-org-member@v1
+        with:
+          username: ${{ steps.pr-author.outputs.login }}
+          token: ${{ steps.fetch-ephemeral-token.outputs.token }}
+
+      - name: Evaluate
+        id: evaluate
+        env:
+          IS_FORK: ${{ github.event.workflow_run.head_repository.full_name != github.repository }}
+          IS_ORG_MEMBER: ${{ steps.check-org-membership.outputs.is-member }}
+        # language=bash
+        run: |
+          if [[ "$IS_FORK" == "true" && "$IS_ORG_MEMBER" != "true" ]]; then
+            echo "should-submit=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Changelog submit skipped — fork PRs from non-members are not processed"
+          else
+            echo "should-submit=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  generate:
+    needs: preflight
+    if: needs.preflight.outputs.should-submit == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      proceed: ${{ steps.evaluate.outputs.proceed }}
+    steps:
+      - name: Evaluate and generate changelog
+        id: evaluate
+        uses: elastic/docs-actions/changelog/submit/evaluate@v1
+        with:
+          config: ${{ inputs.config }}
+          # For same-repo PRs the fork-only org-membership steps are skipped,
+          # so the output is empty. Default to 'false' to ensure it is never
+          # interpreted as 'true'.
+          is-org-member: ${{ needs.preflight.outputs.is-org-member || 'false' }}
+          comment-only: ${{ inputs.comment-only }}
+
+  apply:
+    needs: [preflight, generate]
+    if: needs.generate.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
       contents: write
       pull-requests: write
     steps:
-      - name: Submit changelog
-        uses: elastic/docs-actions/changelog/submit@v1
+      - name: Apply changelog
+        uses: elastic/docs-actions/changelog/submit/apply@v1
         with:
           config: ${{ inputs.config }}
-          comment-only: ${{ inputs.comment-only }}

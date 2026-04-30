@@ -1,0 +1,188 @@
+name: Changelog submit / apply
+description: >
+  Write action that downloads the changelog artifact produced by the evaluate
+  action and either commits it to the PR branch or posts it as a PR comment.
+  Requires contents:write and pull-requests:write permissions.
+
+inputs:
+  github-token:
+    description: 'GitHub token with contents:write and pull-requests:write'
+    default: '${{ github.token }}'
+  config:
+    description: 'Path to changelog.yml configuration file (used in failure comment)'
+    default: 'docs/changelog.yml'
+
+outputs:
+  committed:
+    description: 'Whether a changelog was committed (true/false)'
+    value: ${{ steps.commit.outputs.committed || 'false' }}
+
+runs:
+  using: composite
+  steps:
+    - name: Download staging artifact
+      uses: actions/download-artifact@v8
+      with:
+        name: changelog-staging
+        path: /tmp/changelog-staging
+
+    - name: Setup docs-builder
+      uses: elastic/docs-actions/docs-builder/setup@v1
+      with:
+        version: edge
+        github-token: ${{ inputs.github-token }}
+
+    - name: Evaluate artifact
+      id: meta
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        REPO_OWNER: ${{ github.repository_owner }}
+        REPO_NAME: ${{ github.event.repository.name }}
+      run: |
+        docs-builder changelog evaluate-artifact \
+          --metadata /tmp/changelog-staging/metadata.json \
+          --owner "$REPO_OWNER" \
+          --repo "$REPO_NAME"
+
+    - name: Checkout PR branch
+      if: steps.meta.outputs.should-commit == 'true'
+      uses: actions/checkout@v6
+      with:
+        repository: ${{ steps.meta.outputs.head-repo }}
+        ref: ${{ steps.meta.outputs.head-sha }}
+        token: ${{ inputs.github-token }}
+        persist-credentials: false
+
+    - name: Validate ref names
+      if: steps.meta.outputs.should-commit == 'true'
+      shell: bash
+      env:
+        HEAD_REF: ${{ steps.meta.outputs.head-ref }}
+      run: |
+        if [[ ! "$HEAD_REF" =~ ^[a-zA-Z0-9._/+-]+$ ]]; then
+          echo "::error::Ref name contains disallowed characters: ${HEAD_REF}"
+          exit 1
+        fi
+
+    - name: Commit changelog
+      if: steps.meta.outputs.should-commit == 'true'
+      id: commit
+      shell: bash
+      env:
+        PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
+        CHANGELOG_DIR: ${{ steps.meta.outputs.changelog-dir }}
+        CHANGELOG_FILENAME: ${{ steps.meta.outputs.changelog-filename }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        GIT_REPOSITORY: ${{ github.repository }}
+        IS_FORK: ${{ steps.meta.outputs.is-fork }}
+        HEAD_REPO: ${{ steps.meta.outputs.head-repo }}
+        HEAD_REF: ${{ steps.meta.outputs.head-ref }}
+      run: |
+        GENERATED=$(ls /tmp/changelog-staging/*.yaml 2>/dev/null | head -1)
+        if [ -z "$GENERATED" ]; then
+          echo "::error::No changelog YAML found in staging directory"
+          exit 1
+        fi
+
+        if [ -n "$CHANGELOG_FILENAME" ]; then
+          TARGET_FILENAME="$CHANGELOG_FILENAME"
+        else
+          TARGET_FILENAME=$(basename "$GENERATED")
+        fi
+        CHANGELOG_FILE="$CHANGELOG_DIR/$TARGET_FILENAME"
+
+        if [ -f "$CHANGELOG_FILE" ]; then
+          VERB="Update"
+        else
+          VERB="Add"
+        fi
+
+        mkdir -p "$CHANGELOG_DIR"
+        cp "$GENERATED" "$CHANGELOG_FILE"
+
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add "$CHANGELOG_FILE"
+
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+          echo "committed=false" >> "$GITHUB_OUTPUT"
+        else
+          git commit -m "${VERB} changelog for PR #${PR_NUMBER}"
+          push_failed=false
+          if [[ "$IS_FORK" == "true" ]]; then
+            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${HEAD_REPO}.git"
+            if ! git push origin "HEAD:refs/heads/${HEAD_REF}" 2>&1; then
+              echo "::warning::Push to fork failed — maintainer_can_modify may have been revoked after evaluation"
+              push_failed=true
+            fi
+          else
+            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GIT_REPOSITORY}.git"
+            git push
+          fi
+          git remote set-url origin "https://github.com/${GIT_REPOSITORY}.git"
+
+          if [[ "$push_failed" == "true" ]]; then
+            echo "committed=false" >> "$GITHUB_OUTPUT"
+            echo "push-failed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "committed=true" >> "$GITHUB_OUTPUT"
+          fi
+        fi
+
+        echo "changelog-file=$CHANGELOG_FILE" >> "$GITHUB_OUTPUT"
+
+    - name: Post success comment
+      if: steps.commit.outputs.committed == 'true'
+      uses: actions/github-script@v9
+      env:
+        PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
+        HEAD_REF: ${{ steps.meta.outputs.head-ref }}
+        CHANGELOG_FILE: ${{ steps.commit.outputs.changelog-file }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/post-success-comment.js');
+          await script({ github, context, core });
+
+    - name: Post push-fallback comment
+      if: steps.commit.outputs.push-failed == 'true'
+      uses: actions/github-script@v9
+      env:
+        PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
+        CHANGELOG_DIR: ${{ steps.meta.outputs.changelog-dir }}
+        STAGING_DIR: /tmp/changelog-staging
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/post-push-fallback.js');
+          await script({ github, context, core });
+
+    - name: Post comment-only changelog
+      if: steps.meta.outputs.should-comment-success == 'true'
+      uses: actions/github-script@v9
+      env:
+        PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
+        CHANGELOG_DIR: ${{ steps.meta.outputs.changelog-dir }}
+        STAGING_DIR: /tmp/changelog-staging
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/post-comment-only.js');
+          await script({ github, context, core });
+
+    - name: Post failure comment
+      if: steps.meta.outputs.should-comment-failure == 'true'
+      uses: actions/github-script@v9
+      env:
+        PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
+        LABEL_TABLE: ${{ steps.meta.outputs.label-table }}
+        PRODUCT_LABEL_TABLE: ${{ steps.meta.outputs.product-label-table }}
+        SKIP_LABELS: ${{ steps.meta.outputs.skip-labels }}
+        CONFIG_FILE: ${{ inputs.config }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/post-failure-comment.js');
+          await script({ github, context, core });
