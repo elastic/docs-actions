@@ -71,13 +71,17 @@ on:
       - completed
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: write       # commit the generated changelog file to the PR branch
+  pull-requests: write  # post the changelog comment on the PR
+  id-token: write       # OIDC token for the org-membership check on fork PRs
+  packages: read        # pull the docs-builder edge image from GHCR
 
 jobs:
   submit:
     uses: elastic/docs-actions/.github/workflows/changelog-submit.yml@v1
 ```
+
+> **Important:** All four permissions above are required. The reusable workflow's jobs request these permissions internally, and a caller workflow can never grant more than it declares at the top level. Omitting any of them will cause GitHub to reject the workflow with an error like `is requesting 'id-token: write', but is only allowed 'id-token: none'`.
 
 If your changelog configuration is not at `docs/changelog.yml`, pass the path explicitly to both workflows:
 
