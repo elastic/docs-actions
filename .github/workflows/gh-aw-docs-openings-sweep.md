@@ -15,6 +15,9 @@ imports:
         - elastic/elastic-docs-skills/skills/authoring/page-opening-optimizer
 engine:
   id: copilot
+  concurrency:
+    group: "gh-aw-copilot-docs-openings-sweep-${{ github.run_id }}"
+    cancel-in-progress: false
 on:
   workflow_call:
     inputs:

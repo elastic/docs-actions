@@ -13,6 +13,9 @@ imports:
   - gh-aw-fragments/mcp-pagination.md
 engine:
   id: copilot
+  concurrency:
+    group: "gh-aw-copilot-docs-coherence-sweep-${{ github.run_id }}"
+    cancel-in-progress: false
 on:
   workflow_call:
     inputs:

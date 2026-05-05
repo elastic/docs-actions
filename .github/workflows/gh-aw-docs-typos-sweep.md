@@ -11,6 +11,9 @@ imports:
   - gh-aw-fragments/rigor.md
 engine:
   id: copilot
+  concurrency:
+    group: "gh-aw-copilot-docs-typos-sweep-${{ github.run_id }}"
+    cancel-in-progress: false
 on:
   workflow_call:
     inputs:

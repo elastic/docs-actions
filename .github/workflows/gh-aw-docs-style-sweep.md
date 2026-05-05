@@ -15,6 +15,9 @@ imports:
         - elastic/elastic-docs-skills/skills/review/docs-check-style
 engine:
   id: copilot
+  concurrency:
+    group: "gh-aw-copilot-docs-style-sweep-${{ github.run_id }}"
+    cancel-in-progress: false
 on:
   workflow_call:
     inputs:
