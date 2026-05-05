@@ -112,9 +112,18 @@ runs:
           git commit -m "${VERB} changelog for PR #${PR_NUMBER}"
           push_failed=false
           if [[ "$IS_FORK" == "true" ]]; then
+            # NOTE (workaround): The strategy step in evaluate currently
+            # forces can-commit=false for all fork PRs, which means
+            # should-commit is false here too and this branch is
+            # unreachable in practice. The block is retained for the
+            # eventual service-account-PAT path: a PAT belonging to a
+            # maintainer of the upstream repo CAN push to a fork's PR
+            # branch via the maintainer_can_modify mechanism, where
+            # GITHUB_TOKEN cannot. Once that PAT path is wired up, this
+            # block becomes the active push for fork PRs.
             git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${HEAD_REPO}.git"
             if ! git push origin "HEAD:refs/heads/${HEAD_REF}" 2>&1; then
-              echo "::warning::Push to fork failed — maintainer_can_modify may have been revoked after evaluation"
+              echo "::warning::Push to fork failed — token lacks access to the fork repo (expected with GITHUB_TOKEN; requires a service-account PAT)"
               push_failed=true
             fi
           else
