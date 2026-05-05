@@ -1,5 +1,5 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"932b67f19a2d9fef2e512e7b32f12bb0f9d814011f759a0edec7cbf0ba839203","compiler_version":"v0.71.1","agent_id":"copilot"}
-# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GH_AW_PLUGINS_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/cache/restore","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/cache/save","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"239aec45b78c8799417efdd5bc6d8cc036629ec1","version":"v0.71.1"},{"repo":"microsoft/apm-action","sha":"a190b0b1a91031057144dc136acf9757a59c9e4d","version":"v1.4.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28","digest":"sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28","digest":"sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28","digest":"sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.0"},{"image":"ghcr.io/github/github-mcp-server:v1.0.2"},{"image":"node:lts-alpine","digest":"sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f","pinned_image":"node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f"}]}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"09516ebef04be193e15d7e1dafff81277104fff9da163f23cb7b1a0fb32ae36f","compiler_version":"v0.71.1","agent_id":"copilot"}
+# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"239aec45b78c8799417efdd5bc6d8cc036629ec1","version":"v0.71.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28","digest":"sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28","digest":"sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28","digest":"sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.0"},{"image":"ghcr.io/github/github-mcp-server:v1.0.2"},{"image":"node:lts-alpine","digest":"sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f","pinned_image":"node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
 #  | |_| | __ _  ___ _ __ | |_ _  ___ 
@@ -23,15 +23,14 @@
 # For more information: https://github.github.com/gh-aw/introduction/overview/
 #
 # Audits style-guide compliance across a docs corpus on a rotating slice each
-# run, using the docs-check-style skill (Vale + Elastic style guide). Opens a
-# single labeled fix-issue with structured YAML findings consumable by a
-# future fix-agent.
+# run, by running Vale with the elastic/vale-rules ruleset in a deterministic
+# pre-step and having the agent format the findings. Opens a single labeled
+# fix-issue with structured YAML findings consumable by a future fix-agent.
 #
 # Resolved workflow manifest:
 #   Imports:
 #     - gh-aw-fragments/formatting.md
 #     - gh-aw-fragments/rigor.md
-#     - github/gh-aw/.github/workflows/shared/apm.md@v0.71.1
 #
 # inlined-imports: true
 #
@@ -39,12 +38,9 @@
 #   - COPILOT_GITHUB_TOKEN
 #   - GH_AW_GITHUB_MCP_SERVER_TOKEN
 #   - GH_AW_GITHUB_TOKEN
-#   - GH_AW_PLUGINS_TOKEN
 #   - GITHUB_TOKEN
 #
 # Custom actions used:
-#   - actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-#   - actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
 #   - actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 #   - actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 #   - actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -52,7 +48,6 @@
 #   - actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
 #   - actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
 #   - github/gh-aw-actions/setup@239aec45b78c8799417efdd5bc6d8cc036629ec1 # v0.71.1
-#   - microsoft/apm-action@a190b0b1a91031057144dc136acf9757a59c9e4d # v1.4.1
 #
 # Container images used:
 #   - ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a
@@ -238,14 +233,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_cf8b7755cb01a45f_EOF'
+          cat << 'GH_AW_PROMPT_a8a9007132cc7815_EOF'
           <system>
-          GH_AW_PROMPT_cf8b7755cb01a45f_EOF
+          GH_AW_PROMPT_a8a9007132cc7815_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_cf8b7755cb01a45f_EOF'
+          cat << 'GH_AW_PROMPT_a8a9007132cc7815_EOF'
           <safe-output-tools>
           Tools: create_issue, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -277,13 +272,10 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_cf8b7755cb01a45f_EOF
+          GH_AW_PROMPT_a8a9007132cc7815_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_cf8b7755cb01a45f_EOF'
+          cat << 'GH_AW_PROMPT_a8a9007132cc7815_EOF'
           </system>
-          
-          
-          
           ## Formatting Guidelines
           
           - Lead with the most important information — your first sentence should be the key takeaway
@@ -305,28 +297,23 @@ jobs:
           
           # Docs style sweep agent
           
-          You are a style-guide reviewer for an Elastic documentation repository. Your job is to audit a deterministically-selected slice of pages against the Elastic style guide (via the `docs-check-style` skill, which runs Vale plus manual rule checking) and emit a single labeled fix-issue with structured findings.
+          You are a style-guide reviewer for an Elastic documentation repository. Your job is to format Vale's findings (already produced by a deterministic pre-step) into the structured YAML schema below, applying light filtering and category mapping. **Vale has already run** — you are not invoking any skill.
           
           ## Pre-fetched data
           
           - `/tmp/gh-aw/sweep-data/in-scope.txt` — file paths to audit.
           - `/tmp/gh-aw/sweep-data/scope/` — copies mirroring the original paths.
           - `/tmp/gh-aw/sweep-data/stats.json` — corpus stats.
+          - `/tmp/gh-aw/sweep-data/vale.json` — Vale's raw findings, an object keyed by absolute file path under `/tmp/gh-aw/sweep-data/scope/`. Each value is an array of `{Check, Match, Line, Message, Severity, Span, Link}` objects produced by `vale --output JSON` against the `elastic/vale-rules` ruleset.
+          - `/tmp/gh-aw/sweep-data/vale-stats.json` — `{finding_count, file_count, vale_exit}`.
           
-          If `in_scope_count` is `0`, call `noop` and stop.
+          If `in_scope_count` or `vale-stats.finding_count` is `0`, call `noop` with the stats and stop.
           
-          ## Step 1: Run the skill
+          ## Step 1: Read Vale output
           
-          Invoke `skill(skill: docs-check-style)` against `/tmp/gh-aw/sweep-data/scope/`.
+          Read `/tmp/gh-aw/sweep-data/vale.json` with `cat | jq`. Each rule check name (the `Check` field, e.g. `Elastic.WordList`, `Elastic.Accessibility`, `Elastic.Voice`) maps to one of our categories below. The `Line`, `Match`, `Message`, and `Severity` fields are the raw inputs you'll convert.
           
-          The skill produces line-level findings grouped by category (Voice/Tone, Word Choice, Grammar, Formatting, Accessibility, UI Writing). Read its output and convert into the YAML structure below.
-          
-          **If the skill returns "Skill not found", do not noop.** That error is ambiguous — it can mean the skill genuinely isn't installed, or that the invocation form was reformatted by the agent's tool serialization. Either way: fall back to manual analysis instead of aborting. Procedure:
-          
-          1. Try invoking the skill with the exact form `skill(skill: docs-check-style)`.
-          2. If that fails or returns "Skill not found": fall back to **manual style review** of the in-scope files. Use `bash` + `grep` to look for common Elastic style-guide violations the agent can detect on its own (e.g., banned phrasing from the `word-choice` category, second-person inconsistencies, missing alt text). Produce findings as you would have from the skill output, and add a single line in the issue body's `Notes` section: "skill `docs-check-style` did not produce output in this run; findings are agent-only."
-          
-          Only call `noop` if you cannot produce any high-confidence findings even from manual analysis.
+          For long Vale outputs, paginate with `jq` rather than reading the whole file in one go.
           
           ## Step 2: Build the findings list
           
@@ -405,7 +392,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_cf8b7755cb01a45f_EOF
+          GH_AW_PROMPT_a8a9007132cc7815_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
@@ -485,9 +472,7 @@ jobs:
           retention-days: 1
 
   agent:
-    needs:
-      - activation
-      - apm
+    needs: activation
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -548,6 +533,12 @@ jobs:
         name: Compute sweep targets
         run: "set -eu\nmkdir -p /tmp/gh-aw/sweep-data/scope\n\nif [ ! -d \"$DOCS_ROOT\" ]; then\n  echo \"docs-root '$DOCS_ROOT' does not exist; producing empty scope\"\n  : > /tmp/gh-aw/sweep-data/all.txt\n  : > /tmp/gh-aw/sweep-data/shard.txt\n  : > /tmp/gh-aw/sweep-data/recent.txt\n  : > /tmp/gh-aw/sweep-data/in-scope.txt\n  echo '{\"total\":0,\"shard_n\":1,\"shard_slot\":0,\"shard_count\":0,\"recent_count\":0,\"in_scope_count\":0,\"iso_week\":\"'\"$(date +%G-W%V)\"'\",\"docs_root\":\"'\"$DOCS_ROOT\"'\"}' > /tmp/gh-aw/sweep-data/stats.json\n  exit 0\nfi\n\nfind \"$DOCS_ROOT\" -type f -name '*.md' \\\n  -not -path '*/node_modules/*' \\\n  -not -path '*/.git/*' \\\n  | sort > /tmp/gh-aw/sweep-data/all.txt\n\nTOTAL=$(wc -l < /tmp/gh-aw/sweep-data/all.txt | tr -d ' ')\nif [ \"$TOTAL\" -eq 0 ]; then\n  N=1\nelse\n  N=$(( (TOTAL + TARGET_BATCH - 1) / TARGET_BATCH ))\nfi\nISO_WEEK_NUM=$(date +%V | sed 's/^0//')\nSLOT=$(( ISO_WEEK_NUM % N ))\n\n: > /tmp/gh-aw/sweep-data/shard.txt\nwhile IFS= read -r f; do\n  [ -z \"$f\" ] && continue\n  HEX=$(printf '%s' \"$f\" | shasum -a 256 | cut -c1-4)\n  HASH_NUM=$(( 16#$HEX ))\n  if [ $((HASH_NUM % N)) -eq \"$SLOT\" ]; then\n    echo \"$f\" >> /tmp/gh-aw/sweep-data/shard.txt\n  fi\ndone < /tmp/gh-aw/sweep-data/all.txt\n\ngit log --since='2 days ago' --name-only --pretty=format: -- \"$DOCS_ROOT/*.md\" \"$DOCS_ROOT/**/*.md\" 2>/dev/null \\\n  | grep -E '\\.md$' \\\n  | sort -u > /tmp/gh-aw/sweep-data/recent.txt || true\n\n# Cap the recently-changed pass: if a corpus-wide rebase or migration\n# touched far more pages than one slice, fall back to slice-only so\n# rotation actually rotates.\nRECENT_RAW=$(wc -l < /tmp/gh-aw/sweep-data/recent.txt | tr -d ' ')\nRECENT_LIMIT=$(( TARGET_BATCH * 2 ))\nif [ \"$RECENT_RAW\" -gt \"$RECENT_LIMIT\" ]; then\n  echo \"recently-changed pass produced $RECENT_RAW pages (>2x target batch $TARGET_BATCH); disabling for this run\"\n  : > /tmp/gh-aw/sweep-data/recent.txt\nfi\n\nsort -u /tmp/gh-aw/sweep-data/shard.txt /tmp/gh-aw/sweep-data/recent.txt \\\n  | grep -v '^$' > /tmp/gh-aw/sweep-data/in-scope.txt || true\n\nwhile IFS= read -r f; do\n  [ -z \"$f\" ] && continue\n  [ ! -f \"$f\" ] && continue\n  mkdir -p \"/tmp/gh-aw/sweep-data/scope/$(dirname \"$f\")\"\n  cp \"$f\" \"/tmp/gh-aw/sweep-data/scope/$f\"\ndone < /tmp/gh-aw/sweep-data/in-scope.txt\n\nSHARD_COUNT=$(wc -l < /tmp/gh-aw/sweep-data/shard.txt | tr -d ' ')\nRECENT_COUNT=$(wc -l < /tmp/gh-aw/sweep-data/recent.txt | tr -d ' ')\nIN_SCOPE_COUNT=$(wc -l < /tmp/gh-aw/sweep-data/in-scope.txt | tr -d ' ')\n\ncat > /tmp/gh-aw/sweep-data/stats.json <<EOF\n{\n  \"total\": $TOTAL,\n  \"shard_n\": $N,\n  \"shard_slot\": $SLOT,\n  \"shard_count\": $SHARD_COUNT,\n  \"recent_count\": $RECENT_COUNT,\n  \"in_scope_count\": $IN_SCOPE_COUNT,\n  \"iso_week\": \"$(date +%G-W%V)\",\n  \"docs_root\": \"$DOCS_ROOT\"\n}\nEOF\n\necho \"Sweep targets: total=$TOTAL N=$N slot=$SLOT shard=$SHARD_COUNT recent=$RECENT_COUNT in_scope=$IN_SCOPE_COUNT\"\n"
       - env:
+          VALE_VERSION: 3.12.0
+        name: Install Vale and elastic/vale-rules
+        run: "set -eu\nmkdir -p /tmp/gh-aw/bin\n\n# Download the Vale binary into a path the agent container shares\ncurl -fsSL \"https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz\" \\\n  -o /tmp/vale.tar.gz\ntar -xz -C /tmp/gh-aw/bin -f /tmp/vale.tar.gz vale\nchmod +x /tmp/gh-aw/bin/vale\nrm /tmp/vale.tar.gz\n\n# Clone elastic/vale-rules (StylesPath in its .vale.ini is `styles`,\n# resolved relative to the .vale.ini file's directory).\ngit clone --depth 1 https://github.com/elastic/vale-rules.git /tmp/gh-aw/vale-rules\n\n/tmp/gh-aw/bin/vale --version\nls -la /tmp/gh-aw/vale-rules/.vale.ini\n"
+      - name: Run Vale on slice
+        run: "set -u\nmkdir -p /tmp/gh-aw/sweep-data\n\nif [ ! -s /tmp/gh-aw/sweep-data/in-scope.txt ]; then\n  echo '[]' > /tmp/gh-aw/sweep-data/vale.json\n  echo '{\"finding_count\":0,\"file_count\":0}' > /tmp/gh-aw/sweep-data/vale-stats.json\n  exit 0\nfi\n\n# Vale exits 1 when it finds problems; that's expected and not a failure.\n# Run from /tmp/gh-aw/vale-rules so the relative StylesPath resolves.\ncd /tmp/gh-aw/vale-rules\nset +e\n/tmp/gh-aw/bin/vale \\\n  --config /tmp/gh-aw/vale-rules/.vale.ini \\\n  --output JSON \\\n  --no-exit \\\n  $(while IFS= read -r f; do\n      [ -z \"$f\" ] && continue\n      [ -f \"/tmp/gh-aw/sweep-data/scope/$f\" ] || continue\n      printf '%s\\n' \"/tmp/gh-aw/sweep-data/scope/$f\"\n    done < /tmp/gh-aw/sweep-data/in-scope.txt) \\\n  > /tmp/gh-aw/sweep-data/vale.json 2> /tmp/gh-aw/sweep-data/vale.stderr\nRC=$?\nset -e\n\n# Vale's JSON output is an object keyed by file path. Normalize basic stats.\nFILE_COUNT=$(jq 'keys | length' /tmp/gh-aw/sweep-data/vale.json 2>/dev/null || echo 0)\nFINDING_COUNT=$(jq '[.[] | length] | add // 0' /tmp/gh-aw/sweep-data/vale.json 2>/dev/null || echo 0)\ncat > /tmp/gh-aw/sweep-data/vale-stats.json <<EOF\n{\"finding_count\": $FINDING_COUNT, \"file_count\": $FILE_COUNT, \"vale_exit\": $RC}\nEOF\necho \"Vale: file_count=$FILE_COUNT finding_count=$FINDING_COUNT exit=$RC\"\nhead -c 4000 /tmp/gh-aw/sweep-data/vale.stderr 2>/dev/null || true\n"
+      - env:
           SETUP_COMMANDS: ${{ inputs.setup-commands }}
         if: ${{ inputs.setup-commands != '' }}
         name: Repo-specific setup
@@ -607,32 +598,6 @@ jobs:
           GH_AW_AGENT_FOLDERS: ".agents .claude .codex .crush .gemini .github .opencode"
           GH_AW_AGENT_FILES: ".crush.json AGENTS.md CLAUDE.md GEMINI.md opencode.jsonc"
         run: bash "${RUNNER_TEMP}/gh-aw/actions/restore_base_github_folders.sh"
-      - id: apm_cache_restore
-        name: Restore APM bundle from cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          key: apm-${{ needs.activation.outputs.engine_id }}-${{ hashFiles('.github/workflows/*.lock.yml') }}
-          path: /tmp/gh-aw/apm-workspace
-      - if: steps.apm_cache_restore.outputs.cache-hit != 'true'
-        name: Download APM bundle artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: ${{ needs.activation.outputs.artifact_prefix }}apm
-          path: /tmp/gh-aw/apm-bundle
-      - id: apm_bundle
-        name: Find APM bundle path
-        run: |
-          bundle=$(find /tmp/gh-aw/apm-workspace /tmp/gh-aw/apm-bundle -name '*.tar.gz' 2>/dev/null | head -1)
-          if [ -z "$bundle" ]; then
-            echo "::error::APM bundle not found in /tmp/gh-aw/apm-workspace or /tmp/gh-aw/apm-bundle"
-            exit 1
-          fi
-          echo "path=$bundle" >> "$GITHUB_OUTPUT"
-      - name: Restore APM packages
-        uses: microsoft/apm-action@a190b0b1a91031057144dc136acf9757a59c9e4d # v1.4.1
-        with:
-          bundle: ${{ steps.apm_bundle.outputs.path }}
-
       - name: Download container images
         run: bash "${RUNNER_TEMP}/gh-aw/actions/download_docker_images.sh" ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474 ghcr.io/github/gh-aw-mcpg:v0.3.0 ghcr.io/github/github-mcp-server:v1.0.2 node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f
       - name: Write Safe Outputs Config
@@ -640,9 +605,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_93f916976210f91c_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_71501a367abfef0b_EOF'
           {"create_issue":{"close_older_issues":true,"labels":["docs-quality-sweep","docs-fix:style"],"max":1,"title_prefix":"Docs fix — style: "},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_93f916976210f91c_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_71501a367abfef0b_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -841,7 +806,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_7b05b8f9e0bff973_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_d73018a01e9f9757_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "github": {
@@ -882,7 +847,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_7b05b8f9e0bff973_EOF
+          GH_AW_MCP_CONFIG_d73018a01e9f9757_EOF
       - name: Clean git credentials
         continue-on-error: true
         run: bash "${RUNNER_TEMP}/gh-aw/actions/clean_git_credentials.sh"
@@ -1092,88 +1057,10 @@ jobs:
             /tmp/gh-aw/sandbox/firewall/audit/
           if-no-files-found: ignore
 
-  apm:
-    needs: activation
-    runs-on: ubuntu-slim
-    permissions:
-      {}
-
-    steps:
-      - name: Configure GH_HOST for enterprise compatibility
-        id: ghes-host-config
-        shell: bash
-        run: |
-          # Derive GH_HOST from GITHUB_SERVER_URL so the gh CLI targets the correct
-          # GitHub instance (GHES/GHEC). On github.com this is a harmless no-op.
-          GH_HOST="${GITHUB_SERVER_URL#https://}"
-          GH_HOST="${GH_HOST#http://}"
-          echo "GH_HOST=${GH_HOST}" >> "$GITHUB_ENV"
-      - name: Checkout workflow lock files
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-          sparse-checkout: |
-            .github/workflows
-          sparse-checkout-cone-mode: false
-      - name: Restore APM bundle from cache
-        id: apm_cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          key: apm-${{ needs.activation.outputs.engine_id }}-${{ hashFiles('.github/workflows/*.lock.yml') }}
-          path: /tmp/gh-aw/apm-workspace
-      - name: Prepare APM package list
-        id: apm_prep
-        if: steps.apm_cache.outputs.cache-hit != 'true'
-        run: |
-          DEPS=$(echo "$AW_APM_PACKAGES" | jq -r '.[] | "- " + .')
-          {
-            echo "deps<<APMDEPS"
-            printf '%s\n' "$DEPS"
-            echo "APMDEPS"
-          } >> "$GITHUB_OUTPUT"
-        env:
-          AW_APM_PACKAGES: "[\"elastic/elastic-docs-skills/skills/review/docs-check-style\"]"
-      - name: Pack APM packages
-        id: apm_pack
-        if: steps.apm_cache.outputs.cache-hit != 'true'
-        uses: microsoft/apm-action@a190b0b1a91031057144dc136acf9757a59c9e4d # v1.4.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_AW_PLUGINS_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-        with:
-          archive: "true"
-          dependencies: ${{ steps.apm_prep.outputs.deps }}
-          isolated: "true"
-          pack: "true"
-          target: all
-          working-directory: /tmp/gh-aw/apm-workspace
-      - name: Save APM bundle to cache
-        if: steps.apm_cache.outputs.cache-hit != 'true' && success()
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          key: ${{ steps.apm_cache.outputs.cache-primary-key }}
-          path: /tmp/gh-aw/apm-workspace
-      - name: Find APM bundle path
-        id: apm_bundle_path
-        run: |
-          bundle=$(find /tmp/gh-aw/apm-workspace -name '*.tar.gz' | head -1)
-          if [ -z "$bundle" ]; then
-            echo "::error::APM bundle not found in /tmp/gh-aw/apm-workspace"
-            exit 1
-          fi
-          echo "path=$bundle" >> "$GITHUB_OUTPUT"
-      - name: Upload APM bundle artifact
-        if: success()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: ${{ needs.activation.outputs.artifact_prefix }}apm
-          path: ${{ steps.apm_bundle_path.outputs.path }}
-          retention-days: "1"
-
   conclusion:
     needs:
       - activation
       - agent
-      - apm
       - detection
       - safe_outputs
     if: >
@@ -1391,7 +1278,7 @@ jobs:
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
         env:
           WORKFLOW_NAME: "Docs style sweep agent"
-          WORKFLOW_DESCRIPTION: "Audits style-guide compliance across a docs corpus on a rotating slice each\nrun, using the docs-check-style skill (Vale + Elastic style guide). Opens a\nsingle labeled fix-issue with structured YAML findings consumable by a\nfuture fix-agent."
+          WORKFLOW_DESCRIPTION: "Audits style-guide compliance across a docs corpus on a rotating slice each\nrun, by running Vale with the elastic/vale-rules ruleset in a deterministic\npre-step and having the agent format the findings. Opens a single labeled\nfix-issue with structured YAML findings consumable by a future fix-agent."
           HAS_PATCH: ${{ needs.agent.outputs.has_patch }}
         with:
           script: |
