@@ -13,6 +13,8 @@ AI-powered workflows for Elastic documentation tasks. Each directory contains a 
 | [docs-openings-sweep](docs-openings-sweep/) | Audit page openings (H1, opening paragraph, prerequisites) on a rotating slice | `workflow_dispatch` | `create-issue` (label `docs-fix:openings`) |
 | [docs-style-sweep](docs-style-sweep/) | Audit style-guide compliance on a rotating slice (Vale + Elastic style) | `workflow_dispatch` | `create-issue` (label `docs-fix:style`) |
 | [docs-typos-sweep](docs-typos-sweep/) | Run codespell across the whole docs corpus and emit a structured fix-issue | `workflow_dispatch` | `create-issue` (label `docs-fix:typos`) |
+| [docs-staleness-sweep](docs-staleness-sweep/) | Flag stale content, stale screenshots, broken external links, and unsupported-version mentions on a rotating slice | `workflow_dispatch` | `create-issue` (label `docs-fix:staleness`) |
+| [docs-coherence-sweep](docs-coherence-sweep/) | Detect duplicates and contradictions vs. published Elastic docs via MCP on a rotating slice | `workflow_dispatch` | `create-issue` (label `docs-fix:coherence`) |
 
 ## Installation
 

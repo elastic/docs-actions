@@ -1,6 +1,6 @@
 # Docs quality sweep (orchestrator)
 
-A `workflow_dispatch`-triggered orchestrator that fans out to all five docs quality sweep workflows in parallel jobs. Use this in your docs repo as the single entry point — one click runs frontmatter, applies_to, openings, style, and typos in one go (or any subset).
+A `workflow_dispatch`-triggered orchestrator that fans out to all seven docs quality sweep workflows in parallel jobs. Use this in your docs repo as the single entry point — one click runs frontmatter, applies_to, openings, style, typos, staleness, and coherence in one go (or any subset).
 
 Each sweep is independent: a failure in one job doesn't kill the others, and each opens its own labeled fix-issue. There is no aggregated dashboard or quality score — those are deferred to a later iteration.
 
@@ -41,12 +41,14 @@ gh workflow run docs-quality-sweep.yml \
 
 | Input | Default | Description |
 |-------|---------|-------------|
-| `sweeps` | `all` | Comma-separated list of sweep names: `frontmatter`, `applies-to`, `openings`, `style`, `typos`. Use `all` to run every sweep. |
+| `sweeps` | `all` | Comma-separated list of sweep names: `frontmatter`, `applies-to`, `openings`, `style`, `typos`, `staleness`, `coherence`. Use `all` to run every sweep. |
 | `source-repo` | `elastic/docs-content` | Repository to scan, as `owner/repo`. Set to empty to scan the calling repo. |
 | `docs-root` | `.` | Root directory inside the source repo. `.` works for repos where docs live at the root (e.g., `elastic/docs-content`). Set to `docs/` for repos with a `docs/` subtree. |
-| `target-batch-size` | `100` | Approximate pages per rotating slice (used by the four LLM-driven sweeps; not by typos). |
+| `target-batch-size` | `100` | Approximate pages per rotating slice (used by the LLM-driven sweeps; not by typos). |
 | `max-per-fix-issue` | `20` | Cap on findings per fix-issue — overflow surfaces in the next sweep. |
 | `typos-codespell-args` | `""` | Extra flags passed to codespell (e.g., `--ignore-words=allowlist.txt`). |
+| `staleness-content-months` | `24` | Flag pages whose latest commit is older than this. |
+| `coherence-batch-size` | `50` | Smaller per-slice cap for the coherence sweep, since each in-scope page produces multiple MCP fetches and LLM comparisons. |
 
 ## Outputs
 
@@ -59,6 +61,8 @@ Each sweep opens its own labeled fix-issue **in the calling repo** (or calls `no
 | openings | `docs-fix:openings` |
 | style | `docs-fix:style` |
 | typos | `docs-fix:typos` |
+| staleness | `docs-fix:staleness` |
+| coherence | `docs-fix:coherence` |
 
 All issues also carry the parent label `docs-quality-sweep`. Each sweep auto-closes its prior fix-issue (`close-older-issues: true`) before opening a new one, so the issue tracker doesn't accumulate stale runs.
 
@@ -84,9 +88,9 @@ on:
 
 Default `inputs` apply when `schedule` fires.
 
-## Why five workflows instead of one mega-sweep
+## Why seven workflows instead of one mega-sweep
 
 - Each sweep imports only the skills it needs, keeping prompts focused and findings high-signal.
 - Independent failure isolation — a failing skill in one sweep doesn't take down the others.
-- Independent cadence (you can schedule typos hourly and style monthly without coupling them).
+- Independent cadence (you can schedule typos hourly and coherence monthly without coupling them).
 - Per-category labels (`docs-fix:*`) make output routable — a future fix-agent can subscribe to one label and act on its findings without parsing a multi-section dashboard.
