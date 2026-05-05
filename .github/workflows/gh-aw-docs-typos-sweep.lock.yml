@@ -1,4 +1,4 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"aa4ba4f9bc9efe338abcccc9d6ff9831d650eb006c8272468275cfaf90c85540","compiler_version":"v0.71.1","agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"d4c7903830fa52feb2ffd313d9291f04512f25ecc718955546038931a71c5b2f","compiler_version":"v0.71.1","agent_id":"copilot"}
 # gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/setup-python","sha":"a309ff8b426b58ec0e2a45f0f869d46889d02405","version":"v6.2.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"239aec45b78c8799417efdd5bc6d8cc036629ec1","version":"v0.71.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28","digest":"sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28","digest":"sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28","digest":"sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.0"},{"image":"ghcr.io/github/github-mcp-server:v1.0.2"},{"image":"node:lts-alpine","digest":"sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f","pinned_image":"node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
@@ -234,14 +234,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_e36e439c498ebec7_EOF'
+          cat << 'GH_AW_PROMPT_30e7e707fb764751_EOF'
           <system>
-          GH_AW_PROMPT_e36e439c498ebec7_EOF
+          GH_AW_PROMPT_30e7e707fb764751_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_e36e439c498ebec7_EOF'
+          cat << 'GH_AW_PROMPT_30e7e707fb764751_EOF'
           <safe-output-tools>
           Tools: create_issue, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -273,9 +273,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_e36e439c498ebec7_EOF
+          GH_AW_PROMPT_30e7e707fb764751_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_e36e439c498ebec7_EOF'
+          cat << 'GH_AW_PROMPT_30e7e707fb764751_EOF'
           </system>
           ## Formatting Guidelines
           
@@ -345,9 +345,15 @@ jobs:
           
           Use `head -n <line>` and `cat` to inspect the surrounding context when filtering. When unsure whether a finding is a false positive, **drop it** — silence beats noise (per `rigor.md`).
           
-          ## Step 4: Quality gate
+          ## Step 4: Sort and emit
           
-          Cap at `__GH_AW_EXPR_CBA258AA__` findings. If, after filtering, the list is empty, `noop` with `"All <finding_count> codespell findings were false positives or out of scope"`.
+          Sort findings by `file` ascending, then by `line` ascending — this groups all typos in a single file together so an author can fix them in one pass.
+          
+          **Do not cap by category**. codespell is deterministic and every finding is unambiguous (one word swap); emit all of them after filtering. The reader does not need agent judgment about *which* typos are most important — they're all "fix the misspelling."
+          
+          If, after filtering, the list is empty, `noop` with `"All <finding_count> codespell findings were false positives or out of scope"`.
+          
+          **Hard upper bound for issue body length**: if the post-filter list would exceed 400 rows (GitHub issue body limit ≈ 65,536 characters), cap at 400 and add a note `+M additional typos will surface in next sweep`. This is a safety belt for issue-body length, not a quality gate. The `__GH_AW_EXPR_CBA258AA__` input is **not** used by this sweep.
           
           ## Output: fix-issue body
           
@@ -387,7 +393,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_e36e439c498ebec7_EOF
+          GH_AW_PROMPT_30e7e707fb764751_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
@@ -600,9 +606,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_12cbbda89e8557dd_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_7677850513acd2d6_EOF'
           {"create_issue":{"close_older_issues":true,"labels":["docs-quality-sweep","docs-fix:typos"],"max":1,"title_prefix":"Docs fix — typos: "},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_12cbbda89e8557dd_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_7677850513acd2d6_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -801,7 +807,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_60fb52b440ff0cc4_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_d59e8c9bde4b2392_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "github": {
@@ -842,7 +848,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_60fb52b440ff0cc4_EOF
+          GH_AW_MCP_CONFIG_d59e8c9bde4b2392_EOF
       - name: Clean git credentials
         continue-on-error: true
         run: bash "${RUNNER_TEMP}/gh-aw/actions/clean_git_credentials.sh"

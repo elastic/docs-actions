@@ -1,4 +1,4 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"4b80bd6fcd8685019ce40219d7fb89685bef466c41e80372c482114785643389","compiler_version":"v0.71.1","agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"b6ab2cf4d5b76253756396db21fd0887fbb8558ebf877e999247eddaaacf4e18","compiler_version":"v0.71.1","agent_id":"copilot"}
 # gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GH_AW_PLUGINS_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/cache/restore","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/cache/save","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"239aec45b78c8799417efdd5bc6d8cc036629ec1","version":"v0.71.1"},{"repo":"microsoft/apm-action","sha":"a190b0b1a91031057144dc136acf9757a59c9e4d","version":"v1.4.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28","digest":"sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28","digest":"sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28","digest":"sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.0"},{"image":"ghcr.io/github/github-mcp-server:v1.0.2"},{"image":"node:lts-alpine","digest":"sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f","pinned_image":"node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
@@ -239,14 +239,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_0096a3b4e4d0824a_EOF'
+          cat << 'GH_AW_PROMPT_a5daadadd0495f68_EOF'
           <system>
-          GH_AW_PROMPT_0096a3b4e4d0824a_EOF
+          GH_AW_PROMPT_a5daadadd0495f68_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_0096a3b4e4d0824a_EOF'
+          cat << 'GH_AW_PROMPT_a5daadadd0495f68_EOF'
           <safe-output-tools>
           Tools: create_issue, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -278,9 +278,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_0096a3b4e4d0824a_EOF
+          GH_AW_PROMPT_a5daadadd0495f68_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_0096a3b4e4d0824a_EOF'
+          cat << 'GH_AW_PROMPT_a5daadadd0495f68_EOF'
           </system>
           
           
@@ -339,16 +339,18 @@ jobs:
           
           - `file` — the original repository-relative path (strip the `/tmp/gh-aw/sweep-data/scope/` prefix from any skill output).
           - `line` — `1` for missing/invalid frontmatter keys (frontmatter starts at line 1); for description-quality findings use the line of the `description:` key.
-          - `category` — one of: `missing-description`, `weak-description`, `description-too-long`, `missing-applies-to`, `invalid-applies-to`, `missing-products`, `missing-navigation-title`.
+          - `category` — one of: `missing-description`, `weak-description`, `description-too-long`, `missing-products`, `missing-navigation-title`. **Do not emit `missing-applies-to` or `invalid-applies-to`** — those belong to `gh-aw-docs-applies-to-sweep`. If the audit skill produces them, drop them silently.
           - `severity` — `high` for missing required fields; `medium` for weak/long/invalid; `low` for nits.
           - `evidence` — one short sentence quoting or naming the exact problem.
           - `suggested_fix` — concrete YAML snippet ready to paste into the file's frontmatter, when the skill produces one. For audit-only findings (e.g., a missing field with no suggested value), omit `suggested_fix`.
           
           Apply the **Rigor** standards from the imported fragment: skip any finding where you cannot point to exact evidence, and skip any pre-existing build-error-class issues already covered by the docs build.
           
-          ## Step 3: Quality gate
+          ## Step 3: Sort and cap
           
-          Cap the findings list at `__GH_AW_EXPR_CBA258AA__` pages. If more pages have findings, list the first N (sorted by severity then path) and add a note `+M additional pages will surface in next sweep` to the issue body.
+          **Sort findings**: by `severity` (`high` → `medium` → `low`), then by `file` ascending, then by `line` ascending. The reader should see the highest-leverage findings at the top of the YAML block. Group findings on the same `file` adjacently so an author can fix one file in one PR.
+          
+          **Cap** the findings list at `__GH_AW_EXPR_CBA258AA__` distinct files (count distinct file paths, not finding rows). If more pages have findings, list the first N and add a note `+M additional pages will surface in next sweep` to the issue body.
           
           If the capped findings list is empty, call `noop` with `"No high-confidence frontmatter issues in this slice (shard <slot>/<n>, <in_scope_count> pages)"` and stop.
           
@@ -406,7 +408,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_0096a3b4e4d0824a_EOF
+          GH_AW_PROMPT_a5daadadd0495f68_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
@@ -547,7 +549,7 @@ jobs:
           DOCS_ROOT: ${{ inputs.docs-root }}
           TARGET_BATCH: ${{ inputs.target-batch-size }}
         name: Compute sweep targets
-        run: "set -eu\nmkdir -p /tmp/gh-aw/sweep-data/scope\n\nif [ ! -d \"$DOCS_ROOT\" ]; then\n  echo \"docs-root '$DOCS_ROOT' does not exist; producing empty scope\"\n  : > /tmp/gh-aw/sweep-data/all.txt\n  : > /tmp/gh-aw/sweep-data/shard.txt\n  : > /tmp/gh-aw/sweep-data/recent.txt\n  : > /tmp/gh-aw/sweep-data/in-scope.txt\n  echo '{\"total\":0,\"shard_n\":1,\"shard_slot\":0,\"shard_count\":0,\"recent_count\":0,\"in_scope_count\":0,\"iso_week\":\"'\"$(date +%G-W%V)\"'\",\"docs_root\":\"'\"$DOCS_ROOT\"'\"}' > /tmp/gh-aw/sweep-data/stats.json\n  exit 0\nfi\n\nfind \"$DOCS_ROOT\" -type f -name '*.md' \\\n  -not -path '*/node_modules/*' \\\n  -not -path '*/.git/*' \\\n  | sort > /tmp/gh-aw/sweep-data/all.txt\n\nTOTAL=$(wc -l < /tmp/gh-aw/sweep-data/all.txt | tr -d ' ')\nif [ \"$TOTAL\" -eq 0 ]; then\n  N=1\nelse\n  N=$(( (TOTAL + TARGET_BATCH - 1) / TARGET_BATCH ))\nfi\nISO_WEEK_NUM=$(date +%V | sed 's/^0//')\nSLOT=$(( ISO_WEEK_NUM % N ))\n\n: > /tmp/gh-aw/sweep-data/shard.txt\nwhile IFS= read -r f; do\n  [ -z \"$f\" ] && continue\n  HEX=$(printf '%s' \"$f\" | shasum -a 256 | cut -c1-4)\n  HASH_NUM=$(( 16#$HEX ))\n  if [ $((HASH_NUM % N)) -eq \"$SLOT\" ]; then\n    echo \"$f\" >> /tmp/gh-aw/sweep-data/shard.txt\n  fi\ndone < /tmp/gh-aw/sweep-data/all.txt\n\ngit log --since='7 days ago' --name-only --pretty=format: -- \"$DOCS_ROOT/*.md\" \"$DOCS_ROOT/**/*.md\" 2>/dev/null \\\n  | grep -E '\\.md$' \\\n  | sort -u > /tmp/gh-aw/sweep-data/recent.txt || true\n\nsort -u /tmp/gh-aw/sweep-data/shard.txt /tmp/gh-aw/sweep-data/recent.txt \\\n  | grep -v '^$' > /tmp/gh-aw/sweep-data/in-scope.txt || true\n\nwhile IFS= read -r f; do\n  [ -z \"$f\" ] && continue\n  [ ! -f \"$f\" ] && continue\n  mkdir -p \"/tmp/gh-aw/sweep-data/scope/$(dirname \"$f\")\"\n  cp \"$f\" \"/tmp/gh-aw/sweep-data/scope/$f\"\ndone < /tmp/gh-aw/sweep-data/in-scope.txt\n\nSHARD_COUNT=$(wc -l < /tmp/gh-aw/sweep-data/shard.txt | tr -d ' ')\nRECENT_COUNT=$(wc -l < /tmp/gh-aw/sweep-data/recent.txt | tr -d ' ')\nIN_SCOPE_COUNT=$(wc -l < /tmp/gh-aw/sweep-data/in-scope.txt | tr -d ' ')\n\ncat > /tmp/gh-aw/sweep-data/stats.json <<EOF\n{\n  \"total\": $TOTAL,\n  \"shard_n\": $N,\n  \"shard_slot\": $SLOT,\n  \"shard_count\": $SHARD_COUNT,\n  \"recent_count\": $RECENT_COUNT,\n  \"in_scope_count\": $IN_SCOPE_COUNT,\n  \"iso_week\": \"$(date +%G-W%V)\",\n  \"docs_root\": \"$DOCS_ROOT\"\n}\nEOF\n\necho \"Sweep targets: total=$TOTAL N=$N slot=$SLOT shard=$SHARD_COUNT recent=$RECENT_COUNT in_scope=$IN_SCOPE_COUNT\"\n"
+        run: "set -eu\nmkdir -p /tmp/gh-aw/sweep-data/scope\n\nif [ ! -d \"$DOCS_ROOT\" ]; then\n  echo \"docs-root '$DOCS_ROOT' does not exist; producing empty scope\"\n  : > /tmp/gh-aw/sweep-data/all.txt\n  : > /tmp/gh-aw/sweep-data/shard.txt\n  : > /tmp/gh-aw/sweep-data/recent.txt\n  : > /tmp/gh-aw/sweep-data/in-scope.txt\n  echo '{\"total\":0,\"shard_n\":1,\"shard_slot\":0,\"shard_count\":0,\"recent_count\":0,\"in_scope_count\":0,\"iso_week\":\"'\"$(date +%G-W%V)\"'\",\"docs_root\":\"'\"$DOCS_ROOT\"'\"}' > /tmp/gh-aw/sweep-data/stats.json\n  exit 0\nfi\n\nfind \"$DOCS_ROOT\" -type f -name '*.md' \\\n  -not -path '*/node_modules/*' \\\n  -not -path '*/.git/*' \\\n  | sort > /tmp/gh-aw/sweep-data/all.txt\n\nTOTAL=$(wc -l < /tmp/gh-aw/sweep-data/all.txt | tr -d ' ')\nif [ \"$TOTAL\" -eq 0 ]; then\n  N=1\nelse\n  N=$(( (TOTAL + TARGET_BATCH - 1) / TARGET_BATCH ))\nfi\nISO_WEEK_NUM=$(date +%V | sed 's/^0//')\nSLOT=$(( ISO_WEEK_NUM % N ))\n\n: > /tmp/gh-aw/sweep-data/shard.txt\nwhile IFS= read -r f; do\n  [ -z \"$f\" ] && continue\n  HEX=$(printf '%s' \"$f\" | shasum -a 256 | cut -c1-4)\n  HASH_NUM=$(( 16#$HEX ))\n  if [ $((HASH_NUM % N)) -eq \"$SLOT\" ]; then\n    echo \"$f\" >> /tmp/gh-aw/sweep-data/shard.txt\n  fi\ndone < /tmp/gh-aw/sweep-data/all.txt\n\ngit log --since='2 days ago' --name-only --pretty=format: -- \"$DOCS_ROOT/*.md\" \"$DOCS_ROOT/**/*.md\" 2>/dev/null \\\n  | grep -E '\\.md$' \\\n  | sort -u > /tmp/gh-aw/sweep-data/recent.txt || true\n\n# Cap the recently-changed pass: if a corpus-wide rebase or migration\n# touched far more pages than one slice, fall back to slice-only so\n# rotation actually rotates.\nRECENT_RAW=$(wc -l < /tmp/gh-aw/sweep-data/recent.txt | tr -d ' ')\nRECENT_LIMIT=$(( TARGET_BATCH * 2 ))\nif [ \"$RECENT_RAW\" -gt \"$RECENT_LIMIT\" ]; then\n  echo \"recently-changed pass produced $RECENT_RAW pages (>2x target batch $TARGET_BATCH); disabling for this run\"\n  : > /tmp/gh-aw/sweep-data/recent.txt\nfi\n\nsort -u /tmp/gh-aw/sweep-data/shard.txt /tmp/gh-aw/sweep-data/recent.txt \\\n  | grep -v '^$' > /tmp/gh-aw/sweep-data/in-scope.txt || true\n\nwhile IFS= read -r f; do\n  [ -z \"$f\" ] && continue\n  [ ! -f \"$f\" ] && continue\n  mkdir -p \"/tmp/gh-aw/sweep-data/scope/$(dirname \"$f\")\"\n  cp \"$f\" \"/tmp/gh-aw/sweep-data/scope/$f\"\ndone < /tmp/gh-aw/sweep-data/in-scope.txt\n\nSHARD_COUNT=$(wc -l < /tmp/gh-aw/sweep-data/shard.txt | tr -d ' ')\nRECENT_COUNT=$(wc -l < /tmp/gh-aw/sweep-data/recent.txt | tr -d ' ')\nIN_SCOPE_COUNT=$(wc -l < /tmp/gh-aw/sweep-data/in-scope.txt | tr -d ' ')\n\ncat > /tmp/gh-aw/sweep-data/stats.json <<EOF\n{\n  \"total\": $TOTAL,\n  \"shard_n\": $N,\n  \"shard_slot\": $SLOT,\n  \"shard_count\": $SHARD_COUNT,\n  \"recent_count\": $RECENT_COUNT,\n  \"in_scope_count\": $IN_SCOPE_COUNT,\n  \"iso_week\": \"$(date +%G-W%V)\",\n  \"docs_root\": \"$DOCS_ROOT\"\n}\nEOF\n\necho \"Sweep targets: total=$TOTAL N=$N slot=$SLOT shard=$SHARD_COUNT recent=$RECENT_COUNT in_scope=$IN_SCOPE_COUNT\"\n"
       - env:
           SETUP_COMMANDS: ${{ inputs.setup-commands }}
         if: ${{ inputs.setup-commands != '' }}
@@ -641,9 +643,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_c133fdad110b066d_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_749f3c36e9235604_EOF'
           {"create_issue":{"close_older_issues":true,"labels":["docs-quality-sweep","docs-fix:frontmatter"],"max":1,"title_prefix":"Docs fix — frontmatter: "},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_c133fdad110b066d_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_749f3c36e9235604_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -842,7 +844,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_aacb23afe59844b6_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_a557feb6b3020bfa_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "github": {
@@ -883,7 +885,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_aacb23afe59844b6_EOF
+          GH_AW_MCP_CONFIG_a557feb6b3020bfa_EOF
       - name: Clean git credentials
         continue-on-error: true
         run: bash "${RUNNER_TEMP}/gh-aw/actions/clean_git_credentials.sh"

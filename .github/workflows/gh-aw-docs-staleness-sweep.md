@@ -156,9 +156,19 @@ steps:
         fi
       done < /tmp/gh-aw/sweep-data/all.txt
 
-      git log --since='7 days ago' --name-only --pretty=format: -- "$DOCS_ROOT/*.md" "$DOCS_ROOT/**/*.md" 2>/dev/null \
+      git log --since='2 days ago' --name-only --pretty=format: -- "$DOCS_ROOT/*.md" "$DOCS_ROOT/**/*.md" 2>/dev/null \
         | grep -E '\.md$' \
         | sort -u > /tmp/gh-aw/sweep-data/recent.txt || true
+
+      # Cap the recently-changed pass: if a corpus-wide rebase or migration
+      # touched far more pages than one slice, fall back to slice-only so
+      # rotation actually rotates.
+      RECENT_RAW=$(wc -l < /tmp/gh-aw/sweep-data/recent.txt | tr -d ' ')
+      RECENT_LIMIT=$(( TARGET_BATCH * 2 ))
+      if [ "$RECENT_RAW" -gt "$RECENT_LIMIT" ]; then
+        echo "recently-changed pass produced $RECENT_RAW pages (>2x target batch $TARGET_BATCH); disabling for this run"
+        : > /tmp/gh-aw/sweep-data/recent.txt
+      fi
 
       sort -u /tmp/gh-aw/sweep-data/shard.txt /tmp/gh-aw/sweep-data/recent.txt \
         | grep -v '^$' > /tmp/gh-aw/sweep-data/in-scope.txt || true
@@ -394,11 +404,17 @@ Category: `unsupported-version-mention`. `evidence` cites the version token and 
 
 Do not invent versions or speculate about the support matrix when the MCP server doesn't return a clean answer. Skip the finding instead.
 
-## Step 3: Quality gate
+## Step 3: Sort and cap
 
-Cap at `${{ inputs.max-per-fix-issue }}` findings (sort by category severity: `broken-external-link` > `stale-content` > `unsupported-version-mention` > `stale-screenshot`).
+Sort findings by `severity` (`high` → `medium` → `low`), then by `category` (`broken-external-link` > `stale-content` > `unsupported-version-mention` > `stale-screenshot`), then by `file` ascending, then by `line` ascending.
 
-If empty, `noop` with `"No staleness findings in this slice (shard <slot>/<n>, <in_scope_count> pages)"`.
+**Do not cap deterministic categories** — `broken-external-link`, `stale-content`, and `stale-screenshot` are produced verbatim by lychee and the python pre-step. Emit all of them. The reader can scan many deterministic findings; throwing them away costs an audit cycle and gives no value (these are not LLM judgments that need triage).
+
+**Cap only** the LLM-judgment category `unsupported-version-mention` at `${{ inputs.max-per-fix-issue }}` findings. Overflow surfaces in the next sweep.
+
+**Hard upper bound for issue body length**: if the total findings list would exceed 400 rows (GitHub issue body limit ≈ 65,536 characters), cap at 400 and add a note `+M additional findings will surface in next sweep`. Apply this only if the deterministic-uncapped pass exceeds the bound.
+
+If the combined output is empty, `noop` with `"No staleness findings in this slice (shard <slot>/<n>, <in_scope_count> pages)"`.
 
 ## Output: fix-issue body
 
