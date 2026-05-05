@@ -1,18 +1,14 @@
 ---
 description: |
   Audits style-guide compliance across a docs corpus on a rotating slice each
-  run, using the docs-check-style skill (Vale + Elastic style guide). Opens a
-  single labeled fix-issue with structured YAML findings consumable by a
-  future fix-agent.
+  run, by running Vale with the elastic/vale-rules ruleset in a deterministic
+  pre-step and having the agent format the findings. Opens a single labeled
+  fix-issue with structured YAML findings consumable by a future fix-agent.
 
 inlined-imports: true
 imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
-  - uses: github/gh-aw/.github/workflows/shared/apm.md@v0.71.1
-    with:
-      packages:
-        - elastic/elastic-docs-skills/skills/review/docs-check-style
 engine:
   id: copilot
   concurrency:
@@ -179,6 +175,64 @@ steps:
 
       echo "Sweep targets: total=$TOTAL N=$N slot=$SLOT shard=$SHARD_COUNT recent=$RECENT_COUNT in_scope=$IN_SCOPE_COUNT"
 
+  - name: Install Vale and elastic/vale-rules
+    env:
+      VALE_VERSION: "3.12.0"
+    run: |
+      set -eu
+      mkdir -p /tmp/gh-aw/bin
+
+      # Download the Vale binary into a path the agent container shares
+      curl -fsSL "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz" \
+        -o /tmp/vale.tar.gz
+      tar -xz -C /tmp/gh-aw/bin -f /tmp/vale.tar.gz vale
+      chmod +x /tmp/gh-aw/bin/vale
+      rm /tmp/vale.tar.gz
+
+      # Clone elastic/vale-rules (StylesPath in its .vale.ini is `styles`,
+      # resolved relative to the .vale.ini file's directory).
+      git clone --depth 1 https://github.com/elastic/vale-rules.git /tmp/gh-aw/vale-rules
+
+      /tmp/gh-aw/bin/vale --version
+      ls -la /tmp/gh-aw/vale-rules/.vale.ini
+
+  - name: Run Vale on slice
+    run: |
+      set -u
+      mkdir -p /tmp/gh-aw/sweep-data
+
+      if [ ! -s /tmp/gh-aw/sweep-data/in-scope.txt ]; then
+        echo '[]' > /tmp/gh-aw/sweep-data/vale.json
+        echo '{"finding_count":0,"file_count":0}' > /tmp/gh-aw/sweep-data/vale-stats.json
+        exit 0
+      fi
+
+      # Vale exits 1 when it finds problems; that's expected and not a failure.
+      # Run from /tmp/gh-aw/vale-rules so the relative StylesPath resolves.
+      cd /tmp/gh-aw/vale-rules
+      set +e
+      /tmp/gh-aw/bin/vale \
+        --config /tmp/gh-aw/vale-rules/.vale.ini \
+        --output JSON \
+        --no-exit \
+        $(while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            [ -f "/tmp/gh-aw/sweep-data/scope/$f" ] || continue
+            printf '%s\n' "/tmp/gh-aw/sweep-data/scope/$f"
+          done < /tmp/gh-aw/sweep-data/in-scope.txt) \
+        > /tmp/gh-aw/sweep-data/vale.json 2> /tmp/gh-aw/sweep-data/vale.stderr
+      RC=$?
+      set -e
+
+      # Vale's JSON output is an object keyed by file path. Normalize basic stats.
+      FILE_COUNT=$(jq 'keys | length' /tmp/gh-aw/sweep-data/vale.json 2>/dev/null || echo 0)
+      FINDING_COUNT=$(jq '[.[] | length] | add // 0' /tmp/gh-aw/sweep-data/vale.json 2>/dev/null || echo 0)
+      cat > /tmp/gh-aw/sweep-data/vale-stats.json <<EOF
+      {"finding_count": $FINDING_COUNT, "file_count": $FILE_COUNT, "vale_exit": $RC}
+      EOF
+      echo "Vale: file_count=$FILE_COUNT finding_count=$FINDING_COUNT exit=$RC"
+      head -c 4000 /tmp/gh-aw/sweep-data/vale.stderr 2>/dev/null || true
+
   - name: Repo-specific setup
     if: ${{ inputs.setup-commands != '' }}
     env:
@@ -188,28 +242,23 @@ steps:
 
 # Docs style sweep agent
 
-You are a style-guide reviewer for an Elastic documentation repository. Your job is to audit a deterministically-selected slice of pages against the Elastic style guide (via the `docs-check-style` skill, which runs Vale plus manual rule checking) and emit a single labeled fix-issue with structured findings.
+You are a style-guide reviewer for an Elastic documentation repository. Your job is to format Vale's findings (already produced by a deterministic pre-step) into the structured YAML schema below, applying light filtering and category mapping. **Vale has already run** — you are not invoking any skill.
 
 ## Pre-fetched data
 
 - `/tmp/gh-aw/sweep-data/in-scope.txt` — file paths to audit.
 - `/tmp/gh-aw/sweep-data/scope/` — copies mirroring the original paths.
 - `/tmp/gh-aw/sweep-data/stats.json` — corpus stats.
+- `/tmp/gh-aw/sweep-data/vale.json` — Vale's raw findings, an object keyed by absolute file path under `/tmp/gh-aw/sweep-data/scope/`. Each value is an array of `{Check, Match, Line, Message, Severity, Span, Link}` objects produced by `vale --output JSON` against the `elastic/vale-rules` ruleset.
+- `/tmp/gh-aw/sweep-data/vale-stats.json` — `{finding_count, file_count, vale_exit}`.
 
-If `in_scope_count` is `0`, call `noop` and stop.
+If `in_scope_count` or `vale-stats.finding_count` is `0`, call `noop` with the stats and stop.
 
-## Step 1: Run the skill
+## Step 1: Read Vale output
 
-Invoke `skill(skill: docs-check-style)` against `/tmp/gh-aw/sweep-data/scope/`.
+Read `/tmp/gh-aw/sweep-data/vale.json` with `cat | jq`. Each rule check name (the `Check` field, e.g. `Elastic.WordList`, `Elastic.Accessibility`, `Elastic.Voice`) maps to one of our categories below. The `Line`, `Match`, `Message`, and `Severity` fields are the raw inputs you'll convert.
 
-The skill produces line-level findings grouped by category (Voice/Tone, Word Choice, Grammar, Formatting, Accessibility, UI Writing). Read its output and convert into the YAML structure below.
-
-**If the skill returns "Skill not found", do not noop.** That error is ambiguous — it can mean the skill genuinely isn't installed, or that the invocation form was reformatted by the agent's tool serialization. Either way: fall back to manual analysis instead of aborting. Procedure:
-
-1. Try invoking the skill with the exact form `skill(skill: docs-check-style)`.
-2. If that fails or returns "Skill not found": fall back to **manual style review** of the in-scope files. Use `bash` + `grep` to look for common Elastic style-guide violations the agent can detect on its own (e.g., banned phrasing from the `word-choice` category, second-person inconsistencies, missing alt text). Produce findings as you would have from the skill output, and add a single line in the issue body's `Notes` section: "skill `docs-check-style` did not produce output in this run; findings are agent-only."
-
-Only call `noop` if you cannot produce any high-confidence findings even from manual analysis.
+For long Vale outputs, paginate with `jq` rather than reading the whole file in one go.
 
 ## Step 2: Build the findings list
 
