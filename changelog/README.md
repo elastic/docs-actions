@@ -201,12 +201,16 @@ on:
       - 'docs/changelog/**'
       - 'docs/changelog.yml'
 
-permissions: {}
+permissions:
+  contents: read    # checkout the pushed commit
+  id-token: write   # OIDC token for AWS authentication
 
 jobs:
   upload:
     uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
 ```
+
+> **Important:** Both permissions above are required. A caller's top-level `permissions:` block is the ceiling for any reusable workflow it calls — a `permissions: {}` block (or an `id-token` scope omitted) will cause GitHub to reject the workflow with errors like `is requesting 'id-token: write', but is only allowed 'id-token: none'`.
 
 The `paths` filter is optional — it avoids running the workflow on pushes that don't touch changelog files. If your changelog directory or config lives elsewhere, adjust the paths accordingly.
 
@@ -294,7 +298,10 @@ on:
   release:
     types: [published]
 
-permissions: {}
+permissions:
+  contents: read    # checkout and read release data
+  packages: read    # pull the docs-builder image from GHCR
+  id-token: write   # OIDC token for AWS authentication on the upload job
 
 jobs:
   bundle:
@@ -319,7 +326,10 @@ on:
   release:
     types: [published]
 
-permissions: {}
+permissions:
+  contents: read    # checkout and read release data
+  packages: read    # pull the docs-builder image from GHCR
+  id-token: write   # OIDC token for AWS authentication on the upload job
 
 jobs:
   bundle:
@@ -343,7 +353,10 @@ on:
   release:
     types: [published]
 
-permissions: {}
+permissions:
+  contents: read    # checkout and read release data
+  packages: read    # pull the docs-builder image from GHCR
+  id-token: write   # OIDC token for AWS authentication on the upload job
 
 jobs:
   bundle:
@@ -363,7 +376,10 @@ on:
     # At 08:00 AM, Monday through Friday
     - cron: '0 8 * * 1-5'
 
-permissions: {}
+permissions:
+  contents: read    # checkout and read release data
+  packages: read    # pull the docs-builder image from GHCR
+  id-token: write   # OIDC token for AWS authentication on the upload job
 
 jobs:
   discover-report:
@@ -414,7 +430,10 @@ on:
         description: 'Version string (e.g. 9.2.0)'
         required: true
 
-permissions: {}
+permissions:
+  contents: write       # commit the bundle file and push the branch
+  pull-requests: write  # open or update the bundle PR
+  packages: read        # pull the docs-builder image from GHCR
 
 jobs:
   bundle:
