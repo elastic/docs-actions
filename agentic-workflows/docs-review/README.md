@@ -57,10 +57,10 @@ If the pull request is linked to a parent issue, the review also checks whether 
 
 This workflow does not depend on runtime skills. A deterministic pre-step runs Vale with `elastic/vale-rules` on eligible changed markdown files, and the prompt embeds the remaining review rules directly. It focuses on:
 
-- Style and clarity issues from Vale, plus wording that affects meaning.
-- Elastic-internal jargon that external readers will not understand.
+- Style and clarity issues from Vale, plus high-confidence Formatting, Accessibility, and UI writing checks from the embedded style guide checklist.
+- Elastic-internal jargon, outdated terms, informal shorthand, and unexplained acronyms that external readers will not understand.
 - Frontmatter quality for `description`, `products`, `navigation_title`, and verified `applies_to` guidance.
-- Content type fit and structure.
+- Content type fit and structure for overviews, how-to guides, tutorials, troubleshooting pages, and changelog entries.
 - Parent issue satisfaction when the pull request links to a docs issue.
 
 The workflow uses the Elastic docs MCP server only for targeted verification, such as published cumulative-docs guidance or sibling-page context. It noops or skips a finding when it cannot verify the evidence.

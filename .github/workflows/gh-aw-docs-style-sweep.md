@@ -9,6 +9,7 @@ inlined-imports: true
 imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
+  - gh-aw-fragments/mcp-pagination.md
 engine:
   id: copilot
   concurrency:
@@ -69,10 +70,16 @@ tools:
     - "git log *"
     - "yq *"
     - "jq *"
+mcp-servers:
+  elastic-docs:
+    type: http
+    url: "https://www.elastic.co/docs/_mcp/"
+    allowed: ["*"]
 network:
   allowed:
     - defaults
     - github
+    - "www.elastic.co"
 safe-outputs:
   noop:
   create-issue:
@@ -242,7 +249,7 @@ steps:
 
 # Docs style sweep agent
 
-You are a style-guide reviewer for an Elastic documentation repository. Your job is to format Vale's findings (already produced by a deterministic pre-step) into the structured YAML schema below, applying light filtering and category mapping. **Vale has already run** — you are not invoking any skill.
+You are a style-guide reviewer for an Elastic documentation repository. Your job is to format Vale's findings (already produced by a deterministic pre-step) into the structured YAML schema below, applying light filtering and category mapping. You may add high-confidence manual findings for style-guide areas Vale does not fully cover, especially Formatting and UI writing. **Vale has already run** — you are not invoking any skill.
 
 ## Pre-fetched data
 
@@ -262,6 +269,17 @@ For long Vale outputs, paginate with `jq` rather than reading the whole file in 
 
 ## Step 2: Build the findings list
 
+Use Vale as the primary source of findings. For high-confidence issues that Vale does not cover, you may also consult the Elastic docs MCP server and fetch the relevant style guide pages with `elastic-docs.get_document_by_url`, including:
+
+- `/docs/contribute-docs/style-guide/formatting`.
+- `/docs/contribute-docs/style-guide/ui-writing`.
+- `/docs/contribute-docs/style-guide/accessibility`.
+- `/docs/contribute-docs/style-guide/voice-tone`.
+- `/docs/contribute-docs/style-guide/grammar-spelling`.
+- `/docs/contribute-docs/style-guide/word-choice`.
+
+Only add manual findings when the issue is visible in the file, has an exact line number, and has a concrete suggested fix.
+
 Categories (use exactly these strings, lowercased and hyphenated):
 
 - `voice-tone` — sentences that violate Elastic's voice (overly casual, overly formal, marketing-y, second-person inconsistencies).
@@ -271,6 +289,18 @@ Categories (use exactly these strings, lowercased and hyphenated):
 - `formatting` — heading levels, list structure, code-fence language, table conventions.
 - `accessibility` — alt text, link text, color/visual cues used as the only signal.
 - `ui-writing` — UI element references that don't match Elastic conventions (button names, menu paths, capitalization).
+
+Manual checklist for non-Vale findings:
+
+- Formatting: UI element names should be bold; code, commands, config settings, file paths, fields, parameters, values, and environment variables should be monospace; new terms and Elastic docs resource titles should be italicized.
+- Formatting: Lists need at least two items, parallel structure, and periods only for complete sentences.
+- Formatting: Dates should use `Month DD, YYYY`; times should use uppercase `AM`/`PM`; avoid relative dates such as "recently" when they become stale.
+- Formatting: Do not stack admonitions or use an admonition when a requirements section would be clearer.
+- Accessibility: Images need useful alt text without backticks; link text must be descriptive; avoid directional-only references such as "above" or "below".
+- UI writing: Use "Click **Save**" for action buttons and icons, "Select **Logs**" for tabs, checkboxes, radio buttons, dropdown options, and choices, and "In the **Name** field, enter `value`" for text fields.
+- UI writing: Use "Turn on **Feature**" and "Turn off **Feature**" for toggles; use "toggle" as a noun, not a verb.
+- UI writing: Use menu arrows such as `Select **Manage index → Add lifecycle policy**`; do not say "open the dropdown menu".
+- UI writing: Procedures should usually have 5-9 meaningful steps and omit obvious UI narration.
 
 For each finding extract:
 

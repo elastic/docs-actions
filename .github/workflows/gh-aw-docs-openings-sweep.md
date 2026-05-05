@@ -212,12 +212,22 @@ Audit only. Do not edit repo originals or scope copies. This sweep emits an issu
 
 Apply these checks:
 
+- Classify the page type before judging the opening. Tutorials are learning-oriented and hands-on, how-to pages are goal-oriented task instructions, reference pages describe technical specifications, explanation pages cover concepts, and overview pages are parent/landing pages that often have children in `toc.yml`.
 - The page should have exactly one clear H1 near the top after frontmatter.
-- The H1 should include product, feature, or task context. Generic titles such as "Overview", "Introduction", "Guide", "Configuration", or "Settings" are findings only when the surrounding page does not make the topic clear in the heading itself.
+- The H1 should be discoverable, specific, unique, and include product, feature, or task context. Generic titles such as "Overview", "Introduction", "Guide", "Configuration", or "Settings" are findings only when the surrounding page does not make the topic clear in the heading itself.
+- Use content-type-appropriate H1 patterns: tutorials often start with "Get started with...", how-to pages use action verbs such as "Configure..." or "Troubleshoot...", reference pages use labels such as "[Feature] settings" or "[API] reference", explanation pages can use "How [feature] works", and overview pages can use the feature name when the page is a landing page.
 - If nearby pages in the same docs area consistently use explicit anchor suffixes in H1s, flag a missing H1 anchor on pages that violate that local convention.
-- The opening paragraph should explain what the page covers within the first two sentences. It should not be empty, circular, or longer than four sentences before giving the reader the page purpose.
+- The opening paragraph should immediately follow the H1 unless an important or warning admonition must remain first. It should explain what the page covers within the first two sentences, front-load the important information, and convey purpose, value, and scope in 2-4 complete sentences.
+- The opening should not repeat the frontmatter `description`, duplicate the next paragraph, use fragments instead of sentences, or bury the page purpose after a long setup.
+- Tutorials should define the feature, explain how it works, and state what the tutorial covers. How-to pages should define the feature or task, explain what it does, and state the value. Reference pages should define the subject and state its purpose. Explanation pages should establish context and state the concepts covered. Overview pages should state what the feature is, its value, and key capabilities.
 - Task and how-to pages should include prerequisites or a "Before you begin" section when the steps require access, permissions, prior setup, sample data, or product state that is not obvious from the title.
+- Add or recommend "Before you begin" only when no equivalent requirements or prerequisites section appears in the first 50 lines, the page is not an overview page, and at least one requirement is non-obvious. Include specific Kibana privilege levels, data requirements, external systems, special licenses, or version requirements only when the feature requires a version greater than 9.0. Exclude obvious prerequisites, generic "access to Kibana", and procedural details that belong in the main body.
 - `navigation_title` should be present when frontmatter convention requires it, should be shorter than a long H1 when a compact navigation label would help, and should not be a vague duplicate such as "Overview".
+- Prefer Elastic substitutions in the opening when the repository uses them, such as `{{product.kibana}}`, `{{product.elasticsearch}}`, `{{esql}}`, `{{ece}}`, `{{eck}}`, and `{{ech}}`. Flag hardcoded product names only when the local file or nearby pages clearly use substitutions.
+- Use bold for UI elements in the opening and monospace for technical elements.
+- Spell out acronyms on first use in the opening.
+- Do not rewrite, move, or remove important/warning admonitions in the first ~20 lines. Work around them.
+- Do not add pre-9.0 version references to openings in Stack 9+ docs.
 
 Only call `noop` if you cannot produce any high-confidence findings from the in-scope files.
 

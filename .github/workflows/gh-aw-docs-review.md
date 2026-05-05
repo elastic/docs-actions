@@ -242,16 +242,142 @@ Skip:
 
 ## Step 3: Review the changes
 
-Review each eligible file by applying the rules below and your own judgment. Use the Elastic docs MCP server for targeted verification when a finding depends on published docs, cumulative-docs guidance, or sibling-page context. Prefer `elastic-docs.get_document_by_url` for known authoring guidance pages and `elastic-docs.search_docs` or `elastic-docs.find_related_docs` for discovery.
+Review each eligible file by applying the rules below and your own judgment. Use the Elastic docs MCP server for targeted verification when a finding depends on published docs, style-guide guidance, content-type guidance, cumulative-docs guidance, or sibling-page context. Prefer `elastic-docs.get_document_by_url` for known authoring guidance pages and `elastic-docs.search_docs` or `elastic-docs.find_related_docs` for discovery.
+
+For style, content-type, and `applies_to` findings, refresh the relevant published guidance when you need to make a manual judgment that is not already grounded in Vale or local repository schema:
+
+- Style guide overview: `/docs/contribute-docs/style-guide`.
+- Voice and tone: `/docs/contribute-docs/style-guide/voice-tone`.
+- Accessibility: `/docs/contribute-docs/style-guide/accessibility`.
+- Grammar and spelling: `/docs/contribute-docs/style-guide/grammar-spelling`.
+- Word choice: `/docs/contribute-docs/style-guide/word-choice`.
+- Formatting: `/docs/contribute-docs/style-guide/formatting`.
+- UI writing: `/docs/contribute-docs/style-guide/ui-writing`.
+- Content types: `/docs/contribute-docs/content-types/overviews`, `/docs/contribute-docs/content-types/how-tos`, `/docs/contribute-docs/content-types/tutorials`, `/docs/contribute-docs/content-types/troubleshooting`, `/docs/contribute-docs/content-types/changelogs`.
+- Cumulative docs: `/docs/contribute-docs/how-to/cumulative-docs/guidelines` and `/docs/contribute-docs/how-to/cumulative-docs/reference`.
 
 Focus on the categories below:
 
-1. **Style and clarity**: Use the pre-fetched Vale output as the source of truth for Elastic style-guide findings. Report wording not flagged by Vale only when it creates ambiguity or changes technical meaning. Avoid preference-only rewrites.
-2. **Elastic-internal jargon**: Flag Elastic-only shorthand that external users will not understand, such as unexplained team names, internal project names, planning labels, or colloquialisms that are not product terminology. Do not flag established product names, UI labels, API names, or terms the page defines nearby.
-3. **Frontmatter quality**: Check the changed file's frontmatter for missing or empty `description`, `products`, and `navigation_title` fields when the repository convention requires them. A good `description` is specific, under 200 characters, and says what the page helps the reader do or understand. A good `navigation_title` is concise and scannable; it should not duplicate a long H1 when a shorter label would help navigation.
-4. **Content type fit and structure**: Judge whether the changed page is trying to be a concept, task, troubleshooting page, reference, or release note, and whether its structure helps that purpose. Report only mismatches that materially make the page harder to use or send the author toward the wrong kind of documentation.
+1. **Style and clarity**: Use the pre-fetched Vale output as the source of truth for Elastic style-guide findings. Also apply the embedded style checklist below for high-confidence issues that Vale does not reliably catch, especially formatting and UI writing. Report wording not flagged by Vale only when it creates ambiguity, changes technical meaning, violates fetched style-guide guidance, or violates the embedded formatting/UI-writing checklist.
+2. **Elastic-internal jargon**: Flag Elastic-only shorthand that external users will not understand. Use the embedded jargon list below, but respect context: code blocks, CLI output, API fields, UI labels, and acronyms already expanded on the page are exempt.
+3. **Frontmatter quality**: Check the changed file's frontmatter for missing or empty `description`, `products`, and `navigation_title` fields when the repository convention requires them. Apply the embedded frontmatter checklist below.
+4. **Content type fit and structure**: Detect the declared or inferred content type and apply the embedded content-type checklist below. Report only mismatches that materially make the page harder to use or send the author toward the wrong kind of documentation.
 5. **`applies_to` correctness**: For validity judgments, verify against the repository's checked-in schema if available or the published cumulative-docs guidance at `/docs/contribute-docs/how-to/cumulative-docs/guidelines` and `/docs/contribute-docs/how-to/cumulative-docs/reference` through `elastic-docs.get_document_by_url`. Do not rely on training knowledge for valid keys, subkeys, or lifecycle values. If you cannot verify the rule, do not report the finding.
 6. **Issue satisfaction**: Check whether the changed docs appear to satisfy the linked parent issue, if one exists.
+
+### Embedded style checklist
+
+Use Vale findings first. For manual review, only report high-confidence issues from this checklist, and cite the exact changed line.
+
+Voice and tone:
+
+- Prefer active voice unless passive reads more naturally.
+- Use present tense. Avoid unnecessary "will", "would", "should", "could", "currently", and "now".
+- Use second person (`you`, `your`) for user actions. Do not use first person singular. Use "we" sparingly.
+- Remove "please" except when asking users to wait or tolerate inconvenience.
+- Keep sentences concise and scannable. Avoid more than two conjunctions in one sentence.
+
+Word choice and grammar:
+
+- Use documented alternatives for discouraged words: `abort` -> `stop` or `cancel`, `blacklist` -> `blocklist`, `whitelist` -> `allowlist`, `choose` -> `select`, `execute` -> `run`, `launch` -> `open`, `type` -> `enter`, `utilize` -> `use`, `easy`/`simply` -> omit.
+- Replace Latin abbreviations in prose: `e.g.` -> `for example`, `i.e.` -> `that is`, `etc.` -> a specific ending, and `via` -> `through` when it means "by way of".
+- Use American English, Oxford comma, plural acronyms without apostrophes, sentence-case headings, and correct noun/verb pairs (`login`/`log in`, `setup`/`set up`, `backup`/`back up`).
+- Use double quotation marks only for quoted error messages or first-use unfamiliar terms; use monospace for code, commands, settings, fields, and paths.
+
+Formatting:
+
+- Bold UI element names: apps, buttons, menu items, page names, tabs, and columns.
+- Italicize new terms and Elastic documentation resource titles.
+- Use monospace for API endpoints, code, commands, config settings, directories, environment variables, error messages, field names, function names, index names, parameters, properties, roles, and variables.
+- Use numerals for 10 and above, tables, decimals, dimensions, percentages, and large numbers with commas.
+- Use `Month DD, YYYY`, 12-hour time with uppercase `AM`/`PM`, and UTC when time zones matter. Avoid relative dates such as "recently" when they can become stale.
+- Lists need at least two items, parallel structure, and periods only when items are complete sentences.
+- Paragraphs should stay short and scannable. Do not introduce dense walls of text.
+- Use admonitions for their documented purpose. Do not stack admonitions or use a generic admonition where a requirements section fits better.
+- Flag sensitive screenshots, examples, logs, tokens, hostnames, IPs, internal links, customer data, and secrets.
+
+Accessibility:
+
+- Images and media need useful alt text, without backticks.
+- Link text must be descriptive. Do not use "click here" or bare URLs as link text.
+- Avoid directional language such as "above", "below", "left", or "right" as the only way to locate information.
+- Use inclusive, gender-neutral language and avoid ableist, violent, superhero, buzzword, or non-specific superlative language.
+
+UI writing:
+
+- Use "Click **Save**" for buttons and icons that initiate actions. Do not add "button" after the label.
+- Use "Select **Logs**" for tabs, checkboxes, radio buttons, dropdown options, and choices.
+- Use "In the **Name** field, enter `value`" for text input.
+- Use "Turn on **Feature**" and "Turn off **Feature**" for toggles. Use "toggle" as a noun, not a verb.
+- Use "Press Enter" or "Press Command+Alt+L" for keys.
+- Use arrows for menu paths, for example `Select **Manage index → Add lifecycle policy**`. Do not say "open the dropdown menu".
+- For screenshots, check that they are essential, consistently cropped, accessible, and free of sensitive information.
+- Procedures should usually have 5-9 meaningful steps, focus on use cases, and omit obvious UI narration.
+- When a generic word-choice rule conflicts with UI writing, prefer the UI-specific rule.
+
+### Embedded jargon checklist
+
+Flag only when the term is unexplained or used as internal shorthand in user-facing prose:
+
+- Internal code names: `Stateful`, bare `Serverless`, `Classic`, `Cloud UI`, `Signal`, and vague `Solution`.
+- Internal abbreviations that must be spelled out on first use: `ESS`, `ECE`, `ECK`, `ECH`, `EUI`, and `UIAM`.
+- Outdated terms: `index pattern`, `master node`, `master/slave`, `blacklist`, `whitelist`, and `X-Pack`.
+- Informal shorthand that needs context: `the Stack`, bare `Agent`, `Fleet`, `Canvas`, `Lens`, `Painless`, `Watcher`, `Dev Tools`, `Discover`, and `Dashboard`.
+- Unexplained acronyms: `ILM`, `SLM`, `CCR`, `CCS`, `APM`, `SIEM`, `TSDB`, `ECS`, `RBAC`, `KQL`, `EQL`, `ES|QL`, `DSL`, `logsdb`, `ML`, and `NLP`.
+
+Accept the term when the page defines it nearby, when it appears in code or API material, or when it is the actual product/UI label and the surrounding context makes it clear.
+
+### Embedded frontmatter checklist
+
+- `description` must be present, non-empty, complete sentence, unique to the page, no more than 200 characters, user-facing, and plain text with no substitution variables such as `{{kib}}`, `{{es}}`, or `{{esql}}`.
+- Description values should not use label prefixes such as "Reference -", "Tutorial -", or "Guide -". Avoid "you can", "users can", "this page explains", "teaching", "enable", "disable", version numbers, and condescending wording.
+- Quote `description` when punctuation could be misread by YAML. Avoid unquoted colons.
+- `products` should use the repository's canonical shape. In docs-content, use `products` with `id` entries, not `product` singular.
+- `navigation_title` is recommended when the H1 is longer than about 50 characters and should be concise enough for navigation.
+- Preserve `mapped_pages` when present. Do not suggest adding it when absent.
+
+### Embedded content-type checklist
+
+Valid content types are `overview`, `how-to`, `tutorial`, `troubleshooting`, and `changelog`. If frontmatter has no `type`, infer the type from the page and mention the missing field only when it matters for the changed content.
+
+Shared criteria:
+
+- Filename should match content-type pattern when a local pattern exists.
+- Frontmatter should include `applies_to`, `description`, and canonical product metadata.
+- Title should match the content intent, use sentence case, and be specific enough for search and navigation.
+- Introduction should help readers confirm the page matches their goal.
+
+Overview pages:
+
+- Explain one concept, feature, product, or capability.
+- Answer what it is, how it works, and why it matters.
+- Avoid long procedures, reference tables that belong elsewhere, and duplicated how-to content.
+
+How-to guides:
+
+- Help users complete one self-contained task.
+- Use an action-verb title, outcome-focused intro, requirements or **Before you begin** section when needed, numbered steps, and success checkpoints.
+- Avoid broad conceptual teaching, chaining many tasks together, exceeding roughly 10 overall steps without reason, or omitting verification for important actions.
+
+Tutorials:
+
+- Provide a hands-on learning experience across related tasks.
+- Include learning objectives, prerequisites/setup, instructional steps, checkpoints/results, code annotations when code is central, next steps, and related pages.
+- Avoid behaving like a single narrow recipe, a reference page, or a long concept article without practice.
+
+Troubleshooting pages:
+
+- Address one specific, repeatable problem.
+- Include a problem-focused title, **Symptoms**, and **Resolution**.
+- Keep symptoms to user-visible behavior and exact errors. Put ordered fixes in resolution.
+- Avoid generic "Troubleshooting X" issue pages, unrelated problems, or long explanations before the fix.
+
+Changelog entries:
+
+- Include `title`, `type`, and `products`.
+- Title should use present tense, start with an action verb, focus on user impact, and stay under 80 characters.
+- Description should add context only when needed, focus on user value, and stay under 600 characters.
+- Breaking changes need impact and action; deprecations and known issues should include them when useful.
 
 Treat this as a PR review, not a full repository audit:
 

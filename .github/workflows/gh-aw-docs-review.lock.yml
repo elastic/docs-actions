@@ -1,4 +1,4 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"75c7fd2ba802ac5bf4cfd8679c747db443cb18fc9e0e0b3c460ce6b740499e26","compiler_version":"v0.71.1","agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"c95a1c4743f2eef7959ca7847905e55745f3fb4405ff71c711f9ba5d8ad50ee1","compiler_version":"v0.71.1","agent_id":"copilot"}
 # gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"239aec45b78c8799417efdd5bc6d8cc036629ec1","version":"v0.71.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28","digest":"sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28","digest":"sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28","digest":"sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.0"},{"image":"ghcr.io/github/github-mcp-server:v1.0.2"},{"image":"node:lts-alpine","digest":"sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f","pinned_image":"node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
@@ -212,14 +212,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_c324a66065dcc1cb_EOF'
+          cat << 'GH_AW_PROMPT_f665af59995610e9_EOF'
           <system>
-          GH_AW_PROMPT_c324a66065dcc1cb_EOF
+          GH_AW_PROMPT_f665af59995610e9_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_c324a66065dcc1cb_EOF'
+          cat << 'GH_AW_PROMPT_f665af59995610e9_EOF'
           <safe-output-tools>
           Tools: create_pull_request_review_comment(max:20), submit_pull_request_review, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -251,9 +251,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_c324a66065dcc1cb_EOF
+          GH_AW_PROMPT_f665af59995610e9_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_c324a66065dcc1cb_EOF'
+          cat << 'GH_AW_PROMPT_f665af59995610e9_EOF'
           </system>
           ## Formatting Guidelines
           
@@ -364,16 +364,142 @@ jobs:
           
           ## Step 3: Review the changes
           
-          Review each eligible file by applying the rules below and your own judgment. Use the Elastic docs MCP server for targeted verification when a finding depends on published docs, cumulative-docs guidance, or sibling-page context. Prefer `elastic-docs.get_document_by_url` for known authoring guidance pages and `elastic-docs.search_docs` or `elastic-docs.find_related_docs` for discovery.
+          Review each eligible file by applying the rules below and your own judgment. Use the Elastic docs MCP server for targeted verification when a finding depends on published docs, style-guide guidance, content-type guidance, cumulative-docs guidance, or sibling-page context. Prefer `elastic-docs.get_document_by_url` for known authoring guidance pages and `elastic-docs.search_docs` or `elastic-docs.find_related_docs` for discovery.
+          
+          For style, content-type, and `applies_to` findings, refresh the relevant published guidance when you need to make a manual judgment that is not already grounded in Vale or local repository schema:
+          
+          - Style guide overview: `/docs/contribute-docs/style-guide`.
+          - Voice and tone: `/docs/contribute-docs/style-guide/voice-tone`.
+          - Accessibility: `/docs/contribute-docs/style-guide/accessibility`.
+          - Grammar and spelling: `/docs/contribute-docs/style-guide/grammar-spelling`.
+          - Word choice: `/docs/contribute-docs/style-guide/word-choice`.
+          - Formatting: `/docs/contribute-docs/style-guide/formatting`.
+          - UI writing: `/docs/contribute-docs/style-guide/ui-writing`.
+          - Content types: `/docs/contribute-docs/content-types/overviews`, `/docs/contribute-docs/content-types/how-tos`, `/docs/contribute-docs/content-types/tutorials`, `/docs/contribute-docs/content-types/troubleshooting`, `/docs/contribute-docs/content-types/changelogs`.
+          - Cumulative docs: `/docs/contribute-docs/how-to/cumulative-docs/guidelines` and `/docs/contribute-docs/how-to/cumulative-docs/reference`.
           
           Focus on the categories below:
           
-          1. **Style and clarity**: Use the pre-fetched Vale output as the source of truth for Elastic style-guide findings. Report wording not flagged by Vale only when it creates ambiguity or changes technical meaning. Avoid preference-only rewrites.
-          2. **Elastic-internal jargon**: Flag Elastic-only shorthand that external users will not understand, such as unexplained team names, internal project names, planning labels, or colloquialisms that are not product terminology. Do not flag established product names, UI labels, API names, or terms the page defines nearby.
-          3. **Frontmatter quality**: Check the changed file's frontmatter for missing or empty `description`, `products`, and `navigation_title` fields when the repository convention requires them. A good `description` is specific, under 200 characters, and says what the page helps the reader do or understand. A good `navigation_title` is concise and scannable; it should not duplicate a long H1 when a shorter label would help navigation.
-          4. **Content type fit and structure**: Judge whether the changed page is trying to be a concept, task, troubleshooting page, reference, or release note, and whether its structure helps that purpose. Report only mismatches that materially make the page harder to use or send the author toward the wrong kind of documentation.
+          1. **Style and clarity**: Use the pre-fetched Vale output as the source of truth for Elastic style-guide findings. Also apply the embedded style checklist below for high-confidence issues that Vale does not reliably catch, especially formatting and UI writing. Report wording not flagged by Vale only when it creates ambiguity, changes technical meaning, violates fetched style-guide guidance, or violates the embedded formatting/UI-writing checklist.
+          2. **Elastic-internal jargon**: Flag Elastic-only shorthand that external users will not understand. Use the embedded jargon list below, but respect context: code blocks, CLI output, API fields, UI labels, and acronyms already expanded on the page are exempt.
+          3. **Frontmatter quality**: Check the changed file's frontmatter for missing or empty `description`, `products`, and `navigation_title` fields when the repository convention requires them. Apply the embedded frontmatter checklist below.
+          4. **Content type fit and structure**: Detect the declared or inferred content type and apply the embedded content-type checklist below. Report only mismatches that materially make the page harder to use or send the author toward the wrong kind of documentation.
           5. **`applies_to` correctness**: For validity judgments, verify against the repository's checked-in schema if available or the published cumulative-docs guidance at `/docs/contribute-docs/how-to/cumulative-docs/guidelines` and `/docs/contribute-docs/how-to/cumulative-docs/reference` through `elastic-docs.get_document_by_url`. Do not rely on training knowledge for valid keys, subkeys, or lifecycle values. If you cannot verify the rule, do not report the finding.
           6. **Issue satisfaction**: Check whether the changed docs appear to satisfy the linked parent issue, if one exists.
+          
+          ### Embedded style checklist
+          
+          Use Vale findings first. For manual review, only report high-confidence issues from this checklist, and cite the exact changed line.
+          
+          Voice and tone:
+          
+          - Prefer active voice unless passive reads more naturally.
+          - Use present tense. Avoid unnecessary "will", "would", "should", "could", "currently", and "now".
+          - Use second person (`you`, `your`) for user actions. Do not use first person singular. Use "we" sparingly.
+          - Remove "please" except when asking users to wait or tolerate inconvenience.
+          - Keep sentences concise and scannable. Avoid more than two conjunctions in one sentence.
+          
+          Word choice and grammar:
+          
+          - Use documented alternatives for discouraged words: `abort` -> `stop` or `cancel`, `blacklist` -> `blocklist`, `whitelist` -> `allowlist`, `choose` -> `select`, `execute` -> `run`, `launch` -> `open`, `type` -> `enter`, `utilize` -> `use`, `easy`/`simply` -> omit.
+          - Replace Latin abbreviations in prose: `e.g.` -> `for example`, `i.e.` -> `that is`, `etc.` -> a specific ending, and `via` -> `through` when it means "by way of".
+          - Use American English, Oxford comma, plural acronyms without apostrophes, sentence-case headings, and correct noun/verb pairs (`login`/`log in`, `setup`/`set up`, `backup`/`back up`).
+          - Use double quotation marks only for quoted error messages or first-use unfamiliar terms; use monospace for code, commands, settings, fields, and paths.
+          
+          Formatting:
+          
+          - Bold UI element names: apps, buttons, menu items, page names, tabs, and columns.
+          - Italicize new terms and Elastic documentation resource titles.
+          - Use monospace for API endpoints, code, commands, config settings, directories, environment variables, error messages, field names, function names, index names, parameters, properties, roles, and variables.
+          - Use numerals for 10 and above, tables, decimals, dimensions, percentages, and large numbers with commas.
+          - Use `Month DD, YYYY`, 12-hour time with uppercase `AM`/`PM`, and UTC when time zones matter. Avoid relative dates such as "recently" when they can become stale.
+          - Lists need at least two items, parallel structure, and periods only when items are complete sentences.
+          - Paragraphs should stay short and scannable. Do not introduce dense walls of text.
+          - Use admonitions for their documented purpose. Do not stack admonitions or use a generic admonition where a requirements section fits better.
+          - Flag sensitive screenshots, examples, logs, tokens, hostnames, IPs, internal links, customer data, and secrets.
+          
+          Accessibility:
+          
+          - Images and media need useful alt text, without backticks.
+          - Link text must be descriptive. Do not use "click here" or bare URLs as link text.
+          - Avoid directional language such as "above", "below", "left", or "right" as the only way to locate information.
+          - Use inclusive, gender-neutral language and avoid ableist, violent, superhero, buzzword, or non-specific superlative language.
+          
+          UI writing:
+          
+          - Use "Click **Save**" for buttons and icons that initiate actions. Do not add "button" after the label.
+          - Use "Select **Logs**" for tabs, checkboxes, radio buttons, dropdown options, and choices.
+          - Use "In the **Name** field, enter `value`" for text input.
+          - Use "Turn on **Feature**" and "Turn off **Feature**" for toggles. Use "toggle" as a noun, not a verb.
+          - Use "Press Enter" or "Press Command+Alt+L" for keys.
+          - Use arrows for menu paths, for example `Select **Manage index → Add lifecycle policy**`. Do not say "open the dropdown menu".
+          - For screenshots, check that they are essential, consistently cropped, accessible, and free of sensitive information.
+          - Procedures should usually have 5-9 meaningful steps, focus on use cases, and omit obvious UI narration.
+          - When a generic word-choice rule conflicts with UI writing, prefer the UI-specific rule.
+          
+          ### Embedded jargon checklist
+          
+          Flag only when the term is unexplained or used as internal shorthand in user-facing prose:
+          
+          - Internal code names: `Stateful`, bare `Serverless`, `Classic`, `Cloud UI`, `Signal`, and vague `Solution`.
+          - Internal abbreviations that must be spelled out on first use: `ESS`, `ECE`, `ECK`, `ECH`, `EUI`, and `UIAM`.
+          - Outdated terms: `index pattern`, `master node`, `master/slave`, `blacklist`, `whitelist`, and `X-Pack`.
+          - Informal shorthand that needs context: `the Stack`, bare `Agent`, `Fleet`, `Canvas`, `Lens`, `Painless`, `Watcher`, `Dev Tools`, `Discover`, and `Dashboard`.
+          - Unexplained acronyms: `ILM`, `SLM`, `CCR`, `CCS`, `APM`, `SIEM`, `TSDB`, `ECS`, `RBAC`, `KQL`, `EQL`, `ES|QL`, `DSL`, `logsdb`, `ML`, and `NLP`.
+          
+          Accept the term when the page defines it nearby, when it appears in code or API material, or when it is the actual product/UI label and the surrounding context makes it clear.
+          
+          ### Embedded frontmatter checklist
+          
+          - `description` must be present, non-empty, complete sentence, unique to the page, no more than 200 characters, user-facing, and plain text with no substitution variables such as `{{kib}}`, `{{es}}`, or `{{esql}}`.
+          - Description values should not use label prefixes such as "Reference -", "Tutorial -", or "Guide -". Avoid "you can", "users can", "this page explains", "teaching", "enable", "disable", version numbers, and condescending wording.
+          - Quote `description` when punctuation could be misread by YAML. Avoid unquoted colons.
+          - `products` should use the repository's canonical shape. In docs-content, use `products` with `id` entries, not `product` singular.
+          - `navigation_title` is recommended when the H1 is longer than about 50 characters and should be concise enough for navigation.
+          - Preserve `mapped_pages` when present. Do not suggest adding it when absent.
+          
+          ### Embedded content-type checklist
+          
+          Valid content types are `overview`, `how-to`, `tutorial`, `troubleshooting`, and `changelog`. If frontmatter has no `type`, infer the type from the page and mention the missing field only when it matters for the changed content.
+          
+          Shared criteria:
+          
+          - Filename should match content-type pattern when a local pattern exists.
+          - Frontmatter should include `applies_to`, `description`, and canonical product metadata.
+          - Title should match the content intent, use sentence case, and be specific enough for search and navigation.
+          - Introduction should help readers confirm the page matches their goal.
+          
+          Overview pages:
+          
+          - Explain one concept, feature, product, or capability.
+          - Answer what it is, how it works, and why it matters.
+          - Avoid long procedures, reference tables that belong elsewhere, and duplicated how-to content.
+          
+          How-to guides:
+          
+          - Help users complete one self-contained task.
+          - Use an action-verb title, outcome-focused intro, requirements or **Before you begin** section when needed, numbered steps, and success checkpoints.
+          - Avoid broad conceptual teaching, chaining many tasks together, exceeding roughly 10 overall steps without reason, or omitting verification for important actions.
+          
+          Tutorials:
+          
+          - Provide a hands-on learning experience across related tasks.
+          - Include learning objectives, prerequisites/setup, instructional steps, checkpoints/results, code annotations when code is central, next steps, and related pages.
+          - Avoid behaving like a single narrow recipe, a reference page, or a long concept article without practice.
+          
+          Troubleshooting pages:
+          
+          - Address one specific, repeatable problem.
+          - Include a problem-focused title, **Symptoms**, and **Resolution**.
+          - Keep symptoms to user-visible behavior and exact errors. Put ordered fixes in resolution.
+          - Avoid generic "Troubleshooting X" issue pages, unrelated problems, or long explanations before the fix.
+          
+          Changelog entries:
+          
+          - Include `title`, `type`, and `products`.
+          - Title should use present tense, start with an action verb, focus on user impact, and stay under 80 characters.
+          - Description should add context only when needed, focus on user value, and stay under 600 characters.
+          - Breaking changes need impact and action; deprecations and known issues should include them when useful.
           
           Treat this as a PR review, not a full repository audit:
           
@@ -490,7 +616,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_c324a66065dcc1cb_EOF
+          GH_AW_PROMPT_f665af59995610e9_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
@@ -804,9 +930,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_b23970bbca6507f5_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_a1d1df54d9b248a6_EOF'
           {"create_pull_request_review_comment":{"max":20,"side":"RIGHT"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{},"submit_pull_request_review":{"allowed_events":["COMMENT"],"max":1,"target":"triggering"}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_b23970bbca6507f5_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_a1d1df54d9b248a6_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -1026,7 +1152,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_2054fb8808b9a48b_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_d813dbfc0f9307ba_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -1084,7 +1210,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_2054fb8808b9a48b_EOF
+          GH_AW_MCP_CONFIG_d813dbfc0f9307ba_EOF
       - name: Clean git credentials
         continue-on-error: true
         run: bash "${RUNNER_TEMP}/gh-aw/actions/clean_git_credentials.sh"

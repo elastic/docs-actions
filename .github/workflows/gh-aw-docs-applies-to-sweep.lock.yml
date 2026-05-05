@@ -1,4 +1,4 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"30ea2ec7c8d24523189c08483d47e3d60cd52f782f8e595f3012d9ff253f0f4c","compiler_version":"v0.71.1","agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"4922dcd916b19329195bb2c3b1621f342056bee2cb9846ab4dc55710612ba147","compiler_version":"v0.71.1","agent_id":"copilot"}
 # gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"239aec45b78c8799417efdd5bc6d8cc036629ec1","version":"v0.71.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28","digest":"sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28","digest":"sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28","digest":"sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.0"},{"image":"ghcr.io/github/github-mcp-server:v1.0.2"},{"image":"node:lts-alpine","digest":"sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f","pinned_image":"node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
@@ -234,14 +234,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_07683f39809ada47_EOF'
+          cat << 'GH_AW_PROMPT_a11e55896c25d243_EOF'
           <system>
-          GH_AW_PROMPT_07683f39809ada47_EOF
+          GH_AW_PROMPT_a11e55896c25d243_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_07683f39809ada47_EOF'
+          cat << 'GH_AW_PROMPT_a11e55896c25d243_EOF'
           <safe-output-tools>
           Tools: create_issue, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -273,9 +273,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_07683f39809ada47_EOF
+          GH_AW_PROMPT_a11e55896c25d243_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_07683f39809ada47_EOF'
+          cat << 'GH_AW_PROMPT_a11e55896c25d243_EOF'
           </system>
           ## Formatting Guidelines
           
@@ -340,17 +340,26 @@ jobs:
           
           - A checked-in repository schema or docs-builder configuration in the source repository.
           - Published cumulative-docs guidance fetched during this run with `elastic-docs.get_document_by_url`, especially `/docs/contribute-docs/how-to/cumulative-docs/guidelines` and `/docs/contribute-docs/how-to/cumulative-docs/reference`.
+          - Published syntax and placement guidance fetched during this run when body-level annotations are involved, especially the docs-builder applies_to syntax guide, badge placement guidance, and cumulative-docs example scenarios.
           
           Use the published reference as the source of truth for allowed dimensions, keys, lifecycle states, and version formats. If the MCP server is unavailable and no local schema is available, call `noop` with `"applies_to reference unavailable; skipping applies_to sweep"` rather than emitting unverified findings.
           
           Apply these rules after verification:
           
           - Every page should include page-level `applies_to` frontmatter.
-          - Page-level `applies_to` should use one primary dimension: Stack/Serverless (`stack`, `serverless`), Deployment (`deployment` with deployment subkeys and, where documented, `serverless`), or Product (`product` with documented product subkeys).
+          - Page-level `applies_to` should use one primary dimension: Stack/Serverless (`stack`, `serverless`), Deployment (`deployment` with deployment subkeys and, where documented, `serverless`), or Product (`product` with documented product subkeys). Section-level and inline annotations can use a different dimension when needed to clarify local exceptions.
           - Lifecycle values must match the verified reference. Current published states include `preview`, `beta`, `ga`, `deprecated`, `removed`, and `unavailable`, but do not rely on this list without fetching the reference or reading a local schema during the run.
           - Version values must use documented formats, such as major/minor versions, exact versions, ranges, or greater-than-or-equal versions, according to the verified reference.
+          - `ech` is the current key for Elastic Cloud Hosted. Treat `ess` as deprecated in new or updated content unless local build constraints require it.
+          - Validate version semantics: only one version per lifecycle, only one open-ended `+` lifecycle per key, exact versions use `=x.x` or `=x.x.x`, ranges use one hyphen with no spaces, range starts must be less than or equal to ends, and ranges must not overlap.
+          - Do not write version numbers in prose next to `applies_to` badges. Let the badge carry version applicability.
+          - Section-level annotations belong immediately after a heading and apply until the next heading of the same or higher level. Do not put inline annotations in headings.
+          - Inline annotations are appropriate for a single phrase, property, definition-list term, or table cell, not for whole sections.
+          - Badge placement should match the element: frontmatter for page-level, after headings for section-level, at the beginning of list items when the whole item varies, at the end of a definition-list term when the whole item varies, and in the first column or relevant cell for tables.
+          - Use `applies-switch` tabs only when code blocks or workflows differ entirely between contexts.
           - Do not require `unavailable` when omission already communicates that the content does not apply. Report `unavailable` misuse only when the page creates a high risk of user confusion or contradicts the published guidance.
           - Do not flag dimension choices unless the page-level `applies_to` clearly mixes primary dimensions, contradicts `products`, or conflicts with the page's documented scope.
+          - Do not add or require tags for typo fixes, formatting changes, information architecture changes, or sections whose applicability is already established by a parent tag.
           
           Only call `noop` if you cannot produce any high-confidence findings from verified rules.
           
@@ -424,7 +433,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_07683f39809ada47_EOF
+          GH_AW_PROMPT_a11e55896c25d243_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
@@ -631,9 +640,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_e0695cc5fbcc1fe1_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_f24ad1b8a3f4224e_EOF'
           {"create_issue":{"close_older_issues":true,"labels":["docs-quality-sweep","docs-fix:applies-to"],"max":1,"title_prefix":"Docs fix — applies_to: "},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_e0695cc5fbcc1fe1_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_f24ad1b8a3f4224e_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -832,7 +841,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_25c499264e0ed0eb_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_203e5a3051f6994d_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -887,7 +896,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_25c499264e0ed0eb_EOF
+          GH_AW_MCP_CONFIG_203e5a3051f6994d_EOF
       - name: Clean git credentials
         continue-on-error: true
         run: bash "${RUNNER_TEMP}/gh-aw/actions/clean_git_credentials.sh"

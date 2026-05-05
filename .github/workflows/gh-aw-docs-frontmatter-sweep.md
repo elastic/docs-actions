@@ -213,13 +213,19 @@ If `in_scope_count` is `0`, call `noop` with a short message including the corpu
 
 This workflow is autonomous. Do not invoke runtime skills or depend on a skill package being installed. For each in-scope file, read the frontmatter block at the top of the copy under `/tmp/gh-aw/sweep-data/scope/` and inspect only the fields covered by this sweep.
 
-Use local repository evidence first. If a repository schema or docs-builder frontmatter reference is present in the checked-out source, use it for required-field confirmation. Use the Elastic docs MCP server only for targeted authoring guidance, not for broad corpus searches. Prefer `elastic-docs.search_docs` to find published frontmatter guidance and `elastic-docs.get_document_by_url` to fetch the canonical page before citing it.
+Use local repository evidence first. If a repository schema or docs-builder frontmatter reference is present in the checked-out source, use it for required-field confirmation. Use the Elastic docs MCP server only for targeted authoring guidance, not for broad corpus searches. Prefer `elastic-docs.get_document_by_url` for known guidance pages such as `/docs/contribute-docs/how-to/cumulative-docs/reference`, and `elastic-docs.search_docs` only when you need to discover a published frontmatter guidance page before citing it.
 
 Apply these rules:
 
-- `description` should be present, non-empty, no more than 200 characters, specific to the page, and useful in search results. Avoid generic descriptions such as "Learn about X" or descriptions that simply repeat the H1.
-- `products` should be present and non-empty when the repository's frontmatter convention requires it. Do not invent product values; if you cannot verify the right value from the page context or local convention, report the missing field without a suggested fix.
-- `navigation_title` should be present when the repository's convention requires it and should be concise enough for navigation. Flag verbatim H1 duplicates only when the H1 is long or includes context that is unnecessary in the navigation tree.
+- `description` should be present, non-empty, no more than 200 characters, specific to the page, and useful in search results. It must be a complete sentence, not a fragment or label.
+- Descriptions should be action-oriented, value-focused, factual, and impersonal. Avoid "you can", "users can", "this page explains", "teaching", "enable", "disable", condescending or excluding terms, and version numbers.
+- Descriptions must use plain text only. Do not use substitution variables such as `{{kib}}`, `{{es}}`, or `{{esql}}`; they are not parsed in frontmatter.
+- Avoid label prefixes such as "Reference -", "Tutorial -", or "Guide -". Work content type naturally into the description when useful.
+- Quote `description` values when punctuation could be misread by YAML. Avoid unquoted colons; when a colon would be needed, prefer wording that does not require one.
+- Description suggestions should follow the page type: tutorial descriptions can start with "Step-by-step tutorial for...", troubleshooting descriptions can start with "Troubleshooting guide for...", reference descriptions should include "reference" naturally, how-to descriptions should lead with the action, and overview descriptions should lead with what the feature does and why it matters.
+- `products` should be present and non-empty when the repository's frontmatter convention requires it. In docs-content, the canonical shape is `products` with `id` entries; flag `product` singular unless the local repository explicitly uses that schema. Do not invent product values; if you cannot verify the right value from the page context or local convention, report the missing field without a suggested fix.
+- `navigation_title` should be present when the H1 is longer than about 50 characters or when the repository's convention requires it. It should be concise enough for navigation. Flag verbatim H1 duplicates only when the H1 is long or includes context that is unnecessary in the navigation tree.
+- Preserve `mapped_pages` when present. Do not suggest adding it when absent.
 - Do not emit `missing-applies-to` or `invalid-applies-to` findings. The dedicated applies_to sweep owns those categories.
 - Audit only. Do not edit repo originals or scope copies. This sweep emits an issue, not a PR.
 

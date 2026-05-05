@@ -38,7 +38,7 @@ Ensure `COPILOT_GITHUB_TOKEN` is configured.
 ## How it works
 
 1. Pre-step computes the rotating slice plus recently-changed pages.
-2. The agent reads the copied slice and applies embedded checks for H1 specificity, opening paragraph quality, task prerequisites, and navigation titles.
+2. The agent reads the copied slice and applies embedded checks for content type, H1 specificity, opening paragraph quality, task prerequisites, substitutions, UI/technical formatting in openings, and navigation titles.
 3. Categories: `missing-h1`, `vague-h1`, `missing-h1-anchor`, `weak-opening`, `missing-before-you-begin`, `inadequate-navigation-title`.
 4. The agent may use Elastic docs MCP to compare sibling page titles when H1 specificity needs published-doc context.
 5. The workflow does not edit files or push changes — only the structured findings are emitted in the fix-issue.

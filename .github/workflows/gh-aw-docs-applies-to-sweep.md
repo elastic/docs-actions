@@ -212,17 +212,26 @@ Before filing any validity finding, verify the rule from one of these sources:
 
 - A checked-in repository schema or docs-builder configuration in the source repository.
 - Published cumulative-docs guidance fetched during this run with `elastic-docs.get_document_by_url`, especially `/docs/contribute-docs/how-to/cumulative-docs/guidelines` and `/docs/contribute-docs/how-to/cumulative-docs/reference`.
+- Published syntax and placement guidance fetched during this run when body-level annotations are involved, especially the docs-builder applies_to syntax guide, badge placement guidance, and cumulative-docs example scenarios.
 
 Use the published reference as the source of truth for allowed dimensions, keys, lifecycle states, and version formats. If the MCP server is unavailable and no local schema is available, call `noop` with `"applies_to reference unavailable; skipping applies_to sweep"` rather than emitting unverified findings.
 
 Apply these rules after verification:
 
 - Every page should include page-level `applies_to` frontmatter.
-- Page-level `applies_to` should use one primary dimension: Stack/Serverless (`stack`, `serverless`), Deployment (`deployment` with deployment subkeys and, where documented, `serverless`), or Product (`product` with documented product subkeys).
+- Page-level `applies_to` should use one primary dimension: Stack/Serverless (`stack`, `serverless`), Deployment (`deployment` with deployment subkeys and, where documented, `serverless`), or Product (`product` with documented product subkeys). Section-level and inline annotations can use a different dimension when needed to clarify local exceptions.
 - Lifecycle values must match the verified reference. Current published states include `preview`, `beta`, `ga`, `deprecated`, `removed`, and `unavailable`, but do not rely on this list without fetching the reference or reading a local schema during the run.
 - Version values must use documented formats, such as major/minor versions, exact versions, ranges, or greater-than-or-equal versions, according to the verified reference.
+- `ech` is the current key for Elastic Cloud Hosted. Treat `ess` as deprecated in new or updated content unless local build constraints require it.
+- Validate version semantics: only one version per lifecycle, only one open-ended `+` lifecycle per key, exact versions use `=x.x` or `=x.x.x`, ranges use one hyphen with no spaces, range starts must be less than or equal to ends, and ranges must not overlap.
+- Do not write version numbers in prose next to `applies_to` badges. Let the badge carry version applicability.
+- Section-level annotations belong immediately after a heading and apply until the next heading of the same or higher level. Do not put inline annotations in headings.
+- Inline annotations are appropriate for a single phrase, property, definition-list term, or table cell, not for whole sections.
+- Badge placement should match the element: frontmatter for page-level, after headings for section-level, at the beginning of list items when the whole item varies, at the end of a definition-list term when the whole item varies, and in the first column or relevant cell for tables.
+- Use `applies-switch` tabs only when code blocks or workflows differ entirely between contexts.
 - Do not require `unavailable` when omission already communicates that the content does not apply. Report `unavailable` misuse only when the page creates a high risk of user confusion or contradicts the published guidance.
 - Do not flag dimension choices unless the page-level `applies_to` clearly mixes primary dimensions, contradicts `products`, or conflicts with the page's documented scope.
+- Do not add or require tags for typo fixes, formatting changes, information architecture changes, or sections whose applicability is already established by a parent tag.
 
 Only call `noop` if you cannot produce any high-confidence findings from verified rules.
 

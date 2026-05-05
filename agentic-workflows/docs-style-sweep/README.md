@@ -1,6 +1,6 @@
 # Docs style sweep
 
-Audits style-guide compliance across a docs corpus on a rotating slice each run. A deterministic pre-step runs Vale with `elastic/vale-rules`, and the agent formats the resulting findings into a single labeled fix-issue.
+Audits style-guide compliance across a docs corpus on a rotating slice each run. A deterministic pre-step runs Vale with `elastic/vale-rules`, and the agent formats the resulting findings into a single labeled fix-issue. The agent may also add high-confidence manual findings for style-guide areas Vale does not fully cover, such as Formatting and UI writing.
 
 ## Triggers
 
@@ -39,7 +39,7 @@ Ensure `COPILOT_GITHUB_TOKEN` is configured.
 
 1. Pre-step computes the rotating slice plus recently-changed pages.
 2. A pre-step runs Vale against the copied slice.
-3. The agent reads Vale's JSON output and groups findings by category: `voice-tone`, `word-choice`, `grammar`, `formatting`, `accessibility`, `ui-writing`.
+3. The agent reads Vale's JSON output, optionally fetches published style-guide pages through Elastic docs MCP for manual checks, and groups findings by category: `voice-tone`, `word-choice`, `grammar`, `formatting`, `accessibility`, `ui-writing`.
 4. Single-word misspellings are deliberately excluded — those are handled by [`docs-typos-sweep`](../docs-typos-sweep/).
 
 ## Combining with other sweeps

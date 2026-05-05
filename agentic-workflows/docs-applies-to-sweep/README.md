@@ -41,7 +41,8 @@ Ensure `COPILOT_GITHUB_TOKEN` is configured.
 2. Slice files are copied to `/tmp/gh-aw/sweep-data/scope/`.
 3. The agent verifies `applies_to` rules against a local schema when present, or against published cumulative-docs guidance fetched through Elastic docs MCP.
 4. Categories: `missing-applies-to`, `invalid-applies-to-syntax`, `invalid-applies-to-value`, `inconsistent-applies-to`, `outdated-applies-to`.
-5. If the agent cannot verify allowed values from a local schema or MCP, it calls `noop` instead of filing unverified findings.
+5. The embedded checks cover page-level dimensions, lifecycle and version syntax, deprecated deployment keys, section and inline annotation placement, badge placement, and when not to tag.
+6. If the agent cannot verify allowed values from a local schema or MCP, it calls `noop` instead of filing unverified findings.
 
 ## Combining with other sweeps
 
