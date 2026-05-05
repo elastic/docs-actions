@@ -1,6 +1,6 @@
 # Docs applies_to sweep
 
-Validates the `applies_to` frontmatter key across a docs corpus on a rotating slice each run, using the `docs-applies-to-tagging` skill in audit mode. Opens a single labeled fix-issue with structured YAML findings.
+Validates the `applies_to` frontmatter key across a docs corpus on a rotating slice each run, using self-contained validation rules and the Elastic docs MCP server for published cumulative-docs guidance. Opens a single labeled fix-issue with structured YAML findings.
 
 ## Triggers
 
@@ -39,8 +39,10 @@ Ensure `COPILOT_GITHUB_TOKEN` is configured.
 
 1. Pre-step computes the rotating slice (`hash(path) mod N == iso_week mod N`) plus pages modified in the last 7 days.
 2. Slice files are copied to `/tmp/gh-aw/sweep-data/scope/`.
-3. The agent invokes `docs-applies-to-tagging` in audit mode and converts findings into structured YAML.
+3. The agent verifies `applies_to` rules against a local schema when present, or against published cumulative-docs guidance fetched through Elastic docs MCP.
 4. Categories: `missing-applies-to`, `invalid-applies-to-syntax`, `invalid-applies-to-value`, `inconsistent-applies-to`, `outdated-applies-to`.
+5. The embedded checks cover page-level dimensions, lifecycle and version syntax, deprecated deployment keys, section and inline annotation placement, badge placement, and when not to tag.
+6. If the agent cannot verify allowed values from a local schema or MCP, it calls `noop` instead of filing unverified findings.
 
 ## Combining with other sweeps
 

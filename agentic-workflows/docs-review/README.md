@@ -1,6 +1,6 @@
 # Docs review
 
-Reviews changed markdown files in pull requests by using Copilot and Elastic Docs Skills. The workflow limits its scope to files under `docs/` and publishes a pull request review with a concise summary plus inline comments for actionable findings.
+Reviews changed markdown files in pull requests by using Copilot with self-contained Elastic docs review rules. The workflow limits its scope to files under `docs/` and publishes a pull request review with a concise summary plus inline comments for actionable findings.
 
 ## Triggers
 
@@ -53,21 +53,19 @@ It ignores markdown outside the configured review scope, non-markdown files, and
 
 If the pull request is linked to a parent issue, the review also checks whether the PR appears to satisfy that issue's documentation ask and reports the result in the summary review.
 
-## Skills used
+## Autonomous checks
 
-This workflow installs these Elastic Docs Skills through Agent Package Manager dependencies:
+This workflow does not depend on runtime skills. A deterministic pre-step runs Vale with `elastic/vale-rules` on eligible changed markdown files, and the prompt embeds the remaining review rules directly. It focuses on:
 
-- `docs-check-style`.
-- `docs-flag-jargon-skill`.
-- `docs-frontmatter-audit`.
-- `docs-content-type-checker`.
-- `docs-applies-to-tagging`.
+- Style and clarity issues from Vale, plus high-confidence Formatting, Accessibility, and UI writing checks from the embedded style guide checklist.
+- Elastic-internal jargon, outdated terms, informal shorthand, and unexplained acronyms that external readers will not understand.
+- Frontmatter quality for `description`, `products`, `navigation_title`, and verified `applies_to` guidance.
+- Content type fit and structure for overviews, how-to guides, tutorials, troubleshooting pages, and changelog entries.
+- Parent issue satisfaction when the pull request links to a docs issue.
 
-The review prompt instructs the Copilot agent to invoke these imported skills by exact name through the skill tool before falling back to manual judgment.
+The workflow uses the Elastic docs MCP server only for targeted verification, such as published cumulative-docs guidance or sibling-page context. It noops or skips a finding when it cannot verify the evidence.
 
 When an inline comment can be expressed as a small, exact replacement for the reviewed line or hunk, the workflow should prefer an apply-ready GitHub suggestion block over prose-only guidance.
-
-Only `docs-check-style` explicitly references Vale. That skill tries the `vale_lint` MCP tool first and otherwise falls back to the `vale` CLI when available. The reusable workflow itself does not install Vale, so if the runtime environment lacks a `vale` binary and no Vale MCP tool is present, that skill falls back to manual style review.
 
 ## Example
 

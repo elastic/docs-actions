@@ -1,27 +1,15 @@
 ---
 description: |
   Audits page openings (H1 specificity, opening paragraph, "Before you begin")
-  across a docs corpus on a rotating slice each run, using the
-  docs-page-opening-optimizer skill in suggest-only mode. Opens a single
-  labeled fix-issue with structured YAML findings.
+  across a docs corpus on a rotating slice each run, using self-contained
+  review rules and targeted Elastic docs MCP checks. Opens a single labeled
+  fix-issue with structured YAML findings.
 
 inlined-imports: true
 imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
-  - uses: github/gh-aw/.github/workflows/shared/apm.md@v0.71.1
-    with:
-      # Workaround for github/gh-aw#30365: every APM-importing workflow in this
-      # repo must pack the same package set so they don't clobber each other's
-      # cache under the constant key apm-copilot- in the caller repo.
-      packages:
-        - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
-        - elastic/elastic-docs-skills/skills/authoring/content-type-checker
-        - elastic/elastic-docs-skills/skills/authoring/frontmatter-description
-        - elastic/elastic-docs-skills/skills/authoring/page-opening-optimizer
-        - elastic/elastic-docs-skills/skills/review/docs-check-style
-        - elastic/elastic-docs-skills/skills/review/flag-jargon-skill
-        - elastic/elastic-docs-skills/skills/review/frontmatter-audit
+  - gh-aw-fragments/mcp-pagination.md
 engine:
   id: copilot
   concurrency:
@@ -211,32 +199,46 @@ You are a page-opening reviewer for an Elastic documentation repository. Your jo
 A pre-step has computed the in-scope file list:
 
 - `/tmp/gh-aw/sweep-data/in-scope.txt` — file paths to audit.
-- `/tmp/gh-aw/sweep-data/scope/` — copies mirroring the original paths. This is a working directory; the skill may write here. Use these copies, not the repo originals, when invoking the skill.
+- `/tmp/gh-aw/sweep-data/scope/` — copies mirroring the original paths. Audit these copies and map findings back to the repo originals.
 - `/tmp/gh-aw/sweep-data/stats.json` — corpus stats.
 
 If `in_scope_count` is `0`, call `noop` with the stats and stop.
 
-## Step 1: Run the skill in suggest-only mode
+## Step 1: Analyze page openings
 
-Invoke `skill(skill: docs-page-opening-optimizer)` against `/tmp/gh-aw/sweep-data/scope/`.
+This workflow is autonomous. Do not invoke runtime skills or depend on a skill package being installed. Read each in-scope file from `/tmp/gh-aw/sweep-data/scope/`, inspect its frontmatter, H1, first substantive paragraph, and early task scaffolding, and produce findings only when the problem is visible in the file.
 
-**Suggest only — do not produce edits to repo originals.** This sweep emits an issue, not a PR. The skill may modify files inside the scope copy directory; that is fine — the changes are scratch. To recover the suggestion, diff each modified scope file against the original at `${{ github.workspace }}/<path>`.
+Audit only. Do not edit repo originals or scope copies. This sweep emits an issue, not a PR.
 
-**If the skill returns "Skill not found", do not noop.** That error is ambiguous — it can mean the skill genuinely isn't installed, or that the invocation form was reformatted by the agent's tool serialization. Either way: fall back to manual analysis instead of aborting. Procedure:
+Apply these checks:
 
-1. Try invoking the skill with the exact form `skill(skill: docs-page-opening-optimizer)`.
-2. If that fails or returns "Skill not found": fall back to **manual analysis** using `bash` to inspect each in-scope file's first 10 lines. Apply the categories below using your own judgment + grep heuristics (e.g., generic-word H1 detection, opening-paragraph length checks). Produce findings as you would have from the skill output, and add a single line in the issue body's `Notes` section: "skill `docs-page-opening-optimizer` did not produce output in this run; findings are agent-only."
+- Classify the page type before judging the opening. Tutorials are learning-oriented and hands-on, how-to pages are goal-oriented task instructions, reference pages describe technical specifications, explanation pages cover concepts, and overview pages are parent/landing pages that often have children in `toc.yml`.
+- The page should have exactly one clear H1 near the top after frontmatter.
+- The H1 should be discoverable, specific, unique, and include product, feature, or task context. Generic titles such as "Overview", "Introduction", "Guide", "Configuration", or "Settings" are findings only when the surrounding page does not make the topic clear in the heading itself.
+- Use content-type-appropriate H1 patterns: tutorials often start with "Get started with...", how-to pages use action verbs such as "Configure..." or "Troubleshoot...", reference pages use labels such as "[Feature] settings" or "[API] reference", explanation pages can use "How [feature] works", and overview pages can use the feature name when the page is a landing page.
+- If nearby pages in the same docs area consistently use explicit anchor suffixes in H1s, flag a missing H1 anchor on pages that violate that local convention.
+- The opening paragraph should immediately follow the H1 unless an important or warning admonition must remain first. It should explain what the page covers within the first two sentences, front-load the important information, and convey purpose, value, and scope in 2-4 complete sentences.
+- The opening should not repeat the frontmatter `description`, duplicate the next paragraph, use fragments instead of sentences, or bury the page purpose after a long setup.
+- Tutorials should define the feature, explain how it works, and state what the tutorial covers. How-to pages should define the feature or task, explain what it does, and state the value. Reference pages should define the subject and state its purpose. Explanation pages should establish context and state the concepts covered. Overview pages should state what the feature is, its value, and key capabilities.
+- Task and how-to pages should include prerequisites or a "Before you begin" section when the steps require access, permissions, prior setup, sample data, or product state that is not obvious from the title.
+- Add or recommend "Before you begin" only when no equivalent requirements or prerequisites section appears in the first 50 lines, the page is not an overview page, and at least one requirement is non-obvious. Include specific Kibana privilege levels, data requirements, external systems, special licenses, or version requirements only when the feature requires a version greater than 9.0. Exclude obvious prerequisites, generic "access to Kibana", and procedural details that belong in the main body.
+- `navigation_title` should be present when frontmatter convention requires it, should be shorter than a long H1 when a compact navigation label would help, and should not be a vague duplicate such as "Overview".
+- Prefer Elastic substitutions in the opening when the repository uses them, such as `{{product.kibana}}`, `{{product.elasticsearch}}`, `{{esql}}`, `{{ece}}`, `{{eck}}`, and `{{ech}}`. Flag hardcoded product names only when the local file or nearby pages clearly use substitutions.
+- Use bold for UI elements in the opening and monospace for technical elements.
+- Spell out acronyms on first use in the opening.
+- Do not rewrite, move, or remove important/warning admonitions in the first ~20 lines. Work around them.
+- Do not add pre-9.0 version references to openings in Stack 9+ docs.
 
-Only call `noop` if you cannot produce any high-confidence findings even from manual analysis (genuinely empty slice).
+Only call `noop` if you cannot produce any high-confidence findings from the in-scope files.
 
 ## Optional: cross-check H1 specificity via the Elastic Docs MCP server
 
 When judging whether an H1 is too vague, you may consult the `elastic-docs` MCP server (`search_docs`, `find_related_docs`) to see whether sibling pages on the same product/feature use distinct H1s. Use this when:
 
 - A candidate `vague-h1` finding has a generic word ("Overview", "Introduction") and you want to confirm the term is overloaded across the public docs.
-- The skill's suggested H1 reuses a phrase that already appears as another page's H1 — call this out and pick a more distinctive replacement.
+- Your suggested H1 reuses a phrase that already appears as another page's H1. Call this out and pick a more distinctive replacement.
 
-Skip the MCP call when the skill's judgment is already grounded in concrete evidence; do not pad findings with weak MCP-derived nits.
+Skip the MCP call when the local file evidence is already concrete; do not pad findings with weak MCP-derived nits.
 
 ## Step 2: Build the findings list
 
@@ -244,9 +246,9 @@ Categories (use exactly these strings):
 
 - `missing-h1` — file has no `# Heading` line.
 - `vague-h1` — H1 is generic ("Overview", "Introduction", "Guide", "About") without product/feature context, or is a common word that doesn't indicate the page topic.
-- `missing-h1-anchor` — H1 lacks the `[anchor-id]` suffix where the repo's convention requires one (the skill enforces this; respect its judgment).
+- `missing-h1-anchor` — H1 lacks the `[anchor-id]` suffix where the repo's convention requires one.
 - `weak-opening` — opening paragraph is empty, exceeds 4 sentences, or fails to convey what the page covers within the first 2 sentences.
-- `missing-before-you-begin` — task/how-to page that omits a prerequisites section the skill judges necessary.
+- `missing-before-you-begin` — task/how-to page that omits a prerequisites section even though the steps require prior access, permissions, setup, sample data, or product state.
 - `inadequate-navigation-title` — `navigation_title` is missing or duplicates the H1 verbatim when a shorter form is needed.
 
 For each finding extract:
@@ -264,7 +266,7 @@ Cap at `${{ inputs.max-per-fix-issue }}` distinct files. If empty, `noop` with `
 
 **Drop vague `suggested_fix` values**: do not emit `suggested_fix` if the only thing you can produce is generic prose like "improve clarity" or "consider rewording". Either propose a concrete replacement or omit the `suggested_fix` field entirely — vague advice wastes an author's time.
 
-Skip findings where the skill's suggestion materially changes meaning rather than just clarity — those need a human author, not a fix-agent.
+Skip findings where your suggested fix would materially change meaning rather than just clarity. Those need a human author, not a fix-agent.
 
 ## Output: fix-issue body
 
@@ -311,7 +313,7 @@ Shard <slot+1>/<n> · <shard_count> pages in slice · <recent_count> recently-ch
 
 - Files outside `/tmp/gh-aw/sweep-data/in-scope.txt`.
 - Subjective rewrites that don't measurably improve specificity or scannability.
-- Stylistic preferences already covered by `docs-check-style` — leave those to the style sweep.
+- Stylistic preferences already covered by Vale or the style sweep.
 - Findings whose `suggested_fix` would change the page's technical content rather than its framing.
 
 ${{ inputs.additional-instructions }}

@@ -114,6 +114,14 @@ on:
 | `gh-aw-fragments/mcp-pagination.md` | MCP token limit guidance and pagination patterns |
 | `gh-aw-fragments/safe-output-add-comment.md` | Limitations for `add-comment` |
 
+### Self-contained prompts
+
+Agentic workflows should be autonomous. Do not require runtime skills or agent-local packages for core behavior. If a workflow needs specialized knowledge, embed the relevant rules directly in the prompt, keep them focused, and make `noop` the outcome when the agent cannot verify enough evidence.
+
+Prefer deterministic pre-steps for mechanical checks such as linting, spelling, file selection, and schema extraction. Feed those outputs to the agent as pre-fetched data, then have the agent classify, filter, and format findings.
+
+Use the Elastic docs MCP server for published-doc evidence, not as a blanket fallback for uncertain judgments. Configure it under `mcp-servers.elastic-docs`, allow `www.elastic.co` in `network.allowed`, import `gh-aw-fragments/mcp-pagination.md`, and name the expected tool behavior in the prompt, for example `elastic-docs.search_docs`, `elastic-docs.find_related_docs`, and `elastic-docs.get_document_by_url`.
+
 ### Writing trigger templates
 
 Trigger templates (`agentic-workflows/<name>/example.yml`) are the files consumer repos copy into their `.github/workflows/`. They define event triggers and call the compiled `.lock.yml` via `uses:`. Two things to get right:

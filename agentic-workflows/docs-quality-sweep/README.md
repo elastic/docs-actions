@@ -90,7 +90,7 @@ Default `inputs` apply when `schedule` fires.
 
 ## Why seven workflows instead of one mega-sweep
 
-- Each sweep imports only the skills it needs, keeping prompts focused and findings high-signal.
-- Independent failure isolation — a failing skill in one sweep doesn't take down the others.
+- Each sweep owns a focused, self-contained prompt so findings stay high-signal.
+- Independent failure isolation — a failure in one sweep doesn't take down the others.
 - Independent cadence (you can schedule typos hourly and coherence monthly without coupling them).
 - Per-category labels (`docs-fix:*`) make output routable — a future fix-agent can subscribe to one label and act on its findings without parsing a multi-section dashboard.

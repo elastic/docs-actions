@@ -1,6 +1,6 @@
 # Docs frontmatter sweep
 
-Audits frontmatter across a docs corpus on a rotating slice each run, combining the `docs-frontmatter-audit` skill (required-field validation) with `docs-frontmatter-description` (description quality + SEO suggestions). Opens a single labeled fix-issue with structured YAML findings consumable by a future fix-agent.
+Audits frontmatter across a docs corpus on a rotating slice each run, using self-contained required-field and description-quality rules. Opens a single labeled fix-issue with structured YAML findings consumable by a future fix-agent.
 
 ## Triggers
 
@@ -41,8 +41,8 @@ Issues are filed in the **calling repo** (where the workflow runs). Install this
 ## How it works
 
 1. A pre-step enumerates `*.md` under `docs-root`, computes a deterministic shard `(hash(path) mod N == iso_week mod N)`, and unions in any files modified in the last 7 days.
-2. In-scope files are copied to `/tmp/gh-aw/sweep-data/scope/` (mirroring their original paths) so the skills can operate on the slice without affecting the repo.
-3. The agent invokes `docs-frontmatter-audit` and `docs-frontmatter-description` against the slice in audit/suggest mode.
+2. In-scope files are copied to `/tmp/gh-aw/sweep-data/scope/` (mirroring their original paths) so the agent can audit the slice without affecting the repo.
+3. The agent applies embedded checks for required frontmatter keys, complete and unique `description` values, canonical `products` shape, preserved `mapped_pages`, and concise `navigation_title` values.
 4. Findings are emitted as a YAML block in the fix-issue body, capped at `max-per-fix-issue`.
 5. If nothing high-confidence surfaces, the agent calls `noop` instead of opening an issue.
 
@@ -60,7 +60,9 @@ The issue body contains a fenced YAML block with one entry per finding:
     description: "How to configure X for Y use cases."
 ```
 
-Categories: `missing-description`, `weak-description`, `description-too-long`, `missing-applies-to`, `invalid-applies-to`, `missing-products`, `missing-navigation-title`.
+Categories: `missing-description`, `weak-description`, `description-too-long`, `missing-products`, `missing-navigation-title`.
+
+The workflow may use Elastic docs MCP for targeted published authoring guidance, but it does not use MCP as a blanket replacement for local frontmatter evidence.
 
 ## Combining with other sweeps
 

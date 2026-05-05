@@ -1,5 +1,5 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"bf0bda172556a077deffc8891b3279851bb514bcb4e7a5a8289f2ff718f0f6be","compiler_version":"v0.71.1","agent_id":"copilot"}
-# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GH_AW_PLUGINS_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/cache/restore","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/cache/save","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"239aec45b78c8799417efdd5bc6d8cc036629ec1","version":"v0.71.1"},{"repo":"microsoft/apm-action","sha":"a190b0b1a91031057144dc136acf9757a59c9e4d","version":"v1.4.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28","digest":"sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28","digest":"sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28","digest":"sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.0"},{"image":"ghcr.io/github/github-mcp-server:v1.0.2"},{"image":"node:lts-alpine","digest":"sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f","pinned_image":"node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f"}]}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"c6647ba58d86bf314196ac1a47a80445829a2cf45c9f2eeaef2237119b476dc8","compiler_version":"v0.71.1","agent_id":"copilot"}
+# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"239aec45b78c8799417efdd5bc6d8cc036629ec1","version":"v0.71.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28","digest":"sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28","digest":"sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28","digest":"sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.0"},{"image":"ghcr.io/github/github-mcp-server:v1.0.2"},{"image":"node:lts-alpine","digest":"sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f","pinned_image":"node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
 #  | |_| | __ _  ___ _ __ | |_ _  ___ 
@@ -23,15 +23,15 @@
 # For more information: https://github.github.com/gh-aw/introduction/overview/
 #
 # Audits page openings (H1 specificity, opening paragraph, "Before you begin")
-# across a docs corpus on a rotating slice each run, using the
-# docs-page-opening-optimizer skill in suggest-only mode. Opens a single
-# labeled fix-issue with structured YAML findings.
+# across a docs corpus on a rotating slice each run, using self-contained
+# review rules and targeted Elastic docs MCP checks. Opens a single labeled
+# fix-issue with structured YAML findings.
 #
 # Resolved workflow manifest:
 #   Imports:
 #     - gh-aw-fragments/formatting.md
+#     - gh-aw-fragments/mcp-pagination.md
 #     - gh-aw-fragments/rigor.md
-#     - github/gh-aw/.github/workflows/shared/apm.md@v0.71.1
 #
 # inlined-imports: true
 #
@@ -39,12 +39,9 @@
 #   - COPILOT_GITHUB_TOKEN
 #   - GH_AW_GITHUB_MCP_SERVER_TOKEN
 #   - GH_AW_GITHUB_TOKEN
-#   - GH_AW_PLUGINS_TOKEN
 #   - GITHUB_TOKEN
 #
 # Custom actions used:
-#   - actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-#   - actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
 #   - actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 #   - actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 #   - actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -52,7 +49,6 @@
 #   - actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
 #   - actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
 #   - github/gh-aw-actions/setup@239aec45b78c8799417efdd5bc6d8cc036629ec1 # v0.71.1
-#   - microsoft/apm-action@a190b0b1a91031057144dc136acf9757a59c9e4d # v1.4.1
 #
 # Container images used:
 #   - ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a
@@ -238,14 +234,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_5343cfe58ad3e2bf_EOF'
+          cat << 'GH_AW_PROMPT_f20bb96ce091f463_EOF'
           <system>
-          GH_AW_PROMPT_5343cfe58ad3e2bf_EOF
+          GH_AW_PROMPT_f20bb96ce091f463_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_5343cfe58ad3e2bf_EOF'
+          cat << 'GH_AW_PROMPT_f20bb96ce091f463_EOF'
           <safe-output-tools>
           Tools: create_issue, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -277,13 +273,10 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_5343cfe58ad3e2bf_EOF
+          GH_AW_PROMPT_f20bb96ce091f463_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_5343cfe58ad3e2bf_EOF'
+          cat << 'GH_AW_PROMPT_f20bb96ce091f463_EOF'
           </system>
-          
-          
-          
           ## Formatting Guidelines
           
           - Lead with the most important information — your first sentence should be the key takeaway
@@ -303,6 +296,26 @@ jobs:
           - Before filing any issue or opening any PR, re-read your own output as a skeptical reviewer. Ask: "Would a senior engineer on this team find this useful, or would they close it immediately?" If the answer is "close," call `noop` instead.
           - Only report findings you would confidently defend in a code review. If you feel the need to hedge with "might," "could," or "possibly," the finding is not ready to file.
           
+          ## MCP Pagination
+          
+          MCP tool responses have a **25,000 token limit**. When responses exceed this limit, the call fails and you must retry with pagination — wasting turns and tokens. Use proactive pagination to stay under the limit.
+          
+          ### Recommended `perPage` Values
+          
+          - **5-10**: For detailed items (PR diffs, files with patches, issues with comments)
+          - **20-30**: For medium-detail lists (commits, review comments, issue lists)
+          - **50-100**: For simple list operations (branches, labels, tags)
+          
+          ### Pagination Pattern
+          
+          When you need all results from a paginated API:
+          
+          1. Fetch the first page with a conservative `perPage` value
+          2. Process the results before fetching the next page
+          3. Continue fetching pages until you receive fewer results than `perPage` (indicating the last page)
+          
+          If you see `MCP tool response exceeds maximum allowed tokens`, retry with a smaller `perPage` value (halve it).
+          
           # Docs page-openings sweep agent
           
           You are a page-opening reviewer for an Elastic documentation repository. Your job is to audit the opening of a deterministically-selected slice of pages — H1 specificity, opening paragraph quality, and "Before you begin" appropriateness — and emit a single labeled fix-issue with structured findings.
@@ -312,32 +325,46 @@ jobs:
           A pre-step has computed the in-scope file list:
           
           - `/tmp/gh-aw/sweep-data/in-scope.txt` — file paths to audit.
-          - `/tmp/gh-aw/sweep-data/scope/` — copies mirroring the original paths. This is a working directory; the skill may write here. Use these copies, not the repo originals, when invoking the skill.
+          - `/tmp/gh-aw/sweep-data/scope/` — copies mirroring the original paths. Audit these copies and map findings back to the repo originals.
           - `/tmp/gh-aw/sweep-data/stats.json` — corpus stats.
           
           If `in_scope_count` is `0`, call `noop` with the stats and stop.
           
-          ## Step 1: Run the skill in suggest-only mode
+          ## Step 1: Analyze page openings
           
-          Invoke `skill(skill: docs-page-opening-optimizer)` against `/tmp/gh-aw/sweep-data/scope/`.
+          This workflow is autonomous. Do not invoke runtime skills or depend on a skill package being installed. Read each in-scope file from `/tmp/gh-aw/sweep-data/scope/`, inspect its frontmatter, H1, first substantive paragraph, and early task scaffolding, and produce findings only when the problem is visible in the file.
           
-          **Suggest only — do not produce edits to repo originals.** This sweep emits an issue, not a PR. The skill may modify files inside the scope copy directory; that is fine — the changes are scratch. To recover the suggestion, diff each modified scope file against the original at `__GH_AW_GITHUB_WORKSPACE__/<path>`.
+          Audit only. Do not edit repo originals or scope copies. This sweep emits an issue, not a PR.
           
-          **If the skill returns "Skill not found", do not noop.** That error is ambiguous — it can mean the skill genuinely isn't installed, or that the invocation form was reformatted by the agent's tool serialization. Either way: fall back to manual analysis instead of aborting. Procedure:
+          Apply these checks:
           
-          1. Try invoking the skill with the exact form `skill(skill: docs-page-opening-optimizer)`.
-          2. If that fails or returns "Skill not found": fall back to **manual analysis** using `bash` to inspect each in-scope file's first 10 lines. Apply the categories below using your own judgment + grep heuristics (e.g., generic-word H1 detection, opening-paragraph length checks). Produce findings as you would have from the skill output, and add a single line in the issue body's `Notes` section: "skill `docs-page-opening-optimizer` did not produce output in this run; findings are agent-only."
+          - Classify the page type before judging the opening. Tutorials are learning-oriented and hands-on, how-to pages are goal-oriented task instructions, reference pages describe technical specifications, explanation pages cover concepts, and overview pages are parent/landing pages that often have children in `toc.yml`.
+          - The page should have exactly one clear H1 near the top after frontmatter.
+          - The H1 should be discoverable, specific, unique, and include product, feature, or task context. Generic titles such as "Overview", "Introduction", "Guide", "Configuration", or "Settings" are findings only when the surrounding page does not make the topic clear in the heading itself.
+          - Use content-type-appropriate H1 patterns: tutorials often start with "Get started with...", how-to pages use action verbs such as "Configure..." or "Troubleshoot...", reference pages use labels such as "[Feature] settings" or "[API] reference", explanation pages can use "How [feature] works", and overview pages can use the feature name when the page is a landing page.
+          - If nearby pages in the same docs area consistently use explicit anchor suffixes in H1s, flag a missing H1 anchor on pages that violate that local convention.
+          - The opening paragraph should immediately follow the H1 unless an important or warning admonition must remain first. It should explain what the page covers within the first two sentences, front-load the important information, and convey purpose, value, and scope in 2-4 complete sentences.
+          - The opening should not repeat the frontmatter `description`, duplicate the next paragraph, use fragments instead of sentences, or bury the page purpose after a long setup.
+          - Tutorials should define the feature, explain how it works, and state what the tutorial covers. How-to pages should define the feature or task, explain what it does, and state the value. Reference pages should define the subject and state its purpose. Explanation pages should establish context and state the concepts covered. Overview pages should state what the feature is, its value, and key capabilities.
+          - Task and how-to pages should include prerequisites or a "Before you begin" section when the steps require access, permissions, prior setup, sample data, or product state that is not obvious from the title.
+          - Add or recommend "Before you begin" only when no equivalent requirements or prerequisites section appears in the first 50 lines, the page is not an overview page, and at least one requirement is non-obvious. Include specific Kibana privilege levels, data requirements, external systems, special licenses, or version requirements only when the feature requires a version greater than 9.0. Exclude obvious prerequisites, generic "access to Kibana", and procedural details that belong in the main body.
+          - `navigation_title` should be present when frontmatter convention requires it, should be shorter than a long H1 when a compact navigation label would help, and should not be a vague duplicate such as "Overview".
+          - Prefer Elastic substitutions in the opening when the repository uses them, such as `{{product.kibana}}`, `{{product.elasticsearch}}`, `{{esql}}`, `{{ece}}`, `{{eck}}`, and `{{ech}}`. Flag hardcoded product names only when the local file or nearby pages clearly use substitutions.
+          - Use bold for UI elements in the opening and monospace for technical elements.
+          - Spell out acronyms on first use in the opening.
+          - Do not rewrite, move, or remove important/warning admonitions in the first ~20 lines. Work around them.
+          - Do not add pre-9.0 version references to openings in Stack 9+ docs.
           
-          Only call `noop` if you cannot produce any high-confidence findings even from manual analysis (genuinely empty slice).
+          Only call `noop` if you cannot produce any high-confidence findings from the in-scope files.
           
           ## Optional: cross-check H1 specificity via the Elastic Docs MCP server
           
           When judging whether an H1 is too vague, you may consult the `elastic-docs` MCP server (`search_docs`, `find_related_docs`) to see whether sibling pages on the same product/feature use distinct H1s. Use this when:
           
           - A candidate `vague-h1` finding has a generic word ("Overview", "Introduction") and you want to confirm the term is overloaded across the public docs.
-          - The skill's suggested H1 reuses a phrase that already appears as another page's H1 — call this out and pick a more distinctive replacement.
+          - Your suggested H1 reuses a phrase that already appears as another page's H1. Call this out and pick a more distinctive replacement.
           
-          Skip the MCP call when the skill's judgment is already grounded in concrete evidence; do not pad findings with weak MCP-derived nits.
+          Skip the MCP call when the local file evidence is already concrete; do not pad findings with weak MCP-derived nits.
           
           ## Step 2: Build the findings list
           
@@ -345,9 +372,9 @@ jobs:
           
           - `missing-h1` — file has no `# Heading` line.
           - `vague-h1` — H1 is generic ("Overview", "Introduction", "Guide", "About") without product/feature context, or is a common word that doesn't indicate the page topic.
-          - `missing-h1-anchor` — H1 lacks the `[anchor-id]` suffix where the repo's convention requires one (the skill enforces this; respect its judgment).
+          - `missing-h1-anchor` — H1 lacks the `[anchor-id]` suffix where the repo's convention requires one.
           - `weak-opening` — opening paragraph is empty, exceeds 4 sentences, or fails to convey what the page covers within the first 2 sentences.
-          - `missing-before-you-begin` — task/how-to page that omits a prerequisites section the skill judges necessary.
+          - `missing-before-you-begin` — task/how-to page that omits a prerequisites section even though the steps require prior access, permissions, setup, sample data, or product state.
           - `inadequate-navigation-title` — `navigation_title` is missing or duplicates the H1 verbatim when a shorter form is needed.
           
           For each finding extract:
@@ -365,7 +392,7 @@ jobs:
           
           **Drop vague `suggested_fix` values**: do not emit `suggested_fix` if the only thing you can produce is generic prose like "improve clarity" or "consider rewording". Either propose a concrete replacement or omit the `suggested_fix` field entirely — vague advice wastes an author's time.
           
-          Skip findings where the skill's suggestion materially changes meaning rather than just clarity — those need a human author, not a fix-agent.
+          Skip findings where your suggested fix would materially change meaning rather than just clarity. Those need a human author, not a fix-agent.
           
           ## Output: fix-issue body
           
@@ -412,18 +439,17 @@ jobs:
           
           - Files outside `/tmp/gh-aw/sweep-data/in-scope.txt`.
           - Subjective rewrites that don't measurably improve specificity or scannability.
-          - Stylistic preferences already covered by `docs-check-style` — leave those to the style sweep.
+          - Stylistic preferences already covered by Vale or the style sweep.
           - Findings whose `suggested_fix` would change the page's technical content rather than its framing.
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_5343cfe58ad3e2bf_EOF
+          GH_AW_PROMPT_f20bb96ce091f463_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
         env:
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
-          GH_AW_GITHUB_WORKSPACE: ${{ github.workspace }}
           GH_AW_EXPR_49B959F1: ${{ inputs.additional-instructions }}
           GH_AW_EXPR_CBA258AA: ${{ inputs.max-per-fix-issue }}
           GH_AW_EXPR_E6F7E87E: ${{ inputs.source-repo || github.repository }}
@@ -498,9 +524,7 @@ jobs:
           retention-days: 1
 
   agent:
-    needs:
-      - activation
-      - apm
+    needs: activation
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -620,32 +644,6 @@ jobs:
           GH_AW_AGENT_FOLDERS: ".agents .claude .codex .crush .gemini .github .opencode"
           GH_AW_AGENT_FILES: ".crush.json AGENTS.md CLAUDE.md GEMINI.md opencode.jsonc"
         run: bash "${RUNNER_TEMP}/gh-aw/actions/restore_base_github_folders.sh"
-      - id: apm_cache_restore
-        name: Restore APM bundle from cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          key: apm-${{ needs.activation.outputs.engine_id }}-${{ hashFiles('.github/workflows/*.lock.yml') }}
-          path: /tmp/gh-aw/apm-workspace
-      - if: steps.apm_cache_restore.outputs.cache-hit != 'true'
-        name: Download APM bundle artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: ${{ needs.activation.outputs.artifact_prefix }}apm
-          path: /tmp/gh-aw/apm-bundle
-      - id: apm_bundle
-        name: Find APM bundle path
-        run: |
-          bundle=$(find /tmp/gh-aw/apm-workspace /tmp/gh-aw/apm-bundle -name '*.tar.gz' 2>/dev/null | head -1)
-          if [ -z "$bundle" ]; then
-            echo "::error::APM bundle not found in /tmp/gh-aw/apm-workspace or /tmp/gh-aw/apm-bundle"
-            exit 1
-          fi
-          echo "path=$bundle" >> "$GITHUB_OUTPUT"
-      - name: Restore APM packages
-        uses: microsoft/apm-action@a190b0b1a91031057144dc136acf9757a59c9e4d # v1.4.1
-        with:
-          bundle: ${{ steps.apm_bundle.outputs.path }}
-
       - name: Download container images
         run: bash "${RUNNER_TEMP}/gh-aw/actions/download_docker_images.sh" ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474 ghcr.io/github/gh-aw-mcpg:v0.3.0 ghcr.io/github/github-mcp-server:v1.0.2 node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f
       - name: Write Safe Outputs Config
@@ -653,9 +651,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_832498e7d31a079b_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_2e74f6ec08d4a349_EOF'
           {"create_issue":{"close_older_issues":true,"labels":["docs-quality-sweep","docs-fix:openings"],"max":1,"title_prefix":"Docs fix — page openings: "},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_832498e7d31a079b_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_2e74f6ec08d4a349_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -854,7 +852,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_c6134064d1f67990_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_f87fbe4711ed66c2_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -909,7 +907,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_c6134064d1f67990_EOF
+          GH_AW_MCP_CONFIG_f87fbe4711ed66c2_EOF
       - name: Clean git credentials
         continue-on-error: true
         run: bash "${RUNNER_TEMP}/gh-aw/actions/clean_git_credentials.sh"
@@ -1122,88 +1120,10 @@ jobs:
             /tmp/gh-aw/sandbox/firewall/audit/
           if-no-files-found: ignore
 
-  apm:
-    needs: activation
-    runs-on: ubuntu-slim
-    permissions:
-      {}
-
-    steps:
-      - name: Configure GH_HOST for enterprise compatibility
-        id: ghes-host-config
-        shell: bash
-        run: |
-          # Derive GH_HOST from GITHUB_SERVER_URL so the gh CLI targets the correct
-          # GitHub instance (GHES/GHEC). On github.com this is a harmless no-op.
-          GH_HOST="${GITHUB_SERVER_URL#https://}"
-          GH_HOST="${GH_HOST#http://}"
-          echo "GH_HOST=${GH_HOST}" >> "$GITHUB_ENV"
-      - name: Checkout workflow lock files
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-          sparse-checkout: |
-            .github/workflows
-          sparse-checkout-cone-mode: false
-      - name: Restore APM bundle from cache
-        id: apm_cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          key: apm-${{ needs.activation.outputs.engine_id }}-${{ hashFiles('.github/workflows/*.lock.yml') }}
-          path: /tmp/gh-aw/apm-workspace
-      - name: Prepare APM package list
-        id: apm_prep
-        if: steps.apm_cache.outputs.cache-hit != 'true'
-        run: |
-          DEPS=$(echo "$AW_APM_PACKAGES" | jq -r '.[] | "- " + .')
-          {
-            echo "deps<<APMDEPS"
-            printf '%s\n' "$DEPS"
-            echo "APMDEPS"
-          } >> "$GITHUB_OUTPUT"
-        env:
-          AW_APM_PACKAGES: "[\"elastic/elastic-docs-skills/skills/authoring/applies-to-tagging\",\"elastic/elastic-docs-skills/skills/authoring/content-type-checker\",\"elastic/elastic-docs-skills/skills/authoring/frontmatter-description\",\"elastic/elastic-docs-skills/skills/authoring/page-opening-optimizer\",\"elastic/elastic-docs-skills/skills/review/docs-check-style\",\"elastic/elastic-docs-skills/skills/review/flag-jargon-skill\",\"elastic/elastic-docs-skills/skills/review/frontmatter-audit\"]"
-      - name: Pack APM packages
-        id: apm_pack
-        if: steps.apm_cache.outputs.cache-hit != 'true'
-        uses: microsoft/apm-action@a190b0b1a91031057144dc136acf9757a59c9e4d # v1.4.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_AW_PLUGINS_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-        with:
-          archive: "true"
-          dependencies: ${{ steps.apm_prep.outputs.deps }}
-          isolated: "true"
-          pack: "true"
-          target: all
-          working-directory: /tmp/gh-aw/apm-workspace
-      - name: Save APM bundle to cache
-        if: steps.apm_cache.outputs.cache-hit != 'true' && success()
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          key: ${{ steps.apm_cache.outputs.cache-primary-key }}
-          path: /tmp/gh-aw/apm-workspace
-      - name: Find APM bundle path
-        id: apm_bundle_path
-        run: |
-          bundle=$(find /tmp/gh-aw/apm-workspace -name '*.tar.gz' | head -1)
-          if [ -z "$bundle" ]; then
-            echo "::error::APM bundle not found in /tmp/gh-aw/apm-workspace"
-            exit 1
-          fi
-          echo "path=$bundle" >> "$GITHUB_OUTPUT"
-      - name: Upload APM bundle artifact
-        if: success()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: ${{ needs.activation.outputs.artifact_prefix }}apm
-          path: ${{ steps.apm_bundle_path.outputs.path }}
-          retention-days: "1"
-
   conclusion:
     needs:
       - activation
       - agent
-      - apm
       - detection
       - safe_outputs
     if: >
@@ -1421,7 +1341,7 @@ jobs:
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
         env:
           WORKFLOW_NAME: "Docs page-openings sweep agent"
-          WORKFLOW_DESCRIPTION: "Audits page openings (H1 specificity, opening paragraph, \"Before you begin\")\nacross a docs corpus on a rotating slice each run, using the\ndocs-page-opening-optimizer skill in suggest-only mode. Opens a single\nlabeled fix-issue with structured YAML findings."
+          WORKFLOW_DESCRIPTION: "Audits page openings (H1 specificity, opening paragraph, \"Before you begin\")\nacross a docs corpus on a rotating slice each run, using self-contained\nreview rules and targeted Elastic docs MCP checks. Opens a single labeled\nfix-issue with structured YAML findings."
           HAS_PATCH: ${{ needs.agent.outputs.has_patch }}
         with:
           script: |

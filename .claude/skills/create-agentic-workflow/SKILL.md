@@ -27,10 +27,10 @@ You are a workflow generator for the [elastic/docs-actions](https://github.com/e
 
 ## Background
 
-This repo uses [GitHub Agent Workflows](https://github.github.com/gh-aw/). Workflow `.md` sources live in `agentic-workflows/` as a library. A compile script copies them to `.github/workflows/` for the gh-aw compiler, which produces `.lock.yml` files that consumer repos call via `uses:`.
+This repo uses [GitHub Agent Workflows](https://github.github.com/gh-aw/). Workflow `.md` sources live in `.github/workflows/` for the gh-aw compiler, which produces `.lock.yml` files that consumer repos call via `uses:`. Usage documentation and trigger templates live under `agentic-workflows/`.
 
 Each workflow needs three files:
-1. `agentic-workflows/<name>/gh-aw-<name>.md` — workflow source (frontmatter + prompt)
+1. `.github/workflows/gh-aw-<name>.md` — workflow source (frontmatter + prompt)
 2. `agentic-workflows/<name>/example.yml` — trigger template callers copy
 3. `agentic-workflows/<name>/README.md` — usage documentation
 
@@ -64,6 +64,8 @@ Use `AskUserQuestion` to collect:
 Read an existing workflow for reference:
 - `.github/workflows/gh-aw-docs-issue-scope.md` — on-demand check pattern
 - `.github/workflows/gh-aw-issue-triage.md` — triage pattern with pre-steps
+- `.github/workflows/gh-aw-docs-style-sweep.md` — deterministic pre-step pattern
+- `.github/workflows/gh-aw-docs-coherence-sweep.md` — Elastic docs MCP pattern
 
 Generate `.github/workflows/gh-aw-<name>.md`. Read the available fragments in `.github/workflows/gh-aw-fragments/` and import those relevant to the workflow. **Always include `inlined-imports: true`** — this embeds all imported content at compile time, which is required for cross-repo `workflow_call` invocation.
 
@@ -110,6 +112,11 @@ tools:
     toolsets: [repos, issues, pull_requests, search]
   bash: true
   web-fetch:
+mcp-servers:
+  elastic-docs:
+    type: http
+    url: "https://www.elastic.co/docs/_mcp/"
+    allowed: ["*"]
 network:
   allowed:
     - defaults
@@ -136,6 +143,8 @@ Follow the frontmatter with the agent prompt in markdown. The imported fragments
 4. **What to skip** — explicit exclusions to reduce noise
 5. **Quality gate** — when to noop vs. when to report (noop is the expected outcome)
 6. **Output format** — exact format for the issue body, PR body, or comment
+
+Make the workflow autonomous. Do not require runtime skills or agent-local packages for core behavior. Embed the domain rules the agent needs, use deterministic pre-steps for mechanical checks, and use Elastic docs MCP for published-doc evidence when needed. If MCP is required for a finding but is unavailable, instruct the agent to `noop` or skip the finding rather than guessing.
 
 End with `${{ inputs.additional-instructions }}` so callers can inject repo-specific guidance.
 
@@ -177,7 +186,7 @@ For scheduled audits, add `issues: write` to permissions. For fixes, add `conten
 
 ### Step 5: Generate the README
 
-Create `agentic-workflows/<name>/README.md` following the pattern in `agentic-workflows/docs-check/README.md`:
+Create `agentic-workflows/<name>/README.md` following the pattern in `agentic-workflows/docs-review/README.md` or `agentic-workflows/docs-issue-scope/README.md`:
 - Description
 - Triggers table
 - Install section with curl one-liner
