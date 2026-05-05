@@ -205,13 +205,12 @@ Invoke `skill(skill: docs-applies-to-tagging)` against `/tmp/gh-aw/sweep-data/sc
 
 **Audit mode only — do not write any files.** The skill defaults to validation when not asked to fix; reinforce that intent in the call. This sweep produces an issue, not edits.
 
-**Only treat the skill as unavailable after a confirmed exact-form failure.** Stochastic agent retries sometimes invoke the skill with a shortened form (e.g., `skill(docs-applies-to-tagging)` without the `skill:` prefix) which fails before the exact form is tried. Procedure:
+**If the skill returns "Skill not found", do not noop.** That error is ambiguous — it can mean the skill genuinely isn't installed, or that the invocation form was reformatted by the agent's tool serialization. Either way: fall back to manual analysis instead of aborting. Procedure:
 
-1. Invoke with the exact form `skill(skill: docs-applies-to-tagging)`.
-2. If the result is "Skill not found", retry once more with the same exact form.
-3. Only after a second exact-form failure, abort the run by calling `noop` with `"docs-applies-to-tagging skill unavailable"` — there is no fallback heuristic worth filing as findings.
+1. Try invoking the skill with the exact form `skill(skill: docs-applies-to-tagging)`.
+2. If that fails or returns "Skill not found": fall back to **manual analysis**. Use `bash` to scan each in-scope file's frontmatter (the YAML block at the top), checking for missing/invalid `applies_to` keys against the documented allowed values. Produce findings as you would have from the skill output, and add a single line in the issue body's `Notes` section: "skill `docs-applies-to-tagging` did not produce output in this run; findings are agent-only."
 
-A single first-attempt failure (especially with a non-exact form) is **not** sufficient evidence to noop.
+Only call `noop` if you cannot produce any high-confidence findings even from manual analysis.
 
 ## Step 2: Build the findings list
 

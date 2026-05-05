@@ -213,13 +213,12 @@ Invoke `skill(skill: docs-page-opening-optimizer)` against `/tmp/gh-aw/sweep-dat
 
 **Suggest only — do not produce edits to repo originals.** This sweep emits an issue, not a PR. The skill may modify files inside the scope copy directory; that is fine — the changes are scratch. To recover the suggestion, diff each modified scope file against the original at `${{ github.workspace }}/<path>`.
 
-**Only treat the skill as unavailable after a confirmed exact-form failure.** Stochastic agent retries sometimes invoke the skill with a shortened form (e.g., `skill(docs-page-opening-optimizer)` without the `skill:` prefix) which fails before the exact form is tried. Procedure:
+**If the skill returns "Skill not found", do not noop.** That error is ambiguous — it can mean the skill genuinely isn't installed, or that the invocation form was reformatted by the agent's tool serialization. Either way: fall back to manual analysis instead of aborting. Procedure:
 
-1. Invoke with the exact form `skill(skill: docs-page-opening-optimizer)`.
-2. If the result is "Skill not found", retry once more with the same exact form.
-3. Only after a second exact-form failure, abort by calling `noop` with `"docs-page-opening-optimizer skill unavailable"`.
+1. Try invoking the skill with the exact form `skill(skill: docs-page-opening-optimizer)`.
+2. If that fails or returns "Skill not found": fall back to **manual analysis** using `bash` to inspect each in-scope file's first 10 lines. Apply the categories below using your own judgment + grep heuristics (e.g., generic-word H1 detection, opening-paragraph length checks). Produce findings as you would have from the skill output, and add a single line in the issue body's `Notes` section: "skill `docs-page-opening-optimizer` did not produce output in this run; findings are agent-only."
 
-A single first-attempt failure (especially with a non-exact form) is **not** sufficient evidence to noop.
+Only call `noop` if you cannot produce any high-confidence findings even from manual analysis (genuinely empty slice).
 
 ## Optional: cross-check H1 specificity via the Elastic Docs MCP server
 
