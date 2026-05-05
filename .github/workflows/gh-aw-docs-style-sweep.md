@@ -204,7 +204,13 @@ Invoke `skill(skill: docs-check-style)` against `/tmp/gh-aw/sweep-data/scope/`.
 
 The skill produces line-level findings grouped by category (Voice/Tone, Word Choice, Grammar, Formatting, Accessibility, UI Writing). Read its output and convert into the YAML structure below.
 
-If the skill fails, abort by calling `noop` with `"docs-check-style skill unavailable"`.
+**Only treat the skill as unavailable after a confirmed exact-form failure.** Stochastic agent retries sometimes invoke the skill with a shortened form (e.g., `skill(docs-check-style)` without the `skill:` prefix) which fails before the exact form is tried. Procedure:
+
+1. Invoke with the exact form `skill(skill: docs-check-style)`.
+2. If the result is "Skill not found", retry once more with the same exact form.
+3. Only after a second exact-form failure, abort by calling `noop` with `"docs-check-style skill unavailable"`.
+
+A single first-attempt failure (especially with a non-exact form) is **not** sufficient evidence to noop.
 
 ## Step 2: Build the findings list
 
