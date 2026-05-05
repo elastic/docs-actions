@@ -9,7 +9,7 @@ inlined-imports: true
 imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
-  - uses: github/gh-aw/.github/workflows/shared/apm.md@v0.71.1
+  - uses: github/gh-aw/.github/workflows/shared/apm.md@v0.71.4
     with:
       packages:
         - elastic/elastic-docs-skills/skills/review/docs-check-style
