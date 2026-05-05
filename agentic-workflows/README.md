@@ -1,8 +1,8 @@
-# Agentic Workflows
+# Agentic workflows
 
 AI-powered workflows for Elastic documentation tasks. Each directory contains a workflow source (`.md`), a trigger template (`example.yml`), and usage docs (`README.md`).
 
-| Workflow | Description | Trigger | Safe Output |
+| Workflow | Description | Trigger | Safe output |
 |----------|-------------|---------|-------------|
 | [docs-review](docs-review/) | Review changed markdown files under `docs/` in pull requests | `/docs-review`, PR checkbox menu | `create-pull-request-review-comment`, `submit-pull-request-review` |
 | [docs-issue-scope](docs-issue-scope/) | Scope docs work from an issue plus linked PRs or commits | `/docs-issue-scope` | `add-comment`, `update-issue` |

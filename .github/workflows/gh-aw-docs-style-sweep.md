@@ -275,7 +275,7 @@ Categories (use exactly these strings, lowercased and hyphenated):
 For each finding extract:
 
 - `file` — repo-relative (strip `/tmp/gh-aw/sweep-data/scope/`).
-- `line` — exact line number from Vale or the skill's output.
+- `line` — exact line number from Vale's output.
 - `category` — one of the strings above.
 - `severity` — `high` for changes-meaning issues; `medium` for clear style violations; `low` for nits.
 - `evidence` — short quote of the offending text plus the rule name (e.g., `"'in order to' — Elastic.WordList rule"`).
@@ -331,7 +331,7 @@ Shard <slot+1>/<n> · <shard_count> pages in slice · <recent_count> recently-ch
 
 - Files outside `/tmp/gh-aw/sweep-data/in-scope.txt`.
 - **Single-word misspellings** — those belong to the typos sweep (`gh-aw-docs-typos-sweep`). Only include grammar findings when the issue is multi-word or syntactic.
-- Style preferences not grounded in a documented rule — if the skill's output lacks a rule citation, drop the finding.
+- Style preferences not grounded in a documented rule — if Vale's output lacks a rule citation, drop the finding.
 - Repository-wide cleanup opportunities outside the sliced scope.
 - Findings whose `suggested_fix` is uncertain — when in doubt, omit `suggested_fix` rather than guess.
 

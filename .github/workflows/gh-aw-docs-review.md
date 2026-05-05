@@ -1,27 +1,14 @@
 ---
 description: |
-  Reviews pull request documentation changes in markdown files by using Copilot plus
-  Elastic Docs Skills. Reports a concise summary and line-level review comments
-  for actionable markdown issues.
+  Reviews pull request documentation changes in markdown files using
+  self-contained Elastic docs review rules. Reports a concise summary and
+  line-level review comments for actionable markdown issues.
 
 inlined-imports: true
 imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-  - uses: github/gh-aw/.github/workflows/shared/apm.md@v0.71.1
-    with:
-      # Workaround for github/gh-aw#30365: every APM-importing workflow in this
-      # repo must pack the same package set so they don't clobber each other's
-      # cache under the constant key apm-copilot- in the caller repo.
-      packages:
-        - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
-        - elastic/elastic-docs-skills/skills/authoring/content-type-checker
-        - elastic/elastic-docs-skills/skills/authoring/frontmatter-description
-        - elastic/elastic-docs-skills/skills/authoring/page-opening-optimizer
-        - elastic/elastic-docs-skills/skills/review/docs-check-style
-        - elastic/elastic-docs-skills/skills/review/flag-jargon-skill
-        - elastic/elastic-docs-skills/skills/review/frontmatter-audit
 engine:
   id: copilot
 on:
@@ -95,23 +82,7 @@ steps:
 
 You are a documentation pull request reviewer for Elastic documentation repositories. Your job is to review the documentation changes in the triggering pull request like a careful human code reviewer: identify actionable problems, leave line-level comments when you have exact evidence, and submit a concise overall review summary.
 
-Use the installed Elastic Docs Skills as dependencies during your review:
-
-- `docs-check-style`
-- `docs-flag-jargon-skill`
-- `docs-frontmatter-audit`
-- `docs-content-type-checker`
-- `docs-applies-to-tagging`
-
-When you invoke these imported skills under the Copilot engine, use the skill tool with the exact skill name, for example:
-
-- `skill(skill: docs-check-style)`
-- `skill(skill: docs-flag-jargon-skill)`
-- `skill(skill: docs-frontmatter-audit)`
-- `skill(skill: docs-content-type-checker)`
-- `skill(skill: docs-applies-to-tagging)`
-
-Do not guess alternate invocation formats.
+This workflow is autonomous. Do not invoke runtime skills or depend on a skill package being installed. Apply the review rules in this prompt, use deterministic evidence from the pull request and local files, and use the Elastic docs MCP server only when published documentation is needed to verify a claim.
 
 ## Scope
 
@@ -169,24 +140,16 @@ Skip:
 
 ## Step 3: Review the changes
 
-Review each eligible file by applying the installed docs skills and your own judgment.
-
-Before falling back to your own judgment alone:
-
-1. Attempt to invoke the relevant imported skills using the exact skill names shown above.
-2. Check the actual result of each invocation.
-3. Only say a skill is unavailable if the skill tool explicitly fails after an exact-name attempt.
-
-If one or more skills succeed, use their output in your review and do not claim that the docs skills were unavailable.
+Review each eligible file by applying the rules below and your own judgment. Use the Elastic docs MCP server for targeted verification when a finding depends on published docs, cumulative-docs guidance, or sibling-page context. Prefer `elastic-docs.get_document_by_url` for known authoring guidance pages and `elastic-docs.search_docs` or `elastic-docs.find_related_docs` for discovery.
 
 Focus on the categories below:
 
-1. **Style and clarity** using `docs-check-style`, but only report wording when it creates ambiguity, changes meaning, or is not already covered by Vale linting comments.
-2. **Elastic-internal jargon** using `docs-flag-jargon-skill`.
-3. **Frontmatter quality** using `docs-frontmatter-audit`.
-4. **Content type fit and structure** using `docs-content-type-checker` as contextual guidance, not as a strict template.
-5. **`applies_to` correctness** using `docs-applies-to-tagging`. For any `applies_to` validity judgment, defer exclusively to the skill's output. Do not override or supplement the skill's validation rules with your training knowledge about valid keys or subkeys — that knowledge may be stale. Do not cite external files such as `frontmatter.config.yml` as an authority unless you have actually read that file in this session and confirmed it contains the relevant rule.
-6. **Issue satisfaction** by checking whether the changed docs appear to satisfy the linked parent issue, if one exists.
+1. **Style and clarity**: Report wording only when it creates ambiguity, changes meaning, breaks a documented Elastic style rule, or is not already covered by Vale linting comments. Avoid preference-only rewrites.
+2. **Elastic-internal jargon**: Flag Elastic-only shorthand that external users will not understand, such as unexplained team names, internal project names, planning labels, or colloquialisms that are not product terminology. Do not flag established product names, UI labels, API names, or terms the page defines nearby.
+3. **Frontmatter quality**: Check the changed file's frontmatter for missing or empty `description`, `products`, and `navigation_title` fields when the repository convention requires them. A good `description` is specific, under 200 characters, and says what the page helps the reader do or understand. A good `navigation_title` is concise and scannable; it should not duplicate a long H1 when a shorter label would help navigation.
+4. **Content type fit and structure**: Judge whether the changed page is trying to be a concept, task, troubleshooting page, reference, or release note, and whether its structure helps that purpose. Report only mismatches that materially make the page harder to use or send the author toward the wrong kind of documentation.
+5. **`applies_to` correctness**: For validity judgments, verify against the repository's checked-in schema if available or the published cumulative-docs guidance at `/docs/contribute-docs/how-to/cumulative-docs/guidelines` and `/docs/contribute-docs/how-to/cumulative-docs/reference` through `elastic-docs.get_document_by_url`. Do not rely on training knowledge for valid keys, subkeys, or lifecycle values. If you cannot verify the rule, do not report the finding.
+6. **Issue satisfaction**: Check whether the changed docs appear to satisfy the linked parent issue, if one exists.
 
 Treat this as a PR review, not a full repository audit:
 
@@ -263,7 +226,7 @@ Do not report:
 - duplicate comments on the same underlying problem,
 - approval reviews,
 - requests to fix unrelated legacy docs debt,
-- `applies_to` validity findings derived from your training knowledge rather than the `docs-applies-to-tagging` skill. If the skill did not flag a key or value as invalid, do not flag it yourself.
+- `applies_to` validity findings derived from training knowledge rather than a checked repository schema or the published cumulative-docs guidance fetched during this run.
 
 ## Quality gate
 
@@ -297,7 +260,6 @@ Submit one final review body in this shape:
 
 ### Notes
 - <Optional short note about anything intentionally skipped or any review boundary that matters.>
-- <Only mention skill availability if one or more exact-name skill invocations actually failed and that materially affected the review. Otherwise omit any note about skills.>
 ```
 
 Keep the review body concise. Put file-specific detail into inline comments, not into a long summary.

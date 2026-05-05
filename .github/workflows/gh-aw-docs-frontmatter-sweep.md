@@ -1,8 +1,8 @@
 ---
 description: |
   Audits frontmatter quality across a docs corpus on a rotating slice each run.
-  Combines the docs-frontmatter-audit skill (required-field validation) with
-  docs-frontmatter-description (description quality and suggestions). Opens a
+  Applies self-contained required-field and description-quality rules, with
+  targeted Elastic docs MCP checks for published authoring guidance. Opens a
   single labeled fix-issue with structured YAML findings consumable by a future
   fix-agent.
 
@@ -10,19 +10,7 @@ inlined-imports: true
 imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
-  - uses: github/gh-aw/.github/workflows/shared/apm.md@v0.71.1
-    with:
-      # Workaround for github/gh-aw#30365: every APM-importing workflow in this
-      # repo must pack the same package set so they don't clobber each other's
-      # cache under the constant key apm-copilot- in the caller repo.
-      packages:
-        - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
-        - elastic/elastic-docs-skills/skills/authoring/content-type-checker
-        - elastic/elastic-docs-skills/skills/authoring/frontmatter-description
-        - elastic/elastic-docs-skills/skills/authoring/page-opening-optimizer
-        - elastic/elastic-docs-skills/skills/review/docs-check-style
-        - elastic/elastic-docs-skills/skills/review/flag-jargon-skill
-        - elastic/elastic-docs-skills/skills/review/frontmatter-audit
+  - gh-aw-fragments/mcp-pagination.md
 engine:
   id: copilot
   concurrency:
@@ -82,10 +70,16 @@ tools:
     - "git log *"
     - "yq *"
     - "jq *"
+mcp-servers:
+  elastic-docs:
+    type: http
+    url: "https://www.elastic.co/docs/_mcp/"
+    allowed: ["*"]
 network:
   allowed:
     - defaults
     - github
+    - "www.elastic.co"
 safe-outputs:
   noop:
   create-issue:
@@ -204,36 +198,41 @@ You are a frontmatter quality reviewer for an Elastic documentation repository. 
 A pre-step has computed the in-scope file list for this run:
 
 - `/tmp/gh-aw/sweep-data/in-scope.txt` — newline-delimited list of repository-relative file paths to audit. May be empty.
-- `/tmp/gh-aw/sweep-data/scope/` — copies of the same files, mirroring their original paths under this prefix. Pass this directory to skills when they accept a directory argument.
+- `/tmp/gh-aw/sweep-data/scope/` — copies of the same files, mirroring their original paths under this prefix. Audit these copies and map findings back to the repo originals.
 - `/tmp/gh-aw/sweep-data/stats.json` — `total`, `shard_n`, `shard_slot`, `in_scope_count`, `iso_week`, `docs_root`.
 
 Read these with `cat` / `jq`. Do not refetch them from the repo via GitHub APIs.
 
 ## Scope
 
-Audit only the files listed in `in-scope.txt`. Do not expand scope to other files even if a skill suggests it. Out-of-scope files are deliberately skipped this run; they will be picked up in subsequent rotations.
+Audit only the files listed in `in-scope.txt`. Do not expand scope to other files even if related evidence suggests it. Out-of-scope files are deliberately skipped this run; they will be picked up in subsequent rotations.
 
 If `in_scope_count` is `0`, call `noop` with a short message including the corpus stats (`"Empty corpus" / "All files in this rotation are unaudited"`) and stop.
 
-## Step 1: Run the skills on the slice
+## Step 1: Audit the frontmatter
 
-Invoke the two installed skills against `/tmp/gh-aw/sweep-data/scope/` (which mirrors only the in-scope files):
+This workflow is autonomous. Do not invoke runtime skills or depend on a skill package being installed. For each in-scope file, read the frontmatter block at the top of the copy under `/tmp/gh-aw/sweep-data/scope/` and inspect only the fields covered by this sweep.
 
-- `skill(skill: docs-frontmatter-audit)` — reports missing or invalid required keys (`description`, `applies_to`, `products`, `navigation_title`).
-- `skill(skill: docs-frontmatter-description)` — proposes SEO-quality `description:` text where it is missing, empty, too long (>200 chars), or low-quality. **Audit/suggest only — do not write any files.** This sweep produces an issue, not edits.
+Use local repository evidence first. If a repository schema or docs-builder frontmatter reference is present in the checked-out source, use it for required-field confirmation. Use the Elastic docs MCP server only for targeted authoring guidance, not for broad corpus searches. Prefer `elastic-docs.search_docs` to find published frontmatter guidance and `elastic-docs.get_document_by_url` to fetch the canonical page before citing it.
 
-If both skills succeed, merge their findings; if one fails, report only the other and note the skill failure once in the issue body's `Notes` section.
+Apply these rules:
+
+- `description` should be present, non-empty, no more than 200 characters, specific to the page, and useful in search results. Avoid generic descriptions such as "Learn about X" or descriptions that simply repeat the H1.
+- `products` should be present and non-empty when the repository's frontmatter convention requires it. Do not invent product values; if you cannot verify the right value from the page context or local convention, report the missing field without a suggested fix.
+- `navigation_title` should be present when the repository's convention requires it and should be concise enough for navigation. Flag verbatim H1 duplicates only when the H1 is long or includes context that is unnecessary in the navigation tree.
+- Do not emit `missing-applies-to` or `invalid-applies-to` findings. The dedicated applies_to sweep owns those categories.
+- Audit only. Do not edit repo originals or scope copies. This sweep emits an issue, not a PR.
 
 ## Step 2: Build the findings list
 
 For each finding, extract:
 
-- `file` — the original repository-relative path (strip the `/tmp/gh-aw/sweep-data/scope/` prefix from any skill output).
+- `file` — the original repository-relative path (strip the `/tmp/gh-aw/sweep-data/scope/` prefix from any scoped file path).
 - `line` — `1` for missing/invalid frontmatter keys (frontmatter starts at line 1); for description-quality findings use the line of the `description:` key.
-- `category` — one of: `missing-description`, `weak-description`, `description-too-long`, `missing-products`, `missing-navigation-title`. **Do not emit `missing-applies-to` or `invalid-applies-to`** — those belong to `gh-aw-docs-applies-to-sweep`. If the audit skill produces them, drop them silently.
+- `category` — one of: `missing-description`, `weak-description`, `description-too-long`, `missing-products`, `missing-navigation-title`. **Do not emit `missing-applies-to` or `invalid-applies-to`** — those belong to `gh-aw-docs-applies-to-sweep`. If another source suggests them, drop them silently.
 - `severity` — `high` for missing required fields; `medium` for weak/long/invalid; `low` for nits.
 - `evidence` — one short sentence quoting or naming the exact problem.
-- `suggested_fix` — concrete YAML snippet ready to paste into the file's frontmatter, when the skill produces one. For audit-only findings (e.g., a missing field with no suggested value), omit `suggested_fix`.
+- `suggested_fix` — concrete YAML snippet ready to paste into the file's frontmatter when you can produce one confidently. For audit-only findings, or a missing field with no verified value, omit `suggested_fix`.
 
 Apply the **Rigor** standards from the imported fragment: skip any finding where you cannot point to exact evidence, and skip any pre-existing build-error-class issues already covered by the docs build.
 
@@ -278,11 +277,10 @@ Shard <slot+1>/<n> · <shard_count> pages in slice · <recent_count> recently-ch
 ```
 
 ## Done when
-- All listed pages have a non-empty, ≤200-character `description` field, valid `applies_to`, and required keys present per the repo's frontmatter schema.
+- All listed pages have a non-empty, <=200-character `description` field and required frontmatter keys present per the repo's frontmatter schema.
 - A PR addressing this issue is merged.
 
 ## Notes
-- Skill availability: <only mention if a skill failed>.
 - <Optional 1-line about anything intentionally skipped>.
 
 <!-- gh-aw-docs-frontmatter-sweep:run=<iso_week>:shard=<slot>/<n> -->

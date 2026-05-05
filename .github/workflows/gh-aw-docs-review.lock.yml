@@ -1,5 +1,5 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"308459d6e5c0682a20526fe1af40fbe6a2b08ec64c1f7943a45fb49089974c3f","compiler_version":"v0.71.1","agent_id":"copilot"}
-# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GH_AW_PLUGINS_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/cache/restore","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/cache/save","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"239aec45b78c8799417efdd5bc6d8cc036629ec1","version":"v0.71.1"},{"repo":"microsoft/apm-action","sha":"a190b0b1a91031057144dc136acf9757a59c9e4d","version":"v1.4.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28","digest":"sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28","digest":"sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28","digest":"sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.0"},{"image":"ghcr.io/github/github-mcp-server:v1.0.2"},{"image":"node:lts-alpine","digest":"sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f","pinned_image":"node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f"}]}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"c6ea82a5044f6e53d4ee22cd1d65a328a77af9587daa3e4ff9f33cec6b83364f","compiler_version":"v0.71.1","agent_id":"copilot"}
+# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"239aec45b78c8799417efdd5bc6d8cc036629ec1","version":"v0.71.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28","digest":"sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28","digest":"sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28","digest":"sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.0"},{"image":"ghcr.io/github/github-mcp-server:v1.0.2"},{"image":"node:lts-alpine","digest":"sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f","pinned_image":"node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
 #  | |_| | __ _  ___ _ __ | |_ _  ___ 
@@ -22,16 +22,15 @@
 #
 # For more information: https://github.github.com/gh-aw/introduction/overview/
 #
-# Reviews pull request documentation changes in markdown files by using Copilot plus
-# Elastic Docs Skills. Reports a concise summary and line-level review comments
-# for actionable markdown issues.
+# Reviews pull request documentation changes in markdown files using
+# self-contained Elastic docs review rules. Reports a concise summary and
+# line-level review comments for actionable markdown issues.
 #
 # Resolved workflow manifest:
 #   Imports:
 #     - gh-aw-fragments/formatting.md
 #     - gh-aw-fragments/mcp-pagination.md
 #     - gh-aw-fragments/rigor.md
-#     - github/gh-aw/.github/workflows/shared/apm.md@v0.71.1
 #
 # inlined-imports: true
 #
@@ -39,19 +38,15 @@
 #   - COPILOT_GITHUB_TOKEN
 #   - GH_AW_GITHUB_MCP_SERVER_TOKEN
 #   - GH_AW_GITHUB_TOKEN
-#   - GH_AW_PLUGINS_TOKEN
 #   - GITHUB_TOKEN
 #
 # Custom actions used:
-#   - actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-#   - actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
 #   - actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 #   - actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
 #   - actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
 #   - actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
 #   - actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
 #   - github/gh-aw-actions/setup@239aec45b78c8799417efdd5bc6d8cc036629ec1 # v0.71.1
-#   - microsoft/apm-action@a190b0b1a91031057144dc136acf9757a59c9e4d # v1.4.1
 #
 # Container images used:
 #   - ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a
@@ -217,14 +212,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_4a044e8587f4a5bc_EOF'
+          cat << 'GH_AW_PROMPT_d24846ffcc6fdc3d_EOF'
           <system>
-          GH_AW_PROMPT_4a044e8587f4a5bc_EOF
+          GH_AW_PROMPT_d24846ffcc6fdc3d_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_4a044e8587f4a5bc_EOF'
+          cat << 'GH_AW_PROMPT_d24846ffcc6fdc3d_EOF'
           <safe-output-tools>
           Tools: create_pull_request_review_comment(max:20), submit_pull_request_review, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -256,13 +251,10 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_4a044e8587f4a5bc_EOF
+          GH_AW_PROMPT_d24846ffcc6fdc3d_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_4a044e8587f4a5bc_EOF'
+          cat << 'GH_AW_PROMPT_d24846ffcc6fdc3d_EOF'
           </system>
-          
-          
-          
           ## Formatting Guidelines
           
           - Lead with the most important information — your first sentence should be the key takeaway
@@ -306,23 +298,7 @@ jobs:
           
           You are a documentation pull request reviewer for Elastic documentation repositories. Your job is to review the documentation changes in the triggering pull request like a careful human code reviewer: identify actionable problems, leave line-level comments when you have exact evidence, and submit a concise overall review summary.
           
-          Use the installed Elastic Docs Skills as dependencies during your review:
-          
-          - `docs-check-style`
-          - `docs-flag-jargon-skill`
-          - `docs-frontmatter-audit`
-          - `docs-content-type-checker`
-          - `docs-applies-to-tagging`
-          
-          When you invoke these imported skills under the Copilot engine, use the skill tool with the exact skill name, for example:
-          
-          - `skill(skill: docs-check-style)`
-          - `skill(skill: docs-flag-jargon-skill)`
-          - `skill(skill: docs-frontmatter-audit)`
-          - `skill(skill: docs-content-type-checker)`
-          - `skill(skill: docs-applies-to-tagging)`
-          
-          Do not guess alternate invocation formats.
+          This workflow is autonomous. Do not invoke runtime skills or depend on a skill package being installed. Apply the review rules in this prompt, use deterministic evidence from the pull request and local files, and use the Elastic docs MCP server only when published documentation is needed to verify a claim.
           
           ## Scope
           
@@ -380,24 +356,16 @@ jobs:
           
           ## Step 3: Review the changes
           
-          Review each eligible file by applying the installed docs skills and your own judgment.
-          
-          Before falling back to your own judgment alone:
-          
-          1. Attempt to invoke the relevant imported skills using the exact skill names shown above.
-          2. Check the actual result of each invocation.
-          3. Only say a skill is unavailable if the skill tool explicitly fails after an exact-name attempt.
-          
-          If one or more skills succeed, use their output in your review and do not claim that the docs skills were unavailable.
+          Review each eligible file by applying the rules below and your own judgment. Use the Elastic docs MCP server for targeted verification when a finding depends on published docs, cumulative-docs guidance, or sibling-page context. Prefer `elastic-docs.get_document_by_url` for known authoring guidance pages and `elastic-docs.search_docs` or `elastic-docs.find_related_docs` for discovery.
           
           Focus on the categories below:
           
-          1. **Style and clarity** using `docs-check-style`, but only report wording when it creates ambiguity, changes meaning, or is not already covered by Vale linting comments.
-          2. **Elastic-internal jargon** using `docs-flag-jargon-skill`.
-          3. **Frontmatter quality** using `docs-frontmatter-audit`.
-          4. **Content type fit and structure** using `docs-content-type-checker` as contextual guidance, not as a strict template.
-          5. **`applies_to` correctness** using `docs-applies-to-tagging`. For any `applies_to` validity judgment, defer exclusively to the skill's output. Do not override or supplement the skill's validation rules with your training knowledge about valid keys or subkeys — that knowledge may be stale. Do not cite external files such as `frontmatter.config.yml` as an authority unless you have actually read that file in this session and confirmed it contains the relevant rule.
-          6. **Issue satisfaction** by checking whether the changed docs appear to satisfy the linked parent issue, if one exists.
+          1. **Style and clarity**: Report wording only when it creates ambiguity, changes meaning, breaks a documented Elastic style rule, or is not already covered by Vale linting comments. Avoid preference-only rewrites.
+          2. **Elastic-internal jargon**: Flag Elastic-only shorthand that external users will not understand, such as unexplained team names, internal project names, planning labels, or colloquialisms that are not product terminology. Do not flag established product names, UI labels, API names, or terms the page defines nearby.
+          3. **Frontmatter quality**: Check the changed file's frontmatter for missing or empty `description`, `products`, and `navigation_title` fields when the repository convention requires them. A good `description` is specific, under 200 characters, and says what the page helps the reader do or understand. A good `navigation_title` is concise and scannable; it should not duplicate a long H1 when a shorter label would help navigation.
+          4. **Content type fit and structure**: Judge whether the changed page is trying to be a concept, task, troubleshooting page, reference, or release note, and whether its structure helps that purpose. Report only mismatches that materially make the page harder to use or send the author toward the wrong kind of documentation.
+          5. **`applies_to` correctness**: For validity judgments, verify against the repository's checked-in schema if available or the published cumulative-docs guidance at `/docs/contribute-docs/how-to/cumulative-docs/guidelines` and `/docs/contribute-docs/how-to/cumulative-docs/reference` through `elastic-docs.get_document_by_url`. Do not rely on training knowledge for valid keys, subkeys, or lifecycle values. If you cannot verify the rule, do not report the finding.
+          6. **Issue satisfaction**: Check whether the changed docs appear to satisfy the linked parent issue, if one exists.
           
           Treat this as a PR review, not a full repository audit:
           
@@ -474,7 +442,7 @@ jobs:
           - duplicate comments on the same underlying problem,
           - approval reviews,
           - requests to fix unrelated legacy docs debt,
-          - `applies_to` validity findings derived from your training knowledge rather than the `docs-applies-to-tagging` skill. If the skill did not flag a key or value as invalid, do not flag it yourself.
+          - `applies_to` validity findings derived from training knowledge rather than a checked repository schema or the published cumulative-docs guidance fetched during this run.
           
           ## Quality gate
           
@@ -508,14 +476,13 @@ jobs:
           
           ### Notes
           - <Optional short note about anything intentionally skipped or any review boundary that matters.>
-          - <Only mention skill availability if one or more exact-name skill invocations actually failed and that materially affected the review. Otherwise omit any note about skills.>
           ```
           
           Keep the review body concise. Put file-specific detail into inline comments, not into a long summary.
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_4a044e8587f4a5bc_EOF
+          GH_AW_PROMPT_d24846ffcc6fdc3d_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
@@ -589,9 +556,7 @@ jobs:
           retention-days: 1
 
   agent:
-    needs:
-      - activation
-      - apm
+    needs: activation
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -704,32 +669,6 @@ jobs:
           GH_AW_AGENT_FOLDERS: ".agents .claude .codex .crush .gemini .github .opencode"
           GH_AW_AGENT_FILES: ".crush.json AGENTS.md CLAUDE.md GEMINI.md opencode.jsonc"
         run: bash "${RUNNER_TEMP}/gh-aw/actions/restore_base_github_folders.sh"
-      - id: apm_cache_restore
-        name: Restore APM bundle from cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          key: apm-${{ needs.activation.outputs.engine_id }}-${{ hashFiles('.github/workflows/*.lock.yml') }}
-          path: /tmp/gh-aw/apm-workspace
-      - if: steps.apm_cache_restore.outputs.cache-hit != 'true'
-        name: Download APM bundle artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: ${{ needs.activation.outputs.artifact_prefix }}apm
-          path: /tmp/gh-aw/apm-bundle
-      - id: apm_bundle
-        name: Find APM bundle path
-        run: |
-          bundle=$(find /tmp/gh-aw/apm-workspace /tmp/gh-aw/apm-bundle -name '*.tar.gz' 2>/dev/null | head -1)
-          if [ -z "$bundle" ]; then
-            echo "::error::APM bundle not found in /tmp/gh-aw/apm-workspace or /tmp/gh-aw/apm-bundle"
-            exit 1
-          fi
-          echo "path=$bundle" >> "$GITHUB_OUTPUT"
-      - name: Restore APM packages
-        uses: microsoft/apm-action@a190b0b1a91031057144dc136acf9757a59c9e4d # v1.4.1
-        with:
-          bundle: ${{ steps.apm_bundle.outputs.path }}
-
       - name: Download container images
         run: bash "${RUNNER_TEMP}/gh-aw/actions/download_docker_images.sh" ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474 ghcr.io/github/gh-aw-mcpg:v0.3.0 ghcr.io/github/github-mcp-server:v1.0.2 node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f
       - name: Write Safe Outputs Config
@@ -737,9 +676,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_e9ce294a0b7a7666_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_56b4650ce6ee0c7e_EOF'
           {"create_pull_request_review_comment":{"max":20,"side":"RIGHT"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{},"submit_pull_request_review":{"allowed_events":["COMMENT"],"max":1,"target":"triggering"}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_e9ce294a0b7a7666_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_56b4650ce6ee0c7e_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -959,7 +898,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_194c157ab1f65a83_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_26d775a771d616be_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -1017,7 +956,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_194c157ab1f65a83_EOF
+          GH_AW_MCP_CONFIG_26d775a771d616be_EOF
       - name: Clean git credentials
         continue-on-error: true
         run: bash "${RUNNER_TEMP}/gh-aw/actions/clean_git_credentials.sh"
@@ -1206,88 +1145,10 @@ jobs:
             /tmp/gh-aw/sandbox/firewall/audit/
           if-no-files-found: ignore
 
-  apm:
-    needs: activation
-    runs-on: ubuntu-slim
-    permissions:
-      {}
-
-    steps:
-      - name: Configure GH_HOST for enterprise compatibility
-        id: ghes-host-config
-        shell: bash
-        run: |
-          # Derive GH_HOST from GITHUB_SERVER_URL so the gh CLI targets the correct
-          # GitHub instance (GHES/GHEC). On github.com this is a harmless no-op.
-          GH_HOST="${GITHUB_SERVER_URL#https://}"
-          GH_HOST="${GH_HOST#http://}"
-          echo "GH_HOST=${GH_HOST}" >> "$GITHUB_ENV"
-      - name: Checkout workflow lock files
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-          sparse-checkout: |
-            .github/workflows
-          sparse-checkout-cone-mode: false
-      - name: Restore APM bundle from cache
-        id: apm_cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          key: apm-${{ needs.activation.outputs.engine_id }}-${{ hashFiles('.github/workflows/*.lock.yml') }}
-          path: /tmp/gh-aw/apm-workspace
-      - name: Prepare APM package list
-        id: apm_prep
-        if: steps.apm_cache.outputs.cache-hit != 'true'
-        run: |
-          DEPS=$(echo "$AW_APM_PACKAGES" | jq -r '.[] | "- " + .')
-          {
-            echo "deps<<APMDEPS"
-            printf '%s\n' "$DEPS"
-            echo "APMDEPS"
-          } >> "$GITHUB_OUTPUT"
-        env:
-          AW_APM_PACKAGES: "[\"elastic/elastic-docs-skills/skills/authoring/applies-to-tagging\",\"elastic/elastic-docs-skills/skills/authoring/content-type-checker\",\"elastic/elastic-docs-skills/skills/authoring/frontmatter-description\",\"elastic/elastic-docs-skills/skills/authoring/page-opening-optimizer\",\"elastic/elastic-docs-skills/skills/review/docs-check-style\",\"elastic/elastic-docs-skills/skills/review/flag-jargon-skill\",\"elastic/elastic-docs-skills/skills/review/frontmatter-audit\"]"
-      - name: Pack APM packages
-        id: apm_pack
-        if: steps.apm_cache.outputs.cache-hit != 'true'
-        uses: microsoft/apm-action@a190b0b1a91031057144dc136acf9757a59c9e4d # v1.4.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_AW_PLUGINS_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-        with:
-          archive: "true"
-          dependencies: ${{ steps.apm_prep.outputs.deps }}
-          isolated: "true"
-          pack: "true"
-          target: all
-          working-directory: /tmp/gh-aw/apm-workspace
-      - name: Save APM bundle to cache
-        if: steps.apm_cache.outputs.cache-hit != 'true' && success()
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          key: ${{ steps.apm_cache.outputs.cache-primary-key }}
-          path: /tmp/gh-aw/apm-workspace
-      - name: Find APM bundle path
-        id: apm_bundle_path
-        run: |
-          bundle=$(find /tmp/gh-aw/apm-workspace -name '*.tar.gz' | head -1)
-          if [ -z "$bundle" ]; then
-            echo "::error::APM bundle not found in /tmp/gh-aw/apm-workspace"
-            exit 1
-          fi
-          echo "path=$bundle" >> "$GITHUB_OUTPUT"
-      - name: Upload APM bundle artifact
-        if: success()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: ${{ needs.activation.outputs.artifact_prefix }}apm
-          path: ${{ steps.apm_bundle_path.outputs.path }}
-          retention-days: "1"
-
   conclusion:
     needs:
       - activation
       - agent
-      - apm
       - detection
       - safe_outputs
     if: >
@@ -1505,7 +1366,7 @@ jobs:
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
         env:
           WORKFLOW_NAME: "Docs review agent"
-          WORKFLOW_DESCRIPTION: "Reviews pull request documentation changes in markdown files by using Copilot plus\nElastic Docs Skills. Reports a concise summary and line-level review comments\nfor actionable markdown issues."
+          WORKFLOW_DESCRIPTION: "Reviews pull request documentation changes in markdown files using\nself-contained Elastic docs review rules. Reports a concise summary and\nline-level review comments for actionable markdown issues."
           HAS_PATCH: ${{ needs.agent.outputs.has_patch }}
         with:
           script: |

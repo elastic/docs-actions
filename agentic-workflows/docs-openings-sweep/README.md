@@ -1,6 +1,6 @@
 # Docs page openings sweep
 
-Audits page openings — H1 specificity, opening paragraph, "Before you begin" section, `navigation_title` — across a docs corpus on a rotating slice each run, using the `docs-page-opening-optimizer` skill in suggest-only mode.
+Audits page openings — H1 specificity, opening paragraph, "Before you begin" section, `navigation_title` — across a docs corpus on a rotating slice each run, using self-contained rules and targeted Elastic docs MCP checks.
 
 ## Triggers
 
@@ -38,13 +38,14 @@ Ensure `COPILOT_GITHUB_TOKEN` is configured.
 ## How it works
 
 1. Pre-step computes the rotating slice plus recently-changed pages.
-2. The agent invokes `docs-page-opening-optimizer` against the slice and converts the skill's suggested edits into structured findings.
+2. The agent reads the copied slice and applies embedded checks for H1 specificity, opening paragraph quality, task prerequisites, and navigation titles.
 3. Categories: `missing-h1`, `vague-h1`, `missing-h1-anchor`, `weak-opening`, `missing-before-you-begin`, `inadequate-navigation-title`.
-4. The skill may modify the temp scope copies; the workflow does not push those changes anywhere — only the structured findings are emitted in the fix-issue.
+4. The agent may use Elastic docs MCP to compare sibling page titles when H1 specificity needs published-doc context.
+5. The workflow does not edit files or push changes — only the structured findings are emitted in the fix-issue.
 
 ## Notes
 
-This sweep covers vague H1s (the use case `docs-page-opening-optimizer` is built for). There is no separate H1 sweep.
+This sweep covers vague H1s, so there is no separate H1 sweep.
 
 ## Combining with other sweeps
 
