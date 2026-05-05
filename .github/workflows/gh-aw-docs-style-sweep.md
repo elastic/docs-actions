@@ -204,13 +204,12 @@ Invoke `skill(skill: docs-check-style)` against `/tmp/gh-aw/sweep-data/scope/`.
 
 The skill produces line-level findings grouped by category (Voice/Tone, Word Choice, Grammar, Formatting, Accessibility, UI Writing). Read its output and convert into the YAML structure below.
 
-**Only treat the skill as unavailable after a confirmed exact-form failure.** Stochastic agent retries sometimes invoke the skill with a shortened form (e.g., `skill(docs-check-style)` without the `skill:` prefix) which fails before the exact form is tried. Procedure:
+**If the skill returns "Skill not found", do not noop.** That error is ambiguous — it can mean the skill genuinely isn't installed, or that the invocation form was reformatted by the agent's tool serialization. Either way: fall back to manual analysis instead of aborting. Procedure:
 
-1. Invoke with the exact form `skill(skill: docs-check-style)`.
-2. If the result is "Skill not found", retry once more with the same exact form.
-3. Only after a second exact-form failure, abort by calling `noop` with `"docs-check-style skill unavailable"`.
+1. Try invoking the skill with the exact form `skill(skill: docs-check-style)`.
+2. If that fails or returns "Skill not found": fall back to **manual style review** of the in-scope files. Use `bash` + `grep` to look for common Elastic style-guide violations the agent can detect on its own (e.g., banned phrasing from the `word-choice` category, second-person inconsistencies, missing alt text). Produce findings as you would have from the skill output, and add a single line in the issue body's `Notes` section: "skill `docs-check-style` did not produce output in this run; findings are agent-only."
 
-A single first-attempt failure (especially with a non-exact form) is **not** sufficient evidence to noop.
+Only call `noop` if you cannot produce any high-confidence findings even from manual analysis.
 
 ## Step 2: Build the findings list
 
