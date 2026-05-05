@@ -135,9 +135,19 @@ steps:
         fi
       done < /tmp/gh-aw/sweep-data/all.txt
 
-      git log --since='7 days ago' --name-only --pretty=format: -- "$DOCS_ROOT/*.md" "$DOCS_ROOT/**/*.md" 2>/dev/null \
+      git log --since='2 days ago' --name-only --pretty=format: -- "$DOCS_ROOT/*.md" "$DOCS_ROOT/**/*.md" 2>/dev/null \
         | grep -E '\.md$' \
         | sort -u > /tmp/gh-aw/sweep-data/recent.txt || true
+
+      # Cap the recently-changed pass: if a corpus-wide rebase or migration
+      # touched far more pages than one slice, fall back to slice-only so
+      # rotation actually rotates.
+      RECENT_RAW=$(wc -l < /tmp/gh-aw/sweep-data/recent.txt | tr -d ' ')
+      RECENT_LIMIT=$(( TARGET_BATCH * 2 ))
+      if [ "$RECENT_RAW" -gt "$RECENT_LIMIT" ]; then
+        echo "recently-changed pass produced $RECENT_RAW pages (>2x target batch $TARGET_BATCH); disabling for this run"
+        : > /tmp/gh-aw/sweep-data/recent.txt
+      fi
 
       sort -u /tmp/gh-aw/sweep-data/shard.txt /tmp/gh-aw/sweep-data/recent.txt \
         | grep -v '^$' > /tmp/gh-aw/sweep-data/in-scope.txt || true
@@ -211,9 +221,11 @@ For each finding extract `file`, `line`, `category`, `severity`, `evidence`, and
 
 Strip the `/tmp/gh-aw/sweep-data/scope/` prefix from `file` so paths are repo-relative.
 
-## Step 3: Quality gate
+## Step 3: Sort and cap
 
-Cap at `${{ inputs.max-per-fix-issue }}` pages. If empty, `noop` with `"No applies_to issues in this slice (shard <slot>/<n>, <in_scope_count> pages)"` and stop.
+Sort findings by `severity` (`high` → `medium` → `low`), then by `file` ascending, then by `line` ascending. Group findings on the same `file` adjacently.
+
+Cap at `${{ inputs.max-per-fix-issue }}` distinct files. If empty, `noop` with `"No applies_to issues in this slice (shard <slot>/<n>, <in_scope_count> pages)"` and stop.
 
 ## Output: fix-issue body
 

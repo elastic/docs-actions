@@ -137,9 +137,19 @@ steps:
         fi
       done < /tmp/gh-aw/sweep-data/all.txt
 
-      git log --since='7 days ago' --name-only --pretty=format: -- "$DOCS_ROOT/*.md" "$DOCS_ROOT/**/*.md" 2>/dev/null \
+      git log --since='2 days ago' --name-only --pretty=format: -- "$DOCS_ROOT/*.md" "$DOCS_ROOT/**/*.md" 2>/dev/null \
         | grep -E '\.md$' \
         | sort -u > /tmp/gh-aw/sweep-data/recent.txt || true
+
+      # Cap the recently-changed pass: if a corpus-wide rebase or migration
+      # touched far more pages than one slice, fall back to slice-only so
+      # rotation actually rotates.
+      RECENT_RAW=$(wc -l < /tmp/gh-aw/sweep-data/recent.txt | tr -d ' ')
+      RECENT_LIMIT=$(( TARGET_BATCH * 2 ))
+      if [ "$RECENT_RAW" -gt "$RECENT_LIMIT" ]; then
+        echo "recently-changed pass produced $RECENT_RAW pages (>2x target batch $TARGET_BATCH); disabling for this run"
+        : > /tmp/gh-aw/sweep-data/recent.txt
+      fi
 
       sort -u /tmp/gh-aw/sweep-data/shard.txt /tmp/gh-aw/sweep-data/recent.txt \
         | grep -v '^$' > /tmp/gh-aw/sweep-data/in-scope.txt || true
@@ -212,16 +222,18 @@ For each finding, extract:
 
 - `file` — the original repository-relative path (strip the `/tmp/gh-aw/sweep-data/scope/` prefix from any skill output).
 - `line` — `1` for missing/invalid frontmatter keys (frontmatter starts at line 1); for description-quality findings use the line of the `description:` key.
-- `category` — one of: `missing-description`, `weak-description`, `description-too-long`, `missing-applies-to`, `invalid-applies-to`, `missing-products`, `missing-navigation-title`.
+- `category` — one of: `missing-description`, `weak-description`, `description-too-long`, `missing-products`, `missing-navigation-title`. **Do not emit `missing-applies-to` or `invalid-applies-to`** — those belong to `gh-aw-docs-applies-to-sweep`. If the audit skill produces them, drop them silently.
 - `severity` — `high` for missing required fields; `medium` for weak/long/invalid; `low` for nits.
 - `evidence` — one short sentence quoting or naming the exact problem.
 - `suggested_fix` — concrete YAML snippet ready to paste into the file's frontmatter, when the skill produces one. For audit-only findings (e.g., a missing field with no suggested value), omit `suggested_fix`.
 
 Apply the **Rigor** standards from the imported fragment: skip any finding where you cannot point to exact evidence, and skip any pre-existing build-error-class issues already covered by the docs build.
 
-## Step 3: Quality gate
+## Step 3: Sort and cap
 
-Cap the findings list at `${{ inputs.max-per-fix-issue }}` pages. If more pages have findings, list the first N (sorted by severity then path) and add a note `+M additional pages will surface in next sweep` to the issue body.
+**Sort findings**: by `severity` (`high` → `medium` → `low`), then by `file` ascending, then by `line` ascending. The reader should see the highest-leverage findings at the top of the YAML block. Group findings on the same `file` adjacently so an author can fix one file in one PR.
+
+**Cap** the findings list at `${{ inputs.max-per-fix-issue }}` distinct files (count distinct file paths, not finding rows). If more pages have findings, list the first N and add a note `+M additional pages will surface in next sweep` to the issue body.
 
 If the capped findings list is empty, call `noop` with `"No high-confidence frontmatter issues in this slice (shard <slot>/<n>, <in_scope_count> pages)"` and stop.
 

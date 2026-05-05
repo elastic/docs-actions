@@ -143,9 +143,19 @@ steps:
         fi
       done < /tmp/gh-aw/sweep-data/all.txt
 
-      git log --since='7 days ago' --name-only --pretty=format: -- "$DOCS_ROOT/*.md" "$DOCS_ROOT/**/*.md" 2>/dev/null \
+      git log --since='2 days ago' --name-only --pretty=format: -- "$DOCS_ROOT/*.md" "$DOCS_ROOT/**/*.md" 2>/dev/null \
         | grep -E '\.md$' \
         | sort -u > /tmp/gh-aw/sweep-data/recent.txt || true
+
+      # Cap the recently-changed pass: if a corpus-wide rebase or migration
+      # touched far more pages than one slice, fall back to slice-only so
+      # rotation actually rotates.
+      RECENT_RAW=$(wc -l < /tmp/gh-aw/sweep-data/recent.txt | tr -d ' ')
+      RECENT_LIMIT=$(( TARGET_BATCH * 2 ))
+      if [ "$RECENT_RAW" -gt "$RECENT_LIMIT" ]; then
+        echo "recently-changed pass produced $RECENT_RAW pages (>2x target batch $TARGET_BATCH); disabling for this run"
+        : > /tmp/gh-aw/sweep-data/recent.txt
+      fi
 
       sort -u /tmp/gh-aw/sweep-data/shard.txt /tmp/gh-aw/sweep-data/recent.txt \
         | grep -v '^$' > /tmp/gh-aw/sweep-data/in-scope.txt || true
@@ -232,9 +242,13 @@ For each finding extract:
 - `category`, `severity` (`high` for missing/vague-H1; `medium` for weak-opening; `low` for nav-title nits), `evidence`, `suggested_fix`.
 - `suggested_fix` should be a concrete replacement (e.g., a one-line H1, a 2–4 sentence opening paragraph, or a YAML snippet for navigation_title).
 
-## Step 3: Quality gate
+## Step 3: Sort and cap
 
-Cap at `${{ inputs.max-per-fix-issue }}` pages. If empty, `noop` with `"No high-confidence opening issues in this slice (shard <slot>/<n>, <in_scope_count> pages)"`.
+Sort findings by `severity` (`high` → `medium` → `low`), then by `file` ascending, then by `line` ascending. Group findings on the same `file` adjacently.
+
+Cap at `${{ inputs.max-per-fix-issue }}` distinct files. If empty, `noop` with `"No high-confidence opening issues in this slice (shard <slot>/<n>, <in_scope_count> pages)"`.
+
+**Drop vague `suggested_fix` values**: do not emit `suggested_fix` if the only thing you can produce is generic prose like "improve clarity" or "consider rewording". Either propose a concrete replacement or omit the `suggested_fix` field entirely — vague advice wastes an author's time.
 
 Skip findings where the skill's suggestion materially changes meaning rather than just clarity — those need a human author, not a fix-agent.
 

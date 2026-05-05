@@ -187,9 +187,15 @@ Drop findings where the misspelled token is:
 
 Use `head -n <line>` and `cat` to inspect the surrounding context when filtering. When unsure whether a finding is a false positive, **drop it** — silence beats noise (per `rigor.md`).
 
-## Step 4: Quality gate
+## Step 4: Sort and emit
 
-Cap at `${{ inputs.max-per-fix-issue }}` findings. If, after filtering, the list is empty, `noop` with `"All <finding_count> codespell findings were false positives or out of scope"`.
+Sort findings by `file` ascending, then by `line` ascending — this groups all typos in a single file together so an author can fix them in one pass.
+
+**Do not cap by category**. codespell is deterministic and every finding is unambiguous (one word swap); emit all of them after filtering. The reader does not need agent judgment about *which* typos are most important — they're all "fix the misspelling."
+
+If, after filtering, the list is empty, `noop` with `"All <finding_count> codespell findings were false positives or out of scope"`.
+
+**Hard upper bound for issue body length**: if the post-filter list would exceed 400 rows (GitHub issue body limit ≈ 65,536 characters), cap at 400 and add a note `+M additional typos will surface in next sweep`. This is a safety belt for issue-body length, not a quality gate. The `${{ inputs.max-per-fix-issue }}` input is **not** used by this sweep.
 
 ## Output: fix-issue body
 
