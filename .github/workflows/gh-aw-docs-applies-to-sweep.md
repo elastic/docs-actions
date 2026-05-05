@@ -205,7 +205,13 @@ Invoke `skill(skill: docs-applies-to-tagging)` against `/tmp/gh-aw/sweep-data/sc
 
 **Audit mode only — do not write any files.** The skill defaults to validation when not asked to fix; reinforce that intent in the call. This sweep produces an issue, not edits.
 
-If the skill fails, abort the run by calling `noop` with `"docs-applies-to-tagging skill unavailable"` — there is no fallback heuristic worth filing as findings.
+**Only treat the skill as unavailable after a confirmed exact-form failure.** Stochastic agent retries sometimes invoke the skill with a shortened form (e.g., `skill(docs-applies-to-tagging)` without the `skill:` prefix) which fails before the exact form is tried. Procedure:
+
+1. Invoke with the exact form `skill(skill: docs-applies-to-tagging)`.
+2. If the result is "Skill not found", retry once more with the same exact form.
+3. Only after a second exact-form failure, abort the run by calling `noop` with `"docs-applies-to-tagging skill unavailable"` — there is no fallback heuristic worth filing as findings.
+
+A single first-attempt failure (especially with a non-exact form) is **not** sufficient evidence to noop.
 
 ## Step 2: Build the findings list
 

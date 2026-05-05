@@ -213,7 +213,13 @@ Invoke `skill(skill: docs-page-opening-optimizer)` against `/tmp/gh-aw/sweep-dat
 
 **Suggest only — do not produce edits to repo originals.** This sweep emits an issue, not a PR. The skill may modify files inside the scope copy directory; that is fine — the changes are scratch. To recover the suggestion, diff each modified scope file against the original at `${{ github.workspace }}/<path>`.
 
-If the skill fails, abort by calling `noop` with `"docs-page-opening-optimizer skill unavailable"`.
+**Only treat the skill as unavailable after a confirmed exact-form failure.** Stochastic agent retries sometimes invoke the skill with a shortened form (e.g., `skill(docs-page-opening-optimizer)` without the `skill:` prefix) which fails before the exact form is tried. Procedure:
+
+1. Invoke with the exact form `skill(skill: docs-page-opening-optimizer)`.
+2. If the result is "Skill not found", retry once more with the same exact form.
+3. Only after a second exact-form failure, abort by calling `noop` with `"docs-page-opening-optimizer skill unavailable"`.
+
+A single first-attempt failure (especially with a non-exact form) is **not** sufficient evidence to noop.
 
 ## Optional: cross-check H1 specificity via the Elastic Docs MCP server
 
