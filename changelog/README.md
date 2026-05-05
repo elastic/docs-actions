@@ -51,11 +51,12 @@ on:
       - labeled
       - unlabeled
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   validate:
+    permissions:
+      contents: read  # docs-builder reads changelog config from the PR
     uses: elastic/docs-actions/.github/workflows/changelog-validate.yml@v1
 ```
 
@@ -70,14 +71,19 @@ on:
     types:
       - completed
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   submit:
+    permissions:
+      contents: write       # commit the generated changelog file to the PR branch
+      pull-requests: write  # post the changelog comment on the PR
+      id-token: write       # OIDC token for the org-membership check on fork PRs
+      packages: read        # pull the docs-builder edge image from GHCR
     uses: elastic/docs-actions/.github/workflows/changelog-submit.yml@v1
 ```
+
+> **Important:** All four permissions above are required. The calling job's `permissions:` block is the ceiling for the reusable workflow — its jobs internally request these scopes and the call is rejected at validation time if any are omitted, with errors like `is requesting 'id-token: write', but is only allowed 'id-token: none'`. Keeping `permissions: {}` at the workflow level ensures unrelated jobs in the same caller file don't get these scopes.
 
 If your changelog configuration is not at `docs/changelog.yml`, pass the path explicitly to both workflows:
 
@@ -201,8 +207,13 @@ permissions: {}
 
 jobs:
   upload:
+    permissions:
+      contents: read    # checkout the pushed commit
+      id-token: write   # OIDC token for AWS authentication
     uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
 ```
+
+> **Important:** Both permissions above are required. The calling job's `permissions:` block is the ceiling for the reusable workflow — its jobs internally request these scopes and the call is rejected at validation time if any are omitted, with errors like `is requesting 'id-token: write', but is only allowed 'id-token: none'`.
 
 The `paths` filter is optional — it avoids running the workflow on pushes that don't touch changelog files. If your changelog directory or config lives elsewhere, adjust the paths accordingly.
 
@@ -294,6 +305,10 @@ permissions: {}
 
 jobs:
   bundle:
+    permissions:
+      contents: read    # checkout and read release data
+      packages: read    # pull the docs-builder image from GHCR
+      id-token: write   # OIDC token for AWS authentication on the upload job
     uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
     with:
       profile: my-release
@@ -319,6 +334,10 @@ permissions: {}
 
 jobs:
   bundle:
+    permissions:
+      contents: read    # checkout and read release data
+      packages: read    # pull the docs-builder image from GHCR
+      id-token: write   # OIDC token for AWS authentication on the upload job
     uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
     with:
       mode: gh-release
@@ -343,6 +362,10 @@ permissions: {}
 
 jobs:
   bundle:
+    permissions:
+      contents: read    # checkout and read release data
+      packages: read    # pull the docs-builder image from GHCR
+      id-token: write   # OIDC token for AWS authentication on the upload job
     uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
     with:
       release-version: ${{ github.event.release.tag_name }}
@@ -373,6 +396,10 @@ jobs:
 
   bundle:
     needs: discover-report
+    permissions:
+      contents: read    # checkout and read release data
+      packages: read    # pull the docs-builder image from GHCR
+      id-token: write   # OIDC token for AWS authentication on the upload job
     uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
     with:
       report: ${{ needs.discover-report.outputs.report-url }}
@@ -414,6 +441,10 @@ permissions: {}
 
 jobs:
   bundle:
+    permissions:
+      contents: write       # commit the bundle file and push the branch
+      pull-requests: write  # open or update the bundle PR
+      packages: read        # pull the docs-builder image from GHCR
     uses: elastic/docs-actions/.github/workflows/changelog-bundle-pr.yml@v1
     with:
       profile: my-release
