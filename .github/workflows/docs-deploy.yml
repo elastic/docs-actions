@@ -748,7 +748,31 @@ jobs:
       contents: none
       pull-requests: write
     steps:
+      - name: Check Vale results artifact
+        id: vale-artifact
+        uses: actions/github-script@v9
+        with:
+          # language=js
+          script: |
+            const { owner, repo } = context.repo;
+            const runId = context.payload.workflow_run.id;
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
+              owner,
+              repo,
+              run_id: runId,
+              per_page: 100,
+            });
+            const found = artifacts.some(artifact =>
+              artifact.name === 'vale-results' && artifact.expired === false
+            );
+
+            core.setOutput('found', found ? 'true' : 'false');
+            if (!found) {
+              core.notice(`Vale report skipped: no vale-results artifact found for workflow run ${runId}`);
+            }
+
       - name: Post Vale Results
+        if: steps.vale-artifact.outputs.found == 'true'
         uses: elastic/vale-rules/report@main
 
   # Uploads links.json to the shared link index S3 bucket.
