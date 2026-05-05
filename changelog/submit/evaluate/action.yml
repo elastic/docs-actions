@@ -70,12 +70,24 @@ runs:
           trusted=true
           can_commit=true
         elif [[ "$IS_ORG_MEMBER" == "true" ]]; then
+          # Trusted-fork read path: we will fetch the PR head via the
+          # upstream's refs/pull/N/head mirror (see the "Checkout PR head
+          # (fork PR)" step), so we can run docs-builder on the PR's
+          # generated changelog content without needing access to the fork
+          # repo itself.
           trusted=true
-          if [[ "$MAINTAINER_CAN_MODIFY" == "true" ]]; then
-            can_commit=true
-          else
-            echo "::notice::Fork PR does not allow maintainer edits — changelog will be posted as comment"
-          fi
+
+          # WORKAROUND: can_commit is forced to false for ALL fork PRs,
+          # regardless of maintainer_can_modify, because GITHUB_TOKEN cannot
+          # push to fork repositories. The token is scoped to the workflow's
+          # own repository and the maintainer_can_modify privilege only
+          # extends to *human* upstream maintainers — bot tokens (including
+          # GITHUB_TOKEN) do not inherit it. The push would fail at runtime
+          # with "Repository not found" (private fork) or 403 (public fork).
+          #
+          # This is a stop-gap until a service-account PAT path is wired up.
+          # Tracked: https://github.com/elastic/docs-actions/issues/129
+          echo "::notice::Fork PR — changelog will be posted as a comment. Direct commits to fork branches are not supported with GITHUB_TOKEN; this requires a service-account PAT (planned)."
         fi
 
         if [[ "$COMMENT_ONLY" == "true" ]]; then
@@ -85,16 +97,27 @@ runs:
         echo "trusted=${trusted}" >> "$GITHUB_OUTPUT"
         echo "can-commit=${can_commit}" >> "$GITHUB_OUTPUT"
 
-    - name: Checkout PR branch
-      if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted == 'true'
+    - name: Checkout PR head (same-repo PR)
+      if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted == 'true' && steps.pr-data.outputs.is-fork != 'true'
       uses: actions/checkout@v6
       with:
-        repository: ${{ steps.pr-data.outputs.head-repo }}
         ref: ${{ steps.pr-data.outputs.head-sha }}
         token: ${{ inputs.github-token }}
         persist-credentials: false
 
-    - name: Checkout base repo
+    - name: Checkout PR head (fork PR via upstream pull-ref mirror)
+      # WORKAROUND: We cannot clone the fork repo directly with GITHUB_TOKEN
+      # (scoped to the upstream only). GitHub mirrors every PR's head as
+      # refs/pull/<N>/head inside the *upstream* repo, so checking out that
+      # ref via the upstream gives us the exact PR head SHA without ever
+      # touching the fork. Works for both public and private forks.
+      if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted == 'true' && steps.pr-data.outputs.is-fork == 'true'
+      uses: actions/checkout@v6
+      with:
+        ref: refs/pull/${{ steps.pr.outputs.number }}/head
+        persist-credentials: false
+
+    - name: Checkout base repo (untrusted)
       if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted != 'true'
       uses: actions/checkout@v6
 

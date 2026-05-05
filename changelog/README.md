@@ -163,7 +163,7 @@ jobs:
       comment-only: true
 ```
 
-Fork PRs automatically use comment-only mode since the workflow token cannot push to fork branches.
+Fork PRs always use comment-only mode, regardless of the `comment-only` input. This is a current limitation: the workflow's `GITHUB_TOKEN` is scoped to the upstream repository and cannot push to fork branches. The `maintainer_can_modify` setting on a PR only grants push access to *human* upstream maintainers, not to bot tokens, so even with that flag enabled the push would fail. A future iteration will accept an opt-in service-account PAT (from a user with write access to the upstream) to enable direct commits on fork branches; until then, fork PRs receive the changelog as a comment.
 
 ## Skipping changelog generation
 
