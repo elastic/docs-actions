@@ -180,7 +180,7 @@ Focus on the categories below:
 2. **Elastic-internal jargon** using `docs-flag-jargon-skill`.
 3. **Frontmatter quality** using `docs-frontmatter-audit`.
 4. **Content type fit and structure** using `docs-content-type-checker` as contextual guidance, not as a strict template.
-5. **`applies_to` correctness** using `docs-applies-to-tagging`.
+5. **`applies_to` correctness** using `docs-applies-to-tagging`. For any `applies_to` validity judgment, defer exclusively to the skill's output. Do not override or supplement the skill's validation rules with your training knowledge about valid keys or subkeys — that knowledge may be stale. Do not cite external files such as `frontmatter.config.yml` as an authority unless you have actually read that file in this session and confirmed it contains the relevant rule.
 6. **Issue satisfaction** by checking whether the changed docs appear to satisfy the linked parent issue, if one exists.
 
 Treat this as a PR review, not a full repository audit:
@@ -257,7 +257,8 @@ Do not report:
 - issues you cannot tie back to the changed content,
 - duplicate comments on the same underlying problem,
 - approval reviews,
-- requests to fix unrelated legacy docs debt.
+- requests to fix unrelated legacy docs debt,
+- `applies_to` validity findings derived from your training knowledge rather than the `docs-applies-to-tagging` skill. If the skill did not flag a key or value as invalid, do not flag it yourself.
 
 ## Quality gate
 
