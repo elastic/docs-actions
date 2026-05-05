@@ -10,7 +10,7 @@ jobs:
     name: Recompile lock files and open PR if changed
     runs-on: ubuntu-latest
     env:
-      GH_AW_VERSION: v0.71.4
+      GH_AW_VERSION: v0.71.1
     permissions:
       id-token: write
       contents: read
