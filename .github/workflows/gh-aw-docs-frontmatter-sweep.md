@@ -17,6 +17,9 @@ imports:
         - elastic/elastic-docs-skills/skills/authoring/frontmatter-description
 engine:
   id: copilot
+  concurrency:
+    group: "gh-aw-copilot-docs-frontmatter-sweep-${{ github.run_id }}"
+    cancel-in-progress: false
 on:
   workflow_call:
     inputs:
