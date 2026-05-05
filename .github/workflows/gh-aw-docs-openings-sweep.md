@@ -11,8 +11,17 @@ imports:
   - gh-aw-fragments/rigor.md
   - uses: github/gh-aw/.github/workflows/shared/apm.md@v0.71.1
     with:
+      # Workaround for github/gh-aw#30365: every APM-importing workflow in this
+      # repo must pack the same package set so they don't clobber each other's
+      # cache under the constant key apm-copilot- in the caller repo.
       packages:
+        - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
+        - elastic/elastic-docs-skills/skills/authoring/content-type-checker
+        - elastic/elastic-docs-skills/skills/authoring/frontmatter-description
         - elastic/elastic-docs-skills/skills/authoring/page-opening-optimizer
+        - elastic/elastic-docs-skills/skills/review/docs-check-style
+        - elastic/elastic-docs-skills/skills/review/flag-jargon-skill
+        - elastic/elastic-docs-skills/skills/review/frontmatter-audit
 engine:
   id: copilot
   concurrency:
