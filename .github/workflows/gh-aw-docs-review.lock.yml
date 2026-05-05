@@ -1,4 +1,4 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"c6ea82a5044f6e53d4ee22cd1d65a328a77af9587daa3e4ff9f33cec6b83364f","compiler_version":"v0.71.1","agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"75c7fd2ba802ac5bf4cfd8679c747db443cb18fc9e0e0b3c460ce6b740499e26","compiler_version":"v0.71.1","agent_id":"copilot"}
 # gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"239aec45b78c8799417efdd5bc6d8cc036629ec1","version":"v0.71.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28","digest":"sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.28@sha256:a8834e285807654bf680154faa710d43fe4365a0868142f5c20e48c85e137a7a"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28","digest":"sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.28@sha256:93290f2393752252911bd7c39a047f776c0b53063575e7bde4e304962a9a61cb"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28","digest":"sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.28@sha256:844c18280f82cd1b06345eb2f4e91966b34185bfc51c9f237c3e022e848fb474"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.0"},{"image":"ghcr.io/github/github-mcp-server:v1.0.2"},{"image":"node:lts-alpine","digest":"sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f","pinned_image":"node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
@@ -212,14 +212,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_d24846ffcc6fdc3d_EOF'
+          cat << 'GH_AW_PROMPT_c324a66065dcc1cb_EOF'
           <system>
-          GH_AW_PROMPT_d24846ffcc6fdc3d_EOF
+          GH_AW_PROMPT_c324a66065dcc1cb_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_d24846ffcc6fdc3d_EOF'
+          cat << 'GH_AW_PROMPT_c324a66065dcc1cb_EOF'
           <safe-output-tools>
           Tools: create_pull_request_review_comment(max:20), submit_pull_request_review, missing_tool, missing_data, noop
           </safe-output-tools>
@@ -251,9 +251,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_d24846ffcc6fdc3d_EOF
+          GH_AW_PROMPT_c324a66065dcc1cb_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_d24846ffcc6fdc3d_EOF'
+          cat << 'GH_AW_PROMPT_c324a66065dcc1cb_EOF'
           </system>
           ## Formatting Guidelines
           
@@ -332,6 +332,14 @@ jobs:
           - the final contents of each eligible markdown file in the PR branch, and
           - any nearby context needed to understand the changed sections.
           
+          The workflow has also pre-fetched deterministic Vale output for the eligible changed markdown files:
+          
+          - `/tmp/gh-aw/docs-review-data/eligible-files.txt` — eligible changed markdown files after applying `inputs.review-scope`.
+          - `/tmp/gh-aw/docs-review-data/vale.json` — Vale findings from the `elastic/vale-rules` ruleset, keyed by copied file path under `/tmp/gh-aw/docs-review-data/scope/`.
+          - `/tmp/gh-aw/docs-review-data/vale-stats.json` — `{finding_count, file_count, eligible_count, vale_exit}`.
+          
+          Read the Vale files before reporting style-guide findings. If Vale output is empty or unavailable, continue the review, but do not report style-guide-only nits.
+          
           Prefer conservative pagination when reading file lists, review comments, or diffs.
           
           ## Step 2: Filter eligible files
@@ -360,7 +368,7 @@ jobs:
           
           Focus on the categories below:
           
-          1. **Style and clarity**: Report wording only when it creates ambiguity, changes meaning, breaks a documented Elastic style rule, or is not already covered by Vale linting comments. Avoid preference-only rewrites.
+          1. **Style and clarity**: Use the pre-fetched Vale output as the source of truth for Elastic style-guide findings. Report wording not flagged by Vale only when it creates ambiguity or changes technical meaning. Avoid preference-only rewrites.
           2. **Elastic-internal jargon**: Flag Elastic-only shorthand that external users will not understand, such as unexplained team names, internal project names, planning labels, or colloquialisms that are not product terminology. Do not flag established product names, UI labels, API names, or terms the page defines nearby.
           3. **Frontmatter quality**: Check the changed file's frontmatter for missing or empty `description`, `products`, and `navigation_title` fields when the repository convention requires them. A good `description` is specific, under 200 characters, and says what the page helps the reader do or understand. A good `navigation_title` is concise and scannable; it should not duplicate a long H1 when a shorter label would help navigation.
           4. **Content type fit and structure**: Judge whether the changed page is trying to be a concept, task, troubleshooting page, reference, or release note, and whether its structure helps that purpose. Report only mismatches that materially make the page harder to use or send the author toward the wrong kind of documentation.
@@ -373,7 +381,7 @@ jobs:
           - You may report a file-level metadata issue such as missing or incorrect frontmatter when the PR edits that file and the issue is directly relevant to the changed page.
           - Do not dump every possible style nit from a whole file solely because one paragraph changed.
           - Do not flag pre-existing unrelated problems in untouched sections unless the PR clearly makes that area worse.
-          - Do not duplicate docs build failures, broken-link reports, or Vale lint comments with separate inline review comments.
+          - Do not duplicate docs build failures, broken-link reports, existing Vale lint comments, or pre-fetched Vale findings with multiple inline review comments for the same underlying issue.
           - Treat content-type guidance as a reader-centered heuristic. Report content-type issues only when the mismatch materially makes the page harder to use, conflicts with the surrounding section's established pattern, or risks sending the author toward the wrong kind of documentation.
           - Allow mixed-purpose pages and reasonable structural exceptions. For example, do not object to a prerequisites section on a troubleshooting page solely because the troubleshooting content type does not require one; report it only when the requirements are inaccurate, unsupported, confusing, or disruptive to the troubleshooting flow.
           - If the pull request appears linked to a parent issue, assess whether the issue's documentation ask is fully satisfied, only partially satisfied, or still unsupported by the PR.
@@ -424,7 +432,7 @@ jobs:
           
           Treat low-priority nits differently:
           
-          - avoid nits unless they are grounded in the Elastic style guide or another explicit review rule in this workflow,
+          - avoid nits unless they are grounded in the pre-fetched Vale output or another explicit review rule in this workflow,
           - do not spend inline comment slots on lower-priority nits when higher-priority issues still need review comments, and
           - summarize any remaining style-guide-based nits in a short `Nits` section of the final review body instead of posting more inline comments.
           
@@ -437,7 +445,7 @@ jobs:
           - comments about markdown files outside the configured review scope,
           - broken links, missing anchors, missing image targets, or other link existence issues that the docs build already validates,
           - trailing spaces or trailing whitespace,
-          - routine wording suggestions that duplicate Vale linting comments, unless the wording creates ambiguity or changes the technical meaning,
+          - routine wording suggestions that are not grounded in Vale output, unless the wording creates ambiguity or changes the technical meaning,
           - issues you cannot tie back to the changed content,
           - duplicate comments on the same underlying problem,
           - approval reviews,
@@ -482,7 +490,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_d24846ffcc6fdc3d_EOF
+          GH_AW_PROMPT_c324a66065dcc1cb_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
@@ -610,14 +618,130 @@ jobs:
         run: bash "${RUNNER_TEMP}/gh-aw/actions/configure_gh_for_ghe.sh"
         env:
           GH_TOKEN: ${{ github.token }}
-      - env:
-          SETUP_COMMANDS: ${{ inputs.setup-commands }}
-        name: Repo-specific setup
-        run: |-
+      - name: Start DIFC Proxy for pre-agent gh calls
+        env:
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          DIFC_PROXY_POLICY: '{"allow-only":{"min-integrity":"none","repos":"all"}}'
+          DIFC_PROXY_IMAGE: 'ghcr.io/github/gh-aw-mcpg:v0.3.0'
+        run: |
+          bash "${RUNNER_TEMP}/gh-aw/actions/start_difc_proxy.sh"
+      - name: Repo-specific setup
+        run: |
           if [ -n "$SETUP_COMMANDS" ]; then
             eval "$SETUP_COMMANDS"
           fi
+        env:
+          GH_HOST: localhost:18443
+          GH_REPO: ${{ github.repository }}
+          GITHUB_API_URL: https://localhost:18443/api/v3
+          GITHUB_GRAPHQL_URL: https://localhost:18443/api/graphql
+          NODE_EXTRA_CA_CERTS: /tmp/gh-aw/proxy-logs/proxy-tls/ca.crt
+          SETUP_COMMANDS: ${{ inputs.setup-commands }}
+      - name: Install Vale and elastic/vale-rules
+        run: |
+          set -eu
+          mkdir -p /tmp/gh-aw/bin
 
+          curl -fsSL "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz" \
+            -o /tmp/vale.tar.gz
+          tar -xz -C /tmp/gh-aw/bin -f /tmp/vale.tar.gz vale
+          chmod +x /tmp/gh-aw/bin/vale
+          rm /tmp/vale.tar.gz
+
+          git clone --depth 1 https://github.com/elastic/vale-rules.git /tmp/gh-aw/vale-rules
+
+          /tmp/gh-aw/bin/vale --version
+          ls -la /tmp/gh-aw/vale-rules/.vale.ini
+        env:
+          GH_HOST: localhost:18443
+          GH_REPO: ${{ github.repository }}
+          GITHUB_API_URL: https://localhost:18443/api/v3
+          GITHUB_GRAPHQL_URL: https://localhost:18443/api/graphql
+          NODE_EXTRA_CA_CERTS: /tmp/gh-aw/proxy-logs/proxy-tls/ca.crt
+          VALE_VERSION: 3.12.0
+      - name: Run Vale on changed markdown
+        run: |
+          set -u
+          mkdir -p /tmp/gh-aw/docs-review-data/scope
+
+          PR_NUMBER=$(jq -r 'if .pull_request then .pull_request.number elif .issue.pull_request then .issue.number else empty end' "$GITHUB_EVENT_PATH")
+          if [ -z "$PR_NUMBER" ]; then
+            : > /tmp/gh-aw/docs-review-data/eligible-files.txt
+            echo '{}' > /tmp/gh-aw/docs-review-data/vale.json
+            echo '{"finding_count":0,"file_count":0,"eligible_count":0,"vale_exit":0,"skipped":"not a pull request context"}' > /tmp/gh-aw/docs-review-data/vale-stats.json
+            exit 0
+          fi
+
+          if [ "$REVIEW_SCOPE" != "docs-subtree" ] && [ "$REVIEW_SCOPE" != "repo-wide-markdown" ]; then
+            : > /tmp/gh-aw/docs-review-data/eligible-files.txt
+            echo '{}' > /tmp/gh-aw/docs-review-data/vale.json
+            echo '{"finding_count":0,"file_count":0,"eligible_count":0,"vale_exit":0,"skipped":"invalid review scope"}' > /tmp/gh-aw/docs-review-data/vale-stats.json
+            exit 0
+          fi
+
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" \
+            --jq '.[] | select(.status != "removed") | .filename' \
+            | awk ' /\.md$/ { print } ' \
+            > /tmp/gh-aw/docs-review-data/changed-md.txt
+
+          if [ "$REVIEW_SCOPE" = "docs-subtree" ]; then
+            awk ' /^docs\// { print } ' /tmp/gh-aw/docs-review-data/changed-md.txt > /tmp/gh-aw/docs-review-data/eligible-files.txt
+          else
+            cp /tmp/gh-aw/docs-review-data/changed-md.txt /tmp/gh-aw/docs-review-data/eligible-files.txt
+          fi
+
+          if [ ! -s /tmp/gh-aw/docs-review-data/eligible-files.txt ]; then
+            echo '{}' > /tmp/gh-aw/docs-review-data/vale.json
+            echo '{"finding_count":0,"file_count":0,"eligible_count":0,"vale_exit":0}' > /tmp/gh-aw/docs-review-data/vale-stats.json
+            exit 0
+          fi
+
+          SERVER_URL_STRIPPED="${GITHUB_SERVER_URL#https://}"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@${SERVER_URL_STRIPPED}/${GITHUB_REPOSITORY}.git"
+          git fetch --no-tags --depth=1 origin "pull/${PR_NUMBER}/head:refs/remotes/origin/gh-aw-pr-${PR_NUMBER}"
+          git checkout --detach "refs/remotes/origin/gh-aw-pr-${PR_NUMBER}"
+
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            [ -f "$f" ] || continue
+            mkdir -p "/tmp/gh-aw/docs-review-data/scope/$(dirname "$f")"
+            cp "$f" "/tmp/gh-aw/docs-review-data/scope/$f"
+          done < /tmp/gh-aw/docs-review-data/eligible-files.txt
+
+          ELIGIBLE_COUNT=$(find /tmp/gh-aw/docs-review-data/scope -type f -name '*.md' | wc -l | tr -d ' ')
+          if [ "$ELIGIBLE_COUNT" -eq 0 ]; then
+            echo '{}' > /tmp/gh-aw/docs-review-data/vale.json
+            echo '{"finding_count":0,"file_count":0,"eligible_count":0,"vale_exit":0}' > /tmp/gh-aw/docs-review-data/vale-stats.json
+            exit 0
+          fi
+
+          cd /tmp/gh-aw/vale-rules
+          set +e
+          /tmp/gh-aw/bin/vale \
+            --config /tmp/gh-aw/vale-rules/.vale.ini \
+            --output JSON \
+            --no-exit \
+            $(find /tmp/gh-aw/docs-review-data/scope -type f -name '*.md' | sort) \
+            > /tmp/gh-aw/docs-review-data/vale.json 2> /tmp/gh-aw/docs-review-data/vale.stderr
+          RC=$?
+          set -e
+
+          FILE_COUNT=$(jq 'keys | length' /tmp/gh-aw/docs-review-data/vale.json 2>/dev/null || echo 0)
+          FINDING_COUNT=$(jq '[.[] | length] | add // 0' /tmp/gh-aw/docs-review-data/vale.json 2>/dev/null || echo 0)
+          cat > /tmp/gh-aw/docs-review-data/vale-stats.json <<EOF
+          {"finding_count": $FINDING_COUNT, "file_count": $FILE_COUNT, "eligible_count": $ELIGIBLE_COUNT, "vale_exit": $RC}
+          EOF
+          echo "Vale: eligible_count=$ELIGIBLE_COUNT file_count=$FILE_COUNT finding_count=$FINDING_COUNT exit=$RC"
+          head -c 4000 /tmp/gh-aw/docs-review-data/vale.stderr 2>/dev/null || true
+        env:
+          GH_HOST: localhost:18443
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_API_URL: https://localhost:18443/api/v3
+          GITHUB_GRAPHQL_URL: https://localhost:18443/api/graphql
+          NODE_EXTRA_CA_CERTS: /tmp/gh-aw/proxy-logs/proxy-tls/ca.crt
+          REVIEW_SCOPE: ${{ inputs.review-scope }}
       - name: Configure Git credentials
         env:
           REPO_NAME: ${{ github.repository }}
@@ -658,6 +782,10 @@ jobs:
           GH_AW_TRUSTED_USERS_VAR: ${{ vars.GH_AW_GITHUB_TRUSTED_USERS || '' }}
           GH_AW_APPROVAL_LABELS_VAR: ${{ vars.GH_AW_GITHUB_APPROVAL_LABELS || '' }}
         run: bash "${RUNNER_TEMP}/gh-aw/actions/parse_guard_list.sh"
+      - name: Stop DIFC Proxy
+        if: always()
+        continue-on-error: true
+        run: bash "${RUNNER_TEMP}/gh-aw/actions/stop_difc_proxy.sh"
       - name: Download activation artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -676,9 +804,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_56b4650ce6ee0c7e_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_b23970bbca6507f5_EOF'
           {"create_pull_request_review_comment":{"max":20,"side":"RIGHT"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{},"submit_pull_request_review":{"allowed_events":["COMMENT"],"max":1,"target":"triggering"}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_56b4650ce6ee0c7e_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_b23970bbca6507f5_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -898,7 +1026,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_26d775a771d616be_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_2054fb8808b9a48b_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -956,7 +1084,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_26d775a771d616be_EOF
+          GH_AW_MCP_CONFIG_2054fb8808b9a48b_EOF
       - name: Clean git credentials
         continue-on-error: true
         run: bash "${RUNNER_TEMP}/gh-aw/actions/clean_git_credentials.sh"

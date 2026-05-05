@@ -76,6 +76,100 @@ steps:
       if [ -n "$SETUP_COMMANDS" ]; then
         eval "$SETUP_COMMANDS"
       fi
+  - name: Install Vale and elastic/vale-rules
+    env:
+      VALE_VERSION: "3.12.0"
+    run: |
+      set -eu
+      mkdir -p /tmp/gh-aw/bin
+
+      curl -fsSL "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz" \
+        -o /tmp/vale.tar.gz
+      tar -xz -C /tmp/gh-aw/bin -f /tmp/vale.tar.gz vale
+      chmod +x /tmp/gh-aw/bin/vale
+      rm /tmp/vale.tar.gz
+
+      git clone --depth 1 https://github.com/elastic/vale-rules.git /tmp/gh-aw/vale-rules
+
+      /tmp/gh-aw/bin/vale --version
+      ls -la /tmp/gh-aw/vale-rules/.vale.ini
+  - name: Run Vale on changed markdown
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REVIEW_SCOPE: ${{ inputs.review-scope }}
+    run: |
+      set -u
+      mkdir -p /tmp/gh-aw/docs-review-data/scope
+
+      PR_NUMBER=$(jq -r 'if .pull_request then .pull_request.number elif .issue.pull_request then .issue.number else empty end' "$GITHUB_EVENT_PATH")
+      if [ -z "$PR_NUMBER" ]; then
+        : > /tmp/gh-aw/docs-review-data/eligible-files.txt
+        echo '{}' > /tmp/gh-aw/docs-review-data/vale.json
+        echo '{"finding_count":0,"file_count":0,"eligible_count":0,"vale_exit":0,"skipped":"not a pull request context"}' > /tmp/gh-aw/docs-review-data/vale-stats.json
+        exit 0
+      fi
+
+      if [ "$REVIEW_SCOPE" != "docs-subtree" ] && [ "$REVIEW_SCOPE" != "repo-wide-markdown" ]; then
+        : > /tmp/gh-aw/docs-review-data/eligible-files.txt
+        echo '{}' > /tmp/gh-aw/docs-review-data/vale.json
+        echo '{"finding_count":0,"file_count":0,"eligible_count":0,"vale_exit":0,"skipped":"invalid review scope"}' > /tmp/gh-aw/docs-review-data/vale-stats.json
+        exit 0
+      fi
+
+      gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" \
+        --jq '.[] | select(.status != "removed") | .filename' \
+        | awk ' /\.md$/ { print } ' \
+        > /tmp/gh-aw/docs-review-data/changed-md.txt
+
+      if [ "$REVIEW_SCOPE" = "docs-subtree" ]; then
+        awk ' /^docs\// { print } ' /tmp/gh-aw/docs-review-data/changed-md.txt > /tmp/gh-aw/docs-review-data/eligible-files.txt
+      else
+        cp /tmp/gh-aw/docs-review-data/changed-md.txt /tmp/gh-aw/docs-review-data/eligible-files.txt
+      fi
+
+      if [ ! -s /tmp/gh-aw/docs-review-data/eligible-files.txt ]; then
+        echo '{}' > /tmp/gh-aw/docs-review-data/vale.json
+        echo '{"finding_count":0,"file_count":0,"eligible_count":0,"vale_exit":0}' > /tmp/gh-aw/docs-review-data/vale-stats.json
+        exit 0
+      fi
+
+      SERVER_URL_STRIPPED="${GITHUB_SERVER_URL#https://}"
+      git remote set-url origin "https://x-access-token:${GH_TOKEN}@${SERVER_URL_STRIPPED}/${GITHUB_REPOSITORY}.git"
+      git fetch --no-tags --depth=1 origin "pull/${PR_NUMBER}/head:refs/remotes/origin/gh-aw-pr-${PR_NUMBER}"
+      git checkout --detach "refs/remotes/origin/gh-aw-pr-${PR_NUMBER}"
+
+      while IFS= read -r f; do
+        [ -z "$f" ] && continue
+        [ -f "$f" ] || continue
+        mkdir -p "/tmp/gh-aw/docs-review-data/scope/$(dirname "$f")"
+        cp "$f" "/tmp/gh-aw/docs-review-data/scope/$f"
+      done < /tmp/gh-aw/docs-review-data/eligible-files.txt
+
+      ELIGIBLE_COUNT=$(find /tmp/gh-aw/docs-review-data/scope -type f -name '*.md' | wc -l | tr -d ' ')
+      if [ "$ELIGIBLE_COUNT" -eq 0 ]; then
+        echo '{}' > /tmp/gh-aw/docs-review-data/vale.json
+        echo '{"finding_count":0,"file_count":0,"eligible_count":0,"vale_exit":0}' > /tmp/gh-aw/docs-review-data/vale-stats.json
+        exit 0
+      fi
+
+      cd /tmp/gh-aw/vale-rules
+      set +e
+      /tmp/gh-aw/bin/vale \
+        --config /tmp/gh-aw/vale-rules/.vale.ini \
+        --output JSON \
+        --no-exit \
+        $(find /tmp/gh-aw/docs-review-data/scope -type f -name '*.md' | sort) \
+        > /tmp/gh-aw/docs-review-data/vale.json 2> /tmp/gh-aw/docs-review-data/vale.stderr
+      RC=$?
+      set -e
+
+      FILE_COUNT=$(jq 'keys | length' /tmp/gh-aw/docs-review-data/vale.json 2>/dev/null || echo 0)
+      FINDING_COUNT=$(jq '[.[] | length] | add // 0' /tmp/gh-aw/docs-review-data/vale.json 2>/dev/null || echo 0)
+      cat > /tmp/gh-aw/docs-review-data/vale-stats.json <<EOF
+      {"finding_count": $FINDING_COUNT, "file_count": $FILE_COUNT, "eligible_count": $ELIGIBLE_COUNT, "vale_exit": $RC}
+      EOF
+      echo "Vale: eligible_count=$ELIGIBLE_COUNT file_count=$FILE_COUNT finding_count=$FINDING_COUNT exit=$RC"
+      head -c 4000 /tmp/gh-aw/docs-review-data/vale.stderr 2>/dev/null || true
 ---
 
 # Docs review agent
@@ -116,6 +210,14 @@ Use GitHub tools and local workspace inspection as needed to gather:
 - the final contents of each eligible markdown file in the PR branch, and
 - any nearby context needed to understand the changed sections.
 
+The workflow has also pre-fetched deterministic Vale output for the eligible changed markdown files:
+
+- `/tmp/gh-aw/docs-review-data/eligible-files.txt` — eligible changed markdown files after applying `inputs.review-scope`.
+- `/tmp/gh-aw/docs-review-data/vale.json` — Vale findings from the `elastic/vale-rules` ruleset, keyed by copied file path under `/tmp/gh-aw/docs-review-data/scope/`.
+- `/tmp/gh-aw/docs-review-data/vale-stats.json` — `{finding_count, file_count, eligible_count, vale_exit}`.
+
+Read the Vale files before reporting style-guide findings. If Vale output is empty or unavailable, continue the review, but do not report style-guide-only nits.
+
 Prefer conservative pagination when reading file lists, review comments, or diffs.
 
 ## Step 2: Filter eligible files
@@ -144,7 +246,7 @@ Review each eligible file by applying the rules below and your own judgment. Use
 
 Focus on the categories below:
 
-1. **Style and clarity**: Report wording only when it creates ambiguity, changes meaning, breaks a documented Elastic style rule, or is not already covered by Vale linting comments. Avoid preference-only rewrites.
+1. **Style and clarity**: Use the pre-fetched Vale output as the source of truth for Elastic style-guide findings. Report wording not flagged by Vale only when it creates ambiguity or changes technical meaning. Avoid preference-only rewrites.
 2. **Elastic-internal jargon**: Flag Elastic-only shorthand that external users will not understand, such as unexplained team names, internal project names, planning labels, or colloquialisms that are not product terminology. Do not flag established product names, UI labels, API names, or terms the page defines nearby.
 3. **Frontmatter quality**: Check the changed file's frontmatter for missing or empty `description`, `products`, and `navigation_title` fields when the repository convention requires them. A good `description` is specific, under 200 characters, and says what the page helps the reader do or understand. A good `navigation_title` is concise and scannable; it should not duplicate a long H1 when a shorter label would help navigation.
 4. **Content type fit and structure**: Judge whether the changed page is trying to be a concept, task, troubleshooting page, reference, or release note, and whether its structure helps that purpose. Report only mismatches that materially make the page harder to use or send the author toward the wrong kind of documentation.
@@ -157,7 +259,7 @@ Treat this as a PR review, not a full repository audit:
 - You may report a file-level metadata issue such as missing or incorrect frontmatter when the PR edits that file and the issue is directly relevant to the changed page.
 - Do not dump every possible style nit from a whole file solely because one paragraph changed.
 - Do not flag pre-existing unrelated problems in untouched sections unless the PR clearly makes that area worse.
-- Do not duplicate docs build failures, broken-link reports, or Vale lint comments with separate inline review comments.
+- Do not duplicate docs build failures, broken-link reports, existing Vale lint comments, or pre-fetched Vale findings with multiple inline review comments for the same underlying issue.
 - Treat content-type guidance as a reader-centered heuristic. Report content-type issues only when the mismatch materially makes the page harder to use, conflicts with the surrounding section's established pattern, or risks sending the author toward the wrong kind of documentation.
 - Allow mixed-purpose pages and reasonable structural exceptions. For example, do not object to a prerequisites section on a troubleshooting page solely because the troubleshooting content type does not require one; report it only when the requirements are inaccurate, unsupported, confusing, or disruptive to the troubleshooting flow.
 - If the pull request appears linked to a parent issue, assess whether the issue's documentation ask is fully satisfied, only partially satisfied, or still unsupported by the PR.
@@ -208,7 +310,7 @@ Pre-output checklist for every `create_pull_request_review_comment` call:
 
 Treat low-priority nits differently:
 
-- avoid nits unless they are grounded in the Elastic style guide or another explicit review rule in this workflow,
+- avoid nits unless they are grounded in the pre-fetched Vale output or another explicit review rule in this workflow,
 - do not spend inline comment slots on lower-priority nits when higher-priority issues still need review comments, and
 - summarize any remaining style-guide-based nits in a short `Nits` section of the final review body instead of posting more inline comments.
 
@@ -221,7 +323,7 @@ Do not report:
 - comments about markdown files outside the configured review scope,
 - broken links, missing anchors, missing image targets, or other link existence issues that the docs build already validates,
 - trailing spaces or trailing whitespace,
-- routine wording suggestions that duplicate Vale linting comments, unless the wording creates ambiguity or changes the technical meaning,
+- routine wording suggestions that are not grounded in Vale output, unless the wording creates ambiguity or changes the technical meaning,
 - issues you cannot tie back to the changed content,
 - duplicate comments on the same underlying problem,
 - approval reviews,

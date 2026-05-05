@@ -55,9 +55,9 @@ If the pull request is linked to a parent issue, the review also checks whether 
 
 ## Autonomous checks
 
-This workflow does not depend on runtime skills. The prompt embeds the review rules directly and focuses on:
+This workflow does not depend on runtime skills. A deterministic pre-step runs Vale with `elastic/vale-rules` on eligible changed markdown files, and the prompt embeds the remaining review rules directly. It focuses on:
 
-- Style and clarity issues that affect meaning and are not already covered by an existing Vale comment.
+- Style and clarity issues from Vale, plus wording that affects meaning.
 - Elastic-internal jargon that external readers will not understand.
 - Frontmatter quality for `description`, `products`, `navigation_title`, and verified `applies_to` guidance.
 - Content type fit and structure.
