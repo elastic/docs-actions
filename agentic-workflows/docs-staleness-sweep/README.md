@@ -1,6 +1,6 @@
 # Docs staleness sweep
 
-Audits docs on a rotating slice each run for four kinds of staleness:
+Audits docs on a rotating slice each run, or across every markdown file under a selected subtree, for four kinds of staleness:
 
 1. **Stale content** — pages whose latest commit is older than `stale-content-months` (default 24).
 2. **Stale screenshots** — image references where the image's last commit predates the doc's by at least `stale-screenshot-min-gap-months` (default 6).
@@ -33,6 +33,8 @@ Configure both secrets:
 | Input | Default | Description |
 |-------|---------|-------------|
 | `docs-root` | `docs/` | Root directory to sweep. |
+| `target-path` | `""` | Optional `docs-root`-relative directory to sweep recursively. Accepts a leading slash, such as `/solutions/observability`. |
+| `scope-mode` | `auto` | Scope behavior for the matched markdown files. `auto` preserves the existing behavior, `full` scans all matched files, and `shard` shards within the matched set. |
 | `target-batch-size` | `100` | Approximate pages per slice. |
 | `max-per-fix-issue` | `30` | Findings cap per fix-issue. |
 | `stale-content-months` | `24` | Flag pages whose latest commit is older than this. |
@@ -50,7 +52,7 @@ Configure both secrets:
 
 ## How it works
 
-1. **Pre-step 1** — compute the rotating slice (same logic as other sweeps) plus pages modified in the last 7 days.
+1. **Pre-step 1** — enumerate `*.md` under the matched scope (`docs-root`, optionally narrowed by `target-path`), then either scan them all or compute the rotating slice plus pages modified in the last 7 days based on `scope-mode`.
 2. **Pre-step 2** — for each in-scope page: get last-commit date, extract image references, compute commit ages for each image. Write to `staleness.json`.
 3. **Pre-step 3** — install lychee and run it on the slice; output to `lychee.json`. Internal Elastic domains are excluded by default.
 4. **Agent** — assembles findings from the deterministic outputs and adds version-mention findings using the `elastic-docs` MCP server (`search_docs`, `get_document_by_url`) to determine the current support matrix.

@@ -1,6 +1,6 @@
 # Docs quality sweep (orchestrator)
 
-A `workflow_dispatch`-triggered orchestrator that fans out to all seven docs quality sweep workflows in parallel jobs. Use this in your docs repo as the single entry point — one click runs frontmatter, applies_to, openings, style, typos, staleness, and coherence in one go (or any subset).
+A `workflow_dispatch`-triggered orchestrator that fans out to all seven docs quality sweep workflows in parallel jobs. Use this in your docs repo as the single entry point: one click runs frontmatter, applies_to, openings, style, typos, staleness, and coherence in one go (or any subset).
 
 Each sweep is independent: a failure in one job doesn't kill the others, and each opens its own labeled fix-issue. There is no aggregated dashboard or quality score — those are deferred to a later iteration.
 
@@ -33,6 +33,8 @@ gh workflow run docs-quality-sweep.yml \
   -f sweeps=all \
   -f source-repo=elastic/docs-content \
   -f docs-root=. \
+  -f target-path=/solutions/observability \
+  -f scope-mode=shard \
   -f target-batch-size=100 \
   -f max-per-fix-issue=20
 ```
@@ -44,7 +46,9 @@ gh workflow run docs-quality-sweep.yml \
 | `sweeps` | `all` | Comma-separated list of sweep names: `frontmatter`, `applies-to`, `openings`, `style`, `typos`, `staleness`, `coherence`. Use `all` to run every sweep. |
 | `source-repo` | `elastic/docs-content` | Repository to scan, as `owner/repo`. Set to empty to scan the calling repo. |
 | `docs-root` | `.` | Root directory inside the source repo. `.` works for repos where docs live at the root (e.g., `elastic/docs-content`). Set to `docs/` for repos with a `docs/` subtree. |
-| `target-batch-size` | `100` | Approximate pages per rotating slice (used by the LLM-driven sweeps; not by typos). |
+| `target-path` | `""` | Optional `docs-root`-relative directory to sweep recursively. Accepts a leading slash, such as `/solutions/observability`. |
+| `scope-mode` | `auto` | Scope behavior for the matched markdown files. `auto` preserves the existing behavior, `full` scans all matched files, and `shard` shards within the matched set. |
+| `target-batch-size` | `100` | Approximate pages per rotating slice when `scope-mode` resolves to `shard`. |
 | `max-per-fix-issue` | `20` | Cap on findings per fix-issue — overflow surfaces in the next sweep. |
 | `typos-codespell-args` | `""` | Extra flags passed to codespell (e.g., `--ignore-words=allowlist.txt`). |
 | `staleness-content-months` | `24` | Flag pages whose latest commit is older than this. |
@@ -72,6 +76,31 @@ Pass a comma-separated list to `sweeps`:
 
 ```bash
 gh workflow run docs-quality-sweep.yml -f sweeps=frontmatter,typos
+```
+
+## Running a subtree
+
+Pass `target-path` to scope the sweep to one subtree under `docs-root`:
+
+```bash
+gh workflow run docs-quality-sweep.yml \
+  -f sweeps=all \
+  -f source-repo=elastic/docs-content \
+  -f docs-root=. \
+  -f target-path=/solutions/observability \
+  -f scope-mode=full
+```
+
+To shard within a large subtree instead of scanning it all at once:
+
+```bash
+gh workflow run docs-quality-sweep.yml \
+  -f sweeps=all \
+  -f source-repo=elastic/docs-content \
+  -f docs-root=. \
+  -f target-path=/solutions/observability \
+  -f scope-mode=shard \
+  -f target-batch-size=100
 ```
 
 ## Adding a schedule
