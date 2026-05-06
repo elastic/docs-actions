@@ -27,6 +27,21 @@ on:
         type: string
         required: false
         default: "docs/"
+      target-path:
+        description: "Optional docs-root-relative directory to sweep recursively. Accepts a leading slash."
+        type: string
+        required: false
+        default: ""
+      scope-mode:
+        description: "How to scope matched markdown files: auto preserves the default behavior, full scans every matched file, and shard applies rotating shard selection within the matched set."
+        type: string
+        required: false
+        default: "auto"
+      target-batch-size:
+        description: "Approximate pages per rotating slice when scope-mode resolves to shard"
+        type: string
+        required: false
+        default: "100"
       max-per-fix-issue:
         description: "Cap on findings per fix-issue; overflow is noted and surfaces in next sweep"
         type: string
@@ -92,36 +107,110 @@ steps:
   - name: Run codespell
     env:
       DOCS_ROOT: ${{ inputs.docs-root }}
+      TARGET_PATH: ${{ inputs.target-path }}
+      SCOPE_MODE: ${{ inputs.scope-mode }}
+      TARGET_BATCH: ${{ inputs.target-batch-size }}
       CODESPELL_ARGS: ${{ inputs.codespell-args }}
     run: |
       set -u
       mkdir -p /tmp/gh-aw/sweep-data
 
-      if [ ! -d "$DOCS_ROOT" ]; then
-        echo "docs-root '$DOCS_ROOT' does not exist; producing empty output"
+      TARGET_PATH_CLEAN=${TARGET_PATH#/}
+      TARGET_PATH_CLEAN=${TARGET_PATH_CLEAN%/}
+      DOCS_ROOT_CLEAN=${DOCS_ROOT%/}
+      SCOPE_ROOT="$DOCS_ROOT"
+      REQUESTED_SCOPE_MODE="$SCOPE_MODE"
+      SELECTION_MODE="full"
+
+      case "$REQUESTED_SCOPE_MODE" in
+        auto|full|shard) ;;
+        *)
+          echo "scope-mode '$REQUESTED_SCOPE_MODE' must be one of: auto, full, shard"
+          exit 1
+          ;;
+      esac
+
+      if [ -n "$TARGET_PATH_CLEAN" ]; then
+        if [ "$DOCS_ROOT_CLEAN" = "." ] || [ -z "$DOCS_ROOT_CLEAN" ]; then
+          SCOPE_ROOT="$TARGET_PATH_CLEAN"
+        else
+          SCOPE_ROOT="$DOCS_ROOT_CLEAN/$TARGET_PATH_CLEAN"
+        fi
+      fi
+
+      if [ "$REQUESTED_SCOPE_MODE" = "auto" ]; then
+        SELECTION_MODE="full"
+      else
+        SELECTION_MODE="$REQUESTED_SCOPE_MODE"
+      fi
+
+      if [ ! -d "$SCOPE_ROOT" ]; then
+        echo "scope root '$SCOPE_ROOT' does not exist; producing empty output"
         : > /tmp/gh-aw/sweep-data/codespell.out
-        echo '{"docs_root":"'"$DOCS_ROOT"'","total_md":0,"finding_count":0}' > /tmp/gh-aw/sweep-data/stats.json
+        : > /tmp/gh-aw/sweep-data/all.txt
+        : > /tmp/gh-aw/sweep-data/in-scope.txt
+        echo '{"docs_root":"'"$DOCS_ROOT"'","scope_root":"'"$SCOPE_ROOT"'","target_path":"'"$TARGET_PATH_CLEAN"'","scope_mode":"'"$REQUESTED_SCOPE_MODE"'","selection_mode":"'"$SELECTION_MODE"'","shard_n":1,"shard_slot":0,"in_scope_count":0,"total_md":0,"finding_count":0}' > /tmp/gh-aw/sweep-data/stats.json
         exit 0
       fi
 
-      TOTAL_MD=$(find "$DOCS_ROOT" -type f -name '*.md' \
-        -not -path '*/node_modules/*' -not -path '*/.git/*' | wc -l | tr -d ' ')
+      find "$SCOPE_ROOT" -type f -name '*.md' \
+        -not -path '*/node_modules/*' \
+        -not -path '*/.git/*' \
+        | sort > /tmp/gh-aw/sweep-data/all.txt
+
+      TOTAL_MD=$(wc -l < /tmp/gh-aw/sweep-data/all.txt | tr -d ' ')
+
+      if [ "$SELECTION_MODE" = "shard" ]; then
+        if [ "$TOTAL_MD" -eq 0 ]; then
+          N=1
+        else
+          N=$(( (TOTAL_MD + TARGET_BATCH - 1) / TARGET_BATCH ))
+        fi
+        ISO_WEEK_NUM=$(date +%V | sed 's/^0//')
+        SLOT=$(( ISO_WEEK_NUM % N ))
+        : > /tmp/gh-aw/sweep-data/in-scope.txt
+        while IFS= read -r f; do
+          [ -z "$f" ] && continue
+          HEX=$(printf '%s' "$f" | shasum -a 256 | cut -c1-4)
+          HASH_NUM=$(( 16#$HEX ))
+          if [ $((HASH_NUM % N)) -eq "$SLOT" ]; then
+            echo "$f" >> /tmp/gh-aw/sweep-data/in-scope.txt
+          fi
+        done < /tmp/gh-aw/sweep-data/all.txt
+      else
+        N=1
+        SLOT=0
+        cp /tmp/gh-aw/sweep-data/all.txt /tmp/gh-aw/sweep-data/in-scope.txt
+      fi
+
+      IN_SCOPE_COUNT=$(wc -l < /tmp/gh-aw/sweep-data/in-scope.txt | tr -d ' ')
 
       # codespell exits non-zero when misspellings are found. Capture and continue.
       set +e
-      codespell \
-        --quiet-level=2 \
-        $CODESPELL_ARGS \
-        $(find "$DOCS_ROOT" -type f -name '*.md' \
-          -not -path '*/node_modules/*' -not -path '*/.git/*') \
-        > /tmp/gh-aw/sweep-data/codespell.out 2>&1
-      RC=$?
+      if [ ! -s /tmp/gh-aw/sweep-data/in-scope.txt ]; then
+        : > /tmp/gh-aw/sweep-data/codespell.out
+        RC=0
+      else
+        codespell \
+          --quiet-level=2 \
+          $CODESPELL_ARGS \
+          $(cat /tmp/gh-aw/sweep-data/in-scope.txt) \
+          > /tmp/gh-aw/sweep-data/codespell.out 2>&1
+        RC=$?
+      fi
       set -e
 
       FINDING_COUNT=$(wc -l < /tmp/gh-aw/sweep-data/codespell.out | tr -d ' ')
       cat > /tmp/gh-aw/sweep-data/stats.json <<EOF
       {
         "docs_root": "$DOCS_ROOT",
+        "scope_root": "$SCOPE_ROOT",
+        "target_path": "$TARGET_PATH_CLEAN",
+        "scope_mode": "$REQUESTED_SCOPE_MODE",
+        "selection_mode": "$SELECTION_MODE",
+        "shard_n": $N,
+        "shard_slot": $SLOT,
+        "in_scope_count": $IN_SCOPE_COUNT,
         "total_md": $TOTAL_MD,
         "finding_count": $FINDING_COUNT,
         "exit_code": $RC,
@@ -129,7 +218,7 @@ steps:
       }
       EOF
 
-      echo "Codespell scan: total_md=$TOTAL_MD finding_count=$FINDING_COUNT exit_code=$RC"
+      echo "Codespell scan: scope_mode=$REQUESTED_SCOPE_MODE mode=$SELECTION_MODE scope_root=$SCOPE_ROOT total_md=$TOTAL_MD in_scope=$IN_SCOPE_COUNT shard_n=$N shard_slot=$SLOT finding_count=$FINDING_COUNT exit_code=$RC"
 
   - name: Repo-specific setup
     if: ${{ inputs.setup-commands != '' }}
@@ -146,9 +235,14 @@ You are a deterministic typos-finding formatter. The detection has already happe
 
 - `/tmp/gh-aw/sweep-data/codespell.out` — codespell output, one finding per line in the format:
   `path/to/file.md:LINE: misspelled ==> correction, alt1, alt2`
-- `/tmp/gh-aw/sweep-data/stats.json` — `docs_root`, `total_md`, `finding_count`, `iso_week`.
+- `/tmp/gh-aw/sweep-data/stats.json` — `docs_root`, `scope_root`, `target_path`, `scope_mode`, `selection_mode`, `shard_n`, `shard_slot`, `in_scope_count`, `total_md`, `finding_count`, `iso_week`.
 
-If `finding_count` is `0`, call `noop` with `"No typos found in <docs_root> (<total_md> .md files scanned)"` and stop.
+If `finding_count` is `0`, call `noop` and adapt the message to `selection_mode` and `target_path`:
+
+- Full mode without `target_path`: `"No typos found in <docs_root> (<in_scope_count> .md files scanned)"`.
+- Full mode with `target_path`: `"No typos found under /<target_path> (<in_scope_count> .md files scanned)"`.
+- Shard mode without `target_path`: `"No typos found in shard <slot+1>/<n> of <docs_root> (<in_scope_count> .md files scanned)"`.
+- Shard mode with `target_path`: `"No typos found under /<target_path> in shard <slot+1>/<n> (<in_scope_count> .md files scanned)"`.
 
 ## Step 1: Parse codespell output
 
@@ -199,12 +293,22 @@ If, after filtering, the list is empty, `noop` with `"All <finding_count> codesp
 
 ## Output: fix-issue body
 
-Title body: `<count> typos found across <files> files` (workflow prepends `Docs fix — typos: `).
+Title body depends on the selection mode:
+
+- Full mode without `target_path`: `<count> typos found across <files> files` (workflow prepends `Docs fix — typos: `).
+- Full mode with `target_path`: `path /<target_path> — <count> typos across <files> files`.
+- Shard mode without `target_path`: `shard <slot+1>/<n> — <count> typos across <files> files`.
+- Shard mode with `target_path`: `path /<target_path> — shard <slot+1>/<n> — <count> typos across <files> files`.
 
 ```markdown
 Generated by `gh-aw-docs-typos-sweep` for `${{ inputs.source-repo || github.repository }}` on <iso_week>.
 
-Scanned <total_md> markdown files in <docs_root>; codespell raised <finding_count> raw findings, <count> retained after filtering.
+Use one of these scope-summary lines:
+
+- Full mode without `target_path`: `Scanned <in_scope_count> markdown files in <docs_root>; corpus <total_md> markdown files; codespell raised <finding_count> raw findings, <count> retained after filtering.`
+- Full mode with `target_path`: `Scanned <in_scope_count> markdown files under /<target_path>; subtree corpus <total_md> markdown files; codespell raised <finding_count> raw findings, <count> retained after filtering.`
+- Shard mode without `target_path`: `Scanned shard <slot+1>/<n> of <docs_root>; <in_scope_count> markdown files in scope; corpus <total_md> markdown files; codespell raised <finding_count> raw findings, <count> retained after filtering.`
+- Shard mode with `target_path`: `Scanned path /<target_path> in shard <slot+1>/<n>; <in_scope_count> markdown files in scope; subtree corpus <total_md> markdown files; codespell raised <finding_count> raw findings, <count> retained after filtering.`
 
 ## Findings (<count>)
 

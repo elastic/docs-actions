@@ -1,6 +1,6 @@
 # Docs frontmatter sweep
 
-Audits frontmatter across a docs corpus on a rotating slice each run, using self-contained required-field and description-quality rules. Opens a single labeled fix-issue with structured YAML findings consumable by a future fix-agent.
+Audits frontmatter across a docs corpus on a rotating slice each run, or across every markdown file under a selected subtree, using self-contained required-field and description-quality rules. Opens a single labeled fix-issue with structured YAML findings consumable by a future fix-agent.
 
 ## Triggers
 
@@ -26,6 +26,8 @@ Issues are filed in the **calling repo** (where the workflow runs). Install this
 |-------|------|----------|---------|-------------|
 | `source-repo` | string | No | `""` (calling repo) | Repository to scan, as `owner/repo`. Set this when the workflow runs in a triage repo (e.g., `docs-content-internal`) but should audit a separate docs repo (e.g., `docs-content`). The example template defaults to `elastic/docs-content`. |
 | `docs-root` | string | No | `docs/` | Root directory to sweep within the source repo. Set to `.` for repos where docs live at the repo root. |
+| `target-path` | string | No | `""` | Optional `docs-root`-relative directory to sweep recursively. Accepts a leading slash, such as `/solutions/observability`. |
+| `scope-mode` | string | No | `auto` | Scope behavior for the matched markdown files. `auto` preserves the existing behavior, `full` scans all matched files, and `shard` shards within the matched set. |
 | `target-batch-size` | string | No | `100` | Approximate pages per slice; controls shard count `N = ceil(total/batch-size)`. |
 | `max-per-fix-issue` | string | No | `20` | Cap on findings per fix-issue. Overflow surfaces in the next sweep. |
 | `additional-instructions` | string | No | `""` | Repo-specific guidance appended to the agent prompt. |
@@ -40,7 +42,7 @@ Issues are filed in the **calling repo** (where the workflow runs). Install this
 
 ## How it works
 
-1. A pre-step enumerates `*.md` under `docs-root`, computes a deterministic shard `(hash(path) mod N == iso_week mod N)`, and unions in any files modified in the last 7 days.
+1. A pre-step enumerates `*.md` under the matched scope (`docs-root`, optionally narrowed by `target-path`), then either scans them all or computes a deterministic shard `(hash(path) mod N == iso_week mod N)` based on `scope-mode`.
 2. In-scope files are copied to `/tmp/gh-aw/sweep-data/scope/` (mirroring their original paths) so the agent can audit the slice without affecting the repo.
 3. The agent applies embedded checks for required frontmatter keys, complete and unique `description` values, canonical `products` shape, preserved `mapped_pages`, and concise `navigation_title` values.
 4. Findings are emitted as a YAML block in the fix-issue body, capped at `max-per-fix-issue`.
