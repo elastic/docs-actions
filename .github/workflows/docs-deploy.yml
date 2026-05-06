@@ -437,6 +437,9 @@ jobs:
             -e GITHUB_ACTIONS=true \
             -e CI=true \
             -e GITHUB_WORKSPACE=/github/workspace \
+            -e GITHUB_REPOSITORY="${HEAD_REPO}" \
+            -e GITHUB_REF_NAME="${HEAD_BRANCH}" \
+            -e GITHUB_REF="refs/heads/${HEAD_BRANCH}" \
             -e INPUT_PREFIX="${PATH_PREFIX}" \
             -e INPUT_STRICT="${STRICT_FLAG}" \
             ghcr.io/elastic/docs-builder:edge || EXIT_CODE=$?
