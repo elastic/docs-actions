@@ -2,9 +2,13 @@ name: Changelog upload
 description: >
   Uploads changelog entries to the private S3 bucket
   (elastic-docs-v3-changelog-bundles-private) using docs-builder's incremental
-  upload. A scrubber Lambda mirrors sanitized copies to the public CDN bucket.
-  Intended to run on push to the default branch (main/master). Only files whose
-  content has changed are transferred.
+  upload. Before uploading, looks up merged PRs for the pushed commit and, for
+  each merged fork PR, harvests the verified changelog-staging artifact from
+  its most recent successful changelog-submit run, validates the artifact's
+  metadata against the PR, and stages the YAML into the bundle directory so it
+  is uploaded alongside committed entries. A scrubber Lambda mirrors sanitized
+  copies to the public CDN bucket. Intended to run on push to the default
+  branch (main/master). Only files whose content has changed are transferred.
 
 inputs:
   config:
@@ -59,6 +63,17 @@ runs:
       with:
         version: edge
         github-token: ${{ inputs.github-token }}
+
+    - name: Harvest fork-PR changelog artifacts
+      uses: actions/github-script@v9
+      env:
+        PUSHED_SHA: ${{ github.sha }}
+        HARVEST_DIR: /tmp/changelog-harvested
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const script = require('${{ github.action_path }}/scripts/harvest-fork-prs.js');
+          await script({ github, context, core });
 
     - name: Authenticate with AWS
       uses: elastic/docs-actions/aws/auth@v1

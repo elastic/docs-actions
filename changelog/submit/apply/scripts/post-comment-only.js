@@ -19,6 +19,8 @@ module.exports = async ({ github, context, core }) => {
       '```yaml',
       content,
       '```',
+      '',
+      'This comment is informational. To regenerate the entry, edit the PR title or labels and let the changelog workflow re-run.',
     );
   } else {
     bodyParts.push('⚠️ Changelog entry was generated but the file content could not be read.');
