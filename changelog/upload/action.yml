@@ -3,19 +3,19 @@ description: >
   Uploads changelog entries to the private S3 bucket
   (elastic-docs-v3-changelog-bundles-private) using docs-builder's incremental
   upload. Before uploading, looks up merged PRs for the pushed commit and, for
-  each merged fork PR, harvests the verified changelog-staging artifact from
-  its most recent successful changelog-submit run, validates the artifact's
-  metadata against the PR, and stages the YAML into the bundle directory so it
-  is uploaded alongside committed entries. A scrubber Lambda mirrors sanitized
-  copies to the public CDN bucket. Intended to run on push to the default
-  branch (main/master). Only files whose content has changed are transferred.
+  each merged fork PR, regenerates the changelog entry from the live PR record
+  using `docs-builder changelog add --prs <N>`, so fork PRs (which can't commit
+  to their own branch) still produce an entry on merge. A scrubber Lambda
+  mirrors sanitized copies to the public CDN bucket. Intended to run on push
+  to the default branch (main/master). Only files whose content has changed
+  are transferred.
 
 inputs:
   config:
     description: 'Path to changelog.yml configuration file (repo-relative, no ".." or absolute paths)'
     default: 'docs/changelog.yml'
   github-token:
-    description: 'GitHub token (used by docs-builder setup). Use the default GITHUB_TOKEN; do not substitute a broader PAT.'
+    description: 'GitHub token (used by docs-builder setup and the GitHub API lookups). Use the default GITHUB_TOKEN; do not substitute a broader PAT.'
     default: '${{ github.token }}'
   aws-account-id:
     description: 'The AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account.'
@@ -64,16 +64,47 @@ runs:
         version: edge
         github-token: ${{ inputs.github-token }}
 
-    - name: Harvest fork-PR changelog artifacts
-      uses: actions/github-script@v9
+    - name: Add changelog entries for merged fork PRs
+      shell: bash
       env:
         PUSHED_SHA: ${{ github.sha }}
-        HARVEST_DIR: /tmp/changelog-harvested
-      with:
-        github-token: ${{ inputs.github-token }}
-        script: |
-          const script = require('${{ github.action_path }}/scripts/harvest-fork-prs.js');
-          await script({ github, context, core });
+        REPO: ${{ github.repository }}
+        OWNER: ${{ github.repository_owner }}
+        REPO_NAME: ${{ github.event.repository.name }}
+        CONFIG: ${{ inputs.config }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        set -euo pipefail
+        fork_prs=$(gh api --paginate "repos/${REPO}/commits/${PUSHED_SHA}/pulls" \
+          --jq '.[] | select(.merged_at != null) | select(.head.repo.full_name != .base.repo.full_name) | .number')
+
+        if [[ -z "$fork_prs" ]]; then
+          echo "No merged fork PRs associated with ${PUSHED_SHA}; nothing to add."
+          exit 0
+        fi
+
+        echo "Found merged fork PR(s) for ${PUSHED_SHA}:"
+        echo "$fork_prs"
+
+        while IFS= read -r pr; do
+          [[ -z "$pr" ]] && continue
+          # Defense in depth: the GitHub API only returns digits for PR
+          # numbers, but assert it before splicing into the CLI invocation.
+          if ! [[ "$pr" =~ ^[0-9]+$ ]]; then
+            echo "::error::Refusing non-numeric PR identifier from API: ${pr}"
+            exit 1
+          fi
+          echo "::group::PR #${pr}"
+          docs-builder changelog add \
+            --concise \
+            --use-pr-number \
+            --config "$CONFIG" \
+            --owner "$OWNER" \
+            --repo "$REPO_NAME" \
+            --prs "$pr"
+          echo "::endgroup::"
+        done <<< "$fork_prs"
 
     - name: Authenticate with AWS
       uses: elastic/docs-actions/aws/auth@v1

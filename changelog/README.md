@@ -165,7 +165,7 @@ jobs:
 
 ### Fork PRs
 
-Fork PRs always use comment-only mode. The workflow's `GITHUB_TOKEN` is scoped to the upstream repository and cannot push to fork branches; the `maintainer_can_modify` setting only grants push access to *human* upstream maintainers, not to bot tokens. Rather than rely on a PAT or App workaround, fork PRs receive the changelog as a comment, and on merge the upload workflow harvests the entry from the verified workflow artifact (see [Fork PRs and S3](#fork-prs-and-s3)). The comment body is informational only — editing it does not affect what is uploaded.
+Fork PRs always use comment-only mode. The workflow's `GITHUB_TOKEN` is scoped to the upstream repository and cannot push to fork branches; the `maintainer_can_modify` setting only grants push access to *human* upstream maintainers, not to bot tokens. Rather than rely on a PAT or App workaround, fork PRs receive the changelog as a comment, and on merge the upload workflow regenerates the entry from the live PR record (title, labels) using `docs-builder changelog add --prs <N>` (see [Fork PRs and S3](#fork-prs-and-s3)). The comment body is informational only — editing it does not affect what is uploaded.
 
 ## Skipping changelog generation
 
@@ -209,14 +209,13 @@ jobs:
     permissions:
       contents: read        # checkout the pushed commit
       id-token: write       # OIDC token for AWS authentication
-      actions: read         # download the changelog-staging artifact for fork-PR harvest
-      pull-requests: read   # look up the merged PRs for the pushed commit (fork-PR harvest)
+      pull-requests: read   # look up the merged PRs for the pushed commit so fork-PR entries can be regenerated
     uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
 ```
 
-> **Important:** All four permissions above are required. The calling job's `permissions:` block is the ceiling for the reusable workflow — its jobs internally request these scopes and the call is rejected at validation time if any are omitted, with errors like `is requesting 'id-token: write', but is only allowed 'id-token: none'`.
+> **Important:** All three permissions above are required. The calling job's `permissions:` block is the ceiling for the reusable workflow — its jobs internally request these scopes and the call is rejected at validation time if any are omitted, with errors like `is requesting 'id-token: write', but is only allowed 'id-token: none'`.
 
-> **Note:** Do **not** add a `paths:` filter to this workflow. Fork-PR merge commits don't touch `docs/changelog/**` (the entry never gets committed to the PR branch), so a paths filter would suppress exactly the runs that need to perform the fork-PR harvest. `docs-builder changelog upload` is incremental — runs that have nothing to upload are cheap.
+> **Note:** Do **not** add a `paths:` filter to this workflow. Fork-PR merge commits don't touch `docs/changelog/**` (the entry never gets committed to the PR branch), so a paths filter would suppress exactly the runs that need to regenerate the fork-PR entry. `docs-builder changelog upload` is incremental — runs that have nothing to upload are cheap.
 
 If your changelog configuration is not at `docs/changelog.yml`, pass the path explicitly:
 
@@ -238,9 +237,9 @@ On each push to `main` or `master`, the upload workflow:
 
 1. Checks out the pushed commit
 2. Sets up `docs-builder`
-3. Looks up the merged PRs for the pushed commit; for each merged **fork** PR, finds the most recent successful `changelog-submit` run, downloads its `changelog-staging` artifact, verifies that the artifact's metadata matches the merged PR's number and head SHA, and stages the YAML into the bundle directory
+3. Looks up the merged PRs for the pushed commit; for each merged **fork** PR, runs `docs-builder changelog add --prs <N> --use-pr-number --concise --config <config>` to regenerate the entry from the live PR record (title, labels) and writes it into the bundle directory
 4. Authenticates with AWS via OIDC
-5. Runs `docs-builder changelog upload`, which reads your `changelog.yml`, discovers YAML files in the configured directory (committed entries plus any harvested fork-PR entries), and incrementally uploads them to the **private** S3 bucket — only files whose content has changed are transferred
+5. Runs `docs-builder changelog upload`, which reads your `changelog.yml`, discovers YAML files in the configured directory (committed entries plus any regenerated fork-PR entries), and incrementally uploads them to the **private** S3 bucket — only files whose content has changed are transferred
 6. An SQS-triggered Lambda scrubs private repository references and writes sanitized copies to the **public** bucket behind CloudFront
 
 If the directory has no files and no fork PRs are associated, the command exits silently without error.
@@ -249,15 +248,13 @@ The workflow uses a per-repository concurrency group so that rapid successive pu
 
 ### Fork PRs and S3
 
-Fork PRs cannot commit to their PR branch (see [Fork PRs](#fork-prs)), so the changelog entry only exists as a workflow artifact (`changelog-staging`, retained for 90 days). When the fork PR merges, the upload workflow:
+Fork PRs cannot commit to their PR branch (see [Fork PRs](#fork-prs)), so the changelog entry never lands on the PR branch. Instead, when the fork PR merges, the upload workflow:
 
-- Calls `GET /repos/{owner}/{repo}/commits/{sha}/pulls` to find the merged PR
-- Locates the latest successful `changelog-submit` run for that PR's head SHA
-- Downloads and verifies the `changelog-staging` artifact (mismatch on `pr_number` or `head_sha` aborts the upload — the comment body is never used as a source)
-- Stages the verified YAML into the bundle directory under `changelog_dir` from the artifact's `metadata.json`
+- Calls `GET /repos/{owner}/{repo}/commits/{sha}/pulls` to find merged fork PRs
+- For each one, runs `docs-builder changelog add --prs <N> --use-pr-number --concise --owner <owner> --repo <repo> --config <config>`, which reads the live PR title and labels from the GitHub API, applies the `pivot.types` and `rules.create` mappings from your `changelog.yml`, and writes the YAML into `bundle.directory`
 - Lets the normal `docs-builder changelog upload` step pick it up
 
-**Limit:** the artifact is retained for 90 days. Fork PRs that sit unmerged longer must push a new commit (which re-runs validate/submit and refreshes the artifact) before merging, otherwise the entry is dropped. The harvest step logs a warning when it cannot find a non-expired artifact and proceeds without that entry; it does not block the merge or the rest of the upload.
+The entry is always regenerated from the *current* PR state at merge time, so any title or label edits made between submit-time preview and merge are reflected in what is uploaded. There is no artifact courier and no expiry window: a fork PR that merges months after the preview comment was posted still produces a correct entry.
 
 > **Note:** The composite action accepts an `aws-account-id` input (default: the Elastic docs account). Overriding this is only valid when OIDC trust and IAM roles have been provisioned for the target account. In practice, most repositories should use the default.
 

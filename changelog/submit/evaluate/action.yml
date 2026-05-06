@@ -70,7 +70,7 @@ runs:
           can_commit=true
         elif [[ "$IS_ORG_MEMBER" == "true" ]]; then
           trusted=true
-          echo "::notice::Fork PR — changelog will be posted as a comment. The entry is uploaded to S3 from the verified workflow artifact when the PR merges."
+          echo "::notice::Fork PR — changelog will be posted as a comment. On merge, the upload workflow regenerates the entry from the live PR record (title, labels) and uploads it to S3."
         fi
 
         if [[ "$COMMENT_ONLY" == "true" ]]; then
@@ -246,12 +246,7 @@ runs:
       if: steps.pr-data.outputs.proceed == 'true'
       uses: actions/upload-artifact@v7
       with:
-        # Retained for 90 days so the upload workflow can harvest the artifact
-        # for fork PRs on merge (the comment body is informational only and not
-        # trusted as a source). 90 is the GitHub default/maximum for standard
-        # plans; PRs that sit unmerged longer must push a new commit to
-        # regenerate the artifact before merging.
         name: changelog-staging
         path: .artifacts/changelog-artifact
-        retention-days: 90
+        retention-days: 1
         if-no-files-found: error

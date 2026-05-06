@@ -20,8 +20,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-      actions: read         # list and download changelog-staging artifacts from prior submit runs (fork-PR harvest)
-      pull-requests: read   # look up PRs associated with the pushed commit (fork-PR harvest)
+      pull-requests: read
     steps:
       - name: Upload changelog
         uses: elastic/docs-actions/changelog/upload@v1
