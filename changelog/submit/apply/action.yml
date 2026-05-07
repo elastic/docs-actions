@@ -75,9 +75,6 @@ runs:
         CHANGELOG_FILENAME: ${{ steps.meta.outputs.changelog-filename }}
         GH_TOKEN: ${{ inputs.github-token }}
         GIT_REPOSITORY: ${{ github.repository }}
-        IS_FORK: ${{ steps.meta.outputs.is-fork }}
-        HEAD_REPO: ${{ steps.meta.outputs.head-repo }}
-        HEAD_REF: ${{ steps.meta.outputs.head-ref }}
       run: |
         GENERATED=$(ls /tmp/changelog-staging/*.yaml 2>/dev/null | head -1)
         if [ -z "$GENERATED" ]; then
@@ -110,34 +107,10 @@ runs:
           echo "committed=false" >> "$GITHUB_OUTPUT"
         else
           git commit -m "${VERB} changelog for PR #${PR_NUMBER}"
-          push_failed=false
-          if [[ "$IS_FORK" == "true" ]]; then
-            # NOTE (workaround): The strategy step in evaluate currently
-            # forces can-commit=false for all fork PRs, which means
-            # should-commit is false here too and this branch is
-            # unreachable in practice. The block is retained for the
-            # eventual service-account-PAT path: a PAT belonging to a
-            # maintainer of the upstream repo CAN push to a fork's PR
-            # branch via the maintainer_can_modify mechanism, where
-            # GITHUB_TOKEN cannot. Once that PAT path is wired up, this
-            # block becomes the active push for fork PRs.
-            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${HEAD_REPO}.git"
-            if ! git push origin "HEAD:refs/heads/${HEAD_REF}" 2>&1; then
-              echo "::warning::Push to fork failed — token lacks access to the fork repo (expected with GITHUB_TOKEN; requires a service-account PAT)"
-              push_failed=true
-            fi
-          else
-            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GIT_REPOSITORY}.git"
-            git push
-          fi
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GIT_REPOSITORY}.git"
+          git push
           git remote set-url origin "https://github.com/${GIT_REPOSITORY}.git"
-
-          if [[ "$push_failed" == "true" ]]; then
-            echo "committed=false" >> "$GITHUB_OUTPUT"
-            echo "push-failed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "committed=true" >> "$GITHUB_OUTPUT"
-          fi
+          echo "committed=true" >> "$GITHUB_OUTPUT"
         fi
 
         echo "changelog-file=$CHANGELOG_FILE" >> "$GITHUB_OUTPUT"
@@ -153,19 +126,6 @@ runs:
         github-token: ${{ inputs.github-token }}
         script: |
           const script = require('${{ github.action_path }}/scripts/post-success-comment.js');
-          await script({ github, context, core });
-
-    - name: Post push-fallback comment
-      if: steps.commit.outputs.push-failed == 'true'
-      uses: actions/github-script@v9
-      env:
-        PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
-        CHANGELOG_DIR: ${{ steps.meta.outputs.changelog-dir }}
-        STAGING_DIR: /tmp/changelog-staging
-      with:
-        github-token: ${{ inputs.github-token }}
-        script: |
-          const script = require('${{ github.action_path }}/scripts/post-push-fallback.js');
           await script({ github, context, core });
 
     - name: Post comment-only changelog

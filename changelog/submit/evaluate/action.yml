@@ -60,7 +60,6 @@ runs:
       env:
         IS_FORK: ${{ steps.pr-data.outputs.is-fork }}
         IS_ORG_MEMBER: ${{ inputs.is-org-member }}
-        MAINTAINER_CAN_MODIFY: ${{ steps.pr-data.outputs.maintainer-can-modify }}
         COMMENT_ONLY: ${{ inputs.comment-only }}
       run: |
         trusted=false
@@ -70,24 +69,8 @@ runs:
           trusted=true
           can_commit=true
         elif [[ "$IS_ORG_MEMBER" == "true" ]]; then
-          # Trusted-fork read path: we will fetch the PR head via the
-          # upstream's refs/pull/N/head mirror (see the "Checkout PR head
-          # (fork PR)" step), so we can run docs-builder on the PR's
-          # generated changelog content without needing access to the fork
-          # repo itself.
           trusted=true
-
-          # WORKAROUND: can_commit is forced to false for ALL fork PRs,
-          # regardless of maintainer_can_modify, because GITHUB_TOKEN cannot
-          # push to fork repositories. The token is scoped to the workflow's
-          # own repository and the maintainer_can_modify privilege only
-          # extends to *human* upstream maintainers — bot tokens (including
-          # GITHUB_TOKEN) do not inherit it. The push would fail at runtime
-          # with "Repository not found" (private fork) or 403 (public fork).
-          #
-          # This is a stop-gap until a service-account PAT path is wired up.
-          # Tracked: https://github.com/elastic/docs-actions/issues/129
-          echo "::notice::Fork PR — changelog will be posted as a comment. Direct commits to fork branches are not supported with GITHUB_TOKEN; this requires a service-account PAT (planned)."
+          echo "::notice::Fork PR — changelog will be posted as a comment. On merge, the upload workflow regenerates the entry from the live PR record (title, labels) and uploads it to S3."
         fi
 
         if [[ "$COMMENT_ONLY" == "true" ]]; then
