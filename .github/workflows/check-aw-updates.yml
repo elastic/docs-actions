@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Create ephemeral GitHub token
         id: create-token
-        uses: elastic/oblt-actions/github/create-token@v1.39.0
+        uses: elastic/oblt-actions/github/create-token@v1.39.2
         with:
           token-policy: token-policy-8749eaab83f2
 
