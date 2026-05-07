@@ -28,6 +28,16 @@ on:
         type: string
         required: false
         default: "docs/"
+      target-path:
+        description: "Optional docs-root-relative directory to sweep recursively. Accepts a leading slash."
+        type: string
+        required: false
+        default: ""
+      scope-mode:
+        description: "How to scope matched markdown files: auto preserves the default behavior, full scans every matched file, and shard applies rotating shard selection within the matched set."
+        type: string
+        required: false
+        default: "auto"
       target-batch-size:
         description: "Approximate pages per rotating slice; controls shard count N = ceil(total/batch-size)"
         type: string
@@ -99,61 +109,107 @@ steps:
   - name: Compute sweep targets
     env:
       DOCS_ROOT: ${{ inputs.docs-root }}
+      TARGET_PATH: ${{ inputs.target-path }}
+      SCOPE_MODE: ${{ inputs.scope-mode }}
       TARGET_BATCH: ${{ inputs.target-batch-size }}
     run: |
       set -eu
       mkdir -p /tmp/gh-aw/sweep-data/scope
 
-      if [ ! -d "$DOCS_ROOT" ]; then
-        echo "docs-root '$DOCS_ROOT' does not exist; producing empty scope"
+      TARGET_PATH_CLEAN=${TARGET_PATH#/}
+      TARGET_PATH_CLEAN=${TARGET_PATH_CLEAN%/}
+      DOCS_ROOT_CLEAN=${DOCS_ROOT%/}
+      SCOPE_ROOT="$DOCS_ROOT"
+      REQUESTED_SCOPE_MODE="$SCOPE_MODE"
+      SELECTION_MODE="shard"
+
+      case "$REQUESTED_SCOPE_MODE" in
+        auto|full|shard) ;;
+        *)
+          echo "scope-mode '$REQUESTED_SCOPE_MODE' must be one of: auto, full, shard"
+          exit 1
+          ;;
+      esac
+
+      if [ -n "$TARGET_PATH_CLEAN" ]; then
+        if [ "$DOCS_ROOT_CLEAN" = "." ] || [ -z "$DOCS_ROOT_CLEAN" ]; then
+          SCOPE_ROOT="$TARGET_PATH_CLEAN"
+        else
+          SCOPE_ROOT="$DOCS_ROOT_CLEAN/$TARGET_PATH_CLEAN"
+        fi
+      fi
+
+      if [ "$REQUESTED_SCOPE_MODE" = "auto" ]; then
+        if [ -n "$TARGET_PATH_CLEAN" ]; then
+          SELECTION_MODE="full"
+        else
+          SELECTION_MODE="shard"
+        fi
+      else
+        SELECTION_MODE="$REQUESTED_SCOPE_MODE"
+      fi
+
+      if [ ! -d "$SCOPE_ROOT" ]; then
+        echo "scope root '$SCOPE_ROOT' does not exist; producing empty scope"
         : > /tmp/gh-aw/sweep-data/all.txt
         : > /tmp/gh-aw/sweep-data/shard.txt
         : > /tmp/gh-aw/sweep-data/recent.txt
         : > /tmp/gh-aw/sweep-data/in-scope.txt
-        echo '{"total":0,"shard_n":1,"shard_slot":0,"shard_count":0,"recent_count":0,"in_scope_count":0,"iso_week":"'"$(date +%G-W%V)"'","docs_root":"'"$DOCS_ROOT"'"}' > /tmp/gh-aw/sweep-data/stats.json
+        echo '{"total":0,"shard_n":1,"shard_slot":0,"shard_count":0,"recent_count":0,"in_scope_count":0,"iso_week":"'"$(date +%G-W%V)"'","docs_root":"'"$DOCS_ROOT"'","scope_mode":"'"$REQUESTED_SCOPE_MODE"'","selection_mode":"'"$SELECTION_MODE"'","target_path":"'"$TARGET_PATH_CLEAN"'","scope_root":"'"$SCOPE_ROOT"'"}' > /tmp/gh-aw/sweep-data/stats.json
         exit 0
       fi
 
-      find "$DOCS_ROOT" -type f -name '*.md' \
+      find "$SCOPE_ROOT" -type f -name '*.md' \
         -not -path '*/node_modules/*' \
         -not -path '*/.git/*' \
         | sort > /tmp/gh-aw/sweep-data/all.txt
 
       TOTAL=$(wc -l < /tmp/gh-aw/sweep-data/all.txt | tr -d ' ')
-      if [ "$TOTAL" -eq 0 ]; then
+      if [ "$SELECTION_MODE" = "full" ]; then
         N=1
-      else
-        N=$(( (TOTAL + TARGET_BATCH - 1) / TARGET_BATCH ))
-      fi
-      ISO_WEEK_NUM=$(date +%V | sed 's/^0//')
-      SLOT=$(( ISO_WEEK_NUM % N ))
-
-      : > /tmp/gh-aw/sweep-data/shard.txt
-      while IFS= read -r f; do
-        [ -z "$f" ] && continue
-        HEX=$(printf '%s' "$f" | shasum -a 256 | cut -c1-4)
-        HASH_NUM=$(( 16#$HEX ))
-        if [ $((HASH_NUM % N)) -eq "$SLOT" ]; then
-          echo "$f" >> /tmp/gh-aw/sweep-data/shard.txt
-        fi
-      done < /tmp/gh-aw/sweep-data/all.txt
-
-      git log --since='2 days ago' --name-only --pretty=format: -- "$DOCS_ROOT/*.md" "$DOCS_ROOT/**/*.md" 2>/dev/null \
-        | grep -E '\.md$' \
-        | sort -u > /tmp/gh-aw/sweep-data/recent.txt || true
-
-      # Cap the recently-changed pass: if a corpus-wide rebase or migration
-      # touched far more pages than one slice, fall back to slice-only so
-      # rotation actually rotates.
-      RECENT_RAW=$(wc -l < /tmp/gh-aw/sweep-data/recent.txt | tr -d ' ')
-      RECENT_LIMIT=$(( TARGET_BATCH * 2 ))
-      if [ "$RECENT_RAW" -gt "$RECENT_LIMIT" ]; then
-        echo "recently-changed pass produced $RECENT_RAW pages (>2x target batch $TARGET_BATCH); disabling for this run"
+        SLOT=0
+        cp /tmp/gh-aw/sweep-data/all.txt /tmp/gh-aw/sweep-data/shard.txt
         : > /tmp/gh-aw/sweep-data/recent.txt
+      else
+        if [ "$TOTAL" -eq 0 ]; then
+          N=1
+        else
+          N=$(( (TOTAL + TARGET_BATCH - 1) / TARGET_BATCH ))
+        fi
+        ISO_WEEK_NUM=$(date +%V | sed 's/^0//')
+        SLOT=$(( ISO_WEEK_NUM % N ))
+
+        : > /tmp/gh-aw/sweep-data/shard.txt
+        while IFS= read -r f; do
+          [ -z "$f" ] && continue
+          HEX=$(printf '%s' "$f" | shasum -a 256 | cut -c1-4)
+          HASH_NUM=$(( 16#$HEX ))
+          if [ $((HASH_NUM % N)) -eq "$SLOT" ]; then
+            echo "$f" >> /tmp/gh-aw/sweep-data/shard.txt
+          fi
+        done < /tmp/gh-aw/sweep-data/all.txt
+
+        git log --since='2 days ago' --name-only --pretty=format: -- "$DOCS_ROOT/*.md" "$DOCS_ROOT/**/*.md" 2>/dev/null \
+          | grep -E '\.md$' \
+          | sort -u > /tmp/gh-aw/sweep-data/recent.txt || true
+
+        # Cap the recently-changed pass: if a corpus-wide rebase or migration
+        # touched far more pages than one slice, fall back to slice-only so
+        # rotation actually rotates.
+        RECENT_RAW=$(wc -l < /tmp/gh-aw/sweep-data/recent.txt | tr -d ' ')
+        RECENT_LIMIT=$(( TARGET_BATCH * 2 ))
+        if [ "$RECENT_RAW" -gt "$RECENT_LIMIT" ]; then
+          echo "recently-changed pass produced $RECENT_RAW pages (>2x target batch $TARGET_BATCH); disabling for this run"
+          : > /tmp/gh-aw/sweep-data/recent.txt
+        fi
       fi
 
-      sort -u /tmp/gh-aw/sweep-data/shard.txt /tmp/gh-aw/sweep-data/recent.txt \
-        | grep -v '^$' > /tmp/gh-aw/sweep-data/in-scope.txt || true
+      if [ "$SELECTION_MODE" = "full" ]; then
+        cp /tmp/gh-aw/sweep-data/all.txt /tmp/gh-aw/sweep-data/in-scope.txt
+      else
+        sort -u /tmp/gh-aw/sweep-data/shard.txt /tmp/gh-aw/sweep-data/recent.txt \
+          | grep -v '^$' > /tmp/gh-aw/sweep-data/in-scope.txt || true
+      fi
 
       while IFS= read -r f; do
         [ -z "$f" ] && continue
@@ -175,11 +231,15 @@ steps:
         "recent_count": $RECENT_COUNT,
         "in_scope_count": $IN_SCOPE_COUNT,
         "iso_week": "$(date +%G-W%V)",
-        "docs_root": "$DOCS_ROOT"
+        "docs_root": "$DOCS_ROOT",
+        "scope_mode": "$REQUESTED_SCOPE_MODE",
+        "selection_mode": "$SELECTION_MODE",
+        "target_path": "$TARGET_PATH_CLEAN",
+        "scope_root": "$SCOPE_ROOT"
       }
       EOF
 
-      echo "Sweep targets: total=$TOTAL N=$N slot=$SLOT shard=$SHARD_COUNT recent=$RECENT_COUNT in_scope=$IN_SCOPE_COUNT"
+      echo "Sweep targets: scope_mode=$REQUESTED_SCOPE_MODE mode=$SELECTION_MODE scope_root=$SCOPE_ROOT total=$TOTAL N=$N slot=$SLOT shard=$SHARD_COUNT recent=$RECENT_COUNT in_scope=$IN_SCOPE_COUNT"
 
   - name: Repo-specific setup
     if: ${{ inputs.setup-commands != '' }}
@@ -198,9 +258,9 @@ A pre-step has computed the in-scope file list:
 
 - `/tmp/gh-aw/sweep-data/in-scope.txt` — file paths to audit.
 - `/tmp/gh-aw/sweep-data/scope/` — copies mirroring the original paths.
-- `/tmp/gh-aw/sweep-data/stats.json` — corpus stats.
+- `/tmp/gh-aw/sweep-data/stats.json` — corpus stats, including `scope_mode`, `selection_mode`, `target_path`, and `scope_root`.
 
-Read with `cat` / `jq`. If `in_scope_count` is `0`, call `noop` with the stats and stop.
+Read with `cat` / `jq`. If `in_scope_count` is `0`, call `noop` with a path-aware or shard-aware message based on `selection_mode`, then stop.
 
 ## Step 1: Validate applies_to autonomously
 
@@ -253,18 +313,33 @@ Strip the `/tmp/gh-aw/sweep-data/scope/` prefix from `file` so paths are repo-re
 
 Sort findings by `severity` (`high` → `medium` → `low`), then by `file` ascending, then by `line` ascending. Group findings on the same `file` adjacently.
 
-Cap at `${{ inputs.max-per-fix-issue }}` distinct files. If empty, `noop` with `"No applies_to issues in this slice (shard <slot>/<n>, <in_scope_count> pages)"` and stop.
+Cap at `${{ inputs.max-per-fix-issue }}` distinct files. If empty, call `noop` and adapt the message to the selection mode:
+
+- Shard mode without `target_path`: `"No applies_to issues in this slice (shard <slot>/<n>, <in_scope_count> pages)"`.
+- Shard mode with `target_path`: `"No applies_to issues under /<target_path> in shard <slot>/<n> (<in_scope_count> pages)"`.
+- Full mode with `target_path`: `"No applies_to issues under /<target_path> (<in_scope_count> pages)"`.
+- Full mode without `target_path`: `"No applies_to issues in full sweep <docs_root> (<in_scope_count> pages)"`.
 
 ## Output: fix-issue body
 
-Title body: `shard <slot+1>/<n> — <count> pages` (workflow prepends `Docs fix — applies_to: `).
+Title body depends on the selection mode:
+
+- Shard mode without `target_path`: `shard <slot+1>/<n> — <count> pages` (workflow prepends `Docs fix — applies_to: `).
+- Shard mode with `target_path`: `path /<target_path> — shard <slot+1>/<n> — <count> pages`.
+- Full mode with `target_path`: `path /<target_path> — <count> pages`.
+- Full mode without `target_path`: `full <docs_root> — <count> pages`.
 
 Body:
 
 ```markdown
 Generated by `gh-aw-docs-applies-to-sweep` for `${{ inputs.source-repo || github.repository }}` on <iso_week>.
 
-Shard <slot+1>/<n> · <shard_count> pages in slice · <recent_count> recently-changed · <in_scope_count> total in scope · corpus <total> pages.
+Use one of these scope-summary lines:
+
+- Shard mode without `target_path`: `Shard <slot+1>/<n> · <shard_count> pages in slice · <recent_count> recently-changed · <in_scope_count> total in scope · corpus <total> pages.`
+- Shard mode with `target_path`: `Path /<target_path> · shard <slot+1>/<n> · <shard_count> pages in slice · <recent_count> recently-changed · <in_scope_count> total in scope · subtree corpus <total> pages.`
+- Full mode with `target_path`: `Path /<target_path> · <in_scope_count> total in scope · subtree corpus <total> pages.`
+- Full mode without `target_path`: `Full sweep of <docs_root> · <in_scope_count> total in scope · corpus <total> pages.`
 
 ## Findings (<count>)
 

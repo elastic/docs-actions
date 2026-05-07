@@ -5,7 +5,7 @@ Compares each in-scope page against published Elastic docs (via the Elastic Docs
 - **Duplicate or near-duplicate content** — the same explanation living in multiple places.
 - **Contradictions** — different pages giving different answers to the same question.
 
-The sweep runs on a rotating slice each run. The default `target-batch-size` is smaller (`50`) than other sweeps because each in-scope page produces multiple MCP calls and LLM comparisons.
+The sweep runs on a rotating slice each run, or across every markdown file under a selected subtree. The default `target-batch-size` is smaller (`50`) than other sweeps because each in-scope page produces multiple MCP calls and LLM comparisons.
 
 ## Triggers
 
@@ -31,6 +31,8 @@ Configure both secrets:
 | Input | Default | Description |
 |-------|---------|-------------|
 | `docs-root` | `docs/` | Root directory to sweep. |
+| `target-path` | `""` | Optional `docs-root`-relative directory to sweep recursively. Accepts a leading slash, such as `/solutions/observability`. |
+| `scope-mode` | `auto` | Scope behavior for the matched markdown files. `auto` preserves the existing behavior, `full` scans all matched files, and `shard` shards within the matched set. |
 | `target-batch-size` | `50` | Pages per slice. Smaller than other sweeps because each comparison is expensive. |
 | `max-per-fix-issue` | `20` | Findings cap per fix-issue. |
 | `max-related-per-page` | `3` | Cap on related-doc comparisons per in-scope page. |
@@ -46,7 +48,7 @@ Configure both secrets:
 
 ## How it works
 
-1. Pre-step computes the rotating slice + recently-changed pages.
+1. Pre-step enumerates `*.md` under the matched scope (`docs-root`, optionally narrowed by `target-path`), then either scans them all or computes the rotating slice plus recently-changed pages based on `scope-mode`.
 2. The agent processes each in-scope page:
    - Builds a focused query from the page's H1 and opening paragraphs.
    - Calls `elastic-docs.find_related_docs` (or `search_docs`) to find related published Elastic docs.
