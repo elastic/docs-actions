@@ -446,6 +446,7 @@ Do not report:
 
 ## Quality gate
 
+If there are no eligible markdown files in the configured review scope, call `noop`.
 If you reviewed eligible files and found no actionable issues, post the review summary as a single PR comment using `add_comment`. Do not call `submit_pull_request_review` in this case: a body-only review with no inline comments cannot be submitted when the workflow is triggered from an `issue_comment` event.
 
 If you found one or more high-confidence actionable issues:
