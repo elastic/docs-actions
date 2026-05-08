@@ -9,7 +9,6 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-  - gh-aw-fragments/messages-footer.md
   - gh-aw-fragments/safe-output-add-comment.md
 engine:
   id: copilot
@@ -24,11 +23,6 @@ on:
         default: ""
       setup-commands:
         description: "Shell commands to run before the agent starts (dependency install, build, etc.)"
-        type: string
-        required: false
-        default: ""
-      messages-footer:
-        description: "Footer appended to all agent comments and reviews"
         type: string
         required: false
         default: ""

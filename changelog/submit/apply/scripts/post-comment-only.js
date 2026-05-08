@@ -19,6 +19,8 @@ module.exports = async ({ github, context, core }) => {
       '```yaml',
       content,
       '```',
+      '',
+      'This comment is informational — editing it does not change what gets uploaded. On merge, the entry is regenerated from the live PR record (title, labels) and uploaded to S3. To change the preview, edit the PR title or labels and let the changelog workflow re-run.',
     );
   } else {
     bodyParts.push('⚠️ Changelog entry was generated but the file content could not be read.');

@@ -51,11 +51,12 @@ on:
       - labeled
       - unlabeled
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   validate:
+    permissions:
+      contents: read  # docs-builder reads changelog config from the PR
     uses: elastic/docs-actions/.github/workflows/changelog-validate.yml@v1
 ```
 
@@ -70,14 +71,19 @@ on:
     types:
       - completed
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   submit:
+    permissions:
+      contents: write       # commit the generated changelog file to the PR branch
+      pull-requests: write  # post the changelog comment on the PR
+      id-token: write       # OIDC token for the org-membership check on fork PRs
+      packages: read        # pull the docs-builder edge image from GHCR
     uses: elastic/docs-actions/.github/workflows/changelog-submit.yml@v1
 ```
+
+> **Important:** All four permissions above are required. The calling job's `permissions:` block is the ceiling for the reusable workflow — its jobs internally request these scopes and the call is rejected at validation time if any are omitted, with errors like `is requesting 'id-token: write', but is only allowed 'id-token: none'`. Keeping `permissions: {}` at the workflow level ensures unrelated jobs in the same caller file don't get these scopes.
 
 If your changelog configuration is not at `docs/changelog.yml`, pass the path explicitly to both workflows:
 
@@ -157,7 +163,9 @@ jobs:
       comment-only: true
 ```
 
-Fork PRs automatically use comment-only mode since the workflow token cannot push to fork branches.
+### Fork PRs
+
+Fork PRs always use comment-only mode. The workflow's `GITHUB_TOKEN` is scoped to the upstream repository and cannot push to fork branches; the `maintainer_can_modify` setting only grants push access to *human* upstream maintainers, not to bot tokens. Rather than rely on a PAT or App workaround, fork PRs receive the changelog as a comment, and on merge the upload workflow regenerates the entry from the live PR record (title, labels) using `docs-builder changelog add --prs <N>` (see [Fork PRs and S3](#fork-prs-and-s3)). The comment body is informational only — editing it does not affect what is uploaded.
 
 ## Skipping changelog generation
 
@@ -193,18 +201,21 @@ name: changelog-upload
 on:
   push:
     branches: [main, master]
-    paths:
-      - 'docs/changelog/**'
-      - 'docs/changelog.yml'
 
 permissions: {}
 
 jobs:
   upload:
+    permissions:
+      contents: read        # checkout the pushed commit
+      id-token: write       # OIDC token for AWS authentication
+      pull-requests: read   # look up the merged PRs for the pushed commit so fork-PR entries can be regenerated
     uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
 ```
 
-The `paths` filter is optional — it avoids running the workflow on pushes that don't touch changelog files. If your changelog directory or config lives elsewhere, adjust the paths accordingly.
+> **Important:** All three permissions above are required. The calling job's `permissions:` block is the ceiling for the reusable workflow — its jobs internally request these scopes and the call is rejected at validation time if any are omitted, with errors like `is requesting 'id-token: write', but is only allowed 'id-token: none'`.
+
+> **Note:** Do **not** add a `paths:` filter to this workflow. Fork-PR merge commits don't touch `docs/changelog/**` (the entry never gets committed to the PR branch), so a paths filter would suppress exactly the runs that need to regenerate the fork-PR entry. `docs-builder changelog upload` is incremental — runs that have nothing to upload are cheap.
 
 If your changelog configuration is not at `docs/changelog.yml`, pass the path explicitly:
 
@@ -225,13 +236,25 @@ The upload workflow authenticates to AWS via GitHub Actions OIDC. Your repositor
 On each push to `main` or `master`, the upload workflow:
 
 1. Checks out the pushed commit
-2. Sets up `docs-builder` and authenticates with AWS via OIDC
-3. Runs `docs-builder changelog upload`, which reads your `changelog.yml`, discovers YAML files in the configured directory, and incrementally uploads them to the **private** S3 bucket — only files whose content has changed are transferred
-4. An SQS-triggered Lambda scrubs private repository references and writes sanitized copies to the **public** bucket behind CloudFront
+2. Sets up `docs-builder`
+3. Looks up the merged PRs for the pushed commit; for each merged **fork** PR, runs `docs-builder changelog add --prs <N> --use-pr-number --concise --config <config>` to regenerate the entry from the live PR record (title, labels) and writes it into the bundle directory
+4. Authenticates with AWS via OIDC
+5. Runs `docs-builder changelog upload`, which reads your `changelog.yml`, discovers YAML files in the configured directory (committed entries plus any regenerated fork-PR entries), and incrementally uploads them to the **private** S3 bucket — only files whose content has changed are transferred
+6. An SQS-triggered Lambda scrubs private repository references and writes sanitized copies to the **public** bucket behind CloudFront
 
-If the directory has no files (for example, because changelog generation was skipped), the command exits silently without error.
+If the directory has no files and no fork PRs are associated, the command exits silently without error.
 
 The workflow uses a per-repository concurrency group so that rapid successive pushes queue rather than run in parallel. If a run is already in progress when a new push arrives, the in-progress run completes before the next one starts. Since `docs-builder` performs incremental uploads (skipping unchanged objects), re-runs are cheap.
+
+### Fork PRs and S3
+
+Fork PRs cannot commit to their PR branch (see [Fork PRs](#fork-prs)), so the changelog entry never lands on the PR branch. Instead, when the fork PR merges, the upload workflow:
+
+- Calls `GET /repos/{owner}/{repo}/commits/{sha}/pulls` to find merged fork PRs
+- For each one, runs `docs-builder changelog add --prs <N> --use-pr-number --concise --owner <owner> --repo <repo> --config <config>`, which reads the live PR title and labels from the GitHub API, applies the `pivot.types` and `rules.create` mappings from your `changelog.yml`, and writes the YAML into `bundle.directory`
+- Lets the normal `docs-builder changelog upload` step pick it up
+
+The entry is always regenerated from the *current* PR state at merge time, so any title or label edits made between submit-time preview and merge are reflected in what is uploaded. There is no artifact courier and no expiry window: a fork PR that merges months after the preview comment was posted still produces a correct entry.
 
 > **Note:** The composite action accepts an `aws-account-id` input (default: the Elastic docs account). Overriding this is only valid when OIDC trust and IAM roles have been provisioned for the target account. In practice, most repositories should use the default.
 
@@ -294,6 +317,10 @@ permissions: {}
 
 jobs:
   bundle:
+    permissions:
+      contents: read    # checkout and read release data
+      packages: read    # pull the docs-builder image from GHCR
+      id-token: write   # OIDC token for AWS authentication on the upload job
     uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
     with:
       profile: my-release
@@ -319,6 +346,10 @@ permissions: {}
 
 jobs:
   bundle:
+    permissions:
+      contents: read    # checkout and read release data
+      packages: read    # pull the docs-builder image from GHCR
+      id-token: write   # OIDC token for AWS authentication on the upload job
     uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
     with:
       mode: gh-release
@@ -343,6 +374,10 @@ permissions: {}
 
 jobs:
   bundle:
+    permissions:
+      contents: read    # checkout and read release data
+      packages: read    # pull the docs-builder image from GHCR
+      id-token: write   # OIDC token for AWS authentication on the upload job
     uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
     with:
       release-version: ${{ github.event.release.tag_name }}
@@ -373,6 +408,10 @@ jobs:
 
   bundle:
     needs: discover-report
+    permissions:
+      contents: read    # checkout and read release data
+      packages: read    # pull the docs-builder image from GHCR
+      id-token: write   # OIDC token for AWS authentication on the upload job
     uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
     with:
       report: ${{ needs.discover-report.outputs.report-url }}
@@ -414,6 +453,10 @@ permissions: {}
 
 jobs:
   bundle:
+    permissions:
+      contents: write       # commit the bundle file and push the branch
+      pull-requests: write  # open or update the bundle PR
+      packages: read        # pull the docs-builder image from GHCR
     uses: elastic/docs-actions/.github/workflows/changelog-bundle-pr.yml@v1
     with:
       profile: my-release

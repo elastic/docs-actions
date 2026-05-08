@@ -10,14 +10,14 @@ jobs:
     name: Recompile lock files and open PR if changed
     runs-on: ubuntu-latest
     env:
-      GH_AW_VERSION: v0.71.1
+      GH_AW_VERSION: v0.71.5
     permissions:
       id-token: write
       contents: read
     steps:
       - name: Create ephemeral GitHub token
         id: create-token
-        uses: elastic/oblt-actions/github/create-token@v1.39.0
+        uses: elastic/oblt-actions/github/create-token@v1.39.2
         with:
           token-policy: token-policy-8749eaab83f2
 

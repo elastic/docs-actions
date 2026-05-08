@@ -20,6 +20,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      pull-requests: read
     steps:
       - name: Upload changelog
         uses: elastic/docs-actions/changelog/upload@v1

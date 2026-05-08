@@ -8,7 +8,6 @@
 │   ├── formatting.md
 │   ├── rigor.md
 │   ├── mcp-pagination.md
-│   ├── messages-footer.md
 │   └── safe-output-add-comment.md
 ├── gh-aw-docs-issue-scope.md          # Workflow source
 ├── gh-aw-docs-issue-scope.lock.yml    # Compiled output
@@ -101,11 +100,6 @@ on:
         type: string
         required: false
         default: ""
-      messages-footer:
-        description: "Footer appended to all agent comments and reviews"
-        type: string
-        required: false
-        default: ""
     secrets:
       COPILOT_GITHUB_TOKEN:
         required: true
@@ -118,8 +112,15 @@ on:
 | `gh-aw-fragments/formatting.md` | Response formatting rules |
 | `gh-aw-fragments/rigor.md` | Accuracy & evidence standards |
 | `gh-aw-fragments/mcp-pagination.md` | MCP token limit guidance and pagination patterns |
-| `gh-aw-fragments/messages-footer.md` | Wires the `messages-footer` input to `safe-outputs.messages.footer` |
 | `gh-aw-fragments/safe-output-add-comment.md` | Limitations for `add-comment` |
+
+### Self-contained prompts
+
+Agentic workflows should be autonomous. Do not require runtime skills or agent-local packages for core behavior. If a workflow needs specialized knowledge, embed the relevant rules directly in the prompt, keep them focused, and make `noop` the outcome when the agent cannot verify enough evidence.
+
+Prefer deterministic pre-steps for mechanical checks such as linting, spelling, file selection, and schema extraction. Feed those outputs to the agent as pre-fetched data, then have the agent classify, filter, and format findings.
+
+Use the Elastic docs MCP server for published-doc evidence, not as a blanket fallback for uncertain judgments. Configure it under `mcp-servers.elastic-docs`, allow `www.elastic.co` in `network.allowed`, import `gh-aw-fragments/mcp-pagination.md`, and name the expected tool behavior in the prompt, for example `elastic-docs.search_docs`, `elastic-docs.find_related_docs`, and `elastic-docs.get_document_by_url`.
 
 ### Writing trigger templates
 

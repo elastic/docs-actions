@@ -48,7 +48,7 @@ jobs:
         uses: actions/checkout@v6
       - name: Check changes
         id: check-files
-        uses: tj-actions/changed-files@v47.0.5
+        uses: tj-actions/changed-files@v47.0.6
         with:
           files: ${{ inputs.path-pattern }}
           files_ignore: |
@@ -138,6 +138,13 @@ jobs:
         with:
           name: docs
           path: docs
+      - name: Reject symlinks in build output
+        run: |
+          if find docs -type l | grep -q .; then
+            echo "::error::Symlinks found in build output — refusing to deploy"
+            find docs -type l -ls
+            exit 1
+          fi
       - uses: elastic/docs-actions/aws/auth@v1
         with:
           aws_role_name_prefix: codex-eng-preview-
