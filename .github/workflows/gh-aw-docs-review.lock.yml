@@ -1,4 +1,4 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"93f7a16a7a71066f64d71c23733d3a0e3b2b46ce3a1d98ba6f0d90005facd4c2","compiler_version":"v0.71.5","agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"c820001e69a4cc3f3abf837c9349347694f93a28f167a7f7919488a37fc357c7","compiler_version":"v0.71.5","agent_id":"copilot"}
 # gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"b8068426813005612b960b5ab0b8bd2c27142323","version":"v0.71.5"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.40","digest":"sha256:14ff567e8d9d4c2fbc5e55c973488381c71d7e0fdbe72d30ee7b8a738fd86504","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.40@sha256:14ff567e8d9d4c2fbc5e55c973488381c71d7e0fdbe72d30ee7b8a738fd86504"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.40","digest":"sha256:2883ca3e5ae9f330cafdd9345bfd4ae17fc8da36c96d4c9a1f76e922b4c45280","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.40@sha256:2883ca3e5ae9f330cafdd9345bfd4ae17fc8da36c96d4c9a1f76e922b4c45280"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.40","digest":"sha256:b084f4a2c771f584ee68084ced52fa6b3245197a1889645d817462d307d3ac51","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.40@sha256:b084f4a2c771f584ee68084ced52fa6b3245197a1889645d817462d307d3ac51"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.6","digest":"sha256:2bb8eef86006a4c5963c55616a9c51c32f27bfdecb023b8aa6f91f6718d9171c","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.3.6@sha256:2bb8eef86006a4c5963c55616a9c51c32f27bfdecb023b8aa6f91f6718d9171c"},{"image":"ghcr.io/github/github-mcp-server:v1.0.3","digest":"sha256:2ac27ef03461ef2b877031b838a7d1fd7f12b12d4ace7796d8cad91446d55959","pinned_image":"ghcr.io/github/github-mcp-server:v1.0.3@sha256:2ac27ef03461ef2b877031b838a7d1fd7f12b12d4ace7796d8cad91446d55959"},{"image":"node:lts-alpine","digest":"sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f","pinned_image":"node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
@@ -230,20 +230,20 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_1022f510e0d616cc_EOF'
+          cat << 'GH_AW_PROMPT_3cf95754ce02d500_EOF'
           <system>
-          GH_AW_PROMPT_1022f510e0d616cc_EOF
+          GH_AW_PROMPT_3cf95754ce02d500_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_1022f510e0d616cc_EOF'
+          cat << 'GH_AW_PROMPT_3cf95754ce02d500_EOF'
           <safe-output-tools>
           Tools: add_comment, create_pull_request_review_comment(max:20), submit_pull_request_review, missing_tool, missing_data, noop
           </safe-output-tools>
-          GH_AW_PROMPT_1022f510e0d616cc_EOF
+          GH_AW_PROMPT_3cf95754ce02d500_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/mcp_cli_tools_prompt.md"
-          cat << 'GH_AW_PROMPT_1022f510e0d616cc_EOF'
+          cat << 'GH_AW_PROMPT_3cf95754ce02d500_EOF'
           <github-context>
           The following GitHub context information is available for this workflow:
           {{#if __GH_AW_GITHUB_ACTOR__ }}
@@ -272,9 +272,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_1022f510e0d616cc_EOF
+          GH_AW_PROMPT_3cf95754ce02d500_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_1022f510e0d616cc_EOF'
+          cat << 'GH_AW_PROMPT_3cf95754ce02d500_EOF'
           </system>
           ## Formatting Guidelines
           
@@ -317,13 +317,13 @@ jobs:
           
           # Docs review agent
           
-          You are a documentation pull request reviewer for Elastic documentation repositories. Your job is to review the documentation changes in the triggering pull request like a careful human code reviewer: identify actionable problems, leave line-level comments when you have exact evidence, and submit a concise overall review summary.
+          You are a documentation pull request reviewer for Elastic documentation repositories. Your job is to review the documentation changes in the triggering pull request like a careful human code reviewer: identify actionable problems, leave line-level comments when you have exact evidence, and always submit a concise overall review summary.
           
-          This workflow is autonomous. Do not invoke runtime skills or depend on a skill package being installed. Apply the review rules in this prompt, use deterministic evidence from the pull request and local files, and use the Elastic docs MCP server only when published documentation is needed to verify a claim.
+          Apply the review rules in this prompt, use deterministic evidence from the pull request and local files, and use the Elastic docs MCP server when published documentation is needed to verify a claim.
           
           ## Scope
           
-          This workflow is intended for pull request review flows triggered from a PR slash command such as `/docs-review` or from a consumer repository's PR checkbox menu.
+          This workflow is intended for pull request review flows triggered from a consumer repository's PR checkbox menu.
           
           This workflow supports two repository layouts through `inputs.review-scope`:
           
@@ -359,7 +359,7 @@ jobs:
           - `/tmp/gh-aw/docs-review-data/vale.json` — Vale findings from the `elastic/vale-rules` ruleset, keyed by copied file path under `/tmp/gh-aw/docs-review-data/scope/`.
           - `/tmp/gh-aw/docs-review-data/vale-stats.json` — `{finding_count, file_count, eligible_count, vale_exit}`.
           
-          Read the Vale files before reporting style-guide findings. If Vale output is empty or unavailable, continue the review, but do not report style-guide-only nits.
+          Read the Vale files before reporting style-guide findings. Vale is only one input into the review, not a gate for whether review happens. If Vale output is empty or unavailable, still review every eligible changed markdown file and continue assessing jargon, frontmatter, content type fit, and issue satisfaction, but do not report style-guide-only nits.
           
           Prefer conservative pagination when reading file lists, review comments, or diffs.
           
@@ -401,7 +401,7 @@ jobs:
           
           Focus on the categories below:
           
-          1. **Style and clarity**: Use the pre-fetched Vale output as the source of truth for Elastic style-guide findings. Also apply the embedded style checklist below for high-confidence issues that Vale does not reliably catch, especially formatting and UI writing. Report wording not flagged by Vale only when it creates ambiguity, changes technical meaning, violates fetched style-guide guidance, or violates the embedded formatting/UI-writing checklist.
+          1. **Style and clarity**: Use the pre-fetched Vale output as the source of truth for Elastic style-guide findings. Also apply the embedded style checklist below for high-confidence issues that Vale does not reliably catch, especially formatting and UI writing. Vale findings are not a prerequisite for reviewing a file or category. Report wording not flagged by Vale only when it creates ambiguity, changes technical meaning, violates fetched style-guide guidance, or violates the embedded formatting/UI-writing checklist.
           2. **Elastic-internal jargon**: Flag Elastic-only shorthand that external users will not understand. Use the embedded jargon list below, but respect context: code blocks, CLI output, API fields, UI labels, and acronyms already expanded on the page are exempt.
           3. **Frontmatter quality**: Check the changed file's frontmatter for missing or empty `description`, `products`, and `navigation_title` fields when the repository convention requires them. Apply the embedded frontmatter checklist below.
           4. **Content type fit and structure**: Detect the declared or inferred content type and apply the embedded content-type checklist below. Report only mismatches that materially make the page harder to use or send the author toward the wrong kind of documentation.
@@ -546,7 +546,7 @@ jobs:
           
           Use line-level review comments when you can point to an exact changed line or nearby changed hunk. Keep each inline comment narrowly scoped.
           
-          When helpful, include a concrete replacement sentence, frontmatter snippet, or markdown wording in the comment body. Prefer GitHub suggestion blocks only after passing the pre-output checklist below, and only when the proposed edit cleanly maps to the reviewed line or hunk and can be applied directly. Fall back to plain prose when the change is too large, crosses multiple distant hunks, includes protected substitution syntax, or the exact replacement range is ambiguous.
+          When helpful, include a concrete replacement sentence, frontmatter snippet, or markdown wording in the comment body. Prefer GitHub suggestion blocks when the proposed edit cleanly maps to the reviewed line or hunk and can be applied directly. Fall back to plain prose when the change is too large, crosses multiple distant hunks, or the exact replacement range is ambiguous.
           
           The review comment safe output allows a maximum of 20 inline comments. Use that budget carefully:
           
@@ -557,25 +557,9 @@ jobs:
           
           For inline comments with concrete replacements:
           
-          - prefer one apply-ready GitHub suggestion over a prose description only after passing the pre-output checklist below,
+          - prefer one apply-ready GitHub suggestion over a prose description when GitHub can apply it cleanly,
           - keep the suggested replacement as small as possible while still fixing the issue, and
-          - avoid suggestion blocks only when GitHub would not be able to apply them cleanly.
-          
-          Before creating any inline review comment, inspect the exact comment body you are about to send.
-          
-          If the comment body would contain a GitHub suggestion block and either the original reviewed line or the proposed replacement contains Elastic substitution syntax such as `{{...}}`, do not create the suggestion block. This is a hard rule. Safe-output sanitization can escape curly braces and corrupt substitutions when GitHub applies the suggestion.
-          
-          For these cases, use one of these alternatives instead:
-          
-          - Leave a prose-only inline comment with the exact replacement text outside a suggestion block.
-          - If only part of the line needs changing, suggest only the substring that does not include `{{`, `}}`, or escaped variants such as `\{\{`.
-          - If every useful replacement would include substitution syntax, do not include an apply-ready suggestion.
-          
-          Pre-output checklist for every `create_pull_request_review_comment` call:
-          
-          1. Does the comment body include a fenced `suggestion` block?
-          2. Does the original reviewed line or suggested replacement include `{{`, `}}`, `\{\{`, or `\}\}`?
-          3. If both are true, rewrite the comment before calling the tool so it has no `suggestion` block.
+          - inspect the exact comment body before calling `create_pull_request_review_comment`, especially when using a suggestion block, to confirm it contains the literal replacement text you want GitHub to apply.
           
           Treat low-priority nits differently:
           
@@ -602,7 +586,6 @@ jobs:
           ## Quality gate
           
           If there are no eligible markdown files in the configured review scope, call `noop`.
-          
           If you reviewed eligible files and found no actionable issues, post the review summary as a single PR comment using `add_comment`. Do not call `submit_pull_request_review` in this case: a body-only review with no inline comments cannot be submitted when the workflow is triggered from an `issue_comment` event.
           
           If you found one or more high-confidence actionable issues:
@@ -637,7 +620,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_1022f510e0d616cc_EOF
+          GH_AW_PROMPT_3cf95754ce02d500_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -960,9 +943,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_bb3bf4e4595195af_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_9f94aa89e1915bed_EOF'
           {"add_comment":{"max":1,"target":"triggering"},"create_pull_request_review_comment":{"max":20,"side":"RIGHT"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{},"submit_pull_request_review":{"allowed_events":["COMMENT"],"max":1,"target":"triggering"}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_bb3bf4e4595195af_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_9f94aa89e1915bed_EOF
       - name: Generate Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -1206,7 +1189,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_153c2082a458a331_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_dd50b025c86b6675_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -1264,7 +1247,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_153c2082a458a331_EOF
+          GH_AW_MCP_CONFIG_dd50b025c86b6675_EOF
       - name: Mount MCP servers as CLIs
         id: mount-mcp-clis
         continue-on-error: true

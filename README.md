@@ -27,7 +27,7 @@ AI-powered [GitHub Agent Workflows](https://github.github.com/gh-aw/) for docume
 
 | Workflow | Description | Trigger | Safe output |
 |----------|-------------|---------|-------------|
-| [docs-review](agentic-workflows/docs-review/) | Review changed markdown files under `docs/` in pull requests | `/docs-review`, PR checkbox menu | `create-pull-request-review-comment`, `submit-pull-request-review` |
+| [docs-review](agentic-workflows/docs-review/) | Review changed markdown files in pull requests (`docs/` by default, or repo-wide with `review-scope`) | `/docs-review`, PR checkbox menu | `create-pull-request-review-comment`, `submit-pull-request-review` |
 | [issue-triage](agentic-workflows/issue-triage/) | Triage issues by applying team labels | `/triage`, dispatch | `add-labels` |
 | [docs-quality-sweep](agentic-workflows/docs-quality-sweep/) | Fan out to the docs quality sweeps in parallel | `workflow_dispatch` | Per sweep |
 
