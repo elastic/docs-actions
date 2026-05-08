@@ -1,6 +1,6 @@
 # Docs review
 
-Reviews changed markdown files in pull requests by using Copilot with self-contained Elastic docs review rules. The workflow limits its scope to files under `docs/` and publishes a pull request review with a concise summary plus inline comments for actionable findings.
+Reviews changed markdown files in pull requests by using Copilot with self-contained Elastic docs review rules. By default, the workflow reviews files under `docs/`, and repositories such as `docs-content` can set `review-scope: repo-wide-markdown` to review changed markdown across the repository. It publishes a pull request review with a concise summary plus inline comments for actionable findings.
 
 ## Triggers
 
@@ -31,7 +31,7 @@ Configure the `COPILOT_GITHUB_TOKEN` secret before running the workflow.
 
 | Output | Max | Description |
 |--------|-----|-------------|
-| `noop` | — | Used when the trigger is not a pull request, or the PR has no changed `docs/**/*.md` files |
+| `noop` | — | Used when the trigger is not a pull request, or the PR has no changed markdown files in the configured review scope |
 | `create-pull-request-review-comment` | 20 | Adds focused inline review comments on changed markdown lines |
 | `submit-pull-request-review` | 1 | Submits the overall pull request review summary as a non-blocking `COMMENT` |
 
@@ -55,7 +55,7 @@ If the pull request is linked to a parent issue, the review also checks whether 
 
 ## Autonomous checks
 
-This workflow does not depend on runtime skills. A deterministic pre-step runs Vale with `elastic/vale-rules` on eligible changed markdown files, and the prompt embeds the remaining review rules directly. It focuses on:
+This workflow does not depend on runtime skills. A deterministic pre-step runs Vale with `elastic/vale-rules` on eligible changed markdown files, and the prompt embeds the remaining review rules directly. Vale is one input into the review, not a blocker for whether review happens. The workflow still reviews all eligible markdown files even when Vale finds nothing or is unavailable. It focuses on:
 
 - Style and clarity issues from Vale, plus high-confidence Formatting, Accessibility, and UI writing checks from the embedded style guide checklist.
 - Elastic-internal jargon, outdated terms, informal shorthand, and unexplained acronyms that external readers will not understand.
