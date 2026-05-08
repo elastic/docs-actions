@@ -14,16 +14,16 @@ jobs:
     name: Recompile gh-aw lock files
     runs-on: ubuntu-latest
     env:
-      GH_AW_VERSION: v0.71.1
+      GH_AW_VERSION: v0.71.5
     permissions:
       id-token: write
       contents: read
     steps:
       - name: Create ephemeral GitHub token
         id: create-token
-        uses: elastic/oblt-actions/github/create-token@v1.38.1
+        uses: elastic/oblt-actions/github/create-token@v1.39.2
         with:
-          token-policy: token-policy-8749eaab83f2
+          token-policy: token-policy-7e01f3cdb012
 
       - uses: actions/checkout@v6
         with:
