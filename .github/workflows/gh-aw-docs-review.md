@@ -61,6 +61,10 @@ network:
 strict: false
 safe-outputs:
   noop:
+  add-comment:
+    max: 1
+    target: "triggering"
+    discussions: false
   create-pull-request-review-comment:
     max: 20
   submit-pull-request-review:
@@ -460,12 +464,12 @@ Do not report:
 
 If there are no eligible markdown files in the configured review scope, call `noop`.
 
-If you reviewed eligible files and found no actionable issues, submit a concise `COMMENT` review with a short summary and no inline comments.
+If you reviewed eligible files and found no actionable issues, post the review summary as a single PR comment using `add_comment`. Do not call `submit_pull_request_review` in this case: a body-only review with no inline comments cannot be submitted when the workflow is triggered from an `issue_comment` event.
 
 If you found one or more high-confidence actionable issues:
 
-- create up to 20 focused inline review comments, and
-- submit one consolidated pull request review.
+- create up to 20 focused inline review comments via `create_pull_request_review_comment`, and
+- submit one consolidated pull request review via `submit_pull_request_review`.
 
 Always use `COMMENT` for the final review. This workflow is advisory and must not block merging through a `REQUEST_CHANGES` review state.
 
