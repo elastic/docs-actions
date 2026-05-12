@@ -32,6 +32,17 @@ runs:
         version: edge
         github-token: ${{ inputs.github-token }}
 
+    - name: Stage PR body
+      id: stage-body
+      shell: bash
+      env:
+        PR_BODY: ${{ github.event.pull_request.body }}
+      run: |
+        BODY_FILE="${RUNNER_TEMP}/changelog-pr-body.md"
+        printf '%s' "${PR_BODY:-}" > "$BODY_FILE"
+        chmod 600 "$BODY_FILE"
+        echo "path=${BODY_FILE}" >> "$GITHUB_OUTPUT"
+
     - name: Evaluate PR
       id: evaluate
       shell: bash
@@ -42,7 +53,7 @@ runs:
         REPO_NAME: ${{ github.event.repository.name }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         PR_TITLE: ${{ github.event.pull_request.title }}
-        PR_BODY: ${{ github.event.pull_request.body }}
+        PR_BODY_FILE: ${{ steps.stage-body.outputs.path }}
         PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         HEAD_REF: ${{ github.event.pull_request.head.ref }}
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
