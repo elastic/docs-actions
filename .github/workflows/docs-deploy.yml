@@ -45,7 +45,7 @@ on:
       use-release-branches:
         description: >
           When true, update-link-index runs for semver release branches (e.g. 9.4) as well as the default branch.
-          Pair with the same flag on docs-build so links.json is produced on release pushes without docs/** changes.
+          Pair with the same flag on docs-build so links.json is produced when a release branch is first created.
         type: boolean
         default: false
         required: false
@@ -63,6 +63,7 @@ jobs:
       && github.event.repository.fork == false
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: none
       pull-requests: read
       id-token: write
@@ -80,6 +81,17 @@ jobs:
       vale-files-match: ${{ steps.context.outputs.vale-files-match }}
       link-index-eligible: ${{ steps.link-index-branch.outputs.eligible }}
     steps:
+      - name: Download check metadata
+        id: download-metadata
+        if: github.event.workflow_run.event == 'push'
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: docs-build-check-metadata
+          run-id: ${{ github.event.workflow_run.id }}
+          path: /tmp/check-metadata
+          github-token: ${{ github.token }}
+
       - name: Resolve workflow run context
         id: context
         uses: actions/github-script@v9
@@ -109,8 +121,19 @@ jobs:
 
             if (event === 'push') {
               core.setOutput('base-ref', headBranch);
-              core.setOutput('has-changes', 'true');
               core.setOutput('vale-files-match', 'false');
+
+              let hasChanges = 'true';
+              try {
+                const fs = require('fs');
+                const value = fs.readFileSync('/tmp/check-metadata/effective_any_modified', 'utf8').trim();
+                hasChanges = value === 'false' ? 'false' : 'true';
+                core.info(`Push has-changes from docs-build metadata: ${hasChanges}`);
+              } catch (err) {
+                core.warning(`Could not read check metadata: ${err.message} — falling back to has-changes=true`);
+              }
+
+              core.setOutput('has-changes', hasChanges);
               return;
             }
 
