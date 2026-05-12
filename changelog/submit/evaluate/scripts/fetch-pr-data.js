@@ -12,6 +12,8 @@ module.exports = async ({ github, context, core }) => {
   core.setOutput('body', pr.body || '');
   core.setOutput('labels', pr.labels.map(l => l.name).join(','));
   core.setOutput('is-fork', String(pr.head.repo?.full_name !== pr.base.repo?.full_name));
+  core.setOutput('head-repo', pr.head.repo?.full_name || '');
+  core.setOutput('maintainer-can-modify', String(pr.maintainer_can_modify ?? false));
   core.setOutput('base-ref', pr.base.ref);
   core.setOutput('head-ref', pr.head.ref);
   core.setOutput('head-sha', pr.head.sha);

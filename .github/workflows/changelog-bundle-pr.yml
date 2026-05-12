@@ -1,0 +1,97 @@
+name: Changelog bundle PR
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        description: 'Path to changelog.yml configuration file'
+        type: string
+        default: 'docs/changelog.yml'
+      profile:
+        description: >
+          Bundle profile name from bundle.profiles in changelog.yml.
+          Mutually exclusive with release-version and prs.
+        type: string
+      version:
+        description: >
+          Version string for profile mode (e.g. 9.2.0).
+          Used for {version} substitution in profile patterns.
+        type: string
+      release-version:
+        description: >
+          GitHub release tag used as the PR filter source (e.g. v9.2.0).
+          Mutually exclusive with profile, report, and prs.
+        type: string
+      report:
+        description: >
+          Buildkite promotion report HTTPS URL or local file path.
+          Mutually exclusive with release-version and prs in option mode.
+        type: string
+      prs:
+        description: >
+          Comma-separated PR URLs or numbers, or a path to a newline-delimited file.
+          Mutually exclusive with profile, release-version, and report.
+        type: string
+      output:
+        description: >
+          Output file path for the bundle (e.g. docs/releases/v9.2.0.yaml).
+          Optional. When not provided, the path is determined by the config.
+        type: string
+      repo:
+        description: 'GitHub repository name; falls back to bundle.repo in changelog.yml'
+        type: string
+      owner:
+        description: 'GitHub repository owner; falls back to bundle.owner in changelog.yml'
+        type: string
+      base-branch:
+        description: 'Base branch for the pull request (defaults to repository default branch)'
+        type: string
+      docs-builder-version:
+        description: >
+          docs-builder version to use (e.g. 0.1.100, latest, edge).
+          Non-edge versions are attestation-verified by the setup action.
+        type: string
+        default: 'edge'
+
+permissions: {}
+
+concurrency:
+  group: changelog-bundle-pr-${{ inputs.output || inputs.profile }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      output: ${{ steps.bundle.outputs.output }}
+    steps:
+      - id: bundle
+        uses: elastic/docs-actions/changelog/bundle-create@v1
+        with:
+          config: ${{ inputs.config }}
+          profile: ${{ inputs.profile }}
+          version: ${{ inputs.version }}
+          release-version: ${{ inputs.release-version }}
+          report: ${{ inputs.report }}
+          prs: ${{ inputs.prs }}
+          output: ${{ inputs.output }}
+          repo: ${{ inputs.repo }}
+          owner: ${{ inputs.owner }}
+          docs-builder-version: ${{ inputs.docs-builder-version }}
+          github-token: ${{ github.token }}
+
+  create-pr:
+    needs: generate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: elastic/docs-actions/changelog/bundle-pr@v1
+        with:
+          output: ${{ needs.generate.outputs.output }}
+          base-branch: ${{ inputs.base-branch }}
+          github-token: ${{ github.token }}

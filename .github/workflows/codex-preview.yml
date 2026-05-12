@@ -48,7 +48,7 @@ jobs:
         uses: actions/checkout@v6
       - name: Check changes
         id: check-files
-        uses: tj-actions/changed-files@v47.0.5
+        uses: tj-actions/changed-files@v47.0.6
         with:
           files: ${{ inputs.path-pattern }}
           files_ignore: |
@@ -61,6 +61,7 @@ jobs:
       path_prefix: ${{ steps.codex-build.outputs.path-prefix }}
     permissions:
       contents: read
+      id-token: write
     runs-on: ${{ needs.check.outputs.any_modified == 'true' && 'ubuntu-latest' || 'ubuntu-slim' }}
     steps:
       - name: Checkout code
@@ -102,7 +103,7 @@ jobs:
     steps:
       - name: Create Deployment
         if: contains(fromJSON('["pull_request", "pull_request_target", "workflow_dispatch"]'), github.event_name)
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: deployment
         with:
           result-encoding: string
@@ -137,6 +138,13 @@ jobs:
         with:
           name: docs
           path: docs
+      - name: Reject symlinks in build output
+        run: |
+          if find docs -type l | grep -q .; then
+            echo "::error::Symlinks found in build output — refusing to deploy"
+            find docs -type l -ls
+            exit 1
+          fi
       - uses: elastic/docs-actions/aws/auth@v1
         with:
           aws_role_name_prefix: codex-eng-preview-
@@ -152,7 +160,7 @@ jobs:
           AWS_RETRY_MODE: standard
           AWS_MAX_ATTEMPTS: 3
       - name: Update deployment status
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         if: always() && steps.deployment.outputs.result
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}

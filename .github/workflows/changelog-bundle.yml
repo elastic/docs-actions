@@ -1,0 +1,116 @@
+name: Changelog bundle
+
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: >
+          Operation mode: 'bundle' (default) runs changelog bundle,
+          'gh-release' runs changelog gh-release to create changelogs
+          from a GitHub release. In gh-release mode, repo and version
+          are required.
+        type: string
+        default: 'bundle'
+      config:
+        description: 'Path to changelog.yml configuration file'
+        type: string
+        default: 'docs/changelog.yml'
+      profile:
+        description: >
+          Bundle profile name from bundle.profiles in changelog.yml.
+          Mutually exclusive with release-version and prs.
+        type: string
+      version:
+        description: >
+          Version string (e.g. 9.2.0). In bundle profile mode, used
+          for {version} substitution. In gh-release mode, used as the
+          release tag to fetch.
+        type: string
+      release-version:
+        description: >
+          GitHub release tag used as the PR filter source (e.g. v9.2.0).
+          Mutually exclusive with profile, report, and prs.
+        type: string
+      report:
+        description: >
+          Buildkite promotion report HTTPS URL or local file path.
+          Mutually exclusive with release-version and prs in option mode.
+          In profile mode, passed as a positional argument.
+        type: string
+      prs:
+        description: >
+          Comma-separated PR URLs or numbers, or a path to a newline-delimited file.
+          Mutually exclusive with profile, release-version, and report.
+        type: string
+      output:
+        description: >
+          Output file path for the bundle (e.g. docs/releases/v9.2.0.yaml).
+          Optional. When not provided, the path is determined by the config
+          (bundle.output_directory) and discovered automatically after generation.
+        type: string
+      repo:
+        description: 'GitHub repository name; falls back to bundle.repo in changelog.yml'
+        type: string
+      owner:
+        description: 'GitHub repository owner; falls back to bundle.owner in changelog.yml'
+        type: string
+      strip-title-prefix:
+        description: 'Remove [Prefix]: from PR titles (gh-release mode only)'
+        type: boolean
+        default: false
+      docs-builder-version:
+        description: >
+          docs-builder version to use (e.g. 0.1.100, latest, edge).
+          Non-edge versions are attestation-verified by the setup action.
+        type: string
+        default: 'edge'
+      aws-account-id:
+        description: 'AWS account ID for OIDC. Only override if provisioned for the target account.'
+        type: string
+        default: '197730964718'
+
+permissions: {}
+
+concurrency:
+  group: changelog-bundle-${{ inputs.output || inputs.profile }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      output: ${{ steps.bundle.outputs.output }}
+    steps:
+      - id: bundle
+        uses: elastic/docs-actions/changelog/bundle-create@v1
+        with:
+          mode: ${{ inputs.mode }}
+          config: ${{ inputs.config }}
+          profile: ${{ inputs.profile }}
+          version: ${{ inputs.version }}
+          release-version: ${{ inputs.release-version }}
+          report: ${{ inputs.report }}
+          prs: ${{ inputs.prs }}
+          output: ${{ inputs.output }}
+          repo: ${{ inputs.repo }}
+          owner: ${{ inputs.owner }}
+          strip-title-prefix: ${{ inputs.strip-title-prefix }}
+          docs-builder-version: ${{ inputs.docs-builder-version }}
+          github-token: ${{ github.token }}
+
+  upload:
+    needs: generate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: elastic/docs-actions/changelog/bundle-upload@v1
+        with:
+          output: ${{ needs.generate.outputs.output }}
+          config: ${{ inputs.config }}
+          docs-builder-version: ${{ inputs.docs-builder-version }}
+          aws-account-id: ${{ inputs.aws-account-id }}

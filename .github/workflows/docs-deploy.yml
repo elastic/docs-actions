@@ -94,7 +94,7 @@ jobs:
 
       - name: Resolve workflow run context
         id: context
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           PATH_PATTERN: ${{ inputs.path-pattern }}
           IGNORE_PATTERNS: |
@@ -249,7 +249,7 @@ jobs:
         if: steps.context.outputs.is-fork == 'true' && steps.context.outputs.event == 'pull_request'
         continue-on-error: true
         id: fetch-ephemeral-token
-        uses: elastic/ci-gh-actions/fetch-github-token@v1
+        uses: elastic/ci-gh-actions/fetch-github-token@v1.5.0
         with:
           vault-instance: "ci-prod"
           vault-role: "token-policy-8c6a5ed19135"
@@ -322,7 +322,7 @@ jobs:
     steps:
       - name: Update comment to in-progress
         continue-on-error: true
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
         with:
@@ -460,6 +460,9 @@ jobs:
             -e GITHUB_ACTIONS=true \
             -e CI=true \
             -e GITHUB_WORKSPACE=/github/workspace \
+            -e GITHUB_REPOSITORY="${HEAD_REPO}" \
+            -e GITHUB_REF_NAME="${HEAD_BRANCH}" \
+            -e GITHUB_REF="refs/heads/${HEAD_BRANCH}" \
             -e INPUT_PREFIX="${PATH_PREFIX}" \
             -e INPUT_STRICT="${STRICT_FLAG}" \
             ghcr.io/elastic/docs-builder:edge || EXIT_CODE=$?
@@ -539,7 +542,7 @@ jobs:
 
       - name: Create Deployment
         if: env.EVENT == 'pull_request'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: deployment
         with:
           result-encoding: string
@@ -587,7 +590,7 @@ jobs:
 
       - name: Update deployment status
         if: always() && steps.deployment.outputs.result
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           LANDING_PAGE_PATH: ${{ needs.build.outputs.landing_page_path }}
         with:
@@ -623,7 +626,7 @@ jobs:
     steps:
       - name: Comment on PR
         continue-on-error: true
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
@@ -701,7 +704,7 @@ jobs:
       - name: Comment on docs changes about versioning requirements
         if: inputs.enable-cumulative-comment == true
         continue-on-error: true
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
         with:
@@ -771,7 +774,31 @@ jobs:
       contents: none
       pull-requests: write
     steps:
+      - name: Check Vale results artifact
+        id: vale-artifact
+        uses: actions/github-script@v9
+        with:
+          # language=js
+          script: |
+            const { owner, repo } = context.repo;
+            const runId = context.payload.workflow_run.id;
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
+              owner,
+              repo,
+              run_id: runId,
+              per_page: 100,
+            });
+            const found = artifacts.some(artifact =>
+              artifact.name === 'vale-results' && artifact.expired === false
+            );
+
+            core.setOutput('found', found ? 'true' : 'false');
+            if (!found) {
+              core.notice(`Vale report skipped: no vale-results artifact found for workflow run ${runId}`);
+            }
+
       - name: Post Vale Results
+        if: steps.vale-artifact.outputs.found == 'true'
         uses: elastic/vale-rules/report@main
 
   # Uploads links.json to the shared link index S3 bucket.
@@ -808,7 +835,7 @@ jobs:
             f.write(f"result=arn:aws:iam::197730964718:role/{prefix}{hash}")
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
         with:
           role-to-assume: ${{ steps.role_arn.outputs.result }}
           aws-region: us-east-1
@@ -818,6 +845,14 @@ jobs:
         with:
           name: links
           path: /tmp/link-index-upload
+
+      - name: Reject symlinks in link index artifact
+        run: |
+          if find /tmp/link-index-upload -type l | grep -q .; then
+            echo "::error::Symlinks found in link index artifact — refusing to upload"
+            find /tmp/link-index-upload -type l -ls
+            exit 1
+          fi
 
       - name: Upload link reference to S3
         run: |

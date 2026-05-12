@@ -8,7 +8,6 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-  - gh-aw-fragments/messages-footer.md
 engine:
   id: copilot
 
@@ -26,18 +25,13 @@ on:
         type: string
         required: false
         default: ""
-      messages-footer:
-        description: "Footer appended to all agent comments"
-        type: string
-        required: false
-        default: ""
     secrets:
       COPILOT_GITHUB_TOKEN:
         required: true
-
 concurrency:
-  group: issue-triage
+  group: gh-aw-docs-issue-triage-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
+  job-discriminator: ${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
 
 permissions:
   contents: read
@@ -103,10 +97,12 @@ steps:
       echo "CODEOWNERS fetched."
 
   - name: Repo-specific setup
-    if: ${{ inputs.setup-commands != '' }}
     env:
       SETUP_COMMANDS: ${{ inputs.setup-commands }}
-    run: eval "$SETUP_COMMANDS"
+    run: |
+      if [ -n "$SETUP_COMMANDS" ]; then
+        eval "$SETUP_COMMANDS"
+      fi
 
 safe-outputs:
   noop:

@@ -118,7 +118,7 @@ jobs:
       - name: Get changed files
         if: contains(fromJSON('["push", "merge_group", "pull_request"]'), github.event_name)
         id: check-files
-        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323 # v47.0.5
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
           files: ${{ inputs.path-pattern != '' && inputs.path-pattern || '**' }}
           files_ignore: |
@@ -129,7 +129,7 @@ jobs:
       - name: Get modified file detail
         if: contains(fromJSON('["merge_group", "pull_request"]'), github.event_name)
         id: check-modified-file-detail
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           PATH_PATTERN: "${{ inputs.path-pattern != '' && inputs.path-pattern || '**' }}"
           IGNORE_PATTERNS: |

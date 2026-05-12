@@ -1,8 +1,8 @@
-name: Changelog submit
+name: Changelog submit / evaluate
 description: >
-  Self-contained action that generates a changelog entry and either commits it
-  to the PR branch or posts it as a PR comment. Runs in the trusted workflow_run
-  context with write permissions — no artifact from the validate workflow is needed.
+  Read-only action that resolves PR context, evaluates whether a changelog
+  should be generated, and produces the changelog YAML. Uploads the result
+  as an artifact for the apply action to commit or comment.
 
 inputs:
   config:
@@ -12,26 +12,29 @@ inputs:
     description: 'Remove [Prefix]: from PR titles'
     default: 'true'
   github-token:
-    description: 'GitHub token with contents:write and pull-requests:write'
+    description: 'GitHub token (contents:read is sufficient)'
     default: '${{ github.token }}'
   comment-only:
     description: 'Post changelog as a PR comment instead of committing to the branch'
     default: 'false'
+  is-org-member:
+    description: 'Whether the PR author is a verified elastic org member (enables trusted fork checkout)'
+    default: 'false'
 
 outputs:
-  committed:
-    description: 'Whether a changelog was committed (true/false)'
-    value: ${{ steps.commit.outputs.committed || 'false' }}
   pr-number:
     description: 'The PR number'
     value: ${{ steps.pr.outputs.number }}
+  proceed:
+    description: 'Whether a changelog was generated and artifact uploaded'
+    value: ${{ steps.upload.outcome == 'success' && 'true' || 'false' }}
 
 runs:
   using: composite
   steps:
     - name: Resolve PR
       id: pr
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         github-token: ${{ inputs.github-token }}
         script: |
@@ -41,7 +44,7 @@ runs:
     - name: Fetch PR data
       id: pr-data
       if: steps.pr.outputs.number != ''
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         github-token: ${{ inputs.github-token }}
         script: |
@@ -50,20 +53,59 @@ runs:
       env:
         PR_NUMBER: ${{ steps.pr.outputs.number }}
 
-    - name: Checkout PR branch
-      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+    - name: Resolve commit strategy
+      id: strategy
+      if: steps.pr-data.outputs.proceed == 'true'
+      shell: bash
+      env:
+        IS_FORK: ${{ steps.pr-data.outputs.is-fork }}
+        IS_ORG_MEMBER: ${{ inputs.is-org-member }}
+        COMMENT_ONLY: ${{ inputs.comment-only }}
+      run: |
+        trusted=false
+        can_commit=false
+
+        if [[ "$IS_FORK" != "true" ]]; then
+          trusted=true
+          can_commit=true
+        elif [[ "$IS_ORG_MEMBER" == "true" ]]; then
+          trusted=true
+          echo "::notice::Fork PR — changelog will be posted as a comment. On merge, the upload workflow regenerates the entry from the live PR record (title, labels) and uploads it to S3."
+        fi
+
+        if [[ "$COMMENT_ONLY" == "true" ]]; then
+          can_commit=false
+        fi
+
+        echo "trusted=${trusted}" >> "$GITHUB_OUTPUT"
+        echo "can-commit=${can_commit}" >> "$GITHUB_OUTPUT"
+
+    - name: Checkout PR head (same-repo PR)
+      if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted == 'true' && steps.pr-data.outputs.is-fork != 'true'
       uses: actions/checkout@v6
       with:
         ref: ${{ steps.pr-data.outputs.head-sha }}
         token: ${{ inputs.github-token }}
         persist-credentials: false
 
-    - name: Checkout base repo
-      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork == 'true'
+    - name: Checkout PR head (fork PR via upstream pull-ref mirror)
+      # WORKAROUND: We cannot clone the fork repo directly with GITHUB_TOKEN
+      # (scoped to the upstream only). GitHub mirrors every PR's head as
+      # refs/pull/<N>/head inside the *upstream* repo, so checking out that
+      # ref via the upstream gives us the exact PR head SHA without ever
+      # touching the fork. Works for both public and private forks.
+      if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted == 'true' && steps.pr-data.outputs.is-fork == 'true'
+      uses: actions/checkout@v6
+      with:
+        ref: refs/pull/${{ steps.pr.outputs.number }}/head
+        persist-credentials: false
+
+    - name: Checkout base repo (untrusted)
+      if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted != 'true'
       uses: actions/checkout@v6
 
     - name: Validate ref names
-      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+      if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted == 'true'
       shell: bash
       env:
         HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
@@ -78,7 +120,7 @@ runs:
 
     - name: Read config from base branch
       id: config
-      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+      if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted == 'true'
       shell: bash
       env:
         CONFIG_FILE: ${{ inputs.config }}
@@ -91,7 +133,7 @@ runs:
         fi
 
     - name: Verify checkout SHA
-      if: steps.pr-data.outputs.proceed == 'true' && steps.pr-data.outputs.is-fork != 'true'
+      if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted == 'true'
       shell: bash
       env:
         EXPECTED_SHA: ${{ steps.pr-data.outputs.head-sha }}
@@ -114,7 +156,7 @@ runs:
       if: steps.pr-data.outputs.proceed == 'true'
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_TOKEN: ${{ steps.pr-data.outputs.is-fork != 'true' && inputs.github-token || '' }}
         CONFIG_FILE: ${{ steps.config.outputs.config-path || inputs.config }}
         REPO_OWNER: ${{ github.repository_owner }}
         REPO_NAME: ${{ github.event.repository.name }}
@@ -147,7 +189,6 @@ runs:
       if: steps.evaluate.outputs.should-generate == 'true'
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
         CONFIG_FILE: ${{ steps.config.outputs.config-path || inputs.config }}
         CHANGELOG_PR_NUMBER: ${{ steps.pr.outputs.number }}
         CHANGELOG_TITLE: ${{ steps.evaluate.outputs.title }}
@@ -157,103 +198,55 @@ runs:
         CHANGELOG_REPO: ${{ github.event.repository.name }}
         CHANGELOG_PRODUCTS: ${{ steps.evaluate.outputs.products }}
       run: |
-        mkdir -p /tmp/changelog-staging
+        mkdir -p .artifacts/changelog-staging
         docs-builder changelog add \
           --concise \
           --config "$CONFIG_FILE" \
-          --output /tmp/changelog-staging
+          --output .artifacts/changelog-staging
 
-    - name: Commit changelog
-      if: >
-        steps.generate.outcome == 'success'
-        && steps.pr-data.outputs.is-fork != 'true'
-        && inputs.comment-only != 'true'
-      id: commit
+    - name: Prepare artifact
+      if: steps.pr-data.outputs.proceed == 'true'
       shell: bash
       env:
-        PR_NUMBER: ${{ steps.pr.outputs.number }}
-        CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
-        EXISTING_FILENAME: ${{ steps.evaluate.outputs.existing-changelog-filename }}
-        GH_TOKEN: ${{ inputs.github-token }}
-        GIT_REPOSITORY: ${{ github.repository }}
-      run: |
-        GENERATED=$(ls /tmp/changelog-staging/*.yaml 2>/dev/null | head -1)
-        if [ -z "$GENERATED" ]; then
-          echo "::error::No changelog YAML found in staging directory"
-          exit 1
-        fi
-
-        if [ -n "$EXISTING_FILENAME" ]; then
-          TARGET_FILENAME="$EXISTING_FILENAME"
-        else
-          TARGET_FILENAME=$(basename "$GENERATED")
-        fi
-        CHANGELOG_FILE="$CHANGELOG_DIR/$TARGET_FILENAME"
-
-        if [ -f "$CHANGELOG_FILE" ]; then
-          VERB="Update"
-        else
-          VERB="Add"
-        fi
-
-        mkdir -p "$CHANGELOG_DIR"
-        cp "$GENERATED" "$CHANGELOG_FILE"
-
-        git config user.name "github-actions[bot]"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add "$CHANGELOG_FILE"
-
-        if git diff --cached --quiet; then
-          echo "No changes to commit"
-          echo "committed=false" >> "$GITHUB_OUTPUT"
-        else
-          git commit -m "${VERB} changelog for PR #${PR_NUMBER}"
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GIT_REPOSITORY}.git"
-          git push
-          git remote set-url origin "https://github.com/${GIT_REPOSITORY}.git"
-          echo "committed=true" >> "$GITHUB_OUTPUT"
-        fi
-
-        echo "changelog-file=$CHANGELOG_FILE" >> "$GITHUB_OUTPUT"
-
-    - name: Post success comment
-      if: steps.commit.outputs.committed == 'true'
-      uses: actions/github-script@v8
-      env:
+        STATUS: ${{ steps.evaluate.outputs.status }}
+        GENERATE_OUTCOME: ${{ steps.generate.outcome }}
         PR_NUMBER: ${{ steps.pr.outputs.number }}
         HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
-        CHANGELOG_FILE: ${{ steps.commit.outputs.changelog-file }}
-      with:
-        github-token: ${{ inputs.github-token }}
-        script: |
-          const script = require('${{ github.action_path }}/scripts/post-success-comment.js');
-          await script({ github, context, core });
-
-    - name: Post comment-only changelog
-      if: >
-        steps.generate.outcome == 'success'
-        && (steps.pr-data.outputs.is-fork == 'true' || inputs.comment-only == 'true')
-      uses: actions/github-script@v8
-      env:
-        PR_NUMBER: ${{ steps.pr.outputs.number }}
-        CHANGELOG_DIR: ${{ steps.evaluate.outputs.changelog-dir }}
-        STAGING_DIR: /tmp/changelog-staging
-      with:
-        github-token: ${{ inputs.github-token }}
-        script: |
-          const script = require('${{ github.action_path }}/scripts/post-comment-only.js');
-          await script({ github, context, core });
-
-    - name: Post failure comment
-      if: steps.evaluate.outputs.status == 'no-label'
-      uses: actions/github-script@v8
-      env:
-        PR_NUMBER: ${{ steps.pr.outputs.number }}
+        HEAD_SHA: ${{ steps.pr-data.outputs.head-sha }}
+        IS_FORK: ${{ steps.pr-data.outputs.is-fork }}
+        HEAD_REPO: ${{ steps.pr-data.outputs.head-repo }}
+        CAN_COMMIT: ${{ steps.strategy.outputs.can-commit }}
+        MAINTAINER_CAN_MODIFY: ${{ steps.pr-data.outputs.maintainer-can-modify }}
         LABEL_TABLE: ${{ steps.evaluate.outputs.label-table }}
         PRODUCT_LABEL_TABLE: ${{ steps.evaluate.outputs.product-label-table }}
+        SKIP_LABELS: ${{ steps.evaluate.outputs.skip-labels }}
+        EXISTING_FILENAME: ${{ steps.evaluate.outputs.existing-changelog-filename }}
         CONFIG_FILE: ${{ inputs.config }}
+      run: |
+        docs-builder changelog prepare-artifact \
+          --staging-dir .artifacts/changelog-staging \
+          --output-dir .artifacts/changelog-artifact \
+          --evaluate-status "$STATUS" \
+          --generate-outcome "$GENERATE_OUTCOME" \
+          --pr-number "$PR_NUMBER" \
+          --head-ref "$HEAD_REF" \
+          --head-sha "$HEAD_SHA" \
+          --is-fork "$IS_FORK" \
+          --head-repo "$HEAD_REPO" \
+          --can-commit "$CAN_COMMIT" \
+          --maintainer-can-modify "$MAINTAINER_CAN_MODIFY" \
+          --label-table "$LABEL_TABLE" \
+          --product-label-table "$PRODUCT_LABEL_TABLE" \
+          --skip-labels "$SKIP_LABELS" \
+          --config "$CONFIG_FILE" \
+          --existing-changelog-filename "$EXISTING_FILENAME"
+
+    - name: Upload staging artifact
+      id: upload
+      if: steps.pr-data.outputs.proceed == 'true'
+      uses: actions/upload-artifact@v7
       with:
-        github-token: ${{ inputs.github-token }}
-        script: |
-          const script = require('${{ github.action_path }}/scripts/post-failure-comment.js');
-          await script({ github, context, core });
+        name: changelog-staging
+        path: .artifacts/changelog-artifact
+        retention-days: 1
+        if-no-files-found: error
