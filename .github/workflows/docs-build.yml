@@ -347,7 +347,7 @@ jobs:
           persist-credentials: false
       - name: Run Vale Linter
         id: lint
-        uses: elastic/vale-rules/lint@main
+        uses: elastic/vale-rules/lint@f1d7270dfe289989a3acbdfcaab8c97a4a32d7d1 # v1.4.0
         with:
           files: ${{ needs.check.outputs.all_changed_files }}
           vale-paths: ${{ inputs.vale-paths }}
