@@ -22,7 +22,19 @@ runs:
         mkdir -p "${INSTALL_DIR}"
 
         if [[ "${DOCS_BUILDER_VERSION}" == "edge" ]]; then
-            docker cp $(docker create --name tc ghcr.io/elastic/docs-builder:edge):/app/docs-builder "${INSTALL_DIR}/docs-builder" && docker rm tc
+            # Resolve :edge to a RepoDigest before extracting the binary so
+            # the rest of this run uses an immutable image reference.
+            EDGE_IMAGE="ghcr.io/elastic/docs-builder:edge"
+            docker pull "${EDGE_IMAGE}"
+            EDGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${EDGE_IMAGE}")
+            if [ -z "${EDGE_DIGEST}" ]; then
+              echo "::error::Failed to resolve RepoDigest for ${EDGE_IMAGE}"
+              exit 1
+            fi
+            echo "::notice title=docs-builder image digest::${EDGE_DIGEST}"
+            CONTAINER_ID=$(docker create "${EDGE_DIGEST}")
+            trap "docker rm -f ${CONTAINER_ID} >/dev/null 2>&1 || true" EXIT
+            docker cp "${CONTAINER_ID}:/app/docs-builder" "${INSTALL_DIR}/docs-builder"
         else
             if [[ "${DOCS_BUILDER_VERSION}" == "latest" ]]; then
               DOCS_BUILDER_VERSION="" # empty string to get the latest version
