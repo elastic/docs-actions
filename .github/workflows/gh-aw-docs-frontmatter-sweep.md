@@ -98,7 +98,6 @@ safe-outputs:
       - docs-quality-sweep
       - "docs-fix:frontmatter"
     max: 1
-    close-older-issues: true
 timeout-minutes: 30
 steps:
   - name: Checkout source docs repo
