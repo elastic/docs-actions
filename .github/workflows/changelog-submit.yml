@@ -33,63 +33,6 @@ jobs:
       should-submit: ${{ steps.evaluate.outputs.should-submit }}
       is-org-member: ${{ steps.check-org-membership.outputs.is-member }}
     steps:
-      - name: Resolve involved logins
-        id: pr-author
-        if: github.event.workflow_run.head_repository.full_name != github.repository
-        uses: actions/github-script@v9
-        with:
-          # language=js
-          script: |
-            const run = context.payload.workflow_run;
-            const { owner, repo } = context.repo;
-
-            let prNumber;
-            if (run.pull_requests?.length > 0) {
-              prNumber = run.pull_requests[0].number;
-            } else {
-              const headLabel = `${run.head_repository.owner.login}:${run.head_branch}`;
-              const { data: prs } = await github.rest.pulls.list({
-                owner, repo, state: 'open', head: headLabel
-              });
-              const match = prs.find(pr => pr.head.sha === run.head_sha);
-              if (match) prNumber = match.number;
-            }
-
-            if (!prNumber) {
-              core.setFailed('Could not resolve PR number for fork — cannot verify org membership. Failing closed.');
-              return;
-            }
-
-            const { data: pr } = await github.rest.pulls.get({
-              owner, repo, pull_number: prNumber
-            });
-            core.setOutput('login', pr.user.login);
-
-            const headRepoFull = run.head_repository.full_name;
-            const [forkOwner, forkRepo] = headRepoFull.split('/');
-
-            let headCommitAuthor;
-            let headCommitCommitter;
-            try {
-              const { data: headCommit } = await github.rest.repos.getCommit({
-                owner: forkOwner, repo: forkRepo, ref: run.head_sha
-              });
-              headCommitAuthor = headCommit.author?.login;
-              headCommitCommitter = headCommit.committer?.login;
-            } catch (err) {
-              core.warning(`Could not fetch head commit ${run.head_sha} from ${headRepoFull}: ${err.message}`);
-            }
-
-            const logins = [
-              pr.user?.login,
-              run.actor?.login,
-              run.triggering_actor?.login,
-              headCommitAuthor,
-              headCommitCommitter,
-            ].filter(Boolean);
-
-            core.setOutput('involved-logins', logins.join('\n'));
-
       - name: Fetch ephemeral GitHub token
         if: github.event.workflow_run.head_repository.full_name != github.repository
         id: fetch-ephemeral-token
@@ -103,7 +46,6 @@ jobs:
         if: github.event.workflow_run.head_repository.full_name != github.repository
         uses: elastic/docs-actions/github/is-elastic-org-member@v1
         with:
-          usernames: ${{ steps.pr-author.outputs.involved-logins }}
           token: ${{ steps.fetch-ephemeral-token.outputs.token }}
 
       - name: Evaluate

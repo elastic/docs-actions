@@ -153,34 +153,6 @@ jobs:
             core.setOutput('base-ref', pr.base.ref);
             core.setOutput('pr-author', pr.user.login);
 
-            // Collect every distinct login involved in producing this
-            // workflow_run so the org-membership gate can verify the
-            // *pusher* and not just the PR opener
-
-            const headRepoFull = run.head_repository.full_name;
-            const [forkOwner, forkRepo] = headRepoFull.split('/');
-
-            let headCommitAuthor;
-            let headCommitCommitter;
-            try {
-              const { data: headCommit } = await github.rest.repos.getCommit({
-                owner: forkOwner, repo: forkRepo, ref: headSha
-              });
-              headCommitAuthor = headCommit.author?.login;
-              headCommitCommitter = headCommit.committer?.login;
-            } catch (err) {
-              core.warning(`Could not fetch head commit ${headSha} from ${headRepoFull}: ${err.message}`);
-            }
-
-            const logins = [
-              pr.user?.login,
-              run.actor?.login,
-              run.triggering_actor?.login,
-              headCommitAuthor,
-              headCommitCommitter,
-            ].filter(Boolean);
-
-            core.setOutput('involved-logins', logins.join('\n'));
 
             // --- Changed-files check (docs-relevant files only) ---
             const files = await github.paginate(github.rest.pulls.listFiles, {
@@ -265,7 +237,6 @@ jobs:
         if: steps.context.outputs.is-fork == 'true' && steps.context.outputs.event == 'pull_request'
         uses: elastic/docs-actions/github/is-elastic-org-member@v1
         with:
-          usernames: ${{ steps.context.outputs.involved-logins }}
           token: ${{ steps.fetch-ephemeral-token.outputs.token }}
 
       - name: Evaluate

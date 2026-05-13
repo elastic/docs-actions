@@ -1,136 +1,210 @@
 name: github/is-elastic-org-member
 description: >
-  Checks whether one or more GitHub users are members of the elastic org
-  using a GitHub token with read:org scope. When multiple usernames are
-  supplied, all of them must be confirmed members for `is-member` to be
-  `true` (fail-closed semantics for trust gates).
+  Verifies that one or more GitHub users are members of the elastic org
+  using a GitHub token with read:org scope. When `collect-from-workflow-run`
+  is true, also auto-collects every login involved in the upstream
+  workflow_run (PR opener + actor + triggering_actor + head-commit
+  author/committer) so callers don't duplicate that logic. All resolved
+  users must be confirmed members for `is-member` to be `true` (fail-closed
+  semantics for trust gates — see elastic/docs-eng-team#511).
 
 inputs:
   username:
     description: >
-      Single GitHub username to check. Mutually exclusive with `usernames`
-      in practice, but if both are set the values are merged and deduped.
-    required: false
-  usernames:
-    description: >
-      Newline- or comma-separated list of GitHub usernames. Used by callers
-      that need to verify the union of logins involved in a PR (opener,
-      pusher, head-commit author/committer) — see elastic/docs-eng-team#511.
-      All must be members for `is-member` to be `true`. Empty values, blank
-      lines, and known GitHub system accounts (e.g. `web-flow`) are skipped.
+      Single GitHub username to check. Backward-compat input for callers
+      that only need to verify one user. Merged with `usernames` and any
+      auto-collected logins.
     required: false
     default: ''
+  usernames:
+    description: >
+      Newline- or comma-separated list of additional GitHub usernames.
+      Merged with `username` and any auto-collected logins.
+    required: false
+    default: ''
+  collect-from-workflow-run:
+    description: >
+      When 'true' (default) and the calling workflow was triggered by
+      `workflow_run`, automatically include the PR opener, the upstream
+      run's `actor` and `triggering_actor`, and the head commit's author
+      and committer in the membership check. Set to 'false' to validate
+      only the explicit `username` / `usernames` inputs.
+    required: false
+    default: 'true'
   token:
-    description: GitHub token with the necessary scope
+    description: >
+      GitHub token with `read:org` scope (for membership checks) and at
+      minimum read access to public commits (for fork head-commit
+      lookups). Typically an ephemeral Vault-issued token.
     required: true
 
 outputs:
   is-member:
     description: >
-      "'true' if every supplied user is a confirmed elastic org member,
-      'false' otherwise (including when no usernames were supplied)."
+      "'true' if every resolved user is a confirmed elastic org member,
+      'false' otherwise (including when no usernames were resolved)."
     value: ${{ steps.check.outputs.is-member }}
   non-members:
     description: >
       Newline-separated list of usernames that failed the membership
       check. Empty when `is-member` is `true`. Useful for logging which
-      account caused the gate to fail.
+      account(s) caused the gate to fail.
     value: ${{ steps.check.outputs.non-members }}
+  checked-usernames:
+    description: >
+      Newline-separated list of usernames that were validated and
+      checked (after deduplication and filtering of bots/invalid logins).
+      Useful for diagnostic logging.
+    value: ${{ steps.check.outputs.checked-usernames }}
 
 runs:
   using: composite
   steps:
-    - name: Check org membership
+    - name: Check elastic org membership
       id: check
-      shell: bash
+      uses: actions/github-script@v9
       env:
-        GH_TOKEN: ${{ inputs.token }}
-        USERNAME: ${{ inputs.username }}
-        USERNAMES: ${{ inputs.usernames }}
-      # language=bash
-      run: |
-        set -euo pipefail
+        ORG_MEMBER_TOKEN: ${{ inputs.token }}
+        EXPLICIT_USERNAME: ${{ inputs.username }}
+        EXPLICIT_USERNAMES: ${{ inputs.usernames }}
+        COLLECT_FROM_WORKFLOW_RUN: ${{ inputs.collect-from-workflow-run }}
+      with:
+        # Use a separate Octokit instance so the org-membership token
+        # (read:org) is not conflated with the default GITHUB_TOKEN.
+        github-token: ${{ inputs.token }}
+        # language=js
+        script: |
+          // GitHub username grammar: 1-39 chars, alphanumeric + dash,
+          // no leading or trailing dash, no consecutive dashes.
+          // Source: https://github.com/shinnn/github-username-regex.
+          const USERNAME_REGEX = /^[A-Za-z0-9](?:-?[A-Za-z0-9]){0,38}$/;
 
-        if [[ -z "$GH_TOKEN" ]]; then
-          {
-            echo "is-member=false"
-            echo "non-members<<EOF"
-            echo ""
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-          echo "::warning::Token not available — cannot verify org membership"
-          exit 0
-        fi
+          // Logins that are real GitHub accounts but never represent a
+          // human committer for our trust-gate purposes:
+          //   - `web-flow`  → squash-merge / web-UI commit signer
+          //   - `noreply`   → defensive; no real user
+          // Anything ending in `[bot]` is filtered by USERNAME_REGEX
+          // (the brackets are not in the username alphabet).
+          const FILTERED_LOGINS = new Set(['web-flow', 'noreply']);
 
-        # Merge `username` + `usernames`, splitting on newline/comma, trim
-        # whitespace, drop empties, drop the GitHub web-flow ghost account
-        # (used as committer for web-UI edits and squash merges), and dedupe.
-        # Keep only logins matching GitHub's username regex
-        # (1-39 chars, alphanumeric + dash, no leading/trailing dash) so the
-        # value can be safely interpolated into a URL path segment.
-        # Filter pipeline: split on newline/comma, trim whitespace, drop the
-        # GitHub web-flow ghost account (used as committer for web-UI edits
-        # and squash merges), then keep only logins matching GitHub's
-        # username regex (1-39 chars, alphanumeric + dash, no leading or
-        # trailing dash). The final regex implicitly drops empty lines.
-        normalized=$(
-          printf '%s\n%s\n' "${USERNAME:-}" "${USERNAMES:-}" \
-            | tr ',' '\n' \
-            | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' \
-            | grep -vxE 'web-flow' \
-            | grep -E '^[A-Za-z0-9](-?[A-Za-z0-9]){0,38}$' \
-            | sort -u || true
-        )
+          const split = (s) =>
+            String(s ?? '')
+              .split(/[\n,]/)
+              .map((x) => x.trim())
+              .filter(Boolean);
 
-        if [[ -z "$normalized" ]]; then
-          {
-            echo "is-member=false"
-            echo "non-members<<EOF"
-            echo ""
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-          echo "::warning::No valid usernames provided — cannot verify org membership"
-          exit 0
-        fi
+          const explicit = [
+            ...split(process.env.EXPLICIT_USERNAME),
+            ...split(process.env.EXPLICIT_USERNAMES),
+          ];
 
-        non_members=()
-        all_members=true
+          const collected = [];
 
-        # Loop over each username (NUL-safe via process substitution would
-        # be ideal, but `normalized` is already validated against the
-        # username regex above, so newline-splitting is safe here).
-        while IFS= read -r u; do
-          [[ -z "$u" ]] && continue
-          http_code=$(curl -sS -o /dev/null -w "%{http_code}" \
-            -H "Authorization: token $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/orgs/elastic/members/${u}")
+          if (process.env.COLLECT_FROM_WORKFLOW_RUN === 'true') {
+            const run = context.payload?.workflow_run;
+            if (!run) {
+              core.info('collect-from-workflow-run is true but no workflow_run payload is present — skipping auto-collection');
+            } else {
+              // The PR opener (upstream-resolved). Falls back to nothing
+              // if no PR is associated with the run.
+              try {
+                const prRef = run.pull_requests?.[0];
+                if (prRef?.number) {
+                  const { data: pr } = await github.rest.pulls.get({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: prRef.number,
+                  });
+                  if (pr.user?.login) collected.push(pr.user.login);
+                }
+              } catch (err) {
+                core.warning(`Could not resolve PR opener: ${err.message}`);
+              }
 
-          if [[ "$http_code" == "204" ]]; then
-            echo "::notice::${u} is a member of the elastic org"
-          else
-            all_members=false
-            non_members+=("$u")
-            echo "::notice::${u} is not a confirmed member of the elastic org (HTTP ${http_code})"
-          fi
-        done <<< "$normalized"
+              // The user(s) who triggered the upstream workflow_run.
+              if (run.actor?.login) collected.push(run.actor.login);
+              if (run.triggering_actor?.login) collected.push(run.triggering_actor.login);
 
-        if [[ "$all_members" == "true" ]]; then
-          {
-            echo "is-member=true"
-            echo "non-members<<EOF"
-            echo ""
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-        else
-          {
-            echo "is-member=false"
-            echo "non-members<<EOF"
-            # Empty-array-safe expansion for `set -u` correctness.
-            if [[ ${#non_members[@]} -gt 0 ]]; then
-              printf '%s\n' "${non_members[@]}"
-            fi
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-        fi
+              // Head commit author/committer — fetched against the
+              // (possibly fork) head repo. Fail-soft: if we cannot
+              // resolve the commit, the explicit + actor logins still
+              // constrain the check.
+              const headRepoFull = run.head_repository?.full_name;
+              const headSha = run.head_sha;
+              if (headRepoFull && headSha) {
+                const [forkOwner, forkRepo] = headRepoFull.split('/');
+                try {
+                  const { data: commit } = await github.rest.repos.getCommit({
+                    owner: forkOwner,
+                    repo: forkRepo,
+                    ref: headSha,
+                  });
+                  if (commit.author?.login) collected.push(commit.author.login);
+                  if (commit.committer?.login) collected.push(commit.committer.login);
+                } catch (err) {
+                  core.warning(`Could not fetch head commit ${headSha} from ${headRepoFull}: ${err.message}`);
+                }
+              }
+            }
+          }
+
+          // Merge, filter bots, validate against the GitHub username
+          // grammar, and dedupe. Validation happens before any value is
+          // interpolated into an API path.
+          const candidates = [...explicit, ...collected];
+          const seen = new Set();
+          const checked = [];
+          for (const raw of candidates) {
+            if (FILTERED_LOGINS.has(raw)) continue;
+            if (!USERNAME_REGEX.test(raw)) {
+              core.info(`Skipping invalid login candidate: ${JSON.stringify(raw)}`);
+              continue;
+            }
+            const key = raw.toLowerCase();
+            if (seen.has(key)) continue;
+            seen.add(key);
+            checked.push(raw);
+          }
+
+          core.setOutput('checked-usernames', checked.join('\n'));
+
+          if (!process.env.ORG_MEMBER_TOKEN) {
+            core.warning('No token supplied — failing closed (is-member=false)');
+            core.setOutput('is-member', 'false');
+            core.setOutput('non-members', checked.join('\n'));
+            return;
+          }
+
+          if (checked.length === 0) {
+            core.warning('No valid usernames resolved — failing closed (is-member=false)');
+            core.setOutput('is-member', 'false');
+            core.setOutput('non-members', '');
+            return;
+          }
+
+          const nonMembers = [];
+          for (const username of checked) {
+            try {
+              await github.rest.orgs.checkMembershipForUser({
+                org: 'elastic',
+                username,
+              });
+              core.info(`${username} is a member of the elastic org`);
+            } catch (err) {
+              // Octokit raises a HttpError with status 302 (not visible
+              // to the caller — public membership check) or 404 (not a
+              // member) for non-members. Treat any non-200 as "not a
+              // confirmed member".
+              const status = err.status ?? 'unknown';
+              core.info(`${username} is not a confirmed member of the elastic org (status ${status})`);
+              nonMembers.push(username);
+            }
+          }
+
+          if (nonMembers.length === 0) {
+            core.setOutput('is-member', 'true');
+            core.setOutput('non-members', '');
+          } else {
+            core.setOutput('is-member', 'false');
+            core.setOutput('non-members', nonMembers.join('\n'));
+          }
