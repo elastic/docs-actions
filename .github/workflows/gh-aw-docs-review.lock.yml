@@ -1,4 +1,4 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"c820001e69a4cc3f3abf837c9349347694f93a28f167a7f7919488a37fc357c7","compiler_version":"v0.71.5","agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"a32b51ebbd709545cb011ec55348891486580eeb6bc712f9ded09cc91012c2d5","compiler_version":"v0.71.5","agent_id":"copilot"}
 # gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"b8068426813005612b960b5ab0b8bd2c27142323","version":"v0.71.5"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.40","digest":"sha256:14ff567e8d9d4c2fbc5e55c973488381c71d7e0fdbe72d30ee7b8a738fd86504","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.25.40@sha256:14ff567e8d9d4c2fbc5e55c973488381c71d7e0fdbe72d30ee7b8a738fd86504"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.40","digest":"sha256:2883ca3e5ae9f330cafdd9345bfd4ae17fc8da36c96d4c9a1f76e922b4c45280","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.40@sha256:2883ca3e5ae9f330cafdd9345bfd4ae17fc8da36c96d4c9a1f76e922b4c45280"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.40","digest":"sha256:b084f4a2c771f584ee68084ced52fa6b3245197a1889645d817462d307d3ac51","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.25.40@sha256:b084f4a2c771f584ee68084ced52fa6b3245197a1889645d817462d307d3ac51"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.6","digest":"sha256:2bb8eef86006a4c5963c55616a9c51c32f27bfdecb023b8aa6f91f6718d9171c","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.3.6@sha256:2bb8eef86006a4c5963c55616a9c51c32f27bfdecb023b8aa6f91f6718d9171c"},{"image":"ghcr.io/github/github-mcp-server:v1.0.3","digest":"sha256:2ac27ef03461ef2b877031b838a7d1fd7f12b12d4ace7796d8cad91446d55959","pinned_image":"ghcr.io/github/github-mcp-server:v1.0.3@sha256:2ac27ef03461ef2b877031b838a7d1fd7f12b12d4ace7796d8cad91446d55959"},{"image":"node:lts-alpine","digest":"sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f","pinned_image":"node:lts-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
@@ -217,6 +217,7 @@ jobs:
         env:
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
           GH_AW_SAFE_OUTPUTS: ${{ runner.temp }}/gh-aw/safeoutputs/outputs.jsonl
+          GH_AW_EXPR_416D496E: ${{ inputs.review-scope }}
           GH_AW_EXPR_49B959F1: ${{ inputs.additional-instructions }}
           GH_AW_GITHUB_ACTOR: ${{ github.actor }}
           GH_AW_GITHUB_EVENT_COMMENT_ID: ${{ github.event.comment.id }}
@@ -230,20 +231,20 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_3cf95754ce02d500_EOF'
+          cat << 'GH_AW_PROMPT_e3416c5f0948a486_EOF'
           <system>
-          GH_AW_PROMPT_3cf95754ce02d500_EOF
+          GH_AW_PROMPT_e3416c5f0948a486_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_3cf95754ce02d500_EOF'
+          cat << 'GH_AW_PROMPT_e3416c5f0948a486_EOF'
           <safe-output-tools>
           Tools: add_comment, create_pull_request_review_comment(max:20), submit_pull_request_review, missing_tool, missing_data, noop
           </safe-output-tools>
-          GH_AW_PROMPT_3cf95754ce02d500_EOF
+          GH_AW_PROMPT_e3416c5f0948a486_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/mcp_cli_tools_prompt.md"
-          cat << 'GH_AW_PROMPT_3cf95754ce02d500_EOF'
+          cat << 'GH_AW_PROMPT_e3416c5f0948a486_EOF'
           <github-context>
           The following GitHub context information is available for this workflow:
           {{#if __GH_AW_GITHUB_ACTOR__ }}
@@ -272,9 +273,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_3cf95754ce02d500_EOF
+          GH_AW_PROMPT_e3416c5f0948a486_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_3cf95754ce02d500_EOF'
+          cat << 'GH_AW_PROMPT_e3416c5f0948a486_EOF'
           </system>
           ## Formatting Guidelines
           
@@ -332,6 +333,8 @@ jobs:
           
           If `inputs.review-scope` is omitted, use `docs-subtree`.
           
+          Configured review scope for this run: `__GH_AW_EXPR_416D496E__`.
+          
           When the workflow runs:
           
           - Confirm that the triggering item is a pull request or a PR comment context. If this is not a PR context, call `noop` with a short explanation.
@@ -359,7 +362,7 @@ jobs:
           - `/tmp/gh-aw/docs-review-data/vale.json` — Vale findings from the `elastic/vale-rules` ruleset, keyed by copied file path under `/tmp/gh-aw/docs-review-data/scope/`.
           - `/tmp/gh-aw/docs-review-data/vale-stats.json` — `{finding_count, file_count, eligible_count, vale_exit}`.
           
-          Read the Vale files before reporting style-guide findings. Vale is only one input into the review, not a gate for whether review happens. If Vale output is empty or unavailable, still review every eligible changed markdown file and continue assessing jargon, frontmatter, content type fit, and issue satisfaction, but do not report style-guide-only nits.
+          Read the Vale files before reporting style-guide findings. Vale is one input into the review, not the source of truth and not a gate for whether review happens. If Vale output is empty or unavailable, still review every eligible changed markdown file and continue assessing style and clarity, jargon, frontmatter, content type fit, and issue satisfaction.
           
           Prefer conservative pagination when reading file lists, review comments, or diffs.
           
@@ -387,7 +390,9 @@ jobs:
           
           Review each eligible file by applying the rules below and your own judgment. Use the Elastic docs MCP server for targeted verification when a finding depends on published docs, style-guide guidance, content-type guidance, cumulative-docs guidance, or sibling-page context. Prefer `elastic-docs.get_document_by_url` for known authoring guidance pages and `elastic-docs.search_docs` or `elastic-docs.find_related_docs` for discovery.
           
-          For style, content-type, and `applies_to` findings, refresh the relevant published guidance when you need to make a manual judgment that is not already grounded in Vale or local repository schema:
+          Before making manual style or clarity judgments, refresh the published Elastic style guidance with `elastic-docs.get_document_by_url`. At minimum, read the style guide overview once per run when there are eligible files. Then fetch the relevant subpage when a potential finding depends on a specific area such as voice and tone, accessibility, grammar and spelling, word choice, formatting, or UI writing.
+          
+          For content-type and `applies_to` findings, also refresh the relevant published guidance when you need to make a manual judgment that is not already grounded in local repository schema:
           
           - Style guide overview: `/docs/contribute-docs/style-guide`.
           - Voice and tone: `/docs/contribute-docs/style-guide/voice-tone`.
@@ -401,7 +406,7 @@ jobs:
           
           Focus on the categories below:
           
-          1. **Style and clarity**: Use the pre-fetched Vale output as the source of truth for Elastic style-guide findings. Also apply the embedded style checklist below for high-confidence issues that Vale does not reliably catch, especially formatting and UI writing. Vale findings are not a prerequisite for reviewing a file or category. Report wording not flagged by Vale only when it creates ambiguity, changes technical meaning, violates fetched style-guide guidance, or violates the embedded formatting/UI-writing checklist.
+          1. **Style and clarity**: Use the pre-fetched Vale output as a useful signal for Elastic style-guide findings, but do not limit review to Vale output. Apply your own reading of the changed prose against the MCP-fetched Elastic style guide and the embedded style checklist below. Vale findings are not a prerequisite for reviewing a file or category. Report wording not flagged by Vale when it creates ambiguity, changes technical meaning, materially hurts readability, violates fetched style-guide guidance, or violates the embedded formatting/UI-writing checklist.
           2. **Elastic-internal jargon**: Flag Elastic-only shorthand that external users will not understand. Use the embedded jargon list below, but respect context: code blocks, CLI output, API fields, UI labels, and acronyms already expanded on the page are exempt.
           3. **Frontmatter quality**: Check the changed file's frontmatter for missing or empty `description`, `products`, and `navigation_title` fields when the repository convention requires them. Apply the embedded frontmatter checklist below.
           4. **Content type fit and structure**: Detect the declared or inferred content type and apply the embedded content-type checklist below. Report only mismatches that materially make the page harder to use or send the author toward the wrong kind of documentation.
@@ -410,7 +415,7 @@ jobs:
           
           ### Embedded style checklist
           
-          Use Vale findings first. For manual review, only report high-confidence issues from this checklist, and cite the exact changed line.
+          Use Vale findings first to avoid missing automated style-guide violations, then use the MCP-fetched style guide and this checklist to catch high-confidence issues that Vale does not flag. Cite the exact changed line and explain the reader-facing problem, not just the rule name.
           
           Voice and tone:
           
@@ -620,7 +625,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_3cf95754ce02d500_EOF
+          GH_AW_PROMPT_e3416c5f0948a486_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -628,6 +633,7 @@ jobs:
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
           GH_AW_ENGINE_ID: "copilot"
           GH_AW_EXPR_49B959F1: ${{ inputs.additional-instructions }}
+          GH_AW_EXPR_416D496E: ${{ inputs.review-scope }}
         with:
           script: |
             const { setupGlobals } = require('${{ runner.temp }}/gh-aw/actions/setup_globals.cjs');
@@ -638,6 +644,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
+          GH_AW_EXPR_416D496E: ${{ inputs.review-scope }}
           GH_AW_EXPR_49B959F1: ${{ inputs.additional-instructions }}
           GH_AW_GITHUB_ACTOR: ${{ github.actor }}
           GH_AW_GITHUB_EVENT_COMMENT_ID: ${{ github.event.comment.id }}
@@ -660,6 +667,7 @@ jobs:
             return await substitutePlaceholders({
               file: process.env.GH_AW_PROMPT,
               substitutions: {
+                GH_AW_EXPR_416D496E: process.env.GH_AW_EXPR_416D496E,
                 GH_AW_EXPR_49B959F1: process.env.GH_AW_EXPR_49B959F1,
                 GH_AW_GITHUB_ACTOR: process.env.GH_AW_GITHUB_ACTOR,
                 GH_AW_GITHUB_EVENT_COMMENT_ID: process.env.GH_AW_GITHUB_EVENT_COMMENT_ID,
@@ -801,7 +809,7 @@ jobs:
           VALE_VERSION: 3.12.0
       - name: Run Vale on changed markdown
         run: |
-          set -u
+          set -euo pipefail
           mkdir -p /tmp/gh-aw/docs-review-data/scope
 
           PR_NUMBER=$(jq -r 'if .pull_request then .pull_request.number elif .issue.pull_request then .issue.number else empty end' "$GITHUB_EVENT_PATH")
@@ -819,10 +827,35 @@ jobs:
             exit 0
           fi
 
-          gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" \
-            --jq '.[] | select(.status != "removed") | .filename' \
-            | awk ' /\.md$/ { print } ' \
-            > /tmp/gh-aw/docs-review-data/changed-md.txt
+          REPO_OWNER="${GITHUB_REPOSITORY%/*}"
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          NEXT_CURSOR=""
+          : > /tmp/gh-aw/docs-review-data/changed-md.txt
+
+          while :; do
+            if [ -n "$NEXT_CURSOR" ]; then
+              FILES_JSON=$(gh api graphql \
+                -f owner="$REPO_OWNER" \
+                -f repo="$REPO_NAME" \
+                -F number="$PR_NUMBER" \
+                -f after="$NEXT_CURSOR" \
+                -f query='query($owner: String!, $repo: String!, $number: Int!, $after: String) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { files(first: 100, after: $after) { nodes { path changeType } pageInfo { hasNextPage endCursor } } } } }')
+            else
+              FILES_JSON=$(gh api graphql \
+                -f owner="$REPO_OWNER" \
+                -f repo="$REPO_NAME" \
+                -F number="$PR_NUMBER" \
+                -f query='query($owner: String!, $repo: String!, $number: Int!) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { files(first: 100) { nodes { path changeType } pageInfo { hasNextPage endCursor } } } } }')
+            fi
+
+            printf '%s\n' "$FILES_JSON" \
+              | jq -r '.data.repository.pullRequest.files.nodes[] | select(.changeType != "DELETED") | .path | select(endswith(".md"))' \
+              >> /tmp/gh-aw/docs-review-data/changed-md.txt
+
+            HAS_NEXT=$(printf '%s\n' "$FILES_JSON" | jq -r '.data.repository.pullRequest.files.pageInfo.hasNextPage')
+            [ "$HAS_NEXT" = "true" ] || break
+            NEXT_CURSOR=$(printf '%s\n' "$FILES_JSON" | jq -r '.data.repository.pullRequest.files.pageInfo.endCursor')
+          done
 
           if [ "$REVIEW_SCOPE" = "docs-subtree" ]; then
             awk ' /^docs\// { print } ' /tmp/gh-aw/docs-review-data/changed-md.txt > /tmp/gh-aw/docs-review-data/eligible-files.txt
@@ -943,9 +976,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_9f94aa89e1915bed_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_4078985c12e2b1de_EOF'
           {"add_comment":{"max":1,"target":"triggering"},"create_pull_request_review_comment":{"max":20,"side":"RIGHT"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{},"submit_pull_request_review":{"allowed_events":["COMMENT"],"max":1,"target":"triggering"}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_9f94aa89e1915bed_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_4078985c12e2b1de_EOF
       - name: Generate Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -1189,7 +1222,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_dd50b025c86b6675_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_5668b703381f3d94_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -1247,7 +1280,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_dd50b025c86b6675_EOF
+          GH_AW_MCP_CONFIG_5668b703381f3d94_EOF
       - name: Mount MCP servers as CLIs
         id: mount-mcp-clis
         continue-on-error: true
