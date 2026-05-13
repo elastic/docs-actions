@@ -120,35 +120,9 @@ steps:
         exit 0
       fi
 
-      REPO_OWNER="${GITHUB_REPOSITORY%/*}"
-      REPO_NAME="${GITHUB_REPOSITORY#*/}"
-      NEXT_CURSOR=""
-      : > /tmp/gh-aw/docs-review-data/changed-md.txt
-
-      while :; do
-        if [ -n "$NEXT_CURSOR" ]; then
-          FILES_JSON=$(gh api graphql \
-            -f owner="$REPO_OWNER" \
-            -f repo="$REPO_NAME" \
-            -F number="$PR_NUMBER" \
-            -f after="$NEXT_CURSOR" \
-            -f query='query($owner: String!, $repo: String!, $number: Int!, $after: String) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { files(first: 100, after: $after) { nodes { path changeType } pageInfo { hasNextPage endCursor } } } } }')
-        else
-          FILES_JSON=$(gh api graphql \
-            -f owner="$REPO_OWNER" \
-            -f repo="$REPO_NAME" \
-            -F number="$PR_NUMBER" \
-            -f query='query($owner: String!, $repo: String!, $number: Int!) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { files(first: 100) { nodes { path changeType } pageInfo { hasNextPage endCursor } } } } }')
-        fi
-
-        printf '%s\n' "$FILES_JSON" \
-          | jq -r '.data.repository.pullRequest.files.nodes[] | select(.changeType != "DELETED") | .path | select(endswith(".md"))' \
-          >> /tmp/gh-aw/docs-review-data/changed-md.txt
-
-        HAS_NEXT=$(printf '%s\n' "$FILES_JSON" | jq -r '.data.repository.pullRequest.files.pageInfo.hasNextPage')
-        [ "$HAS_NEXT" = "true" ] || break
-        NEXT_CURSOR=$(printf '%s\n' "$FILES_JSON" | jq -r '.data.repository.pullRequest.files.pageInfo.endCursor')
-      done
+      gh pr diff "$PR_NUMBER" --name-only \
+        | awk '/\.md$/' \
+        > /tmp/gh-aw/docs-review-data/changed-md.txt
 
       if [ "$REVIEW_SCOPE" = "docs-subtree" ]; then
         awk ' /^docs\// { print } ' /tmp/gh-aw/docs-review-data/changed-md.txt > /tmp/gh-aw/docs-review-data/eligible-files.txt
