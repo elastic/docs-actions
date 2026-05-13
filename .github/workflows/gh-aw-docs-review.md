@@ -11,7 +11,7 @@ imports:
   - gh-aw-fragments/mcp-pagination.md
 engine:
   id: copilot
-  model: gpt-5.5
+  model: gpt-5.4
 on:
   roles: [admin, maintainer, write]
   workflow_call:
