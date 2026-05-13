@@ -13,7 +13,6 @@ imports:
   - gh-aw-fragments/mcp-pagination.md
 engine:
   id: copilot
-  model: gpt-5.4
   concurrency:
     group: "gh-aw-copilot-docs-coherence-sweep-${{ github.run_id }}"
     cancel-in-progress: false
