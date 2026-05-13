@@ -223,6 +223,14 @@ runs:
         EXISTING_FILENAME: ${{ steps.evaluate.outputs.existing-changelog-filename }}
         CONFIG_FILE: ${{ inputs.config }}
       run: |
+        # Only forward --existing-changelog-filename when set. Passing an empty
+        # value made docs-builder treat "" as a real filename, causing it to
+        # write the artifact YAML to the output-dir path itself (EACCES).
+        EXTRA_ARGS=()
+        if [ -n "$EXISTING_FILENAME" ]; then
+          EXTRA_ARGS+=(--existing-changelog-filename "$EXISTING_FILENAME")
+        fi
+
         docs-builder changelog prepare-artifact \
           --staging-dir .artifacts/changelog-staging \
           --output-dir .artifacts/changelog-artifact \
@@ -239,7 +247,7 @@ runs:
           --product-label-table "$PRODUCT_LABEL_TABLE" \
           --skip-labels "$SKIP_LABELS" \
           --config "$CONFIG_FILE" \
-          --existing-changelog-filename "$EXISTING_FILENAME"
+          "${EXTRA_ARGS[@]}"
 
     - name: Upload staging artifact
       id: upload
