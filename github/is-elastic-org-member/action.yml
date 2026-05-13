@@ -1,20 +1,41 @@
 name: github/is-elastic-org-member
 description: >
-  Checks whether a GitHub user is a member of the elastic org using a
-  GitHub token with read:org scope.
+  Checks whether one or more GitHub users are members of the elastic org
+  using a GitHub token with read:org scope. When multiple usernames are
+  supplied, all of them must be confirmed members for `is-member` to be
+  `true` (fail-closed semantics for trust gates).
 
 inputs:
   username:
-    description: GitHub username to check
-    required: true
+    description: >
+      Single GitHub username to check. Mutually exclusive with `usernames`
+      in practice, but if both are set the values are merged and deduped.
+    required: false
+  usernames:
+    description: >
+      Newline- or comma-separated list of GitHub usernames. Used by callers
+      that need to verify the union of logins involved in a PR (opener,
+      pusher, head-commit author/committer) — see elastic/docs-eng-team#511.
+      All must be members for `is-member` to be `true`. Empty values, blank
+      lines, and known GitHub system accounts (e.g. `web-flow`) are skipped.
+    required: false
+    default: ''
   token:
     description: GitHub token with the necessary scope
     required: true
 
 outputs:
   is-member:
-    description: "'true' if the user is a confirmed elastic org member, 'false' otherwise"
+    description: >
+      "'true' if every supplied user is a confirmed elastic org member,
+      'false' otherwise (including when no usernames were supplied)."
     value: ${{ steps.check.outputs.is-member }}
+  non-members:
+    description: >
+      Newline-separated list of usernames that failed the membership
+      check. Empty when `is-member` is `true`. Useful for logging which
+      account caused the gate to fail.
+    value: ${{ steps.check.outputs.non-members }}
 
 runs:
   using: composite
@@ -25,22 +46,91 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.token }}
         USERNAME: ${{ inputs.username }}
+        USERNAMES: ${{ inputs.usernames }}
+      # language=bash
       run: |
-        if [[ -z "$GH_TOKEN" || -z "$USERNAME" ]]; then
-          echo "is-member=false" >> "$GITHUB_OUTPUT"
-          echo "::warning::Token or username not available — cannot verify org membership"
+        set -euo pipefail
+
+        if [[ -z "$GH_TOKEN" ]]; then
+          {
+            echo "is-member=false"
+            echo "non-members<<EOF"
+            echo ""
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "::warning::Token not available — cannot verify org membership"
           exit 0
         fi
 
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-          -H "Authorization: token $GH_TOKEN" \
-          -H "Accept: application/vnd.github+json" \
-          "https://api.github.com/orgs/elastic/members/${USERNAME}")
+        # Merge `username` + `usernames`, splitting on newline/comma, trim
+        # whitespace, drop empties, drop the GitHub web-flow ghost account
+        # (used as committer for web-UI edits and squash merges), and dedupe.
+        # Keep only logins matching GitHub's username regex
+        # (1-39 chars, alphanumeric + dash, no leading/trailing dash) so the
+        # value can be safely interpolated into a URL path segment.
+        # Filter pipeline: split on newline/comma, trim whitespace, drop the
+        # GitHub web-flow ghost account (used as committer for web-UI edits
+        # and squash merges), then keep only logins matching GitHub's
+        # username regex (1-39 chars, alphanumeric + dash, no leading or
+        # trailing dash). The final regex implicitly drops empty lines.
+        normalized=$(
+          printf '%s\n%s\n' "${USERNAME:-}" "${USERNAMES:-}" \
+            | tr ',' '\n' \
+            | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' \
+            | grep -vxE 'web-flow' \
+            | grep -E '^[A-Za-z0-9](-?[A-Za-z0-9]){0,38}$' \
+            | sort -u || true
+        )
 
-        if [[ "$HTTP_CODE" == "204" ]]; then
-          echo "is-member=true" >> "$GITHUB_OUTPUT"
-          echo "::notice::${USERNAME} is a member of the elastic org"
+        if [[ -z "$normalized" ]]; then
+          {
+            echo "is-member=false"
+            echo "non-members<<EOF"
+            echo ""
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "::warning::No valid usernames provided — cannot verify org membership"
+          exit 0
+        fi
+
+        non_members=()
+        all_members=true
+
+        # Loop over each username (NUL-safe via process substitution would
+        # be ideal, but `normalized` is already validated against the
+        # username regex above, so newline-splitting is safe here).
+        while IFS= read -r u; do
+          [[ -z "$u" ]] && continue
+          http_code=$(curl -sS -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/orgs/elastic/members/${u}")
+
+          if [[ "$http_code" == "204" ]]; then
+            echo "::notice::${u} is a member of the elastic org"
+          else
+            all_members=false
+            non_members+=("$u")
+            echo "::notice::${u} is not a confirmed member of the elastic org (HTTP ${http_code})"
+          fi
+        done <<< "$normalized"
+
+        if [[ "$all_members" == "true" ]]; then
+          {
+            echo "is-member=true"
+            echo "non-members<<EOF"
+            echo ""
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
         else
-          echo "is-member=false" >> "$GITHUB_OUTPUT"
-          echo "::notice::${USERNAME} is not a confirmed member of the elastic org (HTTP ${HTTP_CODE})"
+          {
+            echo "is-member=false"
+            echo "non-members<<EOF"
+            # Empty-array-safe expansion for `set -u` correctness.
+            if [[ ${#non_members[@]} -gt 0 ]]; then
+              printf '%s\n' "${non_members[@]}"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
         fi

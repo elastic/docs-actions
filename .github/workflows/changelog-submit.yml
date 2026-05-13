@@ -33,7 +33,7 @@ jobs:
       should-submit: ${{ steps.evaluate.outputs.should-submit }}
       is-org-member: ${{ steps.check-org-membership.outputs.is-member }}
     steps:
-      - name: Resolve PR author
+      - name: Resolve involved logins
         id: pr-author
         if: github.event.workflow_run.head_repository.full_name != github.repository
         uses: actions/github-script@v9
@@ -65,6 +65,31 @@ jobs:
             });
             core.setOutput('login', pr.user.login);
 
+            const headRepoFull = run.head_repository.full_name;
+            const [forkOwner, forkRepo] = headRepoFull.split('/');
+
+            let headCommitAuthor;
+            let headCommitCommitter;
+            try {
+              const { data: headCommit } = await github.rest.repos.getCommit({
+                owner: forkOwner, repo: forkRepo, ref: run.head_sha
+              });
+              headCommitAuthor = headCommit.author?.login;
+              headCommitCommitter = headCommit.committer?.login;
+            } catch (err) {
+              core.warning(`Could not fetch head commit ${run.head_sha} from ${headRepoFull}: ${err.message}`);
+            }
+
+            const logins = [
+              pr.user?.login,
+              run.actor?.login,
+              run.triggering_actor?.login,
+              headCommitAuthor,
+              headCommitCommitter,
+            ].filter(Boolean);
+
+            core.setOutput('involved-logins', logins.join('\n'));
+
       - name: Fetch ephemeral GitHub token
         if: github.event.workflow_run.head_repository.full_name != github.repository
         id: fetch-ephemeral-token
@@ -78,7 +103,7 @@ jobs:
         if: github.event.workflow_run.head_repository.full_name != github.repository
         uses: elastic/docs-actions/github/is-elastic-org-member@v1
         with:
-          username: ${{ steps.pr-author.outputs.login }}
+          usernames: ${{ steps.pr-author.outputs.involved-logins }}
           token: ${{ steps.fetch-ephemeral-token.outputs.token }}
 
       - name: Evaluate
