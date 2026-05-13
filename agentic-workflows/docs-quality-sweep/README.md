@@ -68,7 +68,7 @@ Each sweep opens its own labeled fix-issue **in the calling repo** (or calls `no
 | staleness | `docs-fix:staleness` |
 | coherence | `docs-fix:coherence` |
 
-All issues also carry the parent label `docs-quality-sweep`. Each sweep auto-closes its prior fix-issue (`close-older-issues: true`) before opening a new one, so the issue tracker doesn't accumulate stale runs.
+All issues also carry the parent label `docs-quality-sweep`. Sweep issues stay open until maintainers close them or a fixing PR resolves them.
 
 ## Running a subset
 
