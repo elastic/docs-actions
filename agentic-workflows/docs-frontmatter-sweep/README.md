@@ -38,7 +38,7 @@ Issues are filed in the **calling repo** (where the workflow runs). Install this
 | Output | Max | Labels | Description |
 |--------|-----|--------|-------------|
 | `noop` | — | — | No high-confidence findings in this slice. |
-| `create-issue` | 1 | `docs-quality-sweep`, `docs-fix:frontmatter` | Fix-issue with structured YAML findings. Closes prior issues from the same workflow. |
+| `create-issue` | 1 | `docs-quality-sweep`, `docs-fix:frontmatter` | Fix-issue with structured YAML findings. |
 
 ## How it works
 

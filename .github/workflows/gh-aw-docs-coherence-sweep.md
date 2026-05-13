@@ -105,7 +105,6 @@ safe-outputs:
       - docs-quality-sweep
       - "docs-fix:coherence"
     max: 1
-    close-older-issues: true
 timeout-minutes: 45
 steps:
   - name: Checkout source docs repo
