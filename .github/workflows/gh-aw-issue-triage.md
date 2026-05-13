@@ -10,6 +10,7 @@ imports:
   - gh-aw-fragments/mcp-pagination.md
 engine:
   id: copilot
+  model: gpt-5-mini
 
 on:
   roles: [admin, maintainer, write]

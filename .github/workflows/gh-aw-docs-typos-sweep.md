@@ -11,6 +11,7 @@ imports:
   - gh-aw-fragments/rigor.md
 engine:
   id: copilot
+  model: gpt-5-mini
   concurrency:
     group: "gh-aw-copilot-docs-typos-sweep-${{ github.run_id }}"
     cancel-in-progress: false

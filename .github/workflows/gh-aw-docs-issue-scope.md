@@ -12,6 +12,7 @@ imports:
   - gh-aw-fragments/safe-output-add-comment.md
 engine:
   id: copilot
+  model: gpt-5.4
 on:
   roles: [admin, maintainer, write]
   workflow_call:
