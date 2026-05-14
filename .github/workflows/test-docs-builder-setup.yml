@@ -13,6 +13,9 @@ on:
     paths:
       - 'docs-builder/setup/**'
       - '.github/workflows/test-docs-builder-setup.yml'
+permissions:
+  contents: read
+
 jobs:
   test:
     name: version=${{ matrix.version || 'default' }}
