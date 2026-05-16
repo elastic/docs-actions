@@ -22,8 +22,13 @@ runs:
         mkdir -p "${INSTALL_DIR}"
 
         if [[ "${DOCS_BUILDER_VERSION}" == "edge" ]]; then
-            # Resolve :edge to a RepoDigest before extracting the binary so
-            # the rest of this run uses an immutable image reference.
+            # Resolve :edge to a RepoDigest, then verify the SLSA
+            # build-provenance attestation minted by docs-builder's
+            # prerelease.yml (elastic/docs-eng-team#518). This matches
+            # the non-edge path's `gh attestation verify` step on the
+            # release zip below — :edge is no longer the unverified
+            # cousin. Fail closed if the attestation is missing or
+            # signed by an unexpected workflow.
             EDGE_IMAGE="ghcr.io/elastic/docs-builder:edge"
             docker pull "${EDGE_IMAGE}"
             EDGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${EDGE_IMAGE}")
@@ -31,6 +36,13 @@ runs:
               echo "::error::Failed to resolve RepoDigest for ${EDGE_IMAGE}"
               exit 1
             fi
+
+            # `-R` constrains the attestation issuer to the
+            # docs-builder repo so an attacker cannot publish a
+            # self-signed attestation under their own repo and have it
+            # accepted here.
+            gh attestation verify "oci://${EDGE_DIGEST}" -R elastic/docs-builder
+
             echo "::notice title=docs-builder image digest::${EDGE_DIGEST}"
             CONTAINER_ID=$(docker create "${EDGE_DIGEST}")
             trap "docker rm -f ${CONTAINER_ID} >/dev/null 2>&1 || true" EXIT
