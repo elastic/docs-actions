@@ -438,12 +438,15 @@ jobs:
           echo "PATH_PREFIX=${path_prefix}" >> "$GITHUB_ENV"
           echo "result=${path_prefix}" >> "$GITHUB_OUTPUT"
 
-      # Resolve the mutable :edge tag once so every later use in this job is
-      # tied to the same immutable image digest.
+      # Resolve the mutable :edge tag once, verify its build provenance, and
+      # use the same immutable image digest throughout this job.
       - name: Pull and pin docs-builder image
         id: docker-image
+        env:
+          GH_TOKEN: ${{ github.token }}
         # language=bash
         run: |
+          set -euo pipefail
           IMAGE="ghcr.io/elastic/docs-builder:edge"
           docker pull "$IMAGE"
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE")
@@ -451,6 +454,14 @@ jobs:
             echo "::error::Failed to resolve RepoDigest for ${IMAGE}"
             exit 1
           fi
+
+          # Fail closed if the attestation is missing, malformed, or
+          # signed by an unexpected workflow. `-R` constrains the
+          # attestation issuer to the docs-builder repo so an attacker
+          # cannot publish a self-signed attestation under their own
+          # repo and have it accepted here.
+          gh attestation verify "oci://${DIGEST}" -R elastic/docs-builder
+
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
           echo "::notice title=docs-builder image digest::${DIGEST}"
 
