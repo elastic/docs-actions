@@ -12,7 +12,6 @@ imports:
   - gh-aw-fragments/mcp-pagination.md
 engine:
   id: copilot
-  model: gpt-5-mini
   concurrency:
     group: "gh-aw-copilot-docs-applies-to-sweep-${{ github.run_id }}"
     cancel-in-progress: false
