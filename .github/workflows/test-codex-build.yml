@@ -13,6 +13,9 @@ on:
     paths:
       - 'codex/build/**'
       - '.github/workflows/test-codex-build.yml'
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
