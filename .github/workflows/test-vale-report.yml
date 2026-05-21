@@ -32,13 +32,15 @@ jobs:
       - name: Verify comment was posted
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           PR_NUMBER=$(echo '${{ toJSON(github.event.workflow_run.pull_requests) }}' | jq -r '.[0].number')
 
           if [ "$PR_NUMBER" == "null" ] || [ -z "$PR_NUMBER" ]; then
             echo "Could not determine PR number, searching by head SHA..."
-            PR_NUMBER=$(gh pr list --repo ${{ github.repository }} --state open --json number,headRefOid \
-              --jq '.[] | select(.headRefOid == "${{ github.event.workflow_run.head_sha }}") | .number' | head -1)
+            PR_NUMBER=$(gh pr list --repo "$GH_REPO" --state open --json number,headRefOid \
+              --jq ".[] | select(.headRefOid == \"${HEAD_SHA}\") | .number" | head -1)
           fi
 
           if [ -z "$PR_NUMBER" ]; then
@@ -48,7 +50,7 @@ jobs:
 
           echo "Checking for Vale comment on PR #${PR_NUMBER}..."
 
-          COMMENT_EXISTS=$(gh api repos/${{ github.repository }}/issues/${PR_NUMBER}/comments \
+          COMMENT_EXISTS=$(gh api "repos/${GH_REPO}/issues/${PR_NUMBER}/comments" \
             --jq '.[] | select(.body | contains("Vale Linting Results")) | .id' | head -1)
 
           if [ -n "$COMMENT_EXISTS" ]; then
