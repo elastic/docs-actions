@@ -364,7 +364,7 @@ jobs:
           persist-credentials: false
       - name: Run Vale Linter
         id: lint
-        uses: elastic/vale-rules/lint@main
+        uses: elastic/docs-actions/vale/lint@v1
         with:
           files: ${{ needs.check.outputs.all_changed_files }}
           vale-paths: ${{ inputs.vale-paths }}

@@ -799,7 +799,7 @@ jobs:
 
       - name: Post Vale Results
         if: steps.vale-artifact.outputs.found == 'true'
-        uses: elastic/vale-rules/report@main
+        uses: elastic/docs-actions/vale/report@v1
 
   # Uploads links.json to the shared link index S3 bucket.
   # Runs concurrently with deploy-preview — both depend only on build.
