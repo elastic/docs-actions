@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-EXPECTED_GH_AW_VERSION="v0.71.5"
+EXPECTED_GH_AW_VERSION="v0.74.8"
 
 installed_version="$(
   gh extension list \
