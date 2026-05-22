@@ -17,6 +17,8 @@ engine:
     group: "gh-aw-copilot-docs-coherence-sweep-${{ github.run_id }}"
     cancel-in-progress: false
 on:
+  bots: ["github-actions[bot]"]
+  roles: [admin, maintainer, write]
   workflow_call:
     inputs:
       source-repo:

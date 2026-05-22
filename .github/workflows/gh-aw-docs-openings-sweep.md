@@ -16,6 +16,8 @@ engine:
     group: "gh-aw-copilot-docs-openings-sweep-${{ github.run_id }}"
     cancel-in-progress: false
 on:
+  bots: ["github-actions[bot]"]
+  roles: [admin, maintainer, write]
   workflow_call:
     inputs:
       source-repo:
