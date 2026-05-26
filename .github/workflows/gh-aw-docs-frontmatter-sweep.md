@@ -13,11 +13,11 @@ imports:
   - gh-aw-fragments/mcp-pagination.md
 engine:
   id: copilot
-  model: gpt-5-mini
   concurrency:
     group: "gh-aw-copilot-docs-frontmatter-sweep-${{ github.run_id }}"
     cancel-in-progress: false
 on:
+  bots: ["github-actions[bot]"]
   workflow_call:
     inputs:
       source-repo:

@@ -1,22 +1,23 @@
-version: 2
 updates:
-  - package-ecosystem: "github-actions"
-    directories:
-      - "**/*"
-    schedule:
-      interval: "weekly"
-    cooldown:
-      default-days: 14
-    labels:
-      - "dependencies"
-    groups:
-      github-actions:
-        patterns:
-          - "*"
-
-  - package-ecosystem: "pre-commit"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
+- cooldown:
+    default-days: 14
+  directories:
+  - "**/*"
+  groups:
+    github-actions:
+      patterns:
+      - "*"
+  ignore:
+  - dependency-name: "github/gh-aw-actions/**" # Managed by gh aw compile. Version-locked to the gh-aw compiler; do not bump.
+  labels:
+  - dependencies
+  package-ecosystem: github-actions
+  schedule:
+    interval: weekly
+- directory: /
+  labels:
+  - dependencies
+  package-ecosystem: pre-commit
+  schedule:
+    interval: weekly
+version: 2
