@@ -8,7 +8,7 @@ Run Vale with Elastic style guide on documentation and user-facing metadata file
 <!--inputs-->
 | Name                | Description                                                                                                                                                                 | Required | Default        |
 |---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|----------------|
-| `files`             | Files or directories to lint (space-separated). If not provided, lints changed Markdown, MDX, YAML, and YML files in PR.                                                   | `false`  | ` `            |
+| `files`             | Files or directories to lint (space-separated). If not provided, lints changed Markdown, MDX, YAML, and YML files in PR.                                                    | `false`  | ` `            |
 | `vale-paths`        | Paths to include for linting. Supports glob patterns and ! negation to exclude paths. Can be space-separated or multi-line. Only files matching these paths will be linted. | `false`  | ` `            |
 | `include-paths`     | Deprecated: use vale-paths instead. Kept for backward compatibility.                                                                                                        | `false`  | ` `            |
 | `fail_on_error`     | Fail the action if Vale finds error-level issues                                                                                                                            | `false`  | `false`        |
