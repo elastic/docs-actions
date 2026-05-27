@@ -1,5 +1,5 @@
 name: 'Elastic Vale Linter - Lint'
-description: 'Run Vale with Elastic style guide on documentation files (Step 1: Linting)'
+description: 'Run Vale with Elastic style guide on documentation and user-facing metadata files (Step 1: Linting)'
 author: 'Elastic'
 
 branding:
@@ -8,7 +8,7 @@ branding:
 
 inputs:
   files:
-    description: 'Files or directories to lint (space-separated). If not provided, lints changed files in PR.'
+    description: 'Files or directories to lint (space-separated). If not provided, lints changed Markdown, MDX, YAML, and YML files in PR.'
     required: false
     default: ''
   vale-paths:
@@ -235,10 +235,11 @@ runs:
 
         echo "Applying repo-level Vale overrides from ${OVERRIDE_FILE}"
 
-        # Only allow overriding rule severity and alert level — not structural
-        # config like StylesPath, BasedOnStyles, or Packages, which could be
-        # abused to disable linting or load attacker-controlled styles.
-        ALLOWED_KEY_PATTERN='^(Elastic\.|MinAlertLevel[[:space:]]*=)'
+        # Only allow overriding rule severity and alert level by default. A
+        # constrained YAML file-type section may opt into the packaged Elastic
+        # rules without allowing arbitrary structural config.
+        ALLOWED_KEY_PATTERN='^(Elastic\.|MinAlertLevel$)'
+        ALLOWED_YAML_SECTION_PATTERN='^\[\*\.(yml|yaml|\{yml,yaml\}|\{yaml,yml\})\]$'
 
         # Collect all config files that need patching:
         # 1. The main temp config
@@ -250,12 +251,63 @@ runs:
         done
         shopt -u nullglob
 
+        CURRENT_SECTION=""
         while IFS= read -r line; do
           [[ -z "$line" ]] && continue
           [[ "$line" =~ ^[[:space:]]*# ]] && continue
-          [[ "$line" =~ ^[[:space:]]*\[ ]] && continue
+
+          if [[ "$line" =~ ^[[:space:]]*\[ ]]; then
+            section=$(printf '%s' "$line" | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            if echo "$section" | grep -qE "$ALLOWED_YAML_SECTION_PATTERN"; then
+              CURRENT_SECTION="$section"
+              if ! grep -qxF "$section" .vale.ini.temp; then
+                printf '\n%s\n' "$section" >> .vale.ini.temp
+                echo "  Added file-type section: ${section}"
+              else
+                echo "  File-type section already exists: ${section}"
+              fi
+            else
+              CURRENT_SECTION=""
+              echo "  Ignoring section header: ${section}"
+            fi
+            continue
+          fi
 
           key=$(echo "$line" | sed 's/[[:space:]]*=.*//')
+
+          # Within the constrained YAML section, only allow opting into the
+          # packaged Elastic style and normal Elastic rule toggles.
+          if [ -n "$CURRENT_SECTION" ]; then
+            value=$(echo "$line" | sed 's/^[^=]*=[[:space:]]*//')
+            value=$(printf '%s' "$value" | tr -d '\n\r')
+
+            if [ "$key" = "BasedOnStyles" ]; then
+              if [ "$value" = "Elastic" ]; then
+                echo "BasedOnStyles = Elastic" >> .vale.ini.temp
+                echo "  Added to ${CURRENT_SECTION}: BasedOnStyles = Elastic"
+              else
+                echo "  Skipped (value not in allowlist): ${key} = ${value}"
+              fi
+              continue
+            fi
+
+            if echo "$key" | grep -qE '^Elastic\.'; then
+              case "$value" in
+                YES|NO|suggestion|warning|error) ;;
+                *)
+                  echo "  Skipped (value not in allowlist): ${key} = ${value}"
+                  continue
+                  ;;
+              esac
+              line="${key} = ${value}"
+              echo "$line" >> .vale.ini.temp
+              echo "  Added to ${CURRENT_SECTION}: ${line}"
+              continue
+            fi
+
+            echo "  Skipped (not in allowlist for ${CURRENT_SECTION}): ${key}"
+            continue
+          fi
 
           if ! echo "$key" | grep -qE "$ALLOWED_KEY_PATTERN"; then
             echo "  Skipped (not in allowlist): ${key}"
@@ -291,7 +343,7 @@ runs:
 
           # If the key wasn't in any config, insert it into the main config
           if ! grep -rq "^${escaped_key}[[:space:]]*=" $CONFIG_FILES; then
-            sed -i "/^\[\\*\\.md\]/a ${escaped_line}" .vale.ini.temp
+            sed -i "/^\[\\*\\./a ${escaped_line}" .vale.ini.temp
             echo "  Inserted: ${line}"
           fi
         done < "$OVERRIDE_FILE"
@@ -325,14 +377,14 @@ runs:
           gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
             --paginate 2>/dev/null \
             | jq -rs 'add // [] | .[] | select(.status != "removed") | .filename' \
-            | grep -E '\.md$' > changed_files.txt || true
+            | grep -E '\.(md|mdx|ya?ml)$' > changed_files.txt || true
 
           if [ -s changed_files.txt ]; then
             echo "Found changed files:"
             cat changed_files.txt
             echo "has_changes=true" >> $GITHUB_OUTPUT
           else
-            echo "No markdown files changed in this PR"
+            echo "No Markdown, MDX, YAML, or YML files changed in this PR"
             echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
         fi
@@ -350,11 +402,11 @@ runs:
         INPUT_FILES='${{ inputs.files }}'
         if [ -n "${INPUT_FILES}" ]; then
           echo "Using provided files list"
-          printf '%s\n' ${INPUT_FILES} | grep -E '\.md$' > files_to_lint.txt || true
+          printf '%s\n' ${INPUT_FILES} | grep -E '\.(md|mdx|ya?ml)$' > files_to_lint.txt || true
           if [ -s files_to_lint.txt ]; then
             echo "has_files=true" >> $GITHUB_OUTPUT
           else
-            echo "No markdown files in provided file list"
+            echo "No Markdown, MDX, YAML, or YML files in provided file list"
             echo "has_files=false" >> $GITHUB_OUTPUT
           fi
         elif [ "${{ steps.changed-files.outputs.has_changes }}" == "true" ]; then

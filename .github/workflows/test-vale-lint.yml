@@ -326,6 +326,56 @@ jobs:
             echo "team-a/excluded/doc.md was correctly excluded by negation"
           fi
 
+  test-yaml-files:
+    name: Test YAML file linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Enable YAML linting through repo override
+        run: cp vale/test-fixtures/yaml-overrides/.vale-overrides.ini .vale-overrides.ini
+
+      - name: Run lint on YAML fixtures
+        id: lint-yaml
+        uses: ./vale/lint
+        with:
+          files: vale/test-fixtures/yaml/manifest.yml vale/test-fixtures/yaml/fields.yaml
+          fail_on_error: 'false'
+          use_local_styles: 'true'
+          styles_path: vale/test-fixtures/local-vale-rules
+          disable_telemetry: 'true'
+          upload_artifact: 'false'
+          debug: 'true'
+
+      - name: Verify YAML files were linted
+        run: |
+          if [ ! -f vale_report.md ]; then
+            echo "::error::vale_report.md was not generated"
+            exit 1
+          fi
+
+          if grep -q "manifest.yml" vale_report.md && grep -q "fields.yaml" vale_report.md; then
+            echo "YAML and YML files were linted"
+          else
+            echo "::error::Expected both YAML fixtures in the Vale report"
+            cat vale_report.md
+            exit 1
+          fi
+
+          fixture_count=$(grep -c "Elastic.Please" vale_report.md || echo "0")
+          if [ "$fixture_count" -ge 2 ]; then
+            echo "Elastic.Please fired for both YAML fixtures"
+          else
+            echo "::error::Expected Elastic.Please to fire for both YAML fixtures but found $fixture_count"
+            cat vale_report.md
+            exit 1
+          fi
+
   test-repo-override:
     name: Test repo-level Vale overrides
     runs-on: ubuntu-latest
@@ -407,7 +457,7 @@ jobs:
   upload-results:
     name: Upload combined results
     runs-on: ubuntu-latest
-    needs: [test-lint, test-clean-file, test-vale-paths, test-vale-paths-negation, test-repo-override]
+    needs: [test-lint, test-clean-file, test-vale-paths, test-vale-paths-negation, test-yaml-files, test-repo-override]
     if: always() && needs.test-lint.result == 'success'
 
     steps:
