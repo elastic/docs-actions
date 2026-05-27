@@ -45,8 +45,13 @@ runs:
           --owner "$REPO_OWNER" \
           --repo "$REPO_NAME"
 
+    # Fail closed: even when metadata says should-commit, never commit to a fork
+    # PR. The upstream GITHUB_TOKEN cannot push to fork branches and would also
+    # land on a detached HEAD (checkout uses head-sha), so a fork push is always
+    # the wrong action. This guard codifies that invariant locally rather than
+    # trusting upstream correctness.
     - name: Checkout PR branch
-      if: steps.meta.outputs.should-commit == 'true'
+      if: steps.meta.outputs.should-commit == 'true' && steps.meta.outputs.is-fork != 'true'
       uses: actions/checkout@v6
       with:
         repository: ${{ steps.meta.outputs.head-repo }}
@@ -55,7 +60,7 @@ runs:
         persist-credentials: false
 
     - name: Validate ref names
-      if: steps.meta.outputs.should-commit == 'true'
+      if: steps.meta.outputs.should-commit == 'true' && steps.meta.outputs.is-fork != 'true'
       shell: bash
       env:
         HEAD_REF: ${{ steps.meta.outputs.head-ref }}
@@ -65,9 +70,13 @@ runs:
           exit 1
         fi
 
+    # continue-on-error lets us catch git push failures (branch protection,
+    # revoked permissions, etc.) and fall back to posting the changelog as a
+    # PR comment in a later step instead of hard-failing the workflow.
     - name: Commit changelog
-      if: steps.meta.outputs.should-commit == 'true'
+      if: steps.meta.outputs.should-commit == 'true' && steps.meta.outputs.is-fork != 'true'
       id: commit
+      continue-on-error: true
       shell: bash
       env:
         PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
@@ -115,6 +124,12 @@ runs:
 
         echo "changelog-file=$CHANGELOG_FILE" >> "$GITHUB_OUTPUT"
 
+    - name: Surface commit failure
+      if: steps.commit.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "::warning::Changelog commit step failed; falling back to posting the entry as a PR comment. Check the commit step logs and the repository's branch protection / token scopes."
+
     - name: Post success comment
       if: steps.commit.outputs.committed == 'true'
       uses: actions/github-script@v9
@@ -128,8 +143,14 @@ runs:
           const script = require('${{ github.action_path }}/scripts/post-success-comment.js');
           await script({ github, context, core });
 
+    # Two paths arrive here:
+    #   1. The strategy chose comment-only (fork PR from a trusted author, or
+    #      explicit `comment-only: true` input).
+    #   2. The strategy chose commit but the commit step failed; rather than
+    #      hard-fail, expose the generated entry on the PR so reviewers and the
+    #      author can still see what would have been recorded.
     - name: Post comment-only changelog
-      if: steps.meta.outputs.should-comment-success == 'true'
+      if: steps.meta.outputs.should-comment-success == 'true' || steps.commit.outcome == 'failure'
       uses: actions/github-script@v9
       env:
         PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
