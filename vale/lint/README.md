@@ -11,6 +11,7 @@ Run Vale with Elastic style guide on documentation and user-facing metadata file
 | `files`             | Files or directories to lint (space-separated). If not provided, lints changed Markdown, MDX, YAML, and YML files in PR.                                                    | `false`  | ` `            |
 | `vale-paths`        | Paths to include for linting. Supports glob patterns and ! negation to exclude paths. Can be space-separated or multi-line. Only files matching these paths will be linted. | `false`  | ` `            |
 | `include-paths`     | Deprecated: use vale-paths instead. Kept for backward compatibility.                                                                                                        | `false`  | ` `            |
+| `vale-overrides`    | Inline Vale overrides. Supports Elastic rule severity overrides and constrained YAML file-type opt-in.                                                                      | `false`  | ` `            |
 | `fail_on_error`     | Fail the action if Vale finds error-level issues                                                                                                                            | `false`  | `false`        |
 | `vale_version`      | Vale version to install (default: latest via package manager)                                                                                                               | `false`  | `latest`       |
 | `debug`             | Enable debug output                                                                                                                                                         | `false`  | `false`        |
@@ -44,7 +45,7 @@ steps:
 ```
 <!--/usage-->
 
-YAML and YML files are eligible for linting, but the active Vale configuration must include a matching file-type section. Repositories can opt in with `.vale-overrides.ini`:
+YAML and YML files are eligible for linting, but the active Vale configuration must include a matching file-type section. Repositories can opt in with the `vale-overrides` input or `.vale-overrides.ini`:
 
 ```ini
 [*.{yml,yaml}]
