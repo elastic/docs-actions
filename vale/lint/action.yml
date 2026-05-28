@@ -23,6 +23,10 @@ inputs:
     description: 'Inline Vale overrides. Supports Elastic rule severity overrides and constrained YAML file-type opt-in.'
     required: false
     default: ''
+  lint-yaml:
+    description: 'Enable Elastic Vale linting for YAML and YML files.'
+    required: false
+    default: 'false'
   fail_on_error:
     description: 'Fail the action if Vale finds error-level issues'
     required: false
@@ -225,6 +229,7 @@ runs:
       env:
         DEBUG: ${{ inputs.debug }}
         INLINE_VALE_OVERRIDES: ${{ inputs.vale-overrides }}
+        LINT_YAML: ${{ inputs.lint-yaml }}
       run: |
         OVERRIDE_FILE=""
         if [ -n "${INLINE_VALE_OVERRIDES}" ]; then
@@ -238,10 +243,12 @@ runs:
 
         if [ -z "$OVERRIDE_FILE" ]; then
           echo "No repo-level Vale overrides found (.vale-overrides.ini or .github/.vale-overrides.ini)"
-          exit 0
+          if [ "${LINT_YAML}" != "true" ]; then
+            exit 0
+          fi
+        else
+          echo "Applying repo-level Vale overrides from ${OVERRIDE_FILE}"
         fi
-
-        echo "Applying repo-level Vale overrides from ${OVERRIDE_FILE}"
 
         # Only allow overriding rule severity and alert level by default. A
         # constrained YAML file-type section may opt into the packaged Elastic
@@ -259,102 +266,116 @@ runs:
         done
         shopt -u nullglob
 
-        CURRENT_SECTION=""
-        while IFS= read -r line; do
-          [[ -z "$line" ]] && continue
-          [[ "$line" =~ ^[[:space:]]*# ]] && continue
-
-          if [[ "$line" =~ ^[[:space:]]*\[ ]]; then
-            section=$(printf '%s' "$line" | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-            if echo "$section" | grep -qE "$ALLOWED_YAML_SECTION_PATTERN"; then
-              CURRENT_SECTION="$section"
-              if ! grep -qxF "$section" .vale.ini.temp; then
-                printf '\n%s\n' "$section" >> .vale.ini.temp
-                echo "  Added file-type section: ${section}"
-              else
-                echo "  File-type section already exists: ${section}"
-              fi
-            else
-              CURRENT_SECTION=""
-              echo "  Ignoring section header: ${section}"
-            fi
-            continue
+        if [ "${LINT_YAML}" == "true" ]; then
+          YAML_SECTION='[*.{yml,yaml}]'
+          if ! grep -qxF "$YAML_SECTION" .vale.ini.temp; then
+            printf '\n%s\n' "$YAML_SECTION" >> .vale.ini.temp
+            echo "  Added file-type section: ${YAML_SECTION}"
+          else
+            echo "  File-type section already exists: ${YAML_SECTION}"
           fi
+          echo "BasedOnStyles = Elastic" >> .vale.ini.temp
+          echo "  Added to ${YAML_SECTION}: BasedOnStyles = Elastic"
+        fi
 
-          key=$(echo "$line" | sed 's/[[:space:]]*=.*//')
+        if [ -n "$OVERRIDE_FILE" ]; then
+          CURRENT_SECTION=""
+          while IFS= read -r line; do
+            [[ -z "$line" ]] && continue
+            [[ "$line" =~ ^[[:space:]]*# ]] && continue
 
-          # Within the constrained YAML section, only allow opting into the
-          # packaged Elastic style and normal Elastic rule toggles.
-          if [ -n "$CURRENT_SECTION" ]; then
+            if [[ "$line" =~ ^[[:space:]]*\[ ]]; then
+              section=$(printf '%s' "$line" | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+              if echo "$section" | grep -qE "$ALLOWED_YAML_SECTION_PATTERN"; then
+                CURRENT_SECTION="$section"
+                if ! grep -qxF "$section" .vale.ini.temp; then
+                  printf '\n%s\n' "$section" >> .vale.ini.temp
+                  echo "  Added file-type section: ${section}"
+                else
+                  echo "  File-type section already exists: ${section}"
+                fi
+              else
+                CURRENT_SECTION=""
+                echo "  Ignoring section header: ${section}"
+              fi
+              continue
+            fi
+
+            key=$(echo "$line" | sed 's/[[:space:]]*=.*//')
+
+            # Within the constrained YAML section, only allow opting into the
+            # packaged Elastic style and normal Elastic rule toggles.
+            if [ -n "$CURRENT_SECTION" ]; then
+              value=$(echo "$line" | sed 's/^[^=]*=[[:space:]]*//')
+              value=$(printf '%s' "$value" | tr -d '\n\r')
+
+              if [ "$key" = "BasedOnStyles" ]; then
+                if [ "$value" = "Elastic" ]; then
+                  echo "BasedOnStyles = Elastic" >> .vale.ini.temp
+                  echo "  Added to ${CURRENT_SECTION}: BasedOnStyles = Elastic"
+                else
+                  echo "  Skipped (value not in allowlist): ${key} = ${value}"
+                fi
+                continue
+              fi
+
+              if echo "$key" | grep -qE '^Elastic\.'; then
+                case "$value" in
+                  YES|NO|suggestion|warning|error) ;;
+                  *)
+                    echo "  Skipped (value not in allowlist): ${key} = ${value}"
+                    continue
+                    ;;
+                esac
+                line="${key} = ${value}"
+                echo "$line" >> .vale.ini.temp
+                echo "  Added to ${CURRENT_SECTION}: ${line}"
+                continue
+              fi
+
+              echo "  Skipped (not in allowlist for ${CURRENT_SECTION}): ${key}"
+              continue
+            fi
+
+            if ! echo "$key" | grep -qE "$ALLOWED_KEY_PATTERN"; then
+              echo "  Skipped (not in allowlist): ${key}"
+              continue
+            fi
+
+            # Extract the value, strip newlines/carriage returns, and validate
             value=$(echo "$line" | sed 's/^[^=]*=[[:space:]]*//')
             value=$(printf '%s' "$value" | tr -d '\n\r')
 
-            if [ "$key" = "BasedOnStyles" ]; then
-              if [ "$value" = "Elastic" ]; then
-                echo "BasedOnStyles = Elastic" >> .vale.ini.temp
-                echo "  Added to ${CURRENT_SECTION}: BasedOnStyles = Elastic"
-              else
+            case "$value" in
+              YES|NO|suggestion|warning|error) ;;
+              *)
                 echo "  Skipped (value not in allowlist): ${key} = ${value}"
+                continue
+                ;;
+            esac
+
+            # Reconstruct the line with the validated value
+            line="${key} = ${value}"
+
+            escaped_key=$(echo "$key" | sed 's/\./\\./g')
+
+            # Escape sed special characters in the replacement string to prevent injection
+            escaped_line=$(printf '%s' "$line" | sed 's/[&/\]/\\&/g')
+
+            for cfg in $CONFIG_FILES; do
+              if grep -q "^${escaped_key}[[:space:]]*=" "$cfg"; then
+                sed -i "s/^${escaped_key}[[:space:]]*=.*/${escaped_line}/" "$cfg"
+                echo "  Replaced in $(basename "$cfg"): ${line}"
               fi
-              continue
+            done
+
+            # If the key wasn't in any config, insert it into the main config
+            if ! grep -rq "^${escaped_key}[[:space:]]*=" $CONFIG_FILES; then
+              sed -i "/^\[\\*\\./a ${escaped_line}" .vale.ini.temp
+              echo "  Inserted: ${line}"
             fi
-
-            if echo "$key" | grep -qE '^Elastic\.'; then
-              case "$value" in
-                YES|NO|suggestion|warning|error) ;;
-                *)
-                  echo "  Skipped (value not in allowlist): ${key} = ${value}"
-                  continue
-                  ;;
-              esac
-              line="${key} = ${value}"
-              echo "$line" >> .vale.ini.temp
-              echo "  Added to ${CURRENT_SECTION}: ${line}"
-              continue
-            fi
-
-            echo "  Skipped (not in allowlist for ${CURRENT_SECTION}): ${key}"
-            continue
-          fi
-
-          if ! echo "$key" | grep -qE "$ALLOWED_KEY_PATTERN"; then
-            echo "  Skipped (not in allowlist): ${key}"
-            continue
-          fi
-
-          # Extract the value, strip newlines/carriage returns, and validate
-          value=$(echo "$line" | sed 's/^[^=]*=[[:space:]]*//')
-          value=$(printf '%s' "$value" | tr -d '\n\r')
-
-          case "$value" in
-            YES|NO|suggestion|warning|error) ;;
-            *)
-              echo "  Skipped (value not in allowlist): ${key} = ${value}"
-              continue
-              ;;
-          esac
-
-          # Reconstruct the line with the validated value
-          line="${key} = ${value}"
-
-          escaped_key=$(echo "$key" | sed 's/\./\\./g')
-
-          # Escape sed special characters in the replacement string to prevent injection
-          escaped_line=$(printf '%s' "$line" | sed 's/[&/\]/\\&/g')
-
-          for cfg in $CONFIG_FILES; do
-            if grep -q "^${escaped_key}[[:space:]]*=" "$cfg"; then
-              sed -i "s/^${escaped_key}[[:space:]]*=.*/${escaped_line}/" "$cfg"
-              echo "  Replaced in $(basename "$cfg"): ${line}"
-            fi
-          done
-
-          # If the key wasn't in any config, insert it into the main config
-          if ! grep -rq "^${escaped_key}[[:space:]]*=" $CONFIG_FILES; then
-            sed -i "/^\[\\*\\./a ${escaped_line}" .vale.ini.temp
-            echo "  Inserted: ${line}"
-          fi
-        done < "$OVERRIDE_FILE"
+          done < "$OVERRIDE_FILE"
+        fi
 
         if [ "${DEBUG}" == "true" ]; then
           echo "::debug::Final Vale config:"

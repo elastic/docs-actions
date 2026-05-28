@@ -348,9 +348,7 @@ jobs:
           disable_telemetry: 'true'
           upload_artifact: 'false'
           debug: 'true'
-          vale-overrides: |
-            [*.{yml,yaml}]
-            BasedOnStyles = Elastic
+          lint-yaml: 'true'
 
       - name: Verify YAML files were linted
         run: |
@@ -419,6 +417,40 @@ jobs:
           fi
 
           echo "Elastic.Spelling correctly disabled by default"
+          rm -f vale_report.md issue_counts.txt
+
+      - name: Run lint with inline override
+        id: lint-inline-override
+        uses: ./vale/lint
+        with:
+          files: vale/test-fixtures/spelling-test.md
+          fail_on_error: 'false'
+          use_local_styles: 'true'
+          styles_path: vale-rules
+          disable_telemetry: 'true'
+          upload_artifact: 'false'
+          debug: 'true'
+          vale-overrides: |
+            Elastic.Spelling = warning
+
+      - name: Verify spelling fired via inline override
+        run: |
+          if [ ! -f vale_report.md ]; then
+            echo "::error::vale_report.md was not generated"
+            exit 1
+          fi
+
+          spelling_count=$(grep -c "Elastic.Spelling" vale_report.md || echo "0")
+
+          if [ "$spelling_count" -ge 2 ]; then
+            echo "Elastic.Spelling fired $spelling_count times via inline vale-overrides"
+          else
+            echo "::error::Expected at least 2 Elastic.Spelling hits from inline override but found $spelling_count"
+            echo "Report contents:"
+            cat vale_report.md
+            exit 1
+          fi
+
           rm -f vale_report.md issue_counts.txt
 
       - name: Place override file in repo root

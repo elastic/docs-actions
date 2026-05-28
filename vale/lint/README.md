@@ -12,6 +12,7 @@ Run Vale with Elastic style guide on documentation and user-facing metadata file
 | `vale-paths`        | Paths to include for linting. Supports glob patterns and ! negation to exclude paths. Can be space-separated or multi-line. Only files matching these paths will be linted. | `false`  | ` `            |
 | `include-paths`     | Deprecated: use vale-paths instead. Kept for backward compatibility.                                                                                                        | `false`  | ` `            |
 | `vale-overrides`    | Inline Vale overrides. Supports Elastic rule severity overrides and constrained YAML file-type opt-in.                                                                      | `false`  | ` `            |
+| `lint-yaml`         | Enable Elastic Vale linting for YAML and YML files.                                                                                                                         | `false`  | `false`        |
 | `fail_on_error`     | Fail the action if Vale finds error-level issues                                                                                                                            | `false`  | `false`        |
 | `vale_version`      | Vale version to install (default: latest via package manager)                                                                                                               | `false`  | `latest`       |
 | `debug`             | Enable debug output                                                                                                                                                         | `false`  | `false`        |
@@ -45,7 +46,14 @@ steps:
 ```
 <!--/usage-->
 
-YAML and YML files are eligible for linting, but the active Vale configuration must include a matching file-type section. Repositories can opt in with the `vale-overrides` input or `.vale-overrides.ini`:
+YAML and YML files are eligible for linting, but the active Vale configuration must include a matching file-type section. To enable YAML linting, set `lint-yaml`:
+
+```yaml
+with:
+  lint-yaml: true
+```
+
+For advanced cases, repositories can still use the `vale-overrides` input or `.vale-overrides.ini`:
 
 ```ini
 [*.{yml,yaml}]
