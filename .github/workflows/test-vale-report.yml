@@ -51,7 +51,7 @@ jobs:
           echo "Checking for Vale comment on PR #${PR_NUMBER}..."
 
           COMMENT_EXISTS=$(gh api "repos/${GH_REPO}/issues/${PR_NUMBER}/comments" \
-            --jq '.[] | select(.body | contains("Vale Linting Results")) | .id' | head -1)
+            --jq '.[] | select(.body | contains("Elastic Docs Style Checker (Vale)")) | .id' | head -1)
 
           if [ -n "$COMMENT_EXISTS" ]; then
             echo "Vale linting results comment found (comment ID: $COMMENT_EXISTS)"

@@ -104,5 +104,26 @@ class TestSanitizePath(unittest.TestCase):
         )
 
 
+class TestFormatRuleLink(unittest.TestCase):
+    """Tests for format_rule_link() — links only safe Elastic rule IDs."""
+
+    def test_links_elastic_rule(self):
+        self.assertEqual(
+            vale_reporter.format_rule_link("Elastic.Articles"),
+            "[Elastic.Articles](https://github.com/elastic/vale-rules/blob/main/styles/Elastic/Articles.yml)",
+        )
+
+    def test_does_not_link_non_elastic_rule(self):
+        self.assertEqual(
+            vale_reporter.format_rule_link("Vale.Spelling"),
+            "Vale.Spelling",
+        )
+
+    def test_sanitizes_unsafe_rule(self):
+        result = vale_reporter.format_rule_link("Elastic.Bad](https://evil.example)")
+        self.assertNotIn("https://evil.example", result)
+        self.assertNotIn("]", result)
+
+
 if __name__ == "__main__":
     unittest.main()

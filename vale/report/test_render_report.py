@@ -225,7 +225,7 @@ class TestRendering(unittest.TestCase):
         data = _valid_data(issues=[])
         report = render_report.render(data, "owner/repo", "1")
         self.assertIn("No issues found", report)
-        self.assertIn("Vale Linting Results", report)
+        self.assertIn("Elastic Docs Style Checker (Vale)", report)
 
     def test_single_error_renders(self):
         data = _valid_data()
@@ -233,6 +233,10 @@ class TestRendering(unittest.TestCase):
         self.assertIn("1 error found", report)
         self.assertIn("docs/guide.md", report)
         self.assertIn("Elastic.Articles", report)
+        self.assertIn(
+            "[Elastic.Articles](https://github.com/elastic/vale-rules/blob/main/styles/Elastic/Articles.yml)",
+            report,
+        )
         self.assertIn("<details>", report)
 
     def test_multiple_severities(self):
@@ -246,9 +250,15 @@ class TestRendering(unittest.TestCase):
         self.assertIn("1 error", report)
         self.assertIn("1 warning", report)
         self.assertIn("1 suggestion", report)
-        self.assertIn("Errors", report)
-        self.assertIn("Warnings", report)
-        self.assertIn("Suggestions", report)
+        self.assertIn("Errors (1): Must fix before merge.", report)
+        self.assertIn(
+            "Warnings (1): Fix when the suggestion improves clarity or correctness.",
+            report,
+        )
+        self.assertIn(
+            "Suggestions (1): Optional style improvements. Apply when helpful.",
+            report,
+        )
 
     def test_diff_link_generated(self):
         data = _valid_data()
@@ -259,7 +269,7 @@ class TestRendering(unittest.TestCase):
     def test_no_link_without_pr(self):
         data = _valid_data()
         report = render_report.render(data, "", "")
-        self.assertNotIn("https://github.com", report)
+        self.assertNotIn("/pull/", report)
         self.assertIn("| 42 |", report)
 
     def test_html_in_message_sanitised_in_render(self):
@@ -281,6 +291,7 @@ class TestRendering(unittest.TestCase):
         data = _valid_data(issues=[])
         report = render_report.render(data, "", "")
         self.assertIn("Elastic Docs style guide", report)
+        self.assertIn("style-guide). To use Vale locally", report)
 
     def test_diff_hash_matches_lint_algorithm(self):
         """Verify our diff hash matches the algorithm in lint/vale_reporter.py."""
@@ -314,7 +325,7 @@ class TestCLI(unittest.TestCase):
             self.assertTrue(os.path.exists(out_path))
             with open(out_path) as f:
                 content = f.read()
-            self.assertIn("Vale Linting Results", content)
+            self.assertIn("Elastic Docs Style Checker (Vale)", content)
         finally:
             os.unlink(inp_path)
             if os.path.exists(out_path):

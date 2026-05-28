@@ -36,10 +36,10 @@ RULE_PATTERN = re.compile(r'^[A-Za-z0-9_.]+$')
 REPORT_FOOTER = """
 ---
 
-The Vale linter checks documentation changes against the [Elastic Docs style guide](https://www.elastic.co/docs/contribute-docs/style-guide).
-
-To use Vale locally or report issues, refer to [Elastic style guide for Vale](https://www.elastic.co/docs/contribute-docs/vale-linter).
+The Vale linter checks documentation changes against the [Elastic Docs style guide](https://www.elastic.co/docs/contribute-docs/style-guide). To use Vale locally or report issues, refer to [Elastic style guide for Vale](https://www.elastic.co/docs/contribute-docs/vale-linter).
 """
+
+RULE_SOURCE_BASE_URL = "https://github.com/elastic/vale-rules/blob/main/styles/Elastic"
 
 # --- validation / sanitisation -----------------------------------------------
 
@@ -181,6 +181,14 @@ def format_line_link(path: str, line: int, repo: str, pr: str) -> str:
     return str(line)
 
 
+def format_rule_link(rule: str) -> str:
+    """Create a link to the Elastic Vale rule source when the rule ID is known-safe."""
+    if not rule.startswith("Elastic."):
+        return rule
+    rule_name = rule.removeprefix("Elastic.")
+    return f"[{rule}]({RULE_SOURCE_BASE_URL}/{rule_name}.yml)"
+
+
 def render(data: dict, repo: str, pr: str) -> str:
     """Render validated JSON data into the markdown report."""
     # Group issues by severity
@@ -194,7 +202,7 @@ def render(data: dict, repo: str, pr: str) -> str:
     total = error_count + warning_count + suggestion_count
 
     if total == 0:
-        return "## " + "\u2705 Vale Linting Results\n\n**No issues found on modified lines!**\n" + REPORT_FOOTER
+        return "## " + "\u2705 Elastic Docs Style Checker (Vale)\n\n**No issues found on modified lines!**\n" + REPORT_FOOTER
 
     # Summary line
     parts = []
@@ -206,12 +214,12 @@ def render(data: dict, repo: str, pr: str) -> str:
         parts.append(f"{suggestion_count} suggestion{'s' if suggestion_count != 1 else ''}")
     summary = ", ".join(parts)
 
-    report = f"## Vale Linting Results\n\n**Summary:** {summary} found\n\n"
+    report = f"## Elastic Docs Style Checker (Vale)\n\n**Summary:** {summary} found\n\n"
 
     section_info = [
-        ("error",      groups["error"],      f"\u274c Errors ({error_count})"),
-        ("warning",    groups["warning"],    f"\u26a0\ufe0f Warnings ({warning_count})"),
-        ("suggestion", groups["suggestion"], f"\U0001f4a1 Suggestions ({suggestion_count})"),
+        ("error",      groups["error"],      f"\u274c Errors ({error_count}): Must fix before merge."),
+        ("warning",    groups["warning"],    f"\u26a0\ufe0f Warnings ({warning_count}): Fix when the suggestion improves clarity or correctness."),
+        ("suggestion", groups["suggestion"], f"\U0001f4a1 Suggestions ({suggestion_count}): Optional style improvements. Apply when helpful."),
     ]
 
     for _severity, items, heading in section_info:
@@ -223,7 +231,7 @@ def render(data: dict, repo: str, pr: str) -> str:
         for issue in items:
             path = sanitize_path(issue["path"])
             message = sanitize_text(issue["message"])
-            rule = issue["rule"]  # already validated by regex
+            rule = format_rule_link(issue["rule"])  # already validated by regex
             line_link = format_line_link(issue["path"], issue["line"], repo, pr)
             report += f"| {path} | {line_link} | {rule} | {message} |\n"
         report += "\n</details>\n\n"
