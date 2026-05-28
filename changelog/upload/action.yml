@@ -76,8 +76,23 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
         set -euo pipefail
-        fork_prs=$(gh api --paginate "repos/${REPO}/commits/${PUSHED_SHA}/pulls" \
-          --jq '.[] | select(.merged_at != null) | select(.head.repo.full_name != .base.repo.full_name) | .number')
+
+        # Look up PRs associated with the pushed commit. The
+        # `/commits/{sha}/pulls` endpoint returns at most one page in
+        # practice (a single commit is associated with very few PRs),
+        # so we ask for the max per_page and skip `--paginate`. Dropping
+        # `--paginate` sidesteps gh CLI's "unexpected end of JSON input"
+        # error which can surface when it parses a stray empty next-page
+        # response, and running gh and jq as separate processes makes a
+        # real API failure surface with gh's own stderr rather than as
+        # an opaque JSON parse error.
+        pulls_json=$(gh api "repos/${REPO}/commits/${PUSHED_SHA}/pulls?per_page=100")
+        fork_prs=$(printf '%s' "$pulls_json" | jq -r '
+          .[]
+          | select(.merged_at != null)
+          | select(.head.repo.full_name != .base.repo.full_name)
+          | .number
+        ')
 
         if [[ -z "$fork_prs" ]]; then
           echo "No merged fork PRs associated with ${PUSHED_SHA}; nothing to add."
