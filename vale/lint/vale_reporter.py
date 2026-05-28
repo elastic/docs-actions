@@ -54,10 +54,10 @@ TELEMETRY_PREFIX = "VALE_TELEMETRY"
 REPORT_FOOTER = """
 ---
 
-The Vale linter checks documentation changes against the [Elastic Docs style guide](https://www.elastic.co/docs/contribute-docs/style-guide).
-
-To use Vale locally or report issues, refer to [Elastic style guide for Vale](https://www.elastic.co/docs/contribute-docs/vale-linter).
+The Vale linter checks documentation changes against the [Elastic Docs style guide](https://www.elastic.co/docs/contribute-docs/style-guide). To use Vale locally or report issues, refer to [Elastic style guide for Vale](https://www.elastic.co/docs/contribute-docs/vale-linter).
 """
+
+RULE_SOURCE_BASE_URL = "https://github.com/elastic/vale-rules/blob/main/styles/Elastic"
 
 
 def load_vale_output(file_path: str) -> Dict:
@@ -249,6 +249,14 @@ def format_line_link(
     return str(line_num)
 
 
+def format_rule_link(rule: str) -> str:
+    """Create a link to the Elastic Vale rule source when the rule ID is known-safe."""
+    if not re.match(r'^Elastic\.[A-Za-z0-9_.]+$', rule):
+        return sanitize_text(rule)
+    rule_name = rule.removeprefix('Elastic.')
+    return f"[{rule}]({RULE_SOURCE_BASE_URL}/{rule_name}.yml)"
+
+
 def generate_markdown_report(
     filtered_issues: Dict[str, List[Dict]],
     github_repo: str,
@@ -262,7 +270,7 @@ def generate_markdown_report(
     total_count = error_count + warning_count + suggestion_count
 
     if total_count == 0:
-        report = "## ✅ Vale Linting Results\n\n**No issues found on modified lines!**\n"
+        report = "## ✅ Elastic Docs Style Checker (Vale)\n\n**No issues found on modified lines!**\n"
         report += REPORT_FOOTER
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(report)
@@ -279,34 +287,34 @@ def generate_markdown_report(
 
     summary = ", ".join(summary_parts)
 
-    report = f"## Vale Linting Results\n\n**Summary:** {summary} found\n\n"
+    report = f"## Elastic Docs Style Checker (Vale)\n\n**Summary:** {summary} found\n\n"
 
     # Add sections for each severity
     if error_count > 0:
-        report += f"<details>\n<summary>❌ Errors ({error_count})</summary>\n\n"
+        report += f"<details>\n<summary>❌ Errors ({error_count}): Must fix before merge.</summary>\n\n"
         report += "| File | Line | Rule | Message |\n"
         report += "|------|------|------|----------|\n"
         for issue in filtered_issues['error']:
             line_link = format_line_link(issue['file'], issue['line'], github_repo, pr_number)
-            report += f"| {sanitize_path(issue['file'])} | {line_link} | {sanitize_text(issue['rule'])} | {sanitize_text(issue['message'])} |\n"
+            report += f"| {sanitize_path(issue['file'])} | {line_link} | {format_rule_link(issue['rule'])} | {sanitize_text(issue['message'])} |\n"
         report += "\n</details>\n\n"
 
     if warning_count > 0:
-        report += f"<details>\n<summary>⚠️ Warnings ({warning_count})</summary>\n\n"
+        report += f"<details>\n<summary>⚠️ Warnings ({warning_count}): Fix when the suggestion improves clarity or correctness.</summary>\n\n"
         report += "| File | Line | Rule | Message |\n"
         report += "|------|------|------|----------|\n"
         for issue in filtered_issues['warning']:
             line_link = format_line_link(issue['file'], issue['line'], github_repo, pr_number)
-            report += f"| {sanitize_path(issue['file'])} | {line_link} | {sanitize_text(issue['rule'])} | {sanitize_text(issue['message'])} |\n"
+            report += f"| {sanitize_path(issue['file'])} | {line_link} | {format_rule_link(issue['rule'])} | {sanitize_text(issue['message'])} |\n"
         report += "\n</details>\n\n"
 
     if suggestion_count > 0:
-        report += f"<details>\n<summary>💡 Suggestions ({suggestion_count})</summary>\n\n"
+        report += f"<details>\n<summary>💡 Suggestions ({suggestion_count}): Optional style improvements. Apply when helpful.</summary>\n\n"
         report += "| File | Line | Rule | Message |\n"
         report += "|------|------|------|----------|\n"
         for issue in filtered_issues['suggestion']:
             line_link = format_line_link(issue['file'], issue['line'], github_repo, pr_number)
-            report += f"| {sanitize_path(issue['file'])} | {line_link} | {sanitize_text(issue['rule'])} | {sanitize_text(issue['message'])} |\n"
+            report += f"| {sanitize_path(issue['file'])} | {line_link} | {format_rule_link(issue['rule'])} | {sanitize_text(issue['message'])} |\n"
         report += "\n</details>\n\n"
 
     # Add footer
@@ -467,7 +475,7 @@ def main():
         # Create empty report
         try:
             with open('vale_report.md', 'w', encoding='utf-8') as f:
-                f.write("## ✅ Vale Linting Results\n\n**No issues found on modified lines!**\n")
+                f.write("## ✅ Elastic Docs Style Checker (Vale)\n\n**No issues found on modified lines!**\n")
                 f.write(REPORT_FOOTER)
             with open('issue_counts.txt', 'w', encoding='utf-8') as f:
                 f.write("errors=0\nwarnings=0\nsuggestions=0\n")
