@@ -223,31 +223,39 @@ runs:
         EXISTING_FILENAME: ${{ steps.evaluate.outputs.existing-changelog-filename }}
         CONFIG_FILE: ${{ inputs.config }}
       run: |
+        # docs-builder uses a CLI framework (Nullean.Argh) where `bool` is a
+        # presence-only switch — `--flag` sets true, omission leaves it false.
+        # Passing `--can-commit "false"` would set canCommit=TRUE (the flag is
+        # present) and silently drop the literal "false" as a stray positional.
+        # Build the args list explicitly and only append boolean flags when the
+        # value is the string "true".
+        ARGS=(
+          --staging-dir .artifacts/changelog-staging
+          --output-dir .artifacts/changelog-artifact
+          --evaluate-status "$STATUS"
+          --generate-outcome "$GENERATE_OUTCOME"
+          --pr-number "$PR_NUMBER"
+          --head-ref "$HEAD_REF"
+          --head-sha "$HEAD_SHA"
+          --head-repo "$HEAD_REPO"
+          --label-table "$LABEL_TABLE"
+          --product-label-table "$PRODUCT_LABEL_TABLE"
+          --skip-labels "$SKIP_LABELS"
+          --config "$CONFIG_FILE"
+        )
+
+        [ "$IS_FORK" = "true" ]               && ARGS+=(--is-fork)
+        [ "$CAN_COMMIT" = "true" ]            && ARGS+=(--can-commit)
+        [ "$MAINTAINER_CAN_MODIFY" = "true" ] && ARGS+=(--maintainer-can-modify)
+
         # Only forward --existing-changelog-filename when set. Passing an empty
         # value made docs-builder treat "" as a real filename, causing it to
         # write the artifact YAML to the output-dir path itself (EACCES).
-        EXTRA_ARGS=()
         if [ -n "$EXISTING_FILENAME" ]; then
-          EXTRA_ARGS+=(--existing-changelog-filename "$EXISTING_FILENAME")
+          ARGS+=(--existing-changelog-filename "$EXISTING_FILENAME")
         fi
 
-        docs-builder changelog prepare-artifact \
-          --staging-dir .artifacts/changelog-staging \
-          --output-dir .artifacts/changelog-artifact \
-          --evaluate-status "$STATUS" \
-          --generate-outcome "$GENERATE_OUTCOME" \
-          --pr-number "$PR_NUMBER" \
-          --head-ref "$HEAD_REF" \
-          --head-sha "$HEAD_SHA" \
-          --is-fork "$IS_FORK" \
-          --head-repo "$HEAD_REPO" \
-          --can-commit "$CAN_COMMIT" \
-          --maintainer-can-modify "$MAINTAINER_CAN_MODIFY" \
-          --label-table "$LABEL_TABLE" \
-          --product-label-table "$PRODUCT_LABEL_TABLE" \
-          --skip-labels "$SKIP_LABELS" \
-          --config "$CONFIG_FILE" \
-          "${EXTRA_ARGS[@]}"
+        docs-builder changelog prepare-artifact "${ARGS[@]}"
 
     - name: Upload staging artifact
       id: upload
