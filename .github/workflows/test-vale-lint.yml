@@ -337,9 +337,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Enable YAML linting through repo override
-        run: cp vale/test-fixtures/yaml-overrides/.vale-overrides.ini .vale-overrides.ini
-
       - name: Run lint on YAML fixtures
         id: lint-yaml
         uses: ./vale/lint
@@ -351,6 +348,9 @@ jobs:
           disable_telemetry: 'true'
           upload_artifact: 'false'
           debug: 'true'
+          vale-overrides: |
+            [*.{yml,yaml}]
+            BasedOnStyles = Elastic
 
       - name: Verify YAML files were linted
         run: |

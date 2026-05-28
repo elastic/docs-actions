@@ -19,6 +19,10 @@ inputs:
     description: 'Deprecated: use vale-paths instead. Kept for backward compatibility.'
     required: false
     default: ''
+  vale-overrides:
+    description: 'Inline Vale overrides. Supports Elastic rule severity overrides and constrained YAML file-type opt-in.'
+    required: false
+    default: ''
   fail_on_error:
     description: 'Fail the action if Vale finds error-level issues'
     required: false
@@ -220,9 +224,13 @@ runs:
       shell: bash
       env:
         DEBUG: ${{ inputs.debug }}
+        INLINE_VALE_OVERRIDES: ${{ inputs.vale-overrides }}
       run: |
         OVERRIDE_FILE=""
-        if [ -f ".vale-overrides.ini" ]; then
+        if [ -n "${INLINE_VALE_OVERRIDES}" ]; then
+          OVERRIDE_FILE=$(mktemp)
+          printf '%s\n' "${INLINE_VALE_OVERRIDES}" > "$OVERRIDE_FILE"
+        elif [ -f ".vale-overrides.ini" ]; then
           OVERRIDE_FILE=".vale-overrides.ini"
         elif [ -f ".github/.vale-overrides.ini" ]; then
           OVERRIDE_FILE=".github/.vale-overrides.ini"
