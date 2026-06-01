@@ -11,7 +11,7 @@ on:
       docs-builder-version:
         description: Version of docs-builder to use (e.g. edge, 1.2.3)
         required: false
-        default: "edge"
+        default: "latest"
         type: string
       path-pattern:
         description: The path pattern to check for changes
