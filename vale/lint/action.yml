@@ -428,7 +428,7 @@ runs:
         # E2BIG ("Argument list too long") before a single line runs. Using an inline
         # GitHub Actions expression instead writes the value into the script file itself,
         # which has no comparable size limit.
-        INPUT_FILES='${{ inputs.files }}'
+        INPUT_FILES='${INPUTS_FILES}'
         if [ -n "${INPUT_FILES}" ]; then
           echo "Using provided files list"
           printf '%s\n' ${INPUT_FILES} | grep -E '\.(md|mdx|ya?ml)$' > files_to_lint.txt || true
@@ -438,7 +438,7 @@ runs:
             echo "No Markdown, MDX, YAML, or YML files in provided file list"
             echo "has_files=false" >> $GITHUB_OUTPUT
           fi
-        elif [ "${{ steps.changed-files.outputs.has_changes }}" == "true" ]; then
+        elif [ "${STEPS_CHANGED_FILES_OUTPUTS_HAS_CHANGES}" == "true" ]; then
           echo "Using changed files from PR"
           cp changed_files.txt files_to_lint.txt
           echo "has_files=true" >> $GITHUB_OUTPUT
@@ -446,6 +446,9 @@ runs:
           echo "No files to lint"
           echo "has_files=false" >> $GITHUB_OUTPUT
         fi
+      env:
+        INPUTS_FILES: ${{ inputs.files }}
+        STEPS_CHANGED_FILES_OUTPUTS_HAS_CHANGES: ${{ steps.changed-files.outputs.has_changes }}
 
     - name: Filter files by vale-paths
       id: filter-paths
@@ -701,8 +704,10 @@ runs:
       if: inputs.fail_on_error == 'true' && steps.vale-report.outputs.error_count != '0'
       shell: bash
       run: |
-        echo "❌ Vale found ${{ steps.vale-report.outputs.error_count }} error-level issue(s)"
+        echo "❌ Vale found ${STEPS_VALE_REPORT_OUTPUTS_ERROR_COUNT} error-level issue(s)"
         exit 1
+      env:
+        STEPS_VALE_REPORT_OUTPUTS_ERROR_COUNT: ${{ steps.vale-report.outputs.error_count }}
 
     - name: Cleanup
       if: always()

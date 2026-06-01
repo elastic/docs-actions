@@ -1051,6 +1051,9 @@ jobs:
           GH_AW_SAFE_OUTPUTS_API_KEY: ${{ steps.safe-outputs-start.outputs.api_key }}
           GH_AW_SAFE_OUTPUTS_PORT: ${{ steps.safe-outputs-start.outputs.port }}
           GITHUB_MCP_SERVER_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          STEPS_PARSE_GUARD_VARS_OUTPUTS_APPROVAL_LABELS: ${{ steps.parse-guard-vars.outputs.approval_labels }}
+          STEPS_PARSE_GUARD_VARS_OUTPUTS_BLOCKED_USERS: ${{ steps.parse-guard-vars.outputs.blocked_users }}
+          STEPS_PARSE_GUARD_VARS_OUTPUTS_TRUSTED_USERS: ${{ steps.parse-guard-vars.outputs.trusted_users }}
         run: |
           set -eo pipefail
           mkdir -p "${RUNNER_TEMP}/gh-aw/mcp-config"
@@ -1111,11 +1114,11 @@ jobs:
                 },
                 "guard-policies": {
                   "allow-only": {
-                    "approval-labels": ${{ steps.parse-guard-vars.outputs.approval_labels }},
-                    "blocked-users": ${{ steps.parse-guard-vars.outputs.blocked_users }},
+                    "approval-labels": ${STEPS_PARSE_GUARD_VARS_OUTPUTS_APPROVAL_LABELS},
+                    "blocked-users": ${STEPS_PARSE_GUARD_VARS_OUTPUTS_BLOCKED_USERS},
                     "min-integrity": "none",
                     "repos": "all",
-                    "trusted-users": ${{ steps.parse-guard-vars.outputs.trusted_users }}
+                    "trusted-users": ${STEPS_PARSE_GUARD_VARS_OUTPUTS_TRUSTED_USERS}
                   }
                 }
               },

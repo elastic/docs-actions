@@ -94,7 +94,9 @@ runs:
           --input .vale-artifacts/vale_results.json \
           --output .vale-artifacts/vale_report.md \
           --repo "${{ github.repository }}" \
-          --pr "${{ steps.pr-number.outputs.pr_number }}"
+          --pr "${STEPS_PR_NUMBER_OUTPUTS_PR_NUMBER}"
+      env:
+        STEPS_PR_NUMBER_OUTPUTS_PR_NUMBER: ${{ steps.pr-number.outputs.pr_number }}
 
     - name: Post sticky comment
       if: steps.check-results.outputs.has_results == 'true' && steps.pr-number.outputs.pr_number != 'null'

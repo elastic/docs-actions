@@ -1,0 +1,11 @@
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        actions/*: ref-pin
+        elastic/*: ref-pin
+
+  dangerous-triggers:
+    ignore:
+      - required-labels.yml
+      - test-vale-report.yml

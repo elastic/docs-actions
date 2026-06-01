@@ -25,6 +25,8 @@ runs:
   steps:
     - name: Checkout
       uses: actions/checkout@v6
+      with:
+        persist-credentials: false
 
     - name: Setup docs-builder
       uses: elastic/docs-actions/docs-builder/setup@v1

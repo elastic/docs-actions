@@ -18,7 +18,7 @@ runs:
   steps:
     - name: Setup git
       shell: bash
-      run: |
+      run: | # zizmor: ignore[github-env] persist git user/email for later steps
         git config --global user.name "${GIT_USER}"
         git config --global user.email "${GIT_EMAIL}"
         gh auth setup-git

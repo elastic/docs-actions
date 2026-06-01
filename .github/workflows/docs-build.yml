@@ -225,7 +225,9 @@ jobs:
       - name: Write check metadata
         if: always() && steps.effective-any-modified.outputs.effective_any_modified != ''
         run: |
-          echo '${{ steps.effective-any-modified.outputs.effective_any_modified }}' > /tmp/effective_any_modified
+          echo '${STEPS_EFFECTIVE_ANY_MODIFIED_OUTPUTS_EFFECTIVE_ANY_MODIFIED}' > /tmp/effective_any_modified
+        env:
+          STEPS_EFFECTIVE_ANY_MODIFIED_OUTPUTS_EFFECTIVE_ANY_MODIFIED: ${{ steps.effective-any-modified.outputs.effective_any_modified }}
 
       - name: Upload check metadata
         if: always() && steps.effective-any-modified.outputs.effective_any_modified != ''
@@ -339,7 +341,10 @@ jobs:
       - name: Skip build
         if: env.MATCH != 'true' || needs.check.outputs.effective_any_modified == 'false'
         run: |
-          echo "::notice::Build skipped (match=${{ env.MATCH }}, any_modified=${{ needs.check.outputs.any_modified }}, effective_any_modified=${{ needs.check.outputs.effective_any_modified }})"
+          echo "::notice::Build skipped (match=${MATCH}, any_modified=${NEEDS_CHECK_OUTPUTS_ANY_MODIFIED}, effective_any_modified=${NEEDS_CHECK_OUTPUTS_EFFECTIVE_ANY_MODIFIED})"
+        env:
+          NEEDS_CHECK_OUTPUTS_ANY_MODIFIED: ${{ needs.check.outputs.any_modified }}
+          NEEDS_CHECK_OUTPUTS_EFFECTIVE_ANY_MODIFIED: ${{ needs.check.outputs.effective_any_modified }}
 
   vale:
     if: >

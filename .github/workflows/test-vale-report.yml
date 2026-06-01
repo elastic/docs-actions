@@ -34,7 +34,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
+        run: | # zizmor: ignore[template-injection] workflow_run payload in test harness
           PR_NUMBER=$(echo '${{ toJSON(github.event.workflow_run.pull_requests) }}' | jq -r '.[0].number')
 
           if [ "$PR_NUMBER" == "null" ] || [ -z "$PR_NUMBER" ]; then

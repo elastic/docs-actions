@@ -21,4 +21,6 @@ updates:
   package-ecosystem: pre-commit
   schedule:
     interval: weekly
+  cooldown:
+    default-days: 14
 version: 2
