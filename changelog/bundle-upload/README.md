@@ -26,4 +26,4 @@ steps:
       output: docs/releases/v9.2.0.yaml
 ```
 
-This action is typically used as the second job in the `changelog-bundle.yml` reusable workflow, after `bundle-create` generates the artifact. The S3 key for each bundle is `{product}/bundles/{filename}`, where the product is read from the bundle's YAML `products` array.
+This action is typically used as the second job in the `changelog-bundle.yml` reusable workflow, after `bundle-create` generates the artifact. The S3 key for each bundle is `{product}/bundle/{filename}`, where the product is read from the bundle's YAML `products` array.
