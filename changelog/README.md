@@ -189,7 +189,7 @@ Each PR produces a file at `docs/changelog/{filename}.yaml` on the PR branch (wh
 
 ## Uploading to S3
 
-Changelog files on the default branch can be uploaded to S3. Files land in a **private bucket** (`elastic-docs-v3-changelog-bundles-private`), which is the internal source of truth. A scrubber Lambda automatically mirrors sanitized copies (with private repository references removed) to the **public bucket** served via CloudFront CDN. Changelogs are uploaded under `{product}/changelogs/{filename}.yaml`.
+Changelog files on the default branch can be uploaded to S3. Files land in a **private bucket** (`elastic-docs-v3-changelog-bundles-private`), which is the internal source of truth. A scrubber Lambda automatically mirrors sanitized copies (with private repository references removed) to the **public bucket** served via CloudFront CDN. Changelogs are uploaded under `{product}/changelog/{filename}.yaml`.
 
 ### 1. Add the upload workflow
 
@@ -431,7 +431,7 @@ If your changelog configuration is not at `docs/changelog.yml`, pass the path ex
 
 ### Output
 
-The primary workflow (`changelog-bundle.yml`) uploads the bundle to the `elastic-docs-v3-changelog-bundles` S3 bucket under `{product}/bundles/{filename}`. The bundle is available to downstream rendering workflows immediately after upload.
+The primary workflow (`changelog-bundle.yml`) uploads the bundle to the `elastic-docs-v3-changelog-bundles` S3 bucket under `{product}/bundle/{filename}`. The bundle is available to downstream rendering workflows immediately after upload.
 
 ### Bundle PR workflow (opt-in)
 
