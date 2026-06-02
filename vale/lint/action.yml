@@ -512,19 +512,25 @@ runs:
               '.[] | select(.filename == $f) | .patch // empty')
 
             if [ -n "$patch" ]; then
-              echo "$patch" | { grep '^@@' || true; } | while read -r hunk; do
-                # Extract start line and count from @@ -x,y +a,b @@
-                range=$(echo "$hunk" | sed -n 's/^@@ -[0-9,]* +\([0-9]*\),*\([0-9]*\).*/\1 \2/p')
-                start=$(echo "$range" | awk '{print $1}')
-                count=$(echo "$range" | awk '{print $2}')
-
-                # If count is empty, exactly 1 line was changed
-                if [ -z "$count" ]; then
-                  count=1
-                fi
-
-                echo "$file|$start|$count" >> "$TEMP_DIR/line_ranges.txt"
-              done
+              new_line=0
+              while IFS= read -r pline; do
+                case "$pline" in
+                  @@*)
+                    new_line=$(printf '%s\n' "$pline" | sed -n 's/^@@ -[0-9,]* +\([0-9]*\).*/\1/p')
+                    ;;
+                  +++*|---*)
+                    ;;
+                  +*)
+                    echo "$file|$new_line|1" >> "$TEMP_DIR/line_ranges.txt"
+                    new_line=$((new_line + 1))
+                    ;;
+                  -*)
+                    ;;
+                  *)
+                    new_line=$((new_line + 1))
+                    ;;
+                esac
+              done <<< "$patch"
             fi
           done < files_to_lint.txt
 

@@ -155,7 +155,7 @@ def filter_issues_to_modified_lines(
             if modified_ranges:
                 if normalized_file in modified_ranges:
                     ranges = modified_ranges[normalized_file]
-                    is_modified = any(start <= line_num <= end for start, end in ranges)
+                    is_modified = any(start <= line_num < end for start, end in ranges)
                     if not is_modified:
                         stats['filtered_no_line_match'] += 1
                         if debug:
