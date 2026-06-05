@@ -267,9 +267,24 @@ Individual changelog files accumulate on the default branch as PRs merge. The bu
 Two reusable workflows are available:
 
 - **`changelog-bundle.yml`** (primary) — generates a bundle and uploads it to S3. Used for release-triggered workflows.
-- **`changelog-bundle-pr.yml`** (opt-in) — generates a bundle and opens a pull request. Used for teams that need a committed bundle before a tag exists.
+- **`changelog-bundle-pr.yml`** (opt-in) — fetches the already-uploaded, scrubbed bundle from the public CDN and opens a pull request. Used for teams that need a committed bundle in the repository. It does **not** regenerate the bundle, so `changelog-bundle.yml` must have uploaded it first.
 
 The bundle always includes the full content of each matching entry, so downstream consumers can render changelogs without access to the original files.
+
+### Where bundle entries come from
+
+By default, the bundle command sources the individual changelog entries from the **public CDN**, scoped to the bundle's product(s), rather than from the local `bundle.directory`. This means a bundle reflects the same sanitized entries that have been published to S3, and a repository can produce a bundle without keeping every entry file checked out locally.
+
+CDN sourcing requires a resolvable product (from a profile's `products`/`output_products`, or `--input-products`) so the per-product registry (`{product}/changelog/registry.json`) can be located. When no product can be resolved (e.g. an option-mode PR/issue-only filter), the command automatically falls back to local sourcing.
+
+To always source entries from the local `bundle.directory` instead, set `use_local_changelogs: true` in the `bundle` section of your `docs/changelog.yml`. Passing an explicit `--directory`/`output` also forces local sourcing.
+
+```yaml
+bundle:
+  directory: docs/changelog
+  output_directory: docs/releases
+  use_local_changelogs: true  # opt out of CDN sourcing; use local entry files
+```
 
 ### Prerequisites
 
@@ -435,7 +450,9 @@ The primary workflow (`changelog-bundle.yml`) uploads the bundle to the `elastic
 
 ### Bundle PR workflow (opt-in)
 
-For teams that need a committed bundle file before a tag exists (e.g. feature-freeze branches), use the PR workflow instead. This generates the bundle and opens a pull request.
+For teams that need the bundle committed into the repository, use the PR workflow. Unlike the primary workflow, it does **not** generate the bundle: it downloads the already-uploaded, scrubbed copy from the public CDN and opens a pull request with it. This guarantees the committed file matches what was published to S3 (private references removed), rather than a freshly-regenerated local copy.
+
+Because it is fetch-only, `changelog-bundle.yml` must have run and uploaded the bundle first. The fetch step polls the CDN with exponential backoff (up to ~10 minutes) to absorb scrubbing and CloudFront propagation latency, failing the job if the bundle never appears.
 
 **`.github/workflows/changelog-bundle-pr.yml`**
 
@@ -452,17 +469,19 @@ on:
 permissions: {}
 
 jobs:
-  bundle:
+  bundle-pr:
     permissions:
       contents: write       # commit the bundle file and push the branch
       pull-requests: write  # open or update the bundle PR
-      packages: read        # pull the docs-builder image from GHCR
+      packages: read        # pull the docs-builder image from GHCR (plan step)
     uses: elastic/docs-actions/.github/workflows/changelog-bundle-pr.yml@v1
     with:
       profile: my-release
       version: ${{ inputs.version }}
 ```
 
-The PR workflow opens a pull request on a branch named `changelog-bundle/<bundle-name>` (e.g. `changelog-bundle/v9.2.0`). If a PR already exists for that branch, the bundle is updated in place. If the generated bundle is identical to what's already in the repository, no commit or PR is created.
+The PR workflow opens a pull request on a branch named `changelog-bundle/<bundle-name>` (e.g. `changelog-bundle/v9.2.0`). If a PR already exists for that branch, the bundle is updated in place. If the fetched bundle is identical to what's already in the repository, no commit or PR is created.
 
-> **Note:** The PR workflow does not upload to S3. If you need both S3 upload and a PR, run both workflows or use the composite actions (`bundle-create`, `bundle-upload`, `bundle-pr`) directly.
+> **Note:** Locating the bundle on the CDN requires a resolvable product, so the PR workflow only supports profile (or product-scoped option) mode — the same constraint as CDN entry sourcing above. PR/issue-only filters that resolve no product cannot be fetched from the CDN.
+
+> **Note:** The PR workflow does not upload to S3; it consumes what `changelog-bundle.yml` already uploaded. If you need both S3 upload and a PR, run the primary workflow first, then this one. To compose the steps yourself, use the composite actions (`bundle-fetch` then `bundle-pr`) directly.

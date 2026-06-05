@@ -1,0 +1,254 @@
+name: Changelog bundle fetch
+description: >
+  Resolves the bundle plan with docs-builder, then downloads the already
+  generated and scrubbed bundle from the public CDN (rather than regenerating
+  it locally) and uploads it as an artifact for the bundle-pr action. Polls the
+  CDN with exponential backoff to absorb scrubbing/CloudFront propagation
+  latency. The bundle must already have been uploaded by the changelog-bundle
+  workflow; this action never contacts the private S3 bucket.
+
+inputs:
+  config:
+    description: 'Path to changelog.yml configuration file'
+    default: 'docs/changelog.yml'
+  profile:
+    description: >
+      Bundle profile name from bundle.profiles in changelog.yml.
+      Mutually exclusive with release-version and prs.
+  version:
+    description: >
+      Version string for profile mode (e.g. 9.2.0, 2026-03).
+      Used for {version} substitution in profile patterns.
+  release-version:
+    description: >
+      GitHub release tag used as the PR filter source (e.g. v9.2.0).
+      Mutually exclusive with profile, report, and prs.
+  report:
+    description: >
+      Buildkite promotion report URL or local file path used as the
+      PR filter source. Local paths must be relative to the repo root.
+  prs:
+    description: >
+      Comma-separated PR URLs or numbers, or a path to a newline-delimited file.
+      Mutually exclusive with profile, release-version, and report.
+  output:
+    description: >
+      Output file path for the bundle, relative to the repo root. Optional;
+      when omitted the path is resolved from the config (bundle.output_directory)
+      by the plan.
+  repo:
+    description: 'GitHub repository name. Falls back to bundle.repo in changelog.yml.'
+  owner:
+    description: 'GitHub repository owner. Falls back to bundle.owner in changelog.yml, then elastic.'
+  docs-builder-version:
+    description: >
+      docs-builder version to use (e.g. 0.1.100, latest, edge).
+      Non-edge versions are attestation-verified by the setup action.
+    default: 'edge'
+  artifact-name:
+    description: 'Name for the uploaded artifact (must match bundle-pr artifact-name)'
+    default: 'changelog-bundle'
+  cdn-base-url:
+    description: >
+      Override the public changelog CDN base URL (for staging/testing). When set,
+      it is passed to docs-builder via DOCS_BUILDER_CHANGELOG_CDN so the resolved
+      cdn_url and the poll target stay in sync. Must be an absolute HTTPS URL.
+    default: ''
+  github-token:
+    description: 'GitHub token (used by docs-builder setup).'
+    default: '${{ github.token }}'
+
+outputs:
+  output:
+    description: 'Resolved output file path for the bundle (repo-relative)'
+    value: ${{ steps.plan.outputs.output_path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        CONFIG: ${{ inputs.config }}
+        PROFILE: ${{ inputs.profile }}
+        VERSION: ${{ inputs.version }}
+        RELEASE_VERSION: ${{ inputs.release-version }}
+        OUTPUT: ${{ inputs.output }}
+        REPORT: ${{ inputs.report }}
+        PRS: ${{ inputs.prs }}
+        REPO: ${{ inputs.repo }}
+        OWNER: ${{ inputs.owner }}
+        ARTIFACT_NAME: ${{ inputs.artifact-name }}
+        CDN_BASE_URL: ${{ inputs.cdn-base-url }}
+      run: |
+        validate_path() {
+          local value="$1" name="$2"
+          [ -z "$value" ] && return
+          if [[ "$value" == /* ]]; then
+            echo "::error::${name} must be a relative path: ${value}"; exit 1
+          fi
+          if [[ "$value" == *..* ]]; then
+            echo "::error::${name} must not contain '..': ${value}"; exit 1
+          fi
+          if [[ "$value" == *$'\n'* || "$value" == *$'\r'* ]]; then
+            echo "::error::${name} must not contain newlines"; exit 1
+          fi
+        }
+
+        validate_identifier() {
+          local value="$1" name="$2" pattern="$3"
+          [ -z "$value" ] && return
+          if [[ ! "$value" =~ $pattern ]]; then
+            echo "::error::${name} contains disallowed characters: ${value}"; exit 1
+          fi
+        }
+
+        validate_path "$CONFIG" "config"
+        validate_path "$OUTPUT" "output"
+
+        if [ -n "$REPORT" ] && [[ "$REPORT" != https://* ]] && [[ "$REPORT" != http://* ]]; then
+          validate_path "$REPORT" "report"
+        fi
+        if [ -n "$PRS" ] && { [[ "$PRS" == */* ]] || [[ "$PRS" == *.txt ]]; }; then
+          validate_path "$PRS" "prs"
+        fi
+
+        validate_identifier "$PROFILE" "profile" '^[a-zA-Z0-9._-]+$'
+        validate_identifier "$VERSION" "version" '^[a-zA-Z0-9._+-]+$'
+        validate_identifier "$RELEASE_VERSION" "release-version" '^[a-zA-Z0-9._+-]+$'
+        validate_identifier "$REPO" "repo" '^[a-zA-Z0-9._-]+$'
+        validate_identifier "$OWNER" "owner" '^[a-zA-Z0-9._-]+$'
+        validate_identifier "$ARTIFACT_NAME" "artifact-name" '^[a-zA-Z0-9._-]+$'
+
+        if [ -n "$REPORT" ] && [[ "$REPORT" == http://* ]]; then
+          echo "::error::Report URL must use HTTPS: ${REPORT}"; exit 1
+        fi
+        if [ -n "$CDN_BASE_URL" ] && [[ "$CDN_BASE_URL" != https://* ]]; then
+          echo "::error::cdn-base-url must be an absolute HTTPS URL: ${CDN_BASE_URL}"; exit 1
+        fi
+
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        persist-credentials: false
+
+    - name: Setup docs-builder
+      uses: elastic/docs-actions/docs-builder/setup@v1
+      with:
+        version: ${{ inputs.docs-builder-version }}
+        github-token: ${{ inputs.github-token }}
+
+    - name: Resolve bundle plan
+      id: plan
+      shell: bash
+      env:
+        CONFIG: ${{ inputs.config }}
+        PROFILE: ${{ inputs.profile }}
+        VERSION: ${{ inputs.version }}
+        RELEASE_VERSION: ${{ inputs.release-version }}
+        REPORT: ${{ inputs.report }}
+        PRS: ${{ inputs.prs }}
+        OUTPUT: ${{ inputs.output }}
+        REPO: ${{ inputs.repo }}
+        OWNER: ${{ inputs.owner }}
+        DOCS_BUILDER_CHANGELOG_CDN: ${{ inputs.cdn-base-url }}
+      run: |
+        ARGS=()
+        ARGS+=(changelog bundle --plan)
+        if [ -n "$PROFILE" ]; then
+          ARGS+=("$PROFILE")
+          [ -n "$VERSION" ] && ARGS+=("$VERSION")
+          [ -n "$REPORT" ] && ARGS+=("$REPORT")
+        else
+          ARGS+=(--config "$CONFIG" --resolve)
+          [ -n "$RELEASE_VERSION" ] && ARGS+=(--release-version "$RELEASE_VERSION")
+          [ -n "$REPORT" ] && ARGS+=(--report "$REPORT")
+          [ -n "$PRS" ] && ARGS+=(--prs "$PRS")
+          [ -n "$OUTPUT" ] && ARGS+=(--output "$OUTPUT")
+          [ -n "$REPO" ] && ARGS+=(--repo "$REPO")
+          [ -n "$OWNER" ] && ARGS+=(--owner "$OWNER")
+        fi
+
+        docs-builder "${ARGS[@]}"
+
+    - name: Verify plan output
+      shell: bash
+      env:
+        OUTPUT_PATH: ${{ steps.plan.outputs.output_path }}
+        CDN_URL: ${{ steps.plan.outputs.cdn_url }}
+      run: |
+        if [ -z "$OUTPUT_PATH" ]; then
+          echo "::error::Plan did not resolve an output path. Set 'output' or configure bundle.output_directory in changelog.yml."
+          exit 1
+        fi
+        if [ -z "$CDN_URL" ]; then
+          echo "::error::Plan did not resolve a CDN URL. Fetching the scrubbed bundle from the CDN requires a resolvable product (use a profile with products/output_products). For PR/issue-only option-mode bundles, use the changelog-bundle workflow instead."
+          exit 1
+        fi
+        # The bundle file committed to the repo must live inside it.
+        if [[ "$OUTPUT_PATH" == /* || "$OUTPUT_PATH" == *..* ]]; then
+          echo "::error::Resolved output path must be a relative in-repo path: ${OUTPUT_PATH}"
+          exit 1
+        fi
+        if [[ "$CDN_URL" != https://* ]]; then
+          echo "::error::Resolved CDN URL must be HTTPS: ${CDN_URL}"
+          exit 1
+        fi
+
+    - name: Fetch scrubbed bundle from CDN
+      shell: bash
+      env:
+        OUTPUT_PATH: ${{ steps.plan.outputs.output_path }}
+        CDN_URL: ${{ steps.plan.outputs.cdn_url }}
+      run: |
+        # Poll the public CDN until the scrubbed bundle is available. The scrubber Lambda + CloudFront
+        # propagation can lag the upload by tens of seconds, and CloudFront may briefly negative-cache a
+        # 404, so we retry with exponential backoff (5s -> 60s cap) for up to 10 minutes and bust the
+        # cache on each attempt.
+        mkdir -p "$(dirname "$OUTPUT_PATH")"
+        DEST="$OUTPUT_PATH"
+
+        MAX_TOTAL=600
+        DELAY=5
+        ELAPSED=0
+        ATTEMPT=0
+
+        while :; do
+          ATTEMPT=$((ATTEMPT + 1))
+          CACHE_BUSTER="cb=$(date +%s%N)"
+          if [[ "$CDN_URL" == *\?* ]]; then
+            POLL_URL="${CDN_URL}&${CACHE_BUSTER}"
+          else
+            POLL_URL="${CDN_URL}?${CACHE_BUSTER}"
+          fi
+
+          HTTP_CODE=$(curl --silent --show-error --location --max-redirs 3 --max-time 30 \
+            -H 'Cache-Control: no-cache' \
+            -o "$DEST" -w '%{http_code}' "$POLL_URL") || HTTP_CODE="000"
+
+          if [ "$HTTP_CODE" = "200" ] && [ -s "$DEST" ]; then
+            echo "::notice title=Bundle fetched::Downloaded scrubbed bundle from CDN after ${ATTEMPT} attempt(s) (${ELAPSED}s)"
+            break
+          fi
+
+          rm -f "$DEST"
+
+          if [ "$ELAPSED" -ge "$MAX_TOTAL" ]; then
+            echo "::error::Timed out after ${ELAPSED}s waiting for the scrubbed bundle at ${CDN_URL} (last HTTP ${HTTP_CODE}). Ensure the changelog-bundle workflow uploaded it first."
+            exit 1
+          fi
+
+          echo "Attempt ${ATTEMPT}: bundle not ready (HTTP ${HTTP_CODE}); retrying in ${DELAY}s (elapsed ${ELAPSED}s)"
+          sleep "$DELAY"
+          ELAPSED=$((ELAPSED + DELAY))
+          DELAY=$((DELAY * 2))
+          [ "$DELAY" -gt 60 ] && DELAY=60
+        done
+
+    - name: Upload bundle artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ steps.plan.outputs.output_path }}
+        if-no-files-found: error
+        retention-days: 1

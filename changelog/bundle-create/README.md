@@ -4,8 +4,14 @@ Checks out the repository, runs docs-builder in Docker to generate a fully-resol
 
 ## Modes
 
-- **`bundle`** (default) — runs `docs-builder changelog bundle` with profile or option-based filtering. Requires changelogs to already exist in the repository.
+- **`bundle`** (default) — runs `docs-builder changelog bundle` with profile or option-based filtering.
 - **`gh-release`** — runs `docs-builder changelog gh-release` to create changelogs directly from a GitHub release's notes. Requires `repo` and optionally `version` (defaults to `latest`).
+
+## Entry sourcing
+
+In `bundle` mode, the individual changelog entries are sourced from the **public CDN** by default (scoped to the bundle's product), so the local entry files don't need to be checked out. The Docker run enables network access only when the `--plan` step reports `needs_network: true`; otherwise it runs with `--network none`.
+
+CDN sourcing requires a resolvable product. When none can be resolved (e.g. an option-mode PR/issue-only filter) the command falls back to the local `bundle.directory`, which must then contain the entries. To force local sourcing, set `use_local_changelogs: true` in `changelog.yml` or pass an explicit `output` path.
 
 ## Inputs
 
