@@ -262,14 +262,33 @@ The entry is always regenerated from the *current* PR state at merge time, so an
 
 ## Bundling changelogs
 
-Individual changelog files accumulate on the default branch as PRs merge. The bundle action generates a fully-resolved YAML file containing only the changelog entries that match a given filter, then uploads it to the `elastic-docs-v3-changelog-bundles` S3 bucket.
+As PRs merge, individual changelog entries pile up on your default branch (and, once uploaded, in S3). A **bundle** is a single, fully-resolved YAML file that collects the entries matching a filter — a release version, a promotion report, or an explicit list of PRs — with each entry's full content inlined. Downstream tooling renders a release changelog from the bundle alone, without needing the original entry files.
 
-Two reusable workflows are available:
+Setting up bundling comes down to two choices: **how the bundle is delivered** and **how its entries are selected**. Pick one row from each table below, then follow the matching recipe.
 
-- **`changelog-bundle.yml`** (primary) — generates a bundle and uploads it to S3. Used for release-triggered workflows.
-- **`changelog-bundle-pr.yml`** (opt-in) — fetches the already-uploaded, scrubbed bundle from the public CDN and opens a pull request. Used for teams that need a committed bundle in the repository. It does **not** regenerate the bundle, so `changelog-bundle.yml` must have uploaded it first.
+### 1. Choose how the bundle is delivered
 
-The bundle always includes the full content of each matching entry, so downstream consumers can render changelogs without access to the original files.
+| Your goal | Workflow | What you get |
+| --- | --- | --- |
+| Make the bundle available to docs rendering | [`changelog-bundle.yml`](#setup-1) | Uploads the bundle to S3 (`{product}/bundle/{file}`) |
+| Commit the bundle into your repository | [`changelog-bundle-pr.yml`](#bundle-pr-workflow-opt-in) | Opens a PR with the scrubbed bundle fetched from the CDN |
+| Both | run `changelog-bundle.yml`, then `changelog-bundle-pr.yml` | Upload first, then open the PR |
+
+The PR workflow is **fetch-only**: it downloads the already-uploaded, scrubbed bundle instead of regenerating it, so the committed file is exactly what was published (private references removed). It therefore requires `changelog-bundle.yml` to have uploaded the bundle first.
+
+### 2. Choose how entries are selected
+
+Pick exactly one — `profile`, `release-version`, `report`, and `prs` are mutually exclusive.
+
+| Situation | Mode | Key inputs |
+| --- | --- | --- |
+| You accumulate entry files and tag releases (most teams) | **Profile** _(recommended)_ | `profile` + `version` |
+| You build changelogs from a GitHub release's notes rather than entry files | **gh-release** | `mode: gh-release` + `repo` + `version` |
+| You want everything in a given release tag | **Option** | `release-version` (+ `output`) |
+| You want everything in a Buildkite promotion report | **Option** | `report` (+ `output`) |
+| You want a specific set of PRs | **Option** | `prs` (+ `output`) |
+
+Each mode has a complete, copy-pasteable workflow file under [Setup](#setup-1).
 
 ### Where bundle entries come from
 
@@ -301,6 +320,8 @@ bundle:
 Your repository must also be listed in the `elastic-docs-v3-changelog-bundles` infrastructure to have an IAM role provisioned for OIDC-based S3 uploads. Contact the docs-engineering team to add your repository.
 
 ### Setup
+
+Each recipe below is a complete `changelog-bundle.yml` caller for one selection mode (S3-upload delivery). To also commit the bundle to your repo, add the [Bundle PR workflow](#bundle-pr-workflow-opt-in) afterwards.
 
 #### Profile-based bundling with S3 upload (`on: release`)
 
