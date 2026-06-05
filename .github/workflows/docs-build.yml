@@ -39,8 +39,9 @@ on:
         required: false
       use-release-branches:
         description: >
-          When true, push events to semver release branches (e.g. 9.4) run the docs build even when no docs/** files
-          changed, so links.json can be produced for the link index. main keeps skip-when-no-docs-diff behavior.
+          When true, the first push to a new semver release branch (e.g. 9.4) runs the docs build even when no
+          docs/** files changed, so links.json can be produced for the link index. Subsequent pushes to the same
+          branch only build when docs files actually change.
         type: boolean
         default: false
         required: false
@@ -191,9 +192,10 @@ jobs:
             core.setOutput('deleted_files', deleted.join(' '));
             core.setOutput('renamed_files', renamed.join(' '));
 
-      # Why: On a release line (e.g. 9.4), months of pushes may touch only code or deps—never docs/. We still need a
-      # full docs build sometimes so links.json exists for the shared link index. Opt-in repos enable that with
-      # use-release-branches; Vale lint stays tied to real doc edits (any_modified), not this override.
+      # Why: When a release branch (e.g. 9.4) is first created, it may share the same commit as the default
+      # branch, so changed-files reports no diff. We still need a full docs build on that first push so
+      # links.json is produced for the link index. Subsequent pushes only build when docs files actually change.
+      # Vale lint stays tied to real doc edits (any_modified), not this override.
       - name: Effective any_modified (release-branch opt-in)
         id: effective-any-modified
         if: always()
@@ -203,20 +205,35 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           REF_NAME: ${{ github.ref_name }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          CREATED: ${{ github.event.created }}
         run: |
           # Empty ANY_MODIFIED means "we did not run changed-files" (e.g. workflow_dispatch), not "no docs changed."
           # We only want to skip the docs build when changed-files explicitly reports no matching paths (false).
           # Treating empty as true keeps that contract: no diff result => do not infer skip; explicit false => skip
-          # unless use-release-branches forces a release-line build below.
+          # unless use-release-branches forces a build on new release branches below.
           effective="${ANY_MODIFIED}"
           if [[ -z "${effective}" ]]; then
             effective="true"
           fi
-          if [[ "${USE_RELEASE}" == "true" && "${EVENT_NAME}" == "push" && "${REF_NAME}" != "${DEFAULT_BRANCH}" ]] \
+          if [[ "${USE_RELEASE}" == "true" && "${EVENT_NAME}" == "push" && "${CREATED}" == "true" ]] \
+            && [[ "${REF_NAME}" != "${DEFAULT_BRANCH}" ]] \
             && [[ "${REF_NAME}" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
             effective="true"
           fi
           echo "effective_any_modified=${effective}" >> "$GITHUB_OUTPUT"
+
+      - name: Write check metadata
+        if: always() && steps.effective-any-modified.outputs.effective_any_modified != ''
+        run: |
+          echo '${{ steps.effective-any-modified.outputs.effective_any_modified }}' > /tmp/effective_any_modified
+
+      - name: Upload check metadata
+        if: always() && steps.effective-any-modified.outputs.effective_any_modified != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: docs-build-check-metadata
+          path: /tmp/effective_any_modified
+          retention-days: 1
 
   # This check skips the job when the workflow runs on a fork repo itself (e.g.
   # user/kibana), not when a fork PR targets upstream. Fork PRs to upstream run
@@ -347,7 +364,8 @@ jobs:
           persist-credentials: false
       - name: Run Vale Linter
         id: lint
-        uses: elastic/vale-rules/lint@f1d7270dfe289989a3acbdfcaab8c97a4a32d7d1 # v1.4.0
+        uses: elastic/docs-actions/vale/lint@v1
         with:
           files: ${{ needs.check.outputs.all_changed_files }}
           vale-paths: ${{ inputs.vale-paths }}
+          vale_version: 3.14.1

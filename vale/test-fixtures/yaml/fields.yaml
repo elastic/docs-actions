@@ -1,0 +1,3 @@
+- name: sample.field
+  type: keyword
+  description: Avoid this forbidden fixture token in production content.

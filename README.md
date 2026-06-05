@@ -13,6 +13,8 @@ Reusable GitHub Actions and agentic workflows for Elastic documentation.
 | [`codex/update-link-index`](codex/update-link-index/) | Update cross-repo link index |
 | [`docs-builder/setup`](docs-builder/setup/) | Install the docs-builder CLI |
 | [`git/setup`](git/setup/) | Configure git user and token auth |
+| [`vale/lint`](vale/lint/) | Run Vale with the Elastic style guide |
+| [`vale/report`](vale/report/) | Post Vale linting results as a pull request comment |
 
 Usage:
 

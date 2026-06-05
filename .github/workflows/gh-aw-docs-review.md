@@ -102,7 +102,7 @@ steps:
       GH_TOKEN: ${{ github.token }}
       REVIEW_SCOPE: ${{ inputs.review-scope }}
     run: |
-      set -u
+      set -euo pipefail
       mkdir -p /tmp/gh-aw/docs-review-data/scope
 
       PR_NUMBER=$(jq -r 'if .pull_request then .pull_request.number elif .issue.pull_request then .issue.number else empty end' "$GITHUB_EVENT_PATH")
@@ -120,9 +120,8 @@ steps:
         exit 0
       fi
 
-      gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" \
-        --jq '.[] | select(.status != "removed") | .filename' \
-        | awk ' /\.md$/ { print } ' \
+      gh pr diff "$PR_NUMBER" --name-only \
+        | awk '/\.md$/' \
         > /tmp/gh-aw/docs-review-data/changed-md.txt
 
       if [ "$REVIEW_SCOPE" = "docs-subtree" ]; then
@@ -193,6 +192,8 @@ This workflow supports two repository layouts through `inputs.review-scope`:
 
 If `inputs.review-scope` is omitted, use `docs-subtree`.
 
+Configured review scope for this run: `${{ inputs.review-scope }}`.
+
 When the workflow runs:
 
 - Confirm that the triggering item is a pull request or a PR comment context. If this is not a PR context, call `noop` with a short explanation.
@@ -220,7 +221,7 @@ The workflow has also pre-fetched deterministic Vale output for the eligible cha
 - `/tmp/gh-aw/docs-review-data/vale.json` — Vale findings from the `elastic/vale-rules` ruleset, keyed by copied file path under `/tmp/gh-aw/docs-review-data/scope/`.
 - `/tmp/gh-aw/docs-review-data/vale-stats.json` — `{finding_count, file_count, eligible_count, vale_exit}`.
 
-Read the Vale files before reporting style-guide findings. Vale is only one input into the review, not a gate for whether review happens. If Vale output is empty or unavailable, still review every eligible changed markdown file and continue assessing jargon, frontmatter, content type fit, and issue satisfaction, but do not report style-guide-only nits.
+Read the Vale files before reporting style-guide findings. Vale is one input into the review, not the source of truth and not a gate for whether review happens. If Vale output is empty or unavailable, still review every eligible changed markdown file and continue assessing style and clarity, jargon, frontmatter, content type fit, and issue satisfaction.
 
 Prefer conservative pagination when reading file lists, review comments, or diffs.
 
@@ -248,7 +249,9 @@ Skip:
 
 Review each eligible file by applying the rules below and your own judgment. Use the Elastic docs MCP server for targeted verification when a finding depends on published docs, style-guide guidance, content-type guidance, cumulative-docs guidance, or sibling-page context. Prefer `elastic-docs.get_document_by_url` for known authoring guidance pages and `elastic-docs.search_docs` or `elastic-docs.find_related_docs` for discovery.
 
-For style, content-type, and `applies_to` findings, refresh the relevant published guidance when you need to make a manual judgment that is not already grounded in Vale or local repository schema:
+Before making manual style or clarity judgments, refresh the published Elastic style guidance with `elastic-docs.get_document_by_url`. At minimum, read the style guide overview once per run when there are eligible files. Then fetch the relevant subpage when a potential finding depends on a specific area such as voice and tone, accessibility, grammar and spelling, word choice, formatting, or UI writing.
+
+For content-type and `applies_to` findings, also refresh the relevant published guidance when you need to make a manual judgment that is not already grounded in local repository schema:
 
 - Style guide overview: `/docs/contribute-docs/style-guide`.
 - Voice and tone: `/docs/contribute-docs/style-guide/voice-tone`.
@@ -262,7 +265,7 @@ For style, content-type, and `applies_to` findings, refresh the relevant publish
 
 Focus on the categories below:
 
-1. **Style and clarity**: Use the pre-fetched Vale output as the source of truth for Elastic style-guide findings. Also apply the embedded style checklist below for high-confidence issues that Vale does not reliably catch, especially formatting and UI writing. Vale findings are not a prerequisite for reviewing a file or category. Report wording not flagged by Vale only when it creates ambiguity, changes technical meaning, violates fetched style-guide guidance, or violates the embedded formatting/UI-writing checklist.
+1. **Style and clarity**: Use the pre-fetched Vale output as a useful signal for Elastic style-guide findings, but do not limit review to Vale output. Apply your own reading of the changed prose against the MCP-fetched Elastic style guide and the embedded style checklist below. Vale findings are not a prerequisite for reviewing a file or category. Report wording not flagged by Vale when it creates ambiguity, changes technical meaning, materially hurts readability, violates fetched style-guide guidance, or violates the embedded formatting/UI-writing checklist.
 2. **Elastic-internal jargon**: Flag Elastic-only shorthand that external users will not understand. Use the embedded jargon list below, but respect context: code blocks, CLI output, API fields, UI labels, and acronyms already expanded on the page are exempt.
 3. **Frontmatter quality**: Check the changed file's frontmatter for missing or empty `description`, `products`, and `navigation_title` fields when the repository convention requires them. Apply the embedded frontmatter checklist below.
 4. **Content type fit and structure**: Detect the declared or inferred content type and apply the embedded content-type checklist below. Report only mismatches that materially make the page harder to use or send the author toward the wrong kind of documentation.
@@ -271,7 +274,7 @@ Focus on the categories below:
 
 ### Embedded style checklist
 
-Use Vale findings first. For manual review, only report high-confidence issues from this checklist, and cite the exact changed line.
+Use Vale findings first to avoid missing automated style-guide violations, then use the MCP-fetched style guide and this checklist to catch high-confidence issues that Vale does not flag. Cite the exact changed line and explain the reader-facing problem, not just the rule name.
 
 Voice and tone:
 

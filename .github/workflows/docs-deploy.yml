@@ -45,7 +45,7 @@ on:
       use-release-branches:
         description: >
           When true, update-link-index runs for semver release branches (e.g. 9.4) as well as the default branch.
-          Pair with the same flag on docs-build so links.json is produced on release pushes without docs/** changes.
+          Pair with the same flag on docs-build so links.json is produced when a release branch is first created.
         type: boolean
         default: false
         required: false
@@ -63,6 +63,7 @@ jobs:
       && github.event.repository.fork == false
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: none
       pull-requests: read
       id-token: write
@@ -80,6 +81,17 @@ jobs:
       vale-files-match: ${{ steps.context.outputs.vale-files-match }}
       link-index-eligible: ${{ steps.link-index-branch.outputs.eligible }}
     steps:
+      - name: Download check metadata
+        id: download-metadata
+        if: github.event.workflow_run.event == 'push'
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: docs-build-check-metadata
+          run-id: ${{ github.event.workflow_run.id }}
+          path: /tmp/check-metadata
+          github-token: ${{ github.token }}
+
       - name: Resolve workflow run context
         id: context
         uses: actions/github-script@v9
@@ -109,8 +121,19 @@ jobs:
 
             if (event === 'push') {
               core.setOutput('base-ref', headBranch);
-              core.setOutput('has-changes', 'true');
               core.setOutput('vale-files-match', 'false');
+
+              let hasChanges = 'true';
+              try {
+                const fs = require('fs');
+                const value = fs.readFileSync('/tmp/check-metadata/effective_any_modified', 'utf8').trim();
+                hasChanges = value === 'false' ? 'false' : 'true';
+                core.info(`Push has-changes from docs-build metadata: ${hasChanges}`);
+              } catch (err) {
+                core.warning(`Could not read check metadata: ${err.message} — falling back to has-changes=true`);
+              }
+
+              core.setOutput('has-changes', hasChanges);
               return;
             }
 
@@ -813,7 +836,7 @@ jobs:
 
       - name: Post Vale Results
         if: steps.vale-artifact.outputs.found == 'true'
-        uses: elastic/vale-rules/report@f1d7270dfe289989a3acbdfcaab8c97a4a32d7d1 # v1.4.0
+        uses: elastic/docs-actions/vale/report@v1
 
   # Uploads links.json to the shared link index S3 bucket.
   # Runs concurrently with deploy-preview — both depend only on build.
@@ -849,7 +872,7 @@ jobs:
             f.write(f"result=arn:aws:iam::197730964718:role/{prefix}{hash}")
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
+        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
         with:
           role-to-assume: ${{ steps.role_arn.outputs.result }}
           aws-region: us-east-1
