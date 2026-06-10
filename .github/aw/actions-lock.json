@@ -10,6 +10,11 @@
       "version": "v5.0.5",
       "sha": "27d5ce7f107fe9357f9df03efb73ab90386fccae"
     },
+    "actions/checkout@v6": {
+      "repo": "actions/checkout",
+      "version": "v6",
+      "sha": "df4cb1c069e1874edd31b4311f1884172cec0e10"
+    },
     "actions/checkout@v6.0.2": {
       "repo": "actions/checkout",
       "version": "v6.0.2",
@@ -45,10 +50,15 @@
       "version": "v7.0.1",
       "sha": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
     },
-    "github/gh-aw-actions/setup@v0.75.0": {
+    "github/gh-aw-actions/setup-cli@v0.79.3": {
+      "repo": "github/gh-aw-actions/setup-cli",
+      "version": "v0.79.3",
+      "sha": "ff3d7ecc684ffaf8c99e9ac7e40536e955a9776b"
+    },
+    "github/gh-aw-actions/setup@v0.79.3": {
       "repo": "github/gh-aw-actions/setup",
-      "version": "v0.75.0",
-      "sha": "f889c9c3c06adeaabccefc06e29c42733ee05dff"
+      "version": "v0.79.3",
+      "sha": "ff3d7ecc684ffaf8c99e9ac7e40536e955a9776b"
     },
     "microsoft/apm-action@v1.4.1": {
       "repo": "microsoft/apm-action",
