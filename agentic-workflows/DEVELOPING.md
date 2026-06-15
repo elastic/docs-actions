@@ -116,7 +116,7 @@ on:
 
 ### Self-contained prompts
 
-Agentic workflows should be autonomous. Do not require runtime skills or agent-local packages for core behavior. If a workflow needs specialized knowledge, embed the relevant rules directly in the prompt, keep them focused, and make `noop` the outcome when the agent cannot verify enough evidence.
+Agentic workflows should be autonomous. Prefer embedded rules and deterministic pre-steps for core behavior, even when you also install APM packages or skills. If a workflow uses runtime skills, keep the prompt usable without them so the workflow still behaves predictably when a skill is unavailable, not selected, or less decisive than local evidence.
 
 Prefer deterministic pre-steps for mechanical checks such as linting, spelling, file selection, and schema extraction. Feed those outputs to the agent as pre-fetched data, then have the agent classify, filter, and format findings.
 
