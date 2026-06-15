@@ -17,7 +17,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-review.yml
 ```
 
-Configure the `COPILOT_GITHUB_TOKEN` secret before running the workflow.
+Add `permissions.copilot-requests: write` to the caller workflow before running this workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
 
 ## Inputs
 
@@ -69,6 +69,7 @@ At runtime, the workflow imports these skills through APM:
 - `docs-flag-jargon-skill`.
 - `docs-frontmatter-audit`.
 - `docs-content-type-checker`.
+- `docs-applies-to-tagging`.
 
 The workflow uses the Elastic docs MCP server only for targeted verification, such as published cumulative-docs guidance or sibling-page context. It noops or skips a finding when it cannot verify the evidence.
 
@@ -84,6 +85,7 @@ on:
 
 permissions:
   actions: read
+  copilot-requests: write
   contents: read
   discussions: write
   pull-requests: write
@@ -99,8 +101,6 @@ jobs:
       additional-instructions: |
         This repository stores product documentation in `docs/`.
         Prefer concise review comments with exact replacement text when possible.
-    secrets:
-      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
 ```
 
 ## PR checkbox menus

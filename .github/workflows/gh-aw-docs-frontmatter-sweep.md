@@ -8,6 +8,12 @@ description: |
 
 inlined-imports: true
 imports:
+  - uses: shared/apm.md
+    with:
+      target: copilot
+      packages:
+        - elastic/elastic-docs-skills/skills/review/frontmatter-audit
+        - elastic/elastic-docs-skills/skills/authoring/frontmatter-description
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
@@ -62,11 +68,12 @@ on:
         default: ""
     secrets:
       COPILOT_GITHUB_TOKEN:
-        required: true
+        required: false
 concurrency:
   group: gh-aw-docs-frontmatter-sweep-${{ github.run_id }}
   cancel-in-progress: false
 permissions:
+  copilot-requests: write
   contents: read
   issues: read
 strict: false
@@ -253,6 +260,13 @@ steps:
 
 You are a frontmatter quality reviewer for an Elastic documentation repository. Your job is to audit the frontmatter (`---` block at the top of each `.md` file) of a deterministically-selected slice of pages, and emit a single labeled fix-issue with structured findings that a human (and later, a fix-agent) can act on.
 
+This workflow also installs these APM skills from `elastic/elastic-docs-skills`:
+
+- `docs-frontmatter-audit`
+- `docs-frontmatter-description`
+
+Use those installed skills when they help validate frontmatter requirements or judge whether a description is missing, weak, or mis-scoped. Treat them as additive guidance, not as permission to skip the deterministic repository evidence and explicit checks in this workflow.
+
 ## Pre-fetched data
 
 A pre-step has computed the in-scope file list for this run:
@@ -276,9 +290,14 @@ If `in_scope_count` is `0`, call `noop` with a short message including the corpu
 
 ## Step 1: Audit the frontmatter
 
-This workflow is autonomous. Do not invoke runtime skills or depend on a skill package being installed. For each in-scope file, read the frontmatter block at the top of the copy under `/tmp/gh-aw/sweep-data/scope/` and inspect only the fields covered by this sweep.
+This workflow is autonomous. For each in-scope file, read the frontmatter block at the top of the copy under `/tmp/gh-aw/sweep-data/scope/` and inspect only the fields covered by this sweep.
 
 Use local repository evidence first. If a repository schema or docs-builder frontmatter reference is present in the checked-out source, use it for required-field confirmation. Use the Elastic docs MCP server only for targeted authoring guidance, not for broad corpus searches. Prefer `elastic-docs.get_document_by_url` for known guidance pages such as `/docs/contribute-docs/how-to/cumulative-docs/reference`, and `elastic-docs.search_docs` only when you need to discover a published frontmatter guidance page before citing it.
+
+When the finding depends on description quality or metadata completeness rather than simple field presence, explicitly use the installed skill guidance:
+
+- `docs-frontmatter-audit` for required-field and metadata-shape checks.
+- `docs-frontmatter-description` for judging description quality and user-facing scope.
 
 Apply these rules:
 

@@ -7,6 +7,12 @@ description: |
 
 inlined-imports: true
 imports:
+  - uses: shared/apm.md
+    with:
+      target: copilot
+      packages:
+        - elastic/elastic-docs-skills/skills/review/docs-check-style
+        - elastic/elastic-docs-skills/skills/review/flag-jargon-skill
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
@@ -61,11 +67,12 @@ on:
         default: ""
     secrets:
       COPILOT_GITHUB_TOKEN:
-        required: true
+        required: false
 concurrency:
   group: gh-aw-docs-style-sweep-${{ github.run_id }}
   cancel-in-progress: false
 permissions:
+  copilot-requests: write
   contents: read
   issues: read
 strict: false
@@ -311,6 +318,13 @@ steps:
 
 You are a style-guide reviewer for an Elastic documentation repository. Your job is to format Vale's findings (already produced by a deterministic pre-step) into the structured YAML schema below, applying light filtering and category mapping. You may add high-confidence manual findings for style-guide areas Vale does not fully cover, especially Formatting and UI writing. **Vale has already run** — you are not invoking any skill.
 
+This workflow also installs these APM skills from `elastic/elastic-docs-skills`:
+
+- `docs-check-style`
+- `docs-flag-jargon-skill`
+
+Use those installed skills when they help interpret style-guide, wording, accessibility, or jargon findings that go beyond Vale's deterministic output. Treat them as additive guidance, not as permission to ignore Vale or the explicit filtering rules in this workflow.
+
 ## Pre-fetched data
 
 - `/tmp/gh-aw/sweep-data/in-scope.txt` — file paths to audit.
@@ -337,6 +351,11 @@ Use Vale as the primary source of findings. For high-confidence issues that Vale
 - `/docs/contribute-docs/style-guide/voice-tone`.
 - `/docs/contribute-docs/style-guide/grammar-spelling`.
 - `/docs/contribute-docs/style-guide/word-choice`.
+
+When you add manual findings, explicitly use the installed skill guidance:
+
+- `docs-check-style` for style-guide, formatting, accessibility, and UI-writing judgments.
+- `docs-flag-jargon-skill` for Elastic-internal jargon, outdated terms, and unexplained acronyms.
 
 Only add manual findings when the issue is visible in the file, has an exact line number, and has a concrete suggested fix.
 

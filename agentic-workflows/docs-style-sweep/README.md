@@ -16,7 +16,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-style-sweep.yml
 ```
 
-Ensure `COPILOT_GITHUB_TOKEN` is configured.
+Add `permissions.copilot-requests: write` to the caller workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
 
 ## Inputs
 
@@ -43,6 +43,15 @@ Ensure `COPILOT_GITHUB_TOKEN` is configured.
 2. A pre-step runs Vale against the copied slice.
 3. The agent reads Vale's JSON output, optionally fetches published style-guide pages through Elastic docs MCP for manual checks, and groups findings by category: `voice-tone`, `word-choice`, `grammar`, `formatting`, `accessibility`, `ui-writing`.
 4. Single-word misspellings are deliberately excluded — those are handled by [`docs-typos-sweep`](../docs-typos-sweep/).
+
+## Imported skills
+
+This workflow installs these APM skills from `elastic/elastic-docs-skills`:
+
+- `docs-check-style`.
+- `docs-flag-jargon-skill`.
+
+The workflow uses them as additive guidance for style, wording, accessibility, UI-writing, and jargon judgments that go beyond Vale's deterministic output.
 
 ## Combining with other sweeps
 

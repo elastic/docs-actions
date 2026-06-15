@@ -16,7 +16,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-openings-sweep.yml
 ```
 
-Ensure `COPILOT_GITHUB_TOKEN` is configured.
+Add `permissions.copilot-requests: write` to the caller workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
 
 ## Inputs
 
@@ -44,6 +44,17 @@ Ensure `COPILOT_GITHUB_TOKEN` is configured.
 3. Categories: `missing-h1`, `vague-h1`, `missing-h1-anchor`, `weak-opening`, `missing-before-you-begin`, `inadequate-navigation-title`.
 4. The agent may use Elastic docs MCP to compare sibling page titles when H1 specificity needs published-doc context.
 5. The workflow does not edit files or push changes — only the structured findings are emitted in the fix-issue.
+
+## Imported skills
+
+This workflow installs these APM skills from `elastic/elastic-docs-skills`:
+
+- `docs-page-opening-optimizer`.
+- `docs-frontmatter-description`.
+- `docs-content-type-checker`.
+- `docs-check-style`.
+
+The workflow uses them as additive guidance for H1 quality, opening-paragraph scope, content-type-specific expectations, and opening-specific style issues.
 
 ## Notes
 

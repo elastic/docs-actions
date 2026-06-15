@@ -16,7 +16,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-applies-to-sweep.yml
 ```
 
-Ensure `COPILOT_GITHUB_TOKEN` is configured.
+Add `permissions.copilot-requests: write` to the caller workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
 
 ## Inputs
 
@@ -45,6 +45,12 @@ Ensure `COPILOT_GITHUB_TOKEN` is configured.
 4. Categories: `missing-applies-to`, `invalid-applies-to-syntax`, `invalid-applies-to-value`, `inconsistent-applies-to`, `outdated-applies-to`.
 5. The embedded checks cover page-level dimensions, lifecycle and version syntax, deprecated deployment keys, section and inline annotation placement, badge placement, and when not to tag.
 6. If the agent cannot verify allowed values from a local schema or MCP, it calls `noop` instead of filing unverified findings.
+
+## Imported skills
+
+This workflow installs the `docs-applies-to-tagging` APM skill from `elastic/elastic-docs-skills`.
+
+The workflow uses it as additive guidance for lifecycle, deployment, product, and version applicability judgments. Verified local or published reference material remains the source of truth.
 
 ## Combining with other sweeps
 

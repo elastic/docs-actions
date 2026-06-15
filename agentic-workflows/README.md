@@ -26,6 +26,8 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-issue-scope.yml
 ```
 
-These workflows use `COPILOT_GITHUB_TOKEN`.
+These workflows now use the built-in GitHub token path. Add `permissions.copilot-requests: write` to the caller workflow, and do not pass `COPILOT_GITHUB_TOKEN` unless you are intentionally overriding the default auth path.
+
+Skill imports are workflow-specific. Some workflows install APM skills from `elastic/elastic-docs-skills`, while others intentionally rely only on embedded rules and deterministic pre-steps.
 
 For the sweep family, `docs-root` defines the default corpus, `target-path` narrows that corpus to one subtree under the root, and `scope-mode` controls whether the matched set is scanned in full or sharded.

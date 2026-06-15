@@ -102,8 +102,10 @@ on:
         default: ""
     secrets:
       COPILOT_GITHUB_TOKEN:
-        required: true
+        required: false
 ```
+
+For Copilot-based reusable workflows, prefer the built-in GitHub token path. Add `permissions.copilot-requests: write` in the workflow frontmatter, and document the same requirement in caller templates instead of hard-requiring `COPILOT_GITHUB_TOKEN`.
 
 ### Shared fragments
 

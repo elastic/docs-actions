@@ -14,6 +14,7 @@ imports:
         - elastic/elastic-docs-skills/skills/review/flag-jargon-skill
         - elastic/elastic-docs-skills/skills/review/frontmatter-audit
         - elastic/elastic-docs-skills/skills/authoring/content-type-checker
+        - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
@@ -196,6 +197,7 @@ This workflow also installs these APM skills from `elastic/elastic-docs-skills`:
 - `docs-flag-jargon-skill`
 - `docs-frontmatter-audit`
 - `docs-content-type-checker`
+- `docs-applies-to-tagging`
 
 Use those installed skills when they are relevant to the current review categories. Treat them as additive guidance, not as permission to skip the explicit review rules and evidence standards in this workflow.
 
@@ -273,6 +275,7 @@ When a changed file would benefit from one of the installed APM skills, explicit
 - `docs-flag-jargon-skill` for Elastic-internal jargon, outdated terms, and unexplained acronyms.
 - `docs-frontmatter-audit` for frontmatter metadata issues.
 - `docs-content-type-checker` for content-type fit and required-structure judgments.
+- `docs-applies-to-tagging` for `applies_to` validity and lifecycle-scope judgments.
 
 Before making manual style or clarity judgments, refresh the published Elastic style guidance with `elastic-docs.get_document_by_url`. At minimum, read the style guide overview once per run when there are eligible files. Then fetch the relevant subpage when a potential finding depends on a specific area such as voice and tone, accessibility, grammar and spelling, word choice, formatting, or UI writing.
 
