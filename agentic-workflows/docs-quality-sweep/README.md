@@ -24,7 +24,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-quality-sweep.yml
 ```
 
-Ensure `COPILOT_GITHUB_TOKEN` is configured in the calling repo (this is the only secret needed).
+Add `permissions.copilot-requests: write` to the calling workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
 
 Run via the Actions UI or:
 
@@ -69,6 +69,10 @@ Each sweep opens its own labeled fix-issue **in the calling repo** (or calls `no
 | coherence | `docs-fix:coherence` |
 
 All issues also carry the parent label `docs-quality-sweep`. Sweep issues stay open until maintainers close them or a fixing PR resolves them.
+
+## Skill mapping
+
+The orchestrator does not import APM skills directly. Each child sweep owns its own skill mapping so only strong workflow-to-skill matches are installed, and workflows without a strong public `elastic-docs-skills` match can keep relying on embedded rules and deterministic pre-steps.
 
 ## Running a subset
 

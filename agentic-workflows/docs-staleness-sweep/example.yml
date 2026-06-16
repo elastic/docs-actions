@@ -41,6 +41,7 @@ on:
 
 permissions:
   actions: read
+  copilot-requests: write
   contents: read
   discussions: write
   issues: write
@@ -59,5 +60,3 @@ jobs:
       stale-content-months: ${{ inputs.stale-content-months }}
       stale-screenshot-min-gap-months: ${{ inputs.stale-screenshot-min-gap-months }}
       lychee-config: ${{ inputs.lychee-config }}
-    secrets:
-      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}

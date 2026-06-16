@@ -6,6 +6,12 @@ description: |
 
 inlined-imports: true
 imports:
+  - uses: shared/apm.md
+    with:
+      target: copilot
+      packages:
+        - elastic/elastic-docs-skills/skills/authoring/content-type-checker
+        - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
@@ -28,12 +34,13 @@ on:
         default: ""
     secrets:
       COPILOT_GITHUB_TOKEN:
-        required: true
+        required: false
 concurrency:
   group: gh-aw-docs-issue-scope-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
   job-discriminator: ${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
 permissions:
+  copilot-requests: write
   contents: read
   issues: read
   pull-requests: read
@@ -83,6 +90,13 @@ steps:
 # Issue Scope Analyzer
 
 You are a documentation scoping analyst for Elastic products. Your job is to determine whether an issue describes a docs change that can be scoped from the issue context plus linked public PRs or commits, and if so, identify which documentation pages should be updated, expanded, added, reviewed, or left unchanged.
+
+This workflow also installs these APM skills from `elastic/elastic-docs-skills`:
+
+- `docs-content-type-checker`
+- `docs-applies-to-tagging`
+
+Use those installed skills when they materially improve page-fit, content-type, or `applies_to` recommendations. Treat them as additive guidance, not as permission to skip the explicit evidence and scoping rules in this workflow.
 
 ## Invocation
 
@@ -186,6 +200,11 @@ For each affected area, determine:
 - **Page fit**: Does the suggested destination page make sense for the kind of information being added, given that page's role in the section?
 - **Smallest viable change**: Can this be handled by updating an existing page or adding a section before proposing a new page?
 - **Follow-on assembly work**: Would navigation, redirects, sibling links, or cross-references likely need follow-up changes?
+
+When the recommendation hinges on page role, destination fit, or lifecycle scoping, explicitly use the installed skill guidance:
+
+- `docs-content-type-checker` for content-type and section-fit reasoning.
+- `docs-applies-to-tagging` when the scoped work appears to touch version, deployment, or lifecycle applicability.
 
 Categorize each finding by impact level:
 - **High** — documentation is wrong or missing for user-facing changes

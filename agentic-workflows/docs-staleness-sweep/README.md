@@ -25,7 +25,7 @@ mkdir -p .github/workflows && curl -sL \
 
 Configure both secrets:
 
-- `COPILOT_GITHUB_TOKEN` — Copilot agent token.
+- `permissions.copilot-requests: write` in the caller workflow — required for built-in Copilot auth. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default path.
 - `DOCS_FIX_ISSUES_TOKEN` — token with `issues:write` on `elastic/docs-content-internal` (where fix-issues are filed). See the parent README for context.
 
 ## Inputs
