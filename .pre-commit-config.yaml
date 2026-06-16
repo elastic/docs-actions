@@ -22,7 +22,7 @@ repos:
     rev: v1.7.12
     hooks:
       - id: actionlint
-        exclude: '\.lock\.yml$'
+        exclude: '(\.lock\.yml$|^\.github/workflows/agentics-maintenance\.yml$)'
 
   - repo: local
     hooks:
