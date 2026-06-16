@@ -16,7 +16,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-issue-scope.yml
 ```
 
-Ensure the `COPILOT_GITHUB_TOKEN` secret is configured in your repository.
+Add `permissions.copilot-requests: write` to the caller workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
 
 ## Inputs
 
@@ -46,6 +46,15 @@ When `/docs-issue-scope` runs on an issue, the workflow prefers to maintain a bo
 
 If the markers already exist exactly once, the workflow rewrites only that block. If the markers are missing, it appends a new block. The managed block includes an `Elastic Docs AI Scoping 🤖` heading followed by a GitHub `<details>` section. If the markers are malformed or duplicated, it does not overwrite the issue body and falls back to a concise comment instead.
 
+## Imported skills
+
+This workflow installs these APM skills from `elastic/elastic-docs-skills`:
+
+- `docs-content-type-checker`.
+- `docs-applies-to-tagging`.
+
+The workflow uses them only when they materially improve page-fit, content-type, or `applies_to` recommendations. The prompt still embeds its own scoping rules so the workflow remains usable without any single skill.
+
 ## Example
 
 ```yaml
@@ -56,6 +65,7 @@ on:
 
 permissions:
   actions: read
+  copilot-requests: write
   contents: read
   discussions: write
   issues: write
@@ -69,6 +79,4 @@ jobs:
       additional-instructions: |
         This repo is the {{product.elasticsearch}} Java client.
         Focus on REST API changes and client method signatures.
-    secrets:
-      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
 ```

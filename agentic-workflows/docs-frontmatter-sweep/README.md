@@ -16,7 +16,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-frontmatter-sweep.yml
 ```
 
-Ensure the `COPILOT_GITHUB_TOKEN` secret is configured in your repository.
+Add `permissions.copilot-requests: write` to the caller workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
 
 Issues are filed in the **calling repo** (where the workflow runs). Install this in the repo where you want fix-issues to land — typically `elastic/docs-content-internal` if the docs being scanned are in `elastic/docs-content`. The example template ships with `source-repo: elastic/docs-content`.
 
@@ -47,6 +47,15 @@ Issues are filed in the **calling repo** (where the workflow runs). Install this
 3. The agent applies embedded checks for required frontmatter keys, complete and unique `description` values, canonical `products` shape, preserved `mapped_pages`, and concise `navigation_title` values.
 4. Findings are emitted as a YAML block in the fix-issue body, capped at `max-per-fix-issue`.
 5. If nothing high-confidence surfaces, the agent calls `noop` instead of opening an issue.
+
+## Imported skills
+
+This workflow installs these APM skills from `elastic/elastic-docs-skills`:
+
+- `docs-frontmatter-audit`.
+- `docs-frontmatter-description`.
+
+The workflow uses them as additive guidance for metadata-shape checks and description-quality judgments. Local repository evidence and the embedded rules remain the source of truth.
 
 ## Fix-issue body
 

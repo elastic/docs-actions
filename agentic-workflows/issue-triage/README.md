@@ -17,7 +17,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-triage.yml
 ```
 
-Ensure the `COPILOT_GITHUB_TOKEN` secret is configured in your repository.
+Add `permissions.copilot-requests: write` to the caller workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
 
 ## Inputs
 
