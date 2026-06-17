@@ -26,7 +26,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-issue-scope.yml
 ```
 
-These workflows now use the built-in GitHub token path. Add `permissions.copilot-requests: write` to the caller workflow, and do not pass `COPILOT_GITHUB_TOKEN` unless you are intentionally overriding the default auth path.
+These workflows use `COPILOT_GITHUB_TOKEN` for authentication. Pass `secrets.COPILOT_GITHUB_TOKEN` from the caller workflow as shown in the `example.yml` files. The quality-sweep orchestrator is the exception — it dispatches sibling workflows via `gh workflow run` and does not pass a token directly.
 
 Skill imports are workflow-specific. Some workflows install APM skills from `elastic/elastic-docs-skills`, while others intentionally rely only on embedded rules and deterministic pre-steps.
 
