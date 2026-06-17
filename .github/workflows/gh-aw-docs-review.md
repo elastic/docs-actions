@@ -60,6 +60,10 @@ network:
     - "docs-v3-preview.elastic.dev"
 strict: false
 safe-outputs:
+  allowed-domains:
+    - www.elastic.co
+    - docs-v3-preview.elastic.dev
+    - github.com
   noop:
   add-comment:
     max: 1
@@ -424,6 +428,8 @@ For inline comments with concrete replacements:
 - prefer one apply-ready GitHub suggestion over a prose description when GitHub can apply it cleanly,
 - keep the suggested replacement as small as possible while still fixing the issue, and
 - inspect the exact comment body before calling `create_pull_request_review_comment`, especially when using a suggestion block, to confirm it contains the literal replacement text you want GitHub to apply.
+
+Do not use a GitHub suggestion block when the replacement contains a markdown link target, bare URL, relative URL, substitution-based URL such as `{{kib}}`, or any other non-HTTPS link target. Safe-output sanitization can rewrite those link targets after the tool call and corrupt apply-ready patches. In those cases, explain the replacement in prose or quote only the affected link target in inline code.
 
 Treat low-priority nits differently:
 
