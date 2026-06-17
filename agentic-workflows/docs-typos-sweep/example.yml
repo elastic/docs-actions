@@ -5,13 +5,13 @@ on:
       source-repo:
         description: "Repository to scan (owner/repo). Leave empty to scan this repo."
         required: false
-        default: "elastic/docs-content"
+        default: ""
       docs-root:
-        description: "Root directory to sweep"
+        description: "Root directory to scan"
         required: false
-        default: "docs/"
+        default: "."
       target-path:
-        description: "Optional docs-root-relative directory to sweep recursively (accepts a leading slash)"
+        description: "Optional docs-root-relative directory to scan recursively (accepts a leading slash)"
         required: false
         default: ""
       scope-mode:
@@ -23,9 +23,9 @@ on:
         required: false
         default: "100"
       max-per-fix-issue:
-        description: "Cap on findings per fix-issue"
+        description: "Cap on findings per fix-issue (ignored — typos sweep emits all findings up to issue body limit)"
         required: false
-        default: "50"
+        default: "20"
       codespell-args:
         description: "Extra codespell flags (e.g., --ignore-words=allowlist.txt --skip='*.svg')"
         required: false
@@ -33,7 +33,6 @@ on:
 
 permissions:
   actions: read
-  copilot-requests: write
   contents: read
   discussions: write
   issues: write
@@ -50,3 +49,5 @@ jobs:
       target-batch-size: ${{ inputs.target-batch-size }}
       max-per-fix-issue: ${{ inputs.max-per-fix-issue }}
       codespell-args: ${{ inputs.codespell-args }}
+    secrets:
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
