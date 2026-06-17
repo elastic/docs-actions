@@ -77,11 +77,12 @@ on:
         default: ""
     secrets:
       COPILOT_GITHUB_TOKEN:
-        required: true
+        required: false
 concurrency:
   group: gh-aw-docs-staleness-sweep-${{ github.run_id }}
   cancel-in-progress: false
 permissions:
+  copilot-requests: write
   contents: read
   issues: read
 strict: false

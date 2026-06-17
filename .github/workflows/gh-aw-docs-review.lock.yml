@@ -1,5 +1,5 @@
-# gh-aw-metadata: {"schema_version":"v4","frontmatter_hash":"657df2495dc89d13c60575c327b0d20a34a734e9e9019cdb7c543855056c59a3","body_hash":"48e85dbb1a53420080a56d90d6684f951a7765579cf703b51bb66e928ff024c9","compiler_version":"v0.79.6","agent_id":"copilot","engine_versions":{"copilot":"1.0.60"}}
-# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"df4cb1c069e1874edd31b4311f1884172cec0e10","version":"v6.0.3"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"5c2fe865bb4dc46e1450f6ee0d0541d759aea73a","version":"v0.79.6"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.27.2","digest":"sha256:f88e5b17b6b7a600117bc121114d6ce2155c88c983c0c939c5df884f730fa1d6","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.27.2@sha256:f88e5b17b6b7a600117bc121114d6ce2155c88c983c0c939c5df884f730fa1d6"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.2","digest":"sha256:ee39841d980878ebbb87592903b06d31a1af500c71525c9616f7e8e2a27041a4","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.2@sha256:ee39841d980878ebbb87592903b06d31a1af500c71525c9616f7e8e2a27041a4"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.27.2","digest":"sha256:2e3a717e5f19a654cd9a2263beb52012b56bcb68562ec5ae2e42f9d156b49591","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.27.2@sha256:2e3a717e5f19a654cd9a2263beb52012b56bcb68562ec5ae2e42f9d156b49591"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.25","digest":"sha256:c10331ad17668ef89f38f5e356678788a40b0cd5fef96e8f92e1d9c1de47cbaa","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.3.25@sha256:c10331ad17668ef89f38f5e356678788a40b0cd5fef96e8f92e1d9c1de47cbaa"},{"image":"ghcr.io/github/github-mcp-server:v1.1.2","digest":"sha256:30197479d8036c7811892bc07e06f9a05c9ef3cdd79bc59f256d50647f95788c","pinned_image":"ghcr.io/github/github-mcp-server:v1.1.2@sha256:30197479d8036c7811892bc07e06f9a05c9ef3cdd79bc59f256d50647f95788c"}]}
+# gh-aw-metadata: {"schema_version":"v4","frontmatter_hash":"efd45b649aa8e78f1837a311bb12b769277f381fb7fb7e67cb103245e23d2e90","body_hash":"47f706717efe2f8b00cfe4e269725174efeba01154ba92860e5ebbfe8945be51","compiler_version":"v0.79.6","agent_id":"copilot","engine_versions":{"copilot":"1.0.60"}}
+# gh-aw-manifest: {"version":1,"secrets":["GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GH_AW_PLUGINS_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"df4cb1c069e1874edd31b4311f1884172cec0e10","version":"v6.0.3"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"5c2fe865bb4dc46e1450f6ee0d0541d759aea73a","version":"v0.79.6"},{"repo":"microsoft/apm-action","sha":"b48dd081eb0050f6d7f32d0e7caa0a59a2d419fd","version":"v1.7.2"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.27.2","digest":"sha256:f88e5b17b6b7a600117bc121114d6ce2155c88c983c0c939c5df884f730fa1d6","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.27.2@sha256:f88e5b17b6b7a600117bc121114d6ce2155c88c983c0c939c5df884f730fa1d6"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.2","digest":"sha256:ee39841d980878ebbb87592903b06d31a1af500c71525c9616f7e8e2a27041a4","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.2@sha256:ee39841d980878ebbb87592903b06d31a1af500c71525c9616f7e8e2a27041a4"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.27.2","digest":"sha256:2e3a717e5f19a654cd9a2263beb52012b56bcb68562ec5ae2e42f9d156b49591","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.27.2@sha256:2e3a717e5f19a654cd9a2263beb52012b56bcb68562ec5ae2e42f9d156b49591"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.25","digest":"sha256:c10331ad17668ef89f38f5e356678788a40b0cd5fef96e8f92e1d9c1de47cbaa","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.3.25@sha256:c10331ad17668ef89f38f5e356678788a40b0cd5fef96e8f92e1d9c1de47cbaa"},{"image":"ghcr.io/github/github-mcp-server:v1.1.2","digest":"sha256:30197479d8036c7811892bc07e06f9a05c9ef3cdd79bc59f256d50647f95788c","pinned_image":"ghcr.io/github/github-mcp-server:v1.1.2@sha256:30197479d8036c7811892bc07e06f9a05c9ef3cdd79bc59f256d50647f95788c"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
 #  | |_| | __ _  ___ _ __ | |_ _  ___ 
@@ -31,13 +31,14 @@
 #     - gh-aw-fragments/formatting.md
 #     - gh-aw-fragments/mcp-pagination.md
 #     - gh-aw-fragments/rigor.md
+#     - shared/apm.md
 #
 # inlined-imports: true
 #
 # Secrets used:
-#   - COPILOT_GITHUB_TOKEN
 #   - GH_AW_GITHUB_MCP_SERVER_TOKEN
 #   - GH_AW_GITHUB_TOKEN
+#   - GH_AW_PLUGINS_TOKEN
 #   - GITHUB_TOKEN
 #
 # Custom actions used:
@@ -46,7 +47,9 @@
 #   - actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
 #   - actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
 #   - actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+#   - actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1 (source v7)
 #   - github/gh-aw-actions/setup@5c2fe865bb4dc46e1450f6ee0d0541d759aea73a # v0.79.6
+#   - microsoft/apm-action@b48dd081eb0050f6d7f32d0e7caa0a59a2d419fd # v1.7.2
 #
 # Container images used:
 #   - ghcr.io/github/gh-aw-firewall/agent:0.27.2@sha256:f88e5b17b6b7a600117bc121114d6ce2155c88c983c0c939c5df884f730fa1d6
@@ -88,10 +91,12 @@ on:
         value: ${{ jobs.safe_outputs.outputs.comment_url }}
     secrets:
       COPILOT_GITHUB_TOKEN:
-        required: true
+        required: false
       GH_AW_GITHUB_MCP_SERVER_TOKEN:
         required: false
       GH_AW_GITHUB_TOKEN:
+        required: false
+      GH_AW_PLUGINS_TOKEN:
         required: false
 
 permissions: {}
@@ -122,7 +127,6 @@ jobs:
       engine_id: ${{ steps.generate_aw_info.outputs.engine_id }}
       lockdown_check_failed: ${{ steps.generate_aw_info.outputs.lockdown_check_failed == 'true' }}
       model: ${{ steps.generate_aw_info.outputs.model }}
-      secret_verification_result: ${{ steps.validate-secret.outputs.verification_result }}
       setup-parent-span-id: ${{ steps.setup.outputs.parent-span-id || steps.setup.outputs.span-id }}
       setup-span-id: ${{ steps.setup.outputs.span-id }}
       setup-trace-id: ${{ steps.setup.outputs.trace-id }}
@@ -193,11 +197,6 @@ jobs:
             setupGlobals(core, github, context, exec, io, getOctokit);
             const { main } = require('${{ runner.temp }}/gh-aw/actions/check_daily_aic_workflow_guardrail.cjs');
             await main();
-      - name: Validate COPILOT_GITHUB_TOKEN secret
-        id: validate-secret
-        run: bash "${RUNNER_TEMP}/gh-aw/actions/validate_multi_secret.sh" COPILOT_GITHUB_TOKEN 'GitHub Copilot CLI' https://github.github.com/gh-aw/reference/engines/#github-copilot-default
-        env:
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
       - name: Checkout .github and .agents folders
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -260,20 +259,20 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_43785f8695a68e88_EOF'
+          cat << 'GH_AW_PROMPT_e51fd4859b6e7b57_EOF'
           <system>
-          GH_AW_PROMPT_43785f8695a68e88_EOF
+          GH_AW_PROMPT_e51fd4859b6e7b57_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_43785f8695a68e88_EOF'
+          cat << 'GH_AW_PROMPT_e51fd4859b6e7b57_EOF'
           <safe-output-tools>
           Tools: add_comment, create_pull_request_review_comment(max:20), submit_pull_request_review, missing_tool, missing_data, noop
           </safe-output-tools>
-          GH_AW_PROMPT_43785f8695a68e88_EOF
+          GH_AW_PROMPT_e51fd4859b6e7b57_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/mcp_cli_tools_prompt.md"
-          cat << 'GH_AW_PROMPT_43785f8695a68e88_EOF'
+          cat << 'GH_AW_PROMPT_e51fd4859b6e7b57_EOF'
           <github-context>
           The following GitHub context information is available for this workflow:
           {{#if github.actor}}
@@ -302,9 +301,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_43785f8695a68e88_EOF
+          GH_AW_PROMPT_e51fd4859b6e7b57_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_43785f8695a68e88_EOF'
+          cat << 'GH_AW_PROMPT_e51fd4859b6e7b57_EOF'
           </system>
           ## Formatting Guidelines
           
@@ -350,6 +349,16 @@ jobs:
           You are a documentation pull request reviewer for Elastic documentation repositories. Your job is to review the documentation changes in the triggering pull request like a careful human code reviewer: identify actionable problems, leave line-level comments when you have exact evidence, and always submit a concise overall review summary.
           
           Apply the review rules in this prompt, use deterministic evidence from the pull request and local files, and use the Elastic docs MCP server when published documentation is needed to verify a claim.
+          
+          This workflow also installs these APM skills from `elastic/elastic-docs-skills`:
+          
+          - `docs-check-style`
+          - `docs-flag-jargon-skill`
+          - `docs-frontmatter-audit`
+          - `docs-content-type-checker`
+          - `docs-applies-to-tagging`
+          
+          Use those installed skills when they are relevant to the current review categories. Treat them as additive guidance, not as permission to skip the explicit review rules and evidence standards in this workflow.
           
           ## Scope
           
@@ -418,6 +427,14 @@ jobs:
           ## Step 3: Review the changes
           
           Review each eligible file by applying the rules below and your own judgment. Use the Elastic docs MCP server for targeted verification when a finding depends on published docs, style-guide guidance, content-type guidance, cumulative-docs guidance, or sibling-page context. Prefer `elastic-docs.get_document_by_url` for known authoring guidance pages and `elastic-docs.search_docs` or `elastic-docs.find_related_docs` for discovery.
+          
+          When a changed file would benefit from one of the installed APM skills, explicitly use that skill's guidance before drafting comments:
+          
+          - `docs-check-style` for style-guide, formatting, accessibility, and UI writing findings.
+          - `docs-flag-jargon-skill` for Elastic-internal jargon, outdated terms, and unexplained acronyms.
+          - `docs-frontmatter-audit` for frontmatter metadata issues.
+          - `docs-content-type-checker` for content-type fit and required-structure judgments.
+          - `docs-applies-to-tagging` for `applies_to` validity and lifecycle-scope judgments.
           
           Before making manual style or clarity judgments, refresh the published Elastic style guidance with `elastic-docs.get_document_by_url`. At minimum, read the style guide overview once per run when there are eligible files. Then fetch the relevant subpage when a potential finding depends on a specific area such as voice and tone, accessibility, grammar and spelling, word choice, formatting, or UI writing.
           
@@ -656,7 +673,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_43785f8695a68e88_EOF
+          GH_AW_PROMPT_e51fd4859b6e7b57_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -743,11 +760,14 @@ jobs:
           retention-days: 1
 
   agent:
-    needs: activation
+    needs:
+      - activation
+      - apm
     if: needs.activation.outputs.daily_effective_workflow_exceeded != 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      copilot-requests: write
       issues: read
       pull-requests: read
     concurrency:
@@ -821,6 +841,39 @@ jobs:
           DIFC_PROXY_IMAGE: 'ghcr.io/github/gh-aw-mcpg:v0.3.25'
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/start_difc_proxy.sh"
+      - name: Download APM bundle artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        env:
+          GH_HOST: ${{ env.GH_HOST || 'github.com' }}
+          GH_REPO: ${{ github.repository }}
+          GITHUB_API_URL: https://localhost:18443/api/v3
+          GITHUB_GRAPHQL_URL: https://localhost:18443/api/graphql
+          NODE_EXTRA_CA_CERTS: /tmp/gh-aw/proxy-logs/proxy-tls/ca.crt
+        with:
+          name: ${{ needs.activation.outputs.artifact_prefix }}apm
+          path: /tmp/gh-aw/apm-bundles
+      - name: Build bundle list
+        run: |
+          set -euo pipefail
+          mapfile -t list < <(find /tmp/gh-aw/apm-bundles -name '*.tar.gz' | sort)
+          [ ${#list[@]} -gt 0 ] || { echo '::error::no apm bundles found'; exit 1; }
+          printf '%s\n' "${list[@]}" > /tmp/gh-aw/apm-bundle-list.txt
+        env:
+          GH_HOST: ${{ env.GH_HOST || 'github.com' }}
+          GH_REPO: ${{ github.repository }}
+          GITHUB_API_URL: https://localhost:18443/api/v3
+          GITHUB_GRAPHQL_URL: https://localhost:18443/api/graphql
+          NODE_EXTRA_CA_CERTS: /tmp/gh-aw/proxy-logs/proxy-tls/ca.crt
+      - name: Restore APM packages
+        uses: microsoft/apm-action@b48dd081eb0050f6d7f32d0e7caa0a59a2d419fd # v1.7.2
+        env:
+          GH_HOST: ${{ env.GH_HOST || 'github.com' }}
+          GH_REPO: ${{ github.repository }}
+          GITHUB_API_URL: https://localhost:18443/api/v3
+          GITHUB_GRAPHQL_URL: https://localhost:18443/api/graphql
+          NODE_EXTRA_CA_CERTS: /tmp/gh-aw/proxy-logs/proxy-tls/ca.crt
+        with:
+          bundles-file: /tmp/gh-aw/apm-bundle-list.txt
       - name: Repo-specific setup
         run: |
           if [ -n "$SETUP_COMMANDS" ]; then
@@ -1385,7 +1438,7 @@ jobs:
           AWF_REFLECT_ENABLED: 1
           COPILOT_AGENT_RUNNER_TYPE: STANDALONE
           COPILOT_DUMMY_BYOK: dummy-byok-key-for-offline-mode
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          COPILOT_GITHUB_TOKEN: ${{ github.token }}
           COPILOT_MODEL: ${{ vars.GH_AW_MODEL_AGENT_COPILOT || vars.GH_AW_DEFAULT_MODEL_COPILOT || 'claude-sonnet-4.6' }}
           GH_AW_MAX_TURNS: ${{ vars.GH_AW_DEFAULT_MAX_TURNS || '' }}
           GH_AW_MCP_CONFIG: /home/runner/.copilot/mcp-config.json
@@ -1408,6 +1461,7 @@ jobs:
           GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
           GIT_COMMITTER_NAME: github-actions[bot]
           RUNNER_TEMP: ${{ runner.temp }}
+          S2STOKENS: true
           XDG_CONFIG_HOME: /home/runner
       - name: Detect agent errors
         if: always()
@@ -1450,8 +1504,7 @@ jobs:
             const { main } = require('${{ runner.temp }}/gh-aw/actions/redact_secrets.cjs');
             await main();
         env:
-          GH_AW_SECRET_NAMES: 'COPILOT_GITHUB_TOKEN,GH_AW_GITHUB_MCP_SERVER_TOKEN,GH_AW_GITHUB_TOKEN,GITHUB_TOKEN'
-          SECRET_COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          GH_AW_SECRET_NAMES: 'GH_AW_GITHUB_MCP_SERVER_TOKEN,GH_AW_GITHUB_TOKEN,GITHUB_TOKEN'
           SECRET_GH_AW_GITHUB_MCP_SERVER_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN }}
           SECRET_GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
           SECRET_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -1570,10 +1623,77 @@ jobs:
             /tmp/gh-aw/sandbox/firewall/awf-reflect.json
           if-no-files-found: ignore
 
+  apm:
+    needs: activation
+    runs-on: ubuntu-slim
+    permissions:
+      {}
+
+    steps:
+      - name: Configure GH_HOST for enterprise compatibility
+        id: ghes-host-config
+        shell: bash
+        # zizmor: ignore[github-env] - GITHUB_SERVER_URL is set by GitHub Actions, not user input.
+        run: |
+          # Derive GH_HOST from GITHUB_SERVER_URL so the gh CLI targets the correct
+          # GitHub instance (GHES/GHEC). On github.com this is a harmless no-op.
+          GH_HOST="${GITHUB_SERVER_URL#https://}"
+          GH_HOST="${GH_HOST#http://}"
+          echo "GH_HOST=${GH_HOST}" >> "$GITHUB_ENV"
+      - name: Render package list
+        id: list
+        run: |
+          set -euo pipefail
+          raw="${AW_APM_PACKAGES:-[]}"
+
+          if printf '%s' "$raw" | jq -e 'type == "array"' >/dev/null 2>&1; then
+            packages_json="$raw"
+          else
+            packages_json="$(python3 -c 'import json, re, sys; s=sys.argv[1].strip(); s=s[1:-1] if s.startswith("[") and s.endswith("]") else s; print(json.dumps([t for t in re.split(r"[\s,]+", s) if t]))' "$raw")"
+          fi
+
+          count="$(printf '%s' "$packages_json" | jq 'length')"
+          if [ "$count" -eq 0 ]; then
+            echo "::error::shared/apm.md import provided no packages."
+            exit 1
+          fi
+
+          deps="$(printf '%s' "$packages_json" | jq -r '.[] | "- " + .')"
+          delim="APMDEPS_$(openssl rand -hex 8)"
+          {
+            printf 'deps<<%s\n' "$delim"
+            printf '%s\n' "$deps"
+            printf '%s\n' "$delim"
+          } >> "$GITHUB_OUTPUT"
+
+          printf '::notice::APM packages: %s\n' "$(printf '%s' "$packages_json" | jq -r 'join(", ")')"
+        env:
+          AW_APM_PACKAGES: "[\"elastic/elastic-docs-skills/skills/review/docs-check-style\",\"elastic/elastic-docs-skills/skills/review/flag-jargon-skill\",\"elastic/elastic-docs-skills/skills/review/frontmatter-audit\",\"elastic/elastic-docs-skills/skills/authoring/content-type-checker\",\"elastic/elastic-docs-skills/skills/authoring/applies-to-tagging\"]"
+      - name: Pack APM packages
+        id: pack
+        uses: microsoft/apm-action@b48dd081eb0050f6d7f32d0e7caa0a59a2d419fd # v1.7.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_AW_PLUGINS_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        with:
+          archive: "true"
+          dependencies: ${{ steps.list.outputs.deps }}
+          isolated: "true"
+          pack: "true"
+          target: copilot
+          working-directory: /tmp/gh-aw/apm-workspace
+      - name: Upload APM bundle artifact
+        if: success()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1 (source v7)
+        with:
+          name: ${{ needs.activation.outputs.artifact_prefix }}apm
+          path: ${{ steps.pack.outputs.bundle-path }}
+          retention-days: "1"
+
   conclusion:
     needs:
       - activation
       - agent
+      - apm
       - detection
       - safe_outputs
     if: >
@@ -1739,7 +1859,6 @@ jobs:
           GH_AW_WORKFLOW_ID: "gh-aw-docs-review"
           GH_AW_ACTION_FAILURE_ISSUE_EXPIRES_HOURS: "168"
           GH_AW_ENGINE_ID: "copilot"
-          GH_AW_SECRET_VERIFICATION_RESULT: ${{ needs.activation.outputs.secret_verification_result }}
           GH_AW_CHECKOUT_PR_SUCCESS: ${{ needs.agent.outputs.checkout_pr_success }}
           GH_AW_EFFECTIVE_TOKENS: ${{ needs.agent.outputs.effective_tokens || '' }}
           GH_AW_AI_CREDITS_RATE_LIMIT_ERROR: ${{ needs.agent.outputs.ai_credits_rate_limit_error || 'false' }}
@@ -1779,6 +1898,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      copilot-requests: write
     outputs:
       aic: ${{ steps.parse_detection_token_usage.outputs.aic }}
       detection_conclusion: ${{ steps.detection_conclusion.outputs.conclusion }}
@@ -1935,7 +2055,7 @@ jobs:
           AWF_REFLECT_ENABLED: 1
           COPILOT_AGENT_RUNNER_TYPE: STANDALONE
           COPILOT_DUMMY_BYOK: dummy-byok-key-for-offline-mode
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          COPILOT_GITHUB_TOKEN: ${{ github.token }}
           COPILOT_MODEL: ${{ vars.GH_AW_MODEL_DETECTION_COPILOT || vars.GH_AW_DEFAULT_MODEL_COPILOT || 'claude-sonnet-4.6' }}
           GH_AW_MAX_TURNS: ${{ vars.GH_AW_DEFAULT_MAX_TURNS || '' }}
           GH_AW_PHASE: detection
@@ -1955,6 +2075,7 @@ jobs:
           GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
           GIT_COMMITTER_NAME: github-actions[bot]
           RUNNER_TEMP: ${{ runner.temp }}
+          S2STOKENS: true
           XDG_CONFIG_HOME: /home/runner
       - name: Parse threat detection token usage for step summary
         id: parse_detection_token_usage

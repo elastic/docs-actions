@@ -25,7 +25,8 @@ import sys
 
 # --- constants ---------------------------------------------------------------
 
-MAX_FILE_SIZE = 100 * 1024  # 100 KB
+# Keep the artifact bounded, but allow large doc PRs to produce a full report.
+MAX_FILE_SIZE = 512 * 1024  # 512 KB
 MAX_PATH_LEN = 256
 MAX_MESSAGE_LEN = 512
 MAX_RULE_LEN = 128

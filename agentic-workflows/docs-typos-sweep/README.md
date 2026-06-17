@@ -18,7 +18,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-typos-sweep.yml
 ```
 
-Ensure `COPILOT_GITHUB_TOKEN` is configured.
+Add `permissions.copilot-requests: write` to the caller workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
 
 ## Inputs
 
