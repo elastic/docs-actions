@@ -457,7 +457,7 @@ For inline comments with concrete replacements:
 - keep the suggested replacement as small as possible while still fixing the issue, and
 - inspect the exact comment body before calling `create_pull_request_review_comment`, especially when using a suggestion block, to confirm it contains the literal replacement text you want GitHub to apply.
 
-Do not use a GitHub suggestion block when the replacement contains a markdown link target, bare URL, relative URL, substitution-based URL such as `{{kib}}`, or any other non-HTTPS link target. Safe-output sanitization can rewrite those link targets after the tool call and corrupt apply-ready patches. In those cases, explain the replacement in prose or quote only the affected link target in inline code.
+Do not use a GitHub suggestion block when the replacement contains a custom-protocol link target such as `kibana://` or `docs-content://`. Also avoid suggestion blocks for bare URLs that are not covered by the safe-output allowlist. Relative links are OK in suggestion blocks. For unsafe link targets, explain the replacement in prose or quote only the affected link target in inline code.
 
 Treat low-priority nits differently:
 
