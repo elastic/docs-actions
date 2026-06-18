@@ -225,7 +225,7 @@ jobs:
       - name: Write check metadata
         if: always() && steps.effective-any-modified.outputs.effective_any_modified != ''
         run: |
-          echo '${STEPS_EFFECTIVE_ANY_MODIFIED_OUTPUTS_EFFECTIVE_ANY_MODIFIED}' > /tmp/effective_any_modified
+          echo "${STEPS_EFFECTIVE_ANY_MODIFIED_OUTPUTS_EFFECTIVE_ANY_MODIFIED}" > /tmp/effective_any_modified
         env:
           STEPS_EFFECTIVE_ANY_MODIFIED_OUTPUTS_EFFECTIVE_ANY_MODIFIED: ${{ steps.effective-any-modified.outputs.effective_any_modified }}
 
