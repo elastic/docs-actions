@@ -595,7 +595,7 @@ jobs:
           LANDING_PAGE_PATH: ${{ needs.build.outputs.landing_page_path }}
         with:
           # language=js
-          script: |
+          script: | # zizmor: ignore[template-injection] deployment_id from prior step output
             await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,

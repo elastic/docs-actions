@@ -421,7 +421,7 @@ runs:
     - name: Determine files to lint
       id: files-to-lint
       shell: bash
-      run: |
+      run: | # zizmor: ignore[template-injection]
         # Intentionally NOT using env: for the files list. When a PR touches hundreds of
         # files (e.g. generated-docs reorganisations), passing the full space-separated list
         # as an environment variable causes the Linux kernel to reject the bash process with
@@ -438,7 +438,7 @@ runs:
             echo "No Markdown, MDX, YAML, or YML files in provided file list"
             echo "has_files=false" >> $GITHUB_OUTPUT
           fi
-        elif [ "${{ steps.changed-files.outputs.has_changes }}" == "true" ]; then
+        elif [ "${STEPS_CHANGED_FILES_OUTPUTS_HAS_CHANGES}" == "true" ]; then
           echo "Using changed files from PR"
           cp changed_files.txt files_to_lint.txt
           echo "has_files=true" >> $GITHUB_OUTPUT
@@ -446,6 +446,8 @@ runs:
           echo "No files to lint"
           echo "has_files=false" >> $GITHUB_OUTPUT
         fi
+      env:
+        STEPS_CHANGED_FILES_OUTPUTS_HAS_CHANGES: ${{ steps.changed-files.outputs.has_changes }}
 
     - name: Filter files by vale-paths
       id: filter-paths
@@ -701,8 +703,10 @@ runs:
       if: inputs.fail_on_error == 'true' && steps.vale-report.outputs.error_count != '0'
       shell: bash
       run: |
-        echo "❌ Vale found ${{ steps.vale-report.outputs.error_count }} error-level issue(s)"
+        echo "❌ Vale found ${STEPS_VALE_REPORT_OUTPUTS_ERROR_COUNT} error-level issue(s)"
         exit 1
+      env:
+        STEPS_VALE_REPORT_OUTPUTS_ERROR_COUNT: ${{ steps.vale-report.outputs.error_count }}
 
     - name: Cleanup
       if: always()

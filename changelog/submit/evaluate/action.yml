@@ -103,6 +103,8 @@ runs:
     - name: Checkout base repo (untrusted)
       if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted != 'true'
       uses: actions/checkout@v6
+      with:
+        persist-credentials: false
 
     - name: Validate ref names
       if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted == 'true'

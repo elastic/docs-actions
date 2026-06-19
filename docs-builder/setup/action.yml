@@ -17,7 +17,7 @@ runs:
   steps:
     - name: Acquire docs-builder binary
       shell: bash
-      run: |
+      run: | # zizmor: ignore[github-env] append docs-builder to PATH via GITHUB_PATH
         INSTALL_DIR="${HOME}/.docs-builder/bin"
         mkdir -p "${INSTALL_DIR}"
 

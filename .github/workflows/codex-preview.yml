@@ -46,9 +46,11 @@ jobs:
         # Checkout is needed to get changed files when the event is not a pull request
         if: contains(fromJSON('["push", "merge_group", "workflow_dispatch"]'), github.event_name)
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - name: Check changes
         id: check-files
-        uses: tj-actions/changed-files@v47.0.6
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
           files: ${{ inputs.path-pattern }}
           files_ignore: |
@@ -70,6 +72,8 @@ jobs:
         # Skip this for now because it's not clear if we need to or should support it.
         # However, the rest of the workflow is designed to support pull_request_target.
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - uses: elastic/docs-actions/codex/build@v1
         if: needs.check.outputs.any_modified == 'true'
         id: codex-build
@@ -166,7 +170,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
         with:
-          script: |
+          script: | # zizmor: ignore[template-injection] deployment_id from prior step output
             await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
