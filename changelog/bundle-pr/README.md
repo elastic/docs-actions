@@ -6,12 +6,12 @@ Downloads a changelog bundle artifact and opens a pull request to add it to the 
 
 ## Inputs
 <!--inputs-->
-| Name            | Description                                                                                                                                            | Required | Default               |
-|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|----------|-----------------------|
-| `output`        | Output file path for the bundle, relative to the repo root (e.g. docs/releases/v9.2.0.yaml). Must match the path used by the bundle-create action.<br> | `true`   | ` `                   |
-| `base-branch`   | Base branch for the pull request (defaults to repository default branch)                                                                               | `false`  | ` `                   |
-| `artifact-name` | Name of the artifact uploaded by bundle-create                                                                                                         | `false`  | `changelog-bundle`    |
-| `github-token`  | GitHub token with contents:write and pull-requests:write permissions                                                                                   | `false`  | `${{ github.token }}` |
+| Name            | Description                                                                                                                                                            | Required | Default               |
+|-----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|-----------------------|
+| `output`        | Output file path for the bundle, relative to the repo root (e.g. docs/releases/v9.2.0.yaml). Must match the path used by the bundle-create or bundle-fetch action.<br> | `true`   | ` `                   |
+| `base-branch`   | Base branch for the pull request (defaults to repository default branch)                                                                                               | `false`  | ` `                   |
+| `artifact-name` | Name of the artifact uploaded by bundle-create or bundle-fetch                                                                                                         | `false`  | `changelog-bundle`    |
+| `github-token`  | GitHub token with contents:write and pull-requests:write permissions                                                                                                   | `false`  | `${{ github.token }}` |
 <!--/inputs-->
 
 ## Outputs

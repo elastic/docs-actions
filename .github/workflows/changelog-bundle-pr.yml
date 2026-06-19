@@ -60,7 +60,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  generate:
+  fetch:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -68,8 +68,10 @@ jobs:
     outputs:
       output: ${{ steps.bundle.outputs.output }}
     steps:
+      # Resolve the plan and download the already generated and scrubbed bundle from the public CDN
+      # (it must have been uploaded first by the changelog-bundle workflow). No regeneration, no S3 auth.
       - id: bundle
-        uses: elastic/docs-actions/changelog/bundle-create@v1
+        uses: elastic/docs-actions/changelog/bundle-fetch@v1
         with:
           config: ${{ inputs.config }}
           profile: ${{ inputs.profile }}
@@ -84,7 +86,7 @@ jobs:
           github-token: ${{ github.token }}
 
   create-pr:
-    needs: generate
+    needs: fetch
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -92,6 +94,6 @@ jobs:
     steps:
       - uses: elastic/docs-actions/changelog/bundle-pr@v1
         with:
-          output: ${{ needs.generate.outputs.output }}
+          output: ${{ needs.fetch.outputs.output }}
           base-branch: ${{ inputs.base-branch }}
           github-token: ${{ github.token }}

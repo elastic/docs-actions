@@ -9,13 +9,13 @@ inputs:
     description: >
       Output file path for the bundle, relative to the repo root
       (e.g. docs/releases/v9.2.0.yaml). Must match the path used
-      by the bundle-create action.
+      by the bundle-create or bundle-fetch action.
     required: true
   base-branch:
     description: 'Base branch for the pull request (defaults to repository default branch)'
     default: ''
   artifact-name:
-    description: 'Name of the artifact uploaded by bundle-create'
+    description: 'Name of the artifact uploaded by bundle-create or bundle-fetch'
     default: 'changelog-bundle'
   github-token:
     description: 'GitHub token with contents:write and pull-requests:write permissions'
