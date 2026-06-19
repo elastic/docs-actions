@@ -47,6 +47,7 @@ jobs:
         if: contains(fromJSON('["push", "merge_group", "workflow_dispatch"]'), github.event_name)
         uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Check changes
         id: check-files
