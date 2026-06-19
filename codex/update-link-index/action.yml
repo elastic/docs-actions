@@ -38,10 +38,14 @@ runs:
         path: ${{ inputs.codex-env }}/${{ github.repository }}
     - name: Commit and push
       shell: bash
+      env:
+        GH_TOKEN: ${{ steps.fetch-ephemeral-token.outputs.token }}
       run: |
           echo "::group::Configure git"
           git config user.name "GitHub Actions"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/elastic/codex-link-index.git"
+          trap 'git remote set-url origin https://github.com/elastic/codex-link-index.git' EXIT
           echo "::endgroup::"
 
           echo "::group::Stage changes"
