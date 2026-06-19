@@ -421,7 +421,7 @@ runs:
     - name: Determine files to lint
       id: files-to-lint
       shell: bash
-      run: |
+      run: | # zizmor: ignore[template-injection]
         # Intentionally NOT using env: for the files list. When a PR touches hundreds of
         # files (e.g. generated-docs reorganisations), passing the full space-separated list
         # as an environment variable causes the Linux kernel to reject the bash process with

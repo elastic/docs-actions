@@ -17,9 +17,6 @@ rules:
   template-injection:
     ignore:
       - agentics-maintenance.yml
-      # vale/lint/action.yml intentionally inlines inputs.files directly into the script
-      # (not via env:) to avoid the Linux E2BIG limit when linting hundreds of files at once.
-      - vale/lint/action.yml
       - gh-aw-docs-applies-to-sweep.lock.yml
       - gh-aw-docs-coherence-sweep.lock.yml
       - gh-aw-docs-frontmatter-sweep.lock.yml
