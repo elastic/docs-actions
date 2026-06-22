@@ -75,6 +75,7 @@ safe-outputs:
   add-comment:
     hide-older-comments: true
   update-issue:
+    target: "*"
     body:
 timeout-minutes: 30
 steps:
@@ -111,8 +112,9 @@ When invoked:
 - Use both the issue description and the linked public PRs or commits you discover. Treat the issue request and the code changes as separate sources of truth that need to be reconciled.
 - Verify that the issue request itself is accurate. Do not assume the issue premise is correct just because the request is clearly written.
 - If the triggering item is an issue, maintain a bot-managed scope summary in the issue body by using the `docs-issue-scope:start` and `docs-issue-scope:end` HTML comment markers shown in the managed block template below.
-- If both markers are present exactly once, you must update only that managed block using `update_issue` with `replace-island`.
-- If neither marker is present, append a new managed block to the end of the issue body using `update_issue` with `append`.
+- When calling `update_issue`, always pass `issue_number` set to the issue number from the GitHub context. The workflow is configured with `update-issue: target: "*"`, so `update_issue` requires the explicit issue number.
+- If both markers are present exactly once, you must update only that managed block using `update_issue` with `replace-island` and the explicit `issue_number`.
+- If neither marker is present, append a new managed block to the end of the issue body using `update_issue` with `append` and the explicit `issue_number`.
 - If only one marker is present, or multiple marker pairs are present, do not guess and do not overwrite the issue body. Skip the body update and use `add_comment` instead to explain that the issue body needs cleanup.
 - Never replace the entire issue body. If someone deleted the original issue template or other author-written content, append the managed block instead of overwriting anything.
 - On subsequent runs for the same issue, update the existing managed block in place. Do not append another scoping block when a valid marker pair already exists.
@@ -229,6 +231,8 @@ Also assign a confidence level:
 ## Step 4: Publish findings
 
 Prefer `update_issue` as the primary output when the triggering item is an issue and the body can be updated safely. Maintain one concise bot-managed block in the issue body instead of creating a chain of full analysis comments.
+
+Because this workflow can be invoked through a reusable workflow path, do not rely on `target: triggering` behavior for issue body updates. Always pass `issue_number` explicitly when calling `update_issue`.
 
 Use this exact body-block format inside the managed markers:
 
