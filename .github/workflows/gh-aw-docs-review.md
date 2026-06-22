@@ -457,8 +457,6 @@ For inline comments with concrete replacements:
 - keep the suggested replacement as small as possible while still fixing the issue, and
 - inspect the exact comment body before calling `create_pull_request_review_comment`, especially when using a suggestion block, to confirm it contains the literal replacement text you want GitHub to apply.
 
-Do not use a GitHub suggestion block when the replacement contains a custom-protocol link target such as `kibana://` or `docs-content://`. Also avoid suggestion blocks for bare URLs that are not covered by the safe-output allowlist. Relative links are OK in suggestion blocks. For unsafe link targets, explain the replacement in prose or quote only the affected link target in inline code.
-
 Treat low-priority nits differently:
 
 - avoid nits unless they are grounded in the pre-fetched Vale output or another explicit review rule in this workflow,
