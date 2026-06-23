@@ -249,7 +249,7 @@ jobs:
         if: steps.context.outputs.is-fork == 'true' && steps.context.outputs.event == 'pull_request'
         continue-on-error: true
         id: fetch-ephemeral-token
-        uses: elastic/ci-gh-actions/fetch-github-token@v1.5.0
+        uses: elastic/ci-gh-actions/fetch-github-token@v1.5.3
         with:
           vault-instance: "ci-prod"
           vault-role: "token-policy-8c6a5ed19135"

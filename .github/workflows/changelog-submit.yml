@@ -68,7 +68,7 @@ jobs:
       - name: Fetch ephemeral GitHub token
         if: github.event.workflow_run.head_repository.full_name != github.repository
         id: fetch-ephemeral-token
-        uses: elastic/ci-gh-actions/fetch-github-token@v1.5.0
+        uses: elastic/ci-gh-actions/fetch-github-token@v1.5.3
         with:
           vault-instance: "ci-prod"
           vault-role: "token-policy-a71b1f2b88ec"
