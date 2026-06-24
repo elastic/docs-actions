@@ -26,4 +26,6 @@ steps:
       output: docs/releases/v9.2.0.yaml
 ```
 
-This action is typically used as the second job in the `changelog-bundle.yml` reusable workflow, after `bundle-create` generates the artifact. The S3 key for each bundle is `{product}/bundle/{filename}`, where the product is read from the bundle's YAML `products` array.
+This action is typically used as the second job in the `changelog-bundle.yml` reusable workflow, after `bundle-create` generates the artifact. The S3 key for each bundle is `bundle/{product}/{filename}`, where the product is read from the bundle's YAML `products` array.
+
+> **Note:** Bundles are keyed by product, so a shared product (e.g. `cloud-serverless`) published by more than one repository shares the `bundle/{product}/` prefix. To avoid collisions, give each bundle a repo-qualified filename such as `{repo}-{dateOrVersion}.yaml` (e.g. `my-repo-2026-03.yaml`).
