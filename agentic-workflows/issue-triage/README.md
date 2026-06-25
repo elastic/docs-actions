@@ -34,6 +34,7 @@ Add `permissions.copilot-requests: write` to the caller workflow. You do not nee
 | Output | Max | Description |
 |--------|-----|-------------|
 | `add-labels` | 6 | Apply classification labels and any team or area labels that already exist in the repo. |
+| `remove-labels` | 1 | Remove `needs-team` once the issue has been triaged, when that label exists. |
 | `add-comment` | 1 | Ask the author for missing information when the issue needs a human. |
 | `update-issue` | 1 | Record a triage findings block and, when appropriate, a refined description. |
 
@@ -45,7 +46,7 @@ Classification labels for `add-labels`: `triaged`, `human-needed`, `bug`, `enhan
 2. Otherwise it reads the issue, its comments, any linked issues or files, and `CODEOWNERS`.
 3. It classifies the issue type and validates the body against the quality bar (required sections, vague language, and cross-references).
 4. When the description needs refinement and enough author-supplied information is present, it rewrites the main content, keeping a hidden snapshot of the previous version for `/triage undo`.
-5. It applies `triaged` plus the best-fit classification and team or area labels, and records a findings block in the issue body via `update_issue`.
+5. It applies `triaged` plus the best-fit classification and team or area labels, removes `needs-team` when present, and records a findings block in the issue body via `update_issue`.
 
 ## Example
 
