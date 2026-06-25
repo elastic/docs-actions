@@ -1,6 +1,6 @@
 # Issue triage
 
-Triages and refines an issue in a single pass. It classifies the issue type, validates the description against a quality bar, rewrites the description when it needs it, and applies labels. It reads `CODEOWNERS` and the issue's links to infer ownership and area. Repo-specific team mapping and label rules are supplied through the `additional-instructions` input.
+Triages and refines an issue in a single pass. It classifies the issue type, validates the description against a quality bar, rewrites the description when it needs it, and applies labels. It reads `CODEOWNERS` and the issue's links to infer ownership and area. When it rewrites, it preserves valid allowed-domain links and meaningful uncertainty from the author. Repo-specific team mapping and label rules are supplied through the `additional-instructions` input.
 
 For the same logic running automatically when an issue is opened, see [issue-auto-triage](../issue-auto-triage/).
 
@@ -44,7 +44,7 @@ Classification labels for `add-labels`: `triaged`, `human-needed`, `bug`, `enhan
 
 1. On a `/triage undo` comment, it restores the previous description from the hidden snapshot and stops.
 2. Otherwise it reads the issue, its comments, any linked issues or files, and `CODEOWNERS`.
-3. It classifies the issue type and validates the body against the quality bar (required sections, vague language, and cross-references).
+3. It classifies the issue type and validates the body against the quality bar (required sections, blocking ambiguity, and cross-references).
 4. When the description needs refinement and enough author-supplied information is present, it rewrites the main content, keeping a hidden snapshot of the previous version for `/triage undo`.
 5. It applies `triaged` plus the best-fit classification and team or area labels, removes `needs-team` when present, and records a findings block in the issue body via `update_issue`.
 

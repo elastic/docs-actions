@@ -2,12 +2,13 @@
 
 A well-formed issue has all of:
 
-- **One clear goal.** Exactly one objective. If several are present, flag them and recommend splitting.
+- **One clear goal or bounded scope.** A broad secondary scope is acceptable when it helps the assignee look for related places to update. Flag only unrelated objectives that make the issue hard to assign or complete.
 - **A stated outcome / definition of done** — what "fixed" or "shipped" looks like.
 - **High-level and concise.** Describes the *what* and *why*, not the *how*. No invented implementation detail unless the fix is trivial and the detail is obviously known.
 - **Specific, action-oriented title.**
 - **Just enough context** — the why, the impact, and any acceptance criteria, without redundancy.
-- Never add facts not supported by the issue or its comments. Preserve the author's intent.
+- Never add facts not supported by the issue or its comments. Preserve the author's original
+  prose, intent, uncertainty, and valid allowed-domain links whenever the text remains actionable.
 
 ## Reference: expected template sections
 
@@ -23,15 +24,19 @@ A well-formed issue has all of:
 **Question / documentation issues** — must have:
 - What specific information is missing or unclear
 
-## Reference: vague language signals
+## Reference: ambiguity signals
 
-Flag these in the issue body as indicators of under-specified content:
+Flag these in the issue body only when they make the task impossible to understand or act on:
 
 - Frequency weasel words: "sometimes", "occasionally", "intermittently", "randomly"
 - Hedged claims: "seems to", "appears to", "might", "maybe", "probably"
-- Unspecified scope: "various", "some", "certain", "several", "etc.", "and so on"
+- Broad scope: "various", "some", "certain", "several", "etc.", "and so on"
 - Bare assertions: "broken", "not working", "doesn't work" (with no description of what fails)
 - Vague goals: "improve", "better", "fix", "update" as the entire objective, with no specifics
+
+Do not treat hedging or broad-scope language as a defect when it preserves the author's uncertainty,
+signals that the issue is exploratory, or asks the assignee to check related locations for
+completeness.
 
 ## Reference: universal label taxonomy
 

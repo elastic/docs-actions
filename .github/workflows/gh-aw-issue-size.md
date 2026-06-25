@@ -54,6 +54,10 @@ network:
   allowed:
     - defaults
     - github
+    - "figma.com"
+    - "*.figma.com"
+    - "slack.com"
+    - "*.slack.com"
 
 steps:
   - name: Repo-specific setup
@@ -65,6 +69,11 @@ steps:
       fi
 
 safe-outputs:
+  allowed-domains:
+    - figma.com
+    - "*.figma.com"
+    - slack.com
+    - "*.slack.com"
   add-labels:
     allowed:
       - "hours"

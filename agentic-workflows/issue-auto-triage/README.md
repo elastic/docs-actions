@@ -1,6 +1,6 @@
 # Issue auto-triage
 
-Runs the same triage and refinement logic as [issue-triage](../issue-triage/), automatically when an issue is opened. It classifies the issue type, validates the description against a quality bar, refines it when appropriate, and applies labels.
+Runs the same triage and refinement logic as [issue-triage](../issue-triage/), automatically when an issue is opened. It classifies the issue type, validates the description against a quality bar, refines it when appropriate, and applies labels. When it rewrites, it preserves valid allowed-domain links and meaningful uncertainty from the author.
 
 Because there are no comments yet, it works from the issue body alone and applies a stricter rewrite guard: it only rewrites the description when the body already contains enough author-supplied information to do so without inventing facts. Issues opened by a bot are skipped.
 

@@ -27,8 +27,10 @@ starts with `/triage undo`:
   - Replies from the issue author — these often contain missing context.
   - Any previous TriageBot or RefineBot findings — use them as a checklist. Do not re-report
     what was already fixed.
-- If the body links to issues or files in any accessible repo, use the GitHub tools to read that
-  content. Use it to resolve ambiguity — do not copy it verbatim.
+- If the body links to issues, files, docs pages, or any other relevant resource, use the
+  available tools to read accessible linked content. Use it to resolve ambiguity — do not copy it
+  verbatim. Preserve every valid allowed-domain link in the issue body, including links you cannot
+  access.
 - Search for open issues in `${{ github.repository }}` whose title begins with `Meta:`,
   `[meta]`, or `META:` — skim each title and first paragraph to understand its scope.
 - Read `.github/CODEOWNERS` from this repo and list the repo's existing labels.
@@ -55,20 +57,23 @@ Using the quality bar from the reference above:
 **a. Section check** — identify which required sections are present, empty, or missing for
 this issue type. Placeholder text ("N/A", "TBD", "todo") counts as missing.
 
-**b. Vague language check** — scan the body for signals listed in the reference. Note every
-instance.
+**b. Ambiguity check** — scan the body for signals listed in the reference. Note only instances
+that make the issue hard to understand or act on. Do not flag hedging, uncertainty, or broad
+secondary scope when it communicates that the issue is exploratory or asks the assignee to check
+related locations for completeness.
 
 **c. Cross-reference validation** — for every issue link in the body (patterns: `#N`,
-`org/repo#N`, full GitHub URLs), verify the referenced issue exists and is open. Flag broken
-or closed links. Do this only for repos you can access.
+`org/repo#N`, full GitHub URLs), verify the referenced issue exists and is open. For other URLs,
+confirm that they are not obviously malformed, inaccessible, or unrelated when tooling allows.
+Flag broken or closed links. Do this only for repos and URLs you can access.
 
 ## 4. Decide the outcome
 
-- **Complete** — type identified, all required sections present, no vague language, all
+- **Complete** — type identified, all required sections present, no blocking ambiguity, all
   cross-references valid. **You must still call `update_issue` to append a TriageBot findings
   block** — the only thing you skip is the rewrite of the main content.
 - **Needs refinement** — type is clear and enough information is present, but sections are
-  weak, vague language is present, or cross-references are broken.
+  weak, blocking ambiguity is present, or cross-references are broken.
 - **Human needed** — goal or type cannot be determined, or so much is missing that refinement
   cannot proceed without author input. **You must still call `update_issue` to append a
   TriageBot findings block** — the only thing you skip is the rewrite of the main content.
@@ -85,10 +90,16 @@ update entirely".
 ## 5. Refine (only when outcome is "needs refinement")
 
 Rewrite the **main content** to the quality bar. Rules:
-- Fill all required sections using only information present in the issue, its comments, and
+- Prefer additive changes. Keep the author's original prose, structure, and wording wherever it is
+  actionable; add missing context, headings, or definitions of done around it instead of replacing
+  it wholesale.
+- Fill missing required sections using only information present in the issue, its comments, and
   linked cross-repo context.
-- Remove vague language; replace with specific claims or omit if unsupported.
-- Preserve the author's intent and all factual details. Do not add, invent, or assume.
+- Clarify only the ambiguity that blocks action. Preserve hedging, uncertainty, and broad
+  secondary scope when they communicate the author's intent or keep the issue exploratory.
+- Preserve the author's intent, all factual details, and all valid allowed-domain links. Do not add,
+  invent, or assume. Do not remove a link because you cannot access it.
+- Do not paraphrase only to make the prose sound more polished, decisive, or formal.
 - Keep it high-level and concise.
 
 ## 6. Act
@@ -176,7 +187,7 @@ Reconstruct the full body in this exact order — do not omit or reorder section
    **Section check:**
    - [✅/❌] <section name>: <one-line note if missing or weak>
 
-   **Vague language:**
+   **Ambiguity / scope notes:**
    - [list instances, or omit if none]
 
    **Cross-references:**
