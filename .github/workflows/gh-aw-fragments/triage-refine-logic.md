@@ -9,13 +9,18 @@ it — rewrite it to the quality bar**, all in one pass with a single body updat
 Read the comment that triggered this run (ID `${{ github.event.comment.id }}`). If its body
 starts with `/triage undo`:
 
+- Check whether `/tmp/gh-aw/agent/triage-undo-original-body.md` exists and is not empty.
+  If it does, read that file and restore its content as the new body using `update_issue` with
+  `"operation": "replace"` and `"issue_number": ${{ github.event.issue.number }}`. This file is
+  generated from GitHub's issue edit history and represents the original non-bot issue body when
+  that history is available. After calling `update_issue` with this body, **stop**.
 - Read the current issue body.
 - Find the block between `<!-- refinebot-undo-snapshot: begin -->` and
   `<!-- refinebot-undo-snapshot: end -->`. If found, restore that content as the new body using
   `update_issue` with `"operation": "replace"` and
   `"issue_number": ${{ github.event.issue.number }}`.
-- If no snapshot block exists, post one comment: "No previous version to restore — `/triage undo`
-  requires a prior rewrite to have taken place."
+- If neither edit history nor a snapshot is available, post one comment: "No previous version to
+  restore — `/triage undo` requires either GitHub edit history or a prior rewrite snapshot."
 - **Stop — do not proceed to the steps below.**
 
 (On `issues: opened` events there is no triggering comment, so this step is always skipped.)
