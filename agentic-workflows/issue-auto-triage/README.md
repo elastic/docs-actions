@@ -32,6 +32,7 @@ Add `permissions.copilot-requests: write` to the caller workflow. You do not nee
 | Output | Max | Description |
 |--------|-----|-------------|
 | `add-labels` | 6 | Apply classification labels and any team or area labels that already exist in the repo. |
+| `remove-labels` | 1 | Remove `needs-team` once the issue has been triaged, when that label exists. |
 | `add-comment` | 1 | Ask the author for missing information when the issue needs a human. |
 | `update-issue` | 1 | Record a triage findings block and, when appropriate, a refined description. |
 

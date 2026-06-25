@@ -98,6 +98,10 @@ Apply the one category label if confident and not already set. For team/area lab
 cross-reference CODEOWNERS with existing repo labels — apply only labels that already exist;
 never invent labels.
 
+**Remove the triage queue label:** if the issue carries a `needs-team` label and you have
+applied a team or area label (or the issue is otherwise fully triaged), remove `needs-team`
+with `remove_labels`. Skip this if no `needs-team` label exists.
+
 **If outcome is "Human needed":** post one comment listing the specific questions for the
 author so they receive a notification.
 

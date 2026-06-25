@@ -80,6 +80,10 @@ safe-outputs:
       - "Team:Projects"
       - "cross-team"
     max: 6
+  remove-labels:
+    allowed:
+      - "needs-team"
+    max: 1
   add-comment:
     max: 1
     hide-older-comments: true
