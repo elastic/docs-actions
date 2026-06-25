@@ -16,6 +16,8 @@ engine:
 
 on:
   roles: [admin, maintainer, write]
+  reaction: eyes
+  status-comment: true
   workflow_call:
     inputs:
       additional-instructions:
