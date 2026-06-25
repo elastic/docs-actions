@@ -8,11 +8,18 @@
 │   ├── formatting.md
 │   ├── rigor.md
 │   ├── mcp-pagination.md
-│   └── safe-output-add-comment.md
+│   ├── safe-output-add-comment.md
+│   ├── quality-bar.md                 # Triage quality bar and label taxonomy
+│   ├── triage-refine-logic.md         # Shared triage + refine prompt
+│   └── size-logic.md                  # Shared cost/benefit prompt
 ├── gh-aw-docs-issue-scope.md          # Workflow source
 ├── gh-aw-docs-issue-scope.lock.yml    # Compiled output
 ├── gh-aw-issue-triage.md              # Workflow source
 ├── gh-aw-issue-triage.lock.yml        # Compiled output
+├── gh-aw-issue-auto-triage.md         # Workflow source
+├── gh-aw-issue-auto-triage.lock.yml   # Compiled output
+├── gh-aw-issue-size.md                # Workflow source
+├── gh-aw-issue-size.lock.yml          # Compiled output
 ├── compile-check.yml                   # PR validation
 ├── check-aw-updates.yml               # Weekly recompilation
 └── ... (other CI workflows)
@@ -22,6 +29,12 @@ agentic-workflows/
 │   ├── example.yml                     # Trigger template for callers
 │   └── README.md                       # Usage docs
 ├── issue-triage/
+│   ├── example.yml
+│   └── README.md
+├── issue-auto-triage/
+│   ├── example.yml
+│   └── README.md
+├── issue-size/
 │   ├── example.yml
 │   └── README.md
 ├── README.md                           # Workflow index
