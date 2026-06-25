@@ -1,8 +1,8 @@
 ---
 description: >
-  Triages and refines an issue in one pass — classifies the issue type, validates it against the
-  quality bar, rewrites the description when it needs it, and applies labels.
-  Triggered by a /triage slash command, or via workflow_call from a consumer repository.
+  Auto-triages a newly opened issue — classifies the issue type, validates it against the
+  quality bar, refines the description when appropriate, and applies labels.
+  Invoked via workflow_call from a consumer repository that triggers on issues: opened.
 
 inlined-imports: true
 imports:
@@ -15,7 +15,6 @@ engine:
   id: copilot
 
 on:
-  roles: [admin, maintainer, write]
   workflow_call:
     inputs:
       additional-instructions:
@@ -32,9 +31,9 @@ on:
       COPILOT_GITHUB_TOKEN:
         required: false
 concurrency:
-  group: gh-aw-issue-triage-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+  group: gh-aw-issue-auto-triage-${{ github.event.issue.number || github.run_id }}
   cancel-in-progress: true
-  job-discriminator: ${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+  job-discriminator: ${{ github.event.issue.number || github.run_id }}
 
 permissions:
   copilot-requests: write
@@ -82,25 +81,26 @@ safe-outputs:
     max: 6
   add-comment:
     max: 1
-    hide-older-comments: true
   update-issue:
     body:
     max: 1
     target: "*"
-  messages:
-    run-started: "👀 TriageBot is triaging issue #${{ github.event.issue.number }}… [{run_url}]({run_url})"
-    run-success: "✅ TriageBot finished. [{run_url}]({run_url})"
-    run-failure: "❌ TriageBot failed. [{run_url}]({run_url}) — check the logs."
 
 timeout-minutes: 15
 ---
 
-This run was triggered by a `/triage` slash command from a team member, or by a consumer
-workflow that calls this reusable workflow. The workflow triages **and** refines the issue in a
-single pass — classifying, validating, rewriting the description if needed, and applying labels.
+This run was triggered automatically because the issue was just opened. There are no comments
+yet — gather context from the body alone.
 
-If the command was `/triage undo`, follow phase 0 (undo check) and stop.
+The triggering issue number is `${{ github.event.issue.number }}`. When calling `update_issue`,
+always pass `issue_number: ${{ github.event.issue.number }}`.
 
-When calling `update_issue`, always pass `issue_number: ${{ github.event.issue.number }}`.
+If the issue was opened by a bot (the actor name ends in `[bot]`), emit a `noop` immediately
+and do not triage.
+
+There is no triggering comment on this run, so phase 0 (undo check) is not applicable — skip
+it and proceed from phase 1. Apply the rewrite guard in phase 4: only rewrite the body when
+the outcome is "needs refinement" AND the body contains enough author-supplied information to
+rewrite without inventing facts.
 
 ${{ inputs.additional-instructions }}
