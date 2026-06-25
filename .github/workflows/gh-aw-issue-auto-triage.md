@@ -52,6 +52,12 @@ network:
   allowed:
     - defaults
     - github
+    - "www.elastic.co"
+    - "docs-v3-preview.elastic.dev"
+    - "figma.com"
+    - "*.figma.com"
+    - "slack.com"
+    - "*.slack.com"
 
 steps:
   - name: Repo-specific setup
@@ -63,6 +69,14 @@ steps:
       fi
 
 safe-outputs:
+  allowed-domains:
+    - www.elastic.co
+    - docs-v3-preview.elastic.dev
+    - github.com
+    - figma.com
+    - "*.figma.com"
+    - slack.com
+    - "*.slack.com"
   add-labels:
     allowed:
       - "triaged"

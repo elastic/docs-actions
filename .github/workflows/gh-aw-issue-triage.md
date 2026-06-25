@@ -55,6 +55,12 @@ network:
   allowed:
     - defaults
     - github
+    - "www.elastic.co"
+    - "docs-v3-preview.elastic.dev"
+    - "figma.com"
+    - "*.figma.com"
+    - "slack.com"
+    - "*.slack.com"
 
 steps:
   - name: Repo-specific setup
@@ -64,8 +70,89 @@ steps:
       if [ -n "$SETUP_COMMANDS" ]; then
         eval "$SETUP_COMMANDS"
       fi
+  - name: Prepare triage undo from edit history
+    env:
+      COMMENT_BODY: ${{ github.event.comment.body || '' }}
+      GH_TOKEN: ${{ github.token }}
+      ISSUE_NUMBER: ${{ github.event.issue.number || 0 }}
+      REPOSITORY: ${{ github.repository }}
+    run: |
+      if [[ "$COMMENT_BODY" != /triage\ undo* ]]; then
+        exit 0
+      fi
+
+      mkdir -p /tmp/gh-aw/agent
+
+      query='query($owner: String!, $name: String!, $number: Int!) {
+        repository(owner: $owner, name: $name) {
+          issue(number: $number) {
+            userContentEdits(first: 100) {
+              nodes {
+                editedAt
+                editor {
+                  login
+                }
+                diff
+              }
+            }
+          }
+        }
+      }'
+
+      owner="${REPOSITORY%%/*}"
+      name="${REPOSITORY#*/}"
+      response_path="/tmp/gh-aw/agent/triage-undo-edits.json"
+      gh api graphql \
+        -f query="$query" \
+        -f owner="$owner" \
+        -f name="$name" \
+        -F number="$ISSUE_NUMBER" > "$response_path"
+
+      node <<'NODE'
+      const fs = require('fs');
+
+      const responsePath = '/tmp/gh-aw/agent/triage-undo-edits.json';
+      const bodyPath = '/tmp/gh-aw/agent/triage-undo-original-body.md';
+      const metadataPath = '/tmp/gh-aw/agent/triage-undo-original-body.json';
+      const response = JSON.parse(fs.readFileSync(responsePath, 'utf8'));
+      const edits = response?.data?.repository?.issue?.userContentEdits?.nodes ?? [];
+      const sorted = edits
+        .filter((edit) => typeof edit.diff === 'string' && edit.diff.trim().length > 0)
+        .sort((a, b) => new Date(a.editedAt) - new Date(b.editedAt));
+
+      const selected =
+        sorted.find((edit) => edit.editor?.login !== 'github-actions') ??
+        sorted[0];
+
+      if (!selected) {
+        process.exit(0);
+      }
+
+      fs.writeFileSync(bodyPath, selected.diff, 'utf8');
+      fs.writeFileSync(
+        metadataPath,
+        JSON.stringify(
+          {
+            editedAt: selected.editedAt,
+            editor: selected.editor?.login ?? null,
+            source: 'github-user-content-edits',
+          },
+          null,
+          2,
+        ),
+        'utf8',
+      );
+      NODE
 
 safe-outputs:
+  allowed-domains:
+    - www.elastic.co
+    - docs-v3-preview.elastic.dev
+    - github.com
+    - figma.com
+    - "*.figma.com"
+    - slack.com
+    - "*.slack.com"
   add-labels:
     allowed:
       - "triaged"
