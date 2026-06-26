@@ -8,6 +8,10 @@ how much? Then break the work into a bill of materials that says which parts AI 
 need a human. Write for a team member who is deciding whether and when to pick this up — not for
 a scoring system. Be direct and specific; avoid invented precision.
 
+Treat benefit as an orientative assessment of documented impact signals, not a measurement of
+actual business value. Do not imply that you know affected-user volume, page traffic, or severity
+unless the issue, comments, linked context, or accessible repo data supports it.
+
 ## 0. Check what previous bots have done
 
 Before anything else, scan the issue body for blocks left by previous bots:
@@ -71,8 +75,18 @@ Answer: **who benefits from this, and how much?**
 - **Audience:** identify the people or systems that would be better off once this is done
   (e.g. docs contributors, readers of a specific product area, CI/CD pipeline operators, the
   on-call engineer). Be specific — "all users" is rarely accurate.
-- **Degree:** describe who benefits, how they benefit, and to what extent — e.g. unblocks a
-  whole workflow vs. removes a minor annoyance for a handful of people. Use plain language.
+- **Degree:** describe who benefits, how they benefit, and to what extent. Use impact signals
+  from the issue and linked context: affected workflow, product area, repeated reports, customer
+  impact, support deflection, onboarding, high-traffic or high-frequency docs, CI/CD reliability,
+  release timing, or breadth of contributor impact. A "minor annoyance" can still be high benefit
+  if it affects a high-frequency task, a high-visibility page, onboarding, support deflection, or
+  a broad user segment. Use plain language and avoid pretending that the estimate is more precise
+  than the evidence allows.
+- **Confidence:** say how well-supported the benefit estimate is: high, medium, or low. Use
+  high only when the issue includes clear impact evidence. Use low when the description does not
+  identify affected users, pages, workflows, traffic, customer impact, or repeated reports.
+  If confidence is low, add a concise caveat and suggest the missing context a human could add
+  before re-running `/size`.
 - **Synergies:** scan open issues in the repo for any that would be partially or fully resolved
   as a side-effect of this work. List them as `#N — title`, or say "None."
 
@@ -119,6 +133,7 @@ automatically. Use the format below exactly:
 ### Benefit
 - **Audience:** <who benefits>
 - **Degree:** <who, how, and to what extent>
+- **Confidence:** <high / medium / low, with a short evidence-based caveat if needed>
 - **Synergies:** <related issues as #N — title, or "None">
 
 ### Bill of materials

@@ -1,6 +1,6 @@
 # Issue size
 
-Estimates the cost and benefit of an issue. It reads the issue, its linked code or docs, and `CODEOWNERS`, then posts a single comment that covers effort, ownership, dependencies, the audience that benefits, and a bill of materials that splits the work into AI-suitable and human tasks.
+Estimates the cost and benefit of an issue. It reads the issue, its linked code or docs, and `CODEOWNERS`, then posts a single comment that covers effort, ownership, dependencies, the audience that benefits, the confidence behind the benefit estimate, and a bill of materials that splits the work into AI-suitable and human tasks.
 
 ## Triggers
 
@@ -41,5 +41,5 @@ Effort labels for `add-labels`: `hours`, `weeks: <1`, `weeks: 1`, `weeks: 2`, an
 1. It reviews any prior TriageBot, RefineBot, or SizeBot blocks in the issue body to sharpen the estimate.
 2. It reads the issue, its comments, linked code or docs, and `CODEOWNERS`.
 3. If the issue is too vague to assess, it emits `noop` with a short comment suggesting `/triage` first.
-4. Otherwise it estimates cost (effort, ownership, dependencies) and benefit (audience, degree, synergies), then builds a bill of materials.
+4. Otherwise it estimates cost (effort, ownership, dependencies) and benefit (audience, degree, confidence, synergies), treating benefit as an evidence-based orientation rather than a precise measurement.
 5. It applies the matching effort label, adds `good-for-ai` when every task is AI-suitable and the effort is small, and posts a single cost-and-benefit comment. It does not edit the issue body.
