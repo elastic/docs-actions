@@ -6,14 +6,18 @@ description: >
   each merged fork PR, regenerates the changelog entry from the live PR record
   using `docs-builder changelog add --prs <N>`, so fork PRs (which can't commit
   to their own branch) still produce an entry on merge. A scrubber Lambda
-  mirrors sanitized copies to the public CDN bucket. Intended to run on push
-  to the default branch (main/master). Only files whose content has changed
+  mirrors sanitized copies to the public CDN bucket. Entries are scoped per
+  branch (changelog/{org}/{repo}/{branch}/...), so this can run on a push to any
+  branch (main/master or a release branch). Only files whose content has changed
   are transferred.
 
 inputs:
   config:
     description: 'Path to changelog.yml configuration file (repo-relative, no ".." or absolute paths)'
     default: 'docs/changelog.yml'
+  branch:
+    description: 'Branch the changelog entries are published under (changelog/{org}/{repo}/{branch}/...). Defaults to the pushed branch.'
+    default: '${{ github.ref_name }}'
   github-token:
     description: 'GitHub token (used by docs-builder setup and the GitHub API lookups). Use the default GITHUB_TOKEN; do not substitute a broader PAT.'
     default: '${{ github.token }}'
@@ -24,20 +28,21 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Verify push to default branch
+    - name: Verify branch push
       shell: bash
       env:
         REF: ${{ github.ref }}
       run: |
-        if [[ "$REF" != "refs/heads/main" && "$REF" != "refs/heads/master" ]]; then
-          echo "::error::changelog upload must run on a push to main or master (got $REF)"
+        if [[ "$REF" != refs/heads/* ]]; then
+          echo "::error::changelog upload must run on a branch push (got $REF)"
           exit 1
         fi
 
-    - name: Validate config path
+    - name: Validate inputs
       shell: bash
       env:
         CONFIG: ${{ inputs.config }}
+        BRANCH: ${{ inputs.branch }}
       run: |
         if [[ "$CONFIG" == /* ]]; then
           echo "::error::config path must be relative, not absolute: ${CONFIG}"
@@ -49,6 +54,14 @@ runs:
         fi
         if [[ "$CONFIG" == *$'\n'* || "$CONFIG" == *$'\r'* ]]; then
           echo "::error::config path must not contain newlines"
+          exit 1
+        fi
+        if [[ -z "$BRANCH" ]]; then
+          echo "::error::branch must not be empty"
+          exit 1
+        fi
+        if [[ "$BRANCH" == *$'\n'* || "$BRANCH" == *$'\r'* ]]; then
+          echo "::error::branch must not contain newlines"
           exit 1
         fi
 
@@ -133,6 +146,7 @@ runs:
         CONFIG: ${{ inputs.config }}
         REPO_NAME: ${{ github.event.repository.name }}
         OWNER: ${{ github.repository_owner }}
+        BRANCH: ${{ inputs.branch }}
       run: |
         docs-builder changelog upload \
           --artifact-type changelog \
@@ -140,4 +154,5 @@ runs:
           --s3-bucket-name elastic-docs-v3-changelog-bundles-private \
           --config "$CONFIG" \
           --repo "$REPO_NAME" \
-          --owner "$OWNER"
+          --owner "$OWNER" \
+          --branch "$BRANCH"
