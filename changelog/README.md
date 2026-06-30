@@ -189,7 +189,7 @@ Each PR produces a file at `docs/changelog/{filename}.yaml` on the PR branch (wh
 
 ## Uploading to S3
 
-Changelog files on the default branch can be uploaded to S3. Files land in a **private bucket** (`elastic-docs-v3-changelog-bundles-private`), which is the internal source of truth. A scrubber Lambda automatically mirrors sanitized copies (with private repository references removed) to the **public bucket** served via CloudFront CDN. Changelog entries are uploaded once per authoring repository under `changelog/{repo}/{filename}.yaml` (the repo is resolved from `--repo`, `bundle.repo` in `changelog.yml`, or the git remote origin).
+Changelog files can be uploaded to S3 from a push to any branch. Files land in a **private bucket** (`elastic-docs-v3-changelog-bundles-private`), which is the internal source of truth. A scrubber Lambda automatically mirrors sanitized copies (with private repository references removed) to the **public bucket** served via CloudFront CDN. Changelog entries are uploaded once per authoring org/repo/branch under `changelog/{org}/{repo}/{branch}/{filename}.yaml` (the owner and repo are resolved from `--owner`/`--repo`, `bundle.owner`/`bundle.repo` in `changelog.yml`, or the git remote origin; the branch from `--branch`, defaulting to the pushed branch). The branch is stored verbatim, so a branch name with `/` (e.g. `feature/foo`) becomes additional key segments.
 
 ### 1. Add the upload workflow
 
@@ -294,7 +294,7 @@ Each mode has a complete, copy-pasteable workflow file under [Setup](#setup-1).
 
 By default, the bundle command sources the individual changelog entries from the **public CDN**, scoped to the bundle's product(s), rather than from the local `bundle.directory`. This means a bundle reflects the same sanitized entries that have been published to S3, and a repository can produce a bundle without keeping every entry file checked out locally.
 
-CDN sourcing locates each authoring repo's entry registry (`changelog/{repo}/registry.json`), resolved from `--repo`, `bundle.repo` in `changelog.yml`, or the git remote origin, to discover that repo's published entries. When the source repo can't be resolved (e.g. an option-mode PR/issue-only filter), the command automatically falls back to local sourcing.
+CDN sourcing locates each authoring pool's entry registry (`changelog/{org}/{repo}/{branch}/registry.json`) — repo from `--repo`/`bundle.repo`/git remote, org from `--owner`/`bundle.owner` (default `elastic`), branch from `--branch`/`bundle.branch` (default `main`) — to discover that pool's published entries. When the source repo can't be resolved (e.g. an option-mode PR/issue-only filter), the command automatically falls back to local sourcing.
 
 To always source entries from the local `bundle.directory` instead, set `use_local_changelogs: true` in the `bundle` section of your `docs/changelog.yml`. Passing an explicit `--directory`/`output` also forces local sourcing.
 
