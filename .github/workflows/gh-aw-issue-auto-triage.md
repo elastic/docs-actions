@@ -88,8 +88,7 @@ safe-outputs:
       - "Team:Admin"
       - "Team:Developer"
       - "Team:DocsEng"
-      - "Team:Experience"
-      - "Team:Ingest"
+      - "Team:SKI"
       - "Team:Projects"
       - "cross-team"
     max: 6
