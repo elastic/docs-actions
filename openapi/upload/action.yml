@@ -1,10 +1,7 @@
 name: OpenAPI upload
 description: >
-  Uploads an already-linted, already-bundled OpenAPI spec to S3
-  (elastic-docs-openapi-specs) via OIDC. Does not lint and does not bundle —
-  the consumer workflow is responsible for both before calling this action.
-  Part of the RFC for publishing OpenAPI specs to S3
-  (elastic/docs-eng-team#634).
+  Uploads an already-linted, already-bundled OpenAPI spec to S3 via OIDC.
+  Does not lint or bundle — the consumer workflow must do both first.
 
 inputs:
   spec-path:
