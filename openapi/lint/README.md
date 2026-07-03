@@ -43,9 +43,13 @@ It has two severity tiers:
 
 - **error** — the spec parses, all `$ref`s resolve, and it conforms to the OAS schema for its
   detected version (Swagger 2.0, OpenAPI 3.0.x, or OpenAPI 3.1.x). These always fail the check.
-- **warn** — authoring conventions (`operationId` presence/casing, security scheme names,
-  required metadata, `x-state` shape, etc.). These pass by default so existing specs aren't broken;
-  set `fail-on-warn: true` to enforce them.
+- **warn** — authoring conventions, currently the generic hygiene rules built into `spectral:oas`
+  (`operationId` presence, required descriptions/tags/servers, tags defined at root). These pass
+  by default so existing specs aren't broken; set `fail-on-warn: true` to enforce them.
+
+Elastic-specific conventions (`operationId` casing, security scheme naming, the `x-state` shape)
+aren't encoded as rules yet — they're sketched as commented-out examples in `ruleset.yaml` pending
+team agreement (see the analysis in elastic/docs-eng-team#639). Land them via PR once adopted.
 
 `spec-path` should be repo-relative — PR annotations are anchored to the path as given, so an
 absolute path won't map back to a file in the diff.

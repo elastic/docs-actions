@@ -27,57 +27,65 @@ rules:
   operation-tag-defined: warn
 
   # ---- Convention tier (warn) — custom Elastic rules ----
-  elastic-info-version-non-empty:
-    description: 'info.version must be set'
-    given: '$.info.version'
-    severity: warn
-    then:
-      function: truthy
-
-  elastic-operation-summary:
-    description: 'Every operation should have a summary'
-    given: '$.paths[*][get,put,post,delete,options,head,patch,trace]'
-    severity: warn
-    then:
-      field: summary
-      function: truthy
-
-  elastic-operation-id-camel-case:
-    description: 'operationId should be camelCase'
-    given: '$.paths[*][get,put,post,delete,options,head,patch,trace].operationId'
-    severity: warn
-    then:
-      function: casing
-      functionOptions:
-        type: camel
-
-  elastic-security-scheme-names:
-    description: 'Security scheme keys should be apiKeyAuth, basicAuth, or bearerAuth'
-    given:
-      - '$.securityDefinitions[*]~'
-      - '$.components.securitySchemes[*]~'
-    severity: warn
-    then:
-      function: enumeration
-      functionOptions:
-        values:
-          - apiKeyAuth
-          - basicAuth
-          - bearerAuth
-
-  elastic-x-state-shape:
-    description: 'x-state should be a structured lifecycle object, not a free-form string'
-    given: '$..x-state'
-    severity: warn
-    then:
-      function: schema
-      functionOptions:
-        schema:
-          type: object
-          required: [lifecycle]
-          properties:
-            lifecycle:
-              enum: [ga, beta, experimental, technical-preview]
-            since:
-              type: string
-          additionalProperties: false
+  #
+  # None enabled yet. The rules below are examples sketched from the
+  # conventions analysis in elastic/docs-eng-team#639, but those conventions
+  # (operationId casing, security scheme naming, the x-state shape) aren't
+  # agreed yet across consumer teams. Uncomment and land via PR once a
+  # convention is actually adopted — don't enforce contested decisions here
+  # ahead of agreement.
+  #
+  # elastic-info-version-non-empty:
+  #   description: 'info.version must be set'
+  #   given: '$.info.version'
+  #   severity: warn
+  #   then:
+  #     function: truthy
+  #
+  # elastic-operation-summary:
+  #   description: 'Every operation should have a summary'
+  #   given: '$.paths[*][get,put,post,delete,options,head,patch,trace]'
+  #   severity: warn
+  #   then:
+  #     field: summary
+  #     function: truthy
+  #
+  # elastic-operation-id-camel-case:
+  #   description: 'operationId should be camelCase'
+  #   given: '$.paths[*][get,put,post,delete,options,head,patch,trace].operationId'
+  #   severity: warn
+  #   then:
+  #     function: casing
+  #     functionOptions:
+  #       type: camel
+  #
+  # elastic-security-scheme-names:
+  #   description: 'Security scheme keys should be apiKeyAuth, basicAuth, or bearerAuth'
+  #   given:
+  #     - '$.securityDefinitions[*]~'
+  #     - '$.components.securitySchemes[*]~'
+  #   severity: warn
+  #   then:
+  #     function: enumeration
+  #     functionOptions:
+  #       values:
+  #         - apiKeyAuth
+  #         - basicAuth
+  #         - bearerAuth
+  #
+  # elastic-x-state-shape:
+  #   description: 'x-state should be a structured lifecycle object, not a free-form string'
+  #   given: '$..x-state'
+  #   severity: warn
+  #   then:
+  #     function: schema
+  #     functionOptions:
+  #       schema:
+  #         type: object
+  #         required: [lifecycle]
+  #         properties:
+  #           lifecycle:
+  #             enum: [ga, beta, experimental, technical-preview]
+  #           since:
+  #             type: string
+  #         additionalProperties: false
