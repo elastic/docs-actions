@@ -60,17 +60,17 @@ runs:
           fi
         }
 
+        validate_segment() {
+          local value="$1" name="$2"
+          if [[ ! "$value" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+            echo "::error::${name} must match [a-zA-Z0-9._-]+: ${value}"; exit 1
+          fi
+        }
+
         validate_path "$SPEC_PATH" "spec-path"
         validate_path "$S3_PREFIX" "s3-prefix"
-
-        if [[ ! "$SPEC_NAME" =~ ^[a-zA-Z0-9._-]+$ ]]; then
-          echo "::error::spec-name must match [a-zA-Z0-9._-]+: ${SPEC_NAME}"
-          exit 1
-        fi
-        if [[ ! "$VERSION" =~ ^[a-zA-Z0-9._-]+$ ]]; then
-          echo "::error::version must match [a-zA-Z0-9._-]+: ${VERSION}"
-          exit 1
-        fi
+        validate_segment "$SPEC_NAME" "spec-name"
+        validate_segment "$VERSION" "version"
 
         case "$SPEC_PATH" in
           *.yaml|*.yml) content_type=application/yaml ;;
