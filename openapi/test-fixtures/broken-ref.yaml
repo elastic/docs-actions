@@ -1,0 +1,23 @@
+openapi: 3.0.3
+info:
+  title: Test API
+  version: "1.0.0"
+  description: An otherwise valid spec with an unresolvable $ref, to prove the linter fails on it.
+servers:
+  - url: https://api.example.com
+paths:
+  /things:
+    get:
+      operationId: getThings
+      summary: Get things
+      description: Returns a list of things.
+      tags: [things]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Missing'
+tags:
+  - name: things

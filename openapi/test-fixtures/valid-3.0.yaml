@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info:
+  title: Test API
+  version: "1.0.0"
+  description: A clean OpenAPI 3.0 fixture used to prove the ruleset passes valid specs.
+servers:
+  - url: https://api.example.com
+paths:
+  /things:
+    get:
+      operationId: getThings
+      summary: Get things
+      description: Returns a list of things.
+      tags: [things]
+      x-state:
+        lifecycle: ga
+        since: "8.0"
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+tags:
+  - name: things

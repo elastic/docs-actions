@@ -1,0 +1,96 @@
+name: test-openapi-lint
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'openapi/**'
+      - '.github/workflows/test-openapi-lint.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'openapi/**'
+      - '.github/workflows/test-openapi-lint.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-openapi-lint-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test-lint:
+    name: Test (${{ matrix.fixture }}, fail-on-warn=${{ matrix.fail-on-warn }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - fixture: valid-2.0.yaml
+            fail-on-warn: 'true'
+            expect: success
+          - fixture: valid-3.0.yaml
+            fail-on-warn: 'true'
+            expect: success
+          - fixture: valid-3.1.yaml
+            fail-on-warn: 'true'
+            expect: success
+          - fixture: broken-ref.yaml
+            fail-on-warn: 'false'
+            expect: failure
+          - fixture: schema-violation.yaml
+            fail-on-warn: 'false'
+            expect: failure
+          - fixture: not-openapi.yaml
+            fail-on-warn: 'false'
+            expect: failure
+          - fixture: convention-warnings.yaml
+            fail-on-warn: 'false'
+            expect: success
+          - fixture: convention-warnings.yaml
+            fail-on-warn: 'true'
+            expect: failure
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run lint action
+        id: lint
+        continue-on-error: true
+        uses: ./openapi/lint
+        with:
+          spec-path: openapi/test-fixtures/${{ matrix.fixture }}
+          fail-on-warn: ${{ matrix.fail-on-warn }}
+
+      - name: Verify outcome
+        env:
+          OUTCOME: ${{ steps.lint.outcome }}
+          EXPECTED: ${{ matrix.expect }}
+        run: |
+          if [ "${OUTCOME}" != "${EXPECTED}" ]; then
+            echo "::error::Expected outcome '${EXPECTED}' but got '${OUTCOME}'"
+            exit 1
+          fi
+          echo "Outcome matched: ${OUTCOME}"
+
+      - name: Verify outputs
+        if: matrix.fixture == 'convention-warnings.yaml' && matrix.fail-on-warn == 'false'
+        env:
+          WARNING_COUNT: ${{ steps.lint.outputs.warning-count }}
+          ERROR_COUNT: ${{ steps.lint.outputs.error-count }}
+        run: |
+          if [ "${ERROR_COUNT}" != "0" ]; then
+            echo "::error::Expected 0 errors, got ${ERROR_COUNT}"
+            exit 1
+          fi
+          if [ "${WARNING_COUNT}" -lt 3 ]; then
+            echo "::error::Expected at least 3 warnings, got ${WARNING_COUNT}"
+            exit 1
+          fi
+          echo "Output counts verified: errors=${ERROR_COUNT} warnings=${WARNING_COUNT}"

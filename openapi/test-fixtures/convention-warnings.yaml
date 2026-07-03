@@ -1,0 +1,19 @@
+openapi: 3.0.3
+info:
+  title: Test API
+  version: "1.0.0"
+  description: A structurally valid spec that violates convention (warn-tier) rules only.
+servers:
+  - url: https://api.example.com
+paths:
+  /things:
+    get:
+      operationId: get_things
+      description: Returns a list of things.
+      tags: [things]
+      x-state: "Generally available"
+      responses:
+        '200':
+          description: OK
+tags:
+  - name: things

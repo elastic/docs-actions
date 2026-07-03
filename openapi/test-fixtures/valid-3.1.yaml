@@ -1,0 +1,24 @@
+openapi: 3.1.0
+info:
+  title: Test API
+  version: "1.0.0"
+  description: A clean OpenAPI 3.1 fixture used to prove the ruleset passes valid specs.
+servers:
+  - url: https://api.example.com
+paths:
+  /things:
+    get:
+      operationId: getThings
+      summary: Get things
+      description: Returns a list of things.
+      tags: [things]
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+tags:
+  - name: things

@@ -1,0 +1,119 @@
+name: 'Elastic OpenAPI Linter'
+description: 'Lint an OpenAPI 2.0 (Swagger), 3.0, or 3.1 spec against the centralized Elastic ruleset (Spectral)'
+author: 'Elastic'
+
+branding:
+  icon: 'check-circle'
+  color: 'blue'
+
+inputs:
+  spec-path:
+    description: 'Repo-relative path to the OpenAPI spec file (JSON or YAML)'
+    required: true
+  fail-on-warn:
+    description: 'Fail the check on warning-level convention issues, not just errors'
+    required: false
+    default: 'false'
+
+outputs:
+  error-count:
+    description: 'Number of error-level results'
+    value: ${{ steps.lint.outputs.error-count }}
+  warning-count:
+    description: 'Number of warning-level results'
+    value: ${{ steps.lint.outputs.warning-count }}
+  results-file:
+    description: 'Path to the machine-readable JSON results file'
+    value: ${{ steps.lint.outputs.results-file }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        SPEC_PATH: ${{ inputs.spec-path }}
+      run: |
+        if [ -z "${SPEC_PATH}" ]; then
+          echo "::error::spec-path is required"
+          exit 1
+        fi
+
+        if [ ! -f "${SPEC_PATH}" ]; then
+          echo "::error::spec-path not found: ${SPEC_PATH}"
+          exit 1
+        fi
+
+        if [[ "${SPEC_PATH}" == /* ]]; then
+          echo "::warning::spec-path is absolute (${SPEC_PATH}); PR annotations may not anchor to a file. Use a repo-relative path."
+        fi
+
+    - name: Run Spectral
+      id: lint
+      shell: bash
+      env:
+        SPEC_PATH: ${{ inputs.spec-path }}
+        FAIL_ON_WARN: ${{ inputs.fail-on-warn }}
+      run: |
+        FAIL_SEV=error
+        if [ "${FAIL_ON_WARN}" == "true" ]; then
+          FAIL_SEV=warn
+        fi
+
+        RESULTS="${RUNNER_TEMP}/spectral-results.json"
+        EXIT=0
+
+        npx --yes @stoplight/spectral-cli@6.16.1 lint \
+          --ruleset "${{ github.action_path }}/ruleset.yaml" \
+          -f github-actions -f json --output.json "${RESULTS}" \
+          --fail-severity="${FAIL_SEV}" \
+          "${SPEC_PATH}" || EXIT=$?
+
+        # A file that isn't OpenAPI at all only produces a warning and exits 0
+        # at default severity; treat it as a hard failure.
+        if jq -e 'any(.[]; .code == "unrecognized-format")' "${RESULTS}" >/dev/null 2>&1; then
+          echo "::error file=${SPEC_PATH}::Not a recognized OpenAPI 2.0/3.0/3.1 document"
+          EXIT=1
+        fi
+
+        ERROR_COUNT=$(jq '[.[] | select(.severity == 0)] | length' "${RESULTS}")
+        WARNING_COUNT=$(jq '[.[] | select(.severity == 1)] | length' "${RESULTS}")
+
+        echo "error-count=${ERROR_COUNT}" >> "$GITHUB_OUTPUT"
+        echo "warning-count=${WARNING_COUNT}" >> "$GITHUB_OUTPUT"
+        echo "results-file=${RESULTS}" >> "$GITHUB_OUTPUT"
+        echo "exit-code=${EXIT}" >> "$GITHUB_OUTPUT"
+
+    - name: Write job summary
+      if: always()
+      shell: bash
+      env:
+        SPEC_PATH: ${{ inputs.spec-path }}
+        RESULTS_FILE: ${{ steps.lint.outputs.results-file }}
+        ERROR_COUNT: ${{ steps.lint.outputs.error-count }}
+        WARNING_COUNT: ${{ steps.lint.outputs.warning-count }}
+      run: |
+        if [ ! -f "${RESULTS_FILE}" ]; then
+          exit 0
+        fi
+
+        {
+          echo "## OpenAPI Lint: ${SPEC_PATH}"
+          echo ""
+          echo "**Errors:** ${ERROR_COUNT} · **Warnings:** ${WARNING_COUNT}"
+          echo ""
+          if [ "$((ERROR_COUNT + WARNING_COUNT))" -gt 0 ]; then
+            echo "| Severity | Rule | Line | Message |"
+            echo "|---|---|---|---|"
+            jq -r '.[] | "| " + (if .severity == 0 then "error" else "warning" end) + " | " + .code + " | " + (.range.start.line + 1 | tostring) + " | " + (.message | gsub("\\|"; "\\|")) + " |"' "${RESULTS_FILE}"
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Fail on results
+      shell: bash
+      env:
+        EXIT_CODE: ${{ steps.lint.outputs.exit-code }}
+      run: |
+        if [ "${EXIT_CODE}" != "0" ]; then
+          exit 1
+        fi
