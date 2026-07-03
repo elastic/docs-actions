@@ -48,6 +48,12 @@ runs:
           echo "::warning::spec-path is absolute (${SPEC_PATH}); PR annotations may not anchor to a file. Use a repo-relative path."
         fi
 
+    - name: Cache Spectral CLI
+      uses: actions/cache@v4
+      with:
+        path: ~/.npm/_npx
+        key: spectral-cli-6.16.1-${{ runner.os }}
+
     - name: Run Spectral
       id: lint
       shell: bash
@@ -69,22 +75,31 @@ runs:
           --fail-severity="${FAIL_SEV}" \
           "${SPEC_PATH}" || EXIT=$?
 
-        # A file that isn't OpenAPI at all only produces a warning and exits 0
-        # at default severity; treat it as a hard failure.
-        if jq -e 'any(.[]; .code == "unrecognized-format")' "${RESULTS}" >/dev/null 2>&1; then
-          echo "::error file=${SPEC_PATH}::Not a recognized OpenAPI 2.0/3.0/3.1 document"
+        # Diagnostic codes that always fail the check regardless of fail-on-warn:
+        # they mean the document isn't lintable at all, not that a rule was
+        # violated, so they can't be tiered via ruleset.yaml like normal rules.
+        # unrecognized-format is emitted by Spectral itself at warn severity.
+        ALWAYS_ERROR_CODES='["unrecognized-format"]'
+
+        read -r ERROR_COUNT WARNING_COUNT HAS_ALWAYS_ERROR < <(jq -r --argjson codes "${ALWAYS_ERROR_CODES}" '
+          [
+            ([.[] | select(.severity == 0)] | length),
+            ([.[] | select(.severity == 1)] | length),
+            (any(.[]; .code as $c | $codes | index($c) != null))
+          ] | @tsv
+        ' "${RESULTS}")
+
+        if [ "${HAS_ALWAYS_ERROR}" == "true" ]; then
+          echo "::error file=${SPEC_PATH}::Document failed a structural check (not a recognized OpenAPI 2.0/3.0/3.1 spec)"
           EXIT=1
         fi
-
-        ERROR_COUNT=$(jq '[.[] | select(.severity == 0)] | length' "${RESULTS}")
-        WARNING_COUNT=$(jq '[.[] | select(.severity == 1)] | length' "${RESULTS}")
 
         echo "error-count=${ERROR_COUNT}" >> "$GITHUB_OUTPUT"
         echo "warning-count=${WARNING_COUNT}" >> "$GITHUB_OUTPUT"
         echo "results-file=${RESULTS}" >> "$GITHUB_OUTPUT"
         echo "exit-code=${EXIT}" >> "$GITHUB_OUTPUT"
 
-    - name: Write job summary
+    - name: Write job summary and enforce result
       if: always()
       shell: bash
       env:
@@ -92,28 +107,22 @@ runs:
         RESULTS_FILE: ${{ steps.lint.outputs.results-file }}
         ERROR_COUNT: ${{ steps.lint.outputs.error-count }}
         WARNING_COUNT: ${{ steps.lint.outputs.warning-count }}
-      run: |
-        if [ ! -f "${RESULTS_FILE}" ]; then
-          exit 0
-        fi
-
-        {
-          echo "## OpenAPI Lint: ${SPEC_PATH}"
-          echo ""
-          echo "**Errors:** ${ERROR_COUNT} · **Warnings:** ${WARNING_COUNT}"
-          echo ""
-          if [ "$((ERROR_COUNT + WARNING_COUNT))" -gt 0 ]; then
-            echo "| Severity | Rule | Line | Message |"
-            echo "|---|---|---|---|"
-            jq -r '.[] | "| " + (if .severity == 0 then "error" else "warning" end) + " | " + .code + " | " + (.range.start.line + 1 | tostring) + " | " + (.message | gsub("\\|"; "\\|")) + " |"' "${RESULTS_FILE}"
-          fi
-        } >> "$GITHUB_STEP_SUMMARY"
-
-    - name: Fail on results
-      shell: bash
-      env:
         EXIT_CODE: ${{ steps.lint.outputs.exit-code }}
       run: |
+        if [ -f "${RESULTS_FILE}" ]; then
+          {
+            echo "## OpenAPI Lint: ${SPEC_PATH}"
+            echo ""
+            echo "**Errors:** ${ERROR_COUNT} · **Warnings:** ${WARNING_COUNT}"
+            echo ""
+            if [ "$((ERROR_COUNT + WARNING_COUNT))" -gt 0 ]; then
+              echo "| Severity | Rule | Line | Message |"
+              echo "|---|---|---|---|"
+              jq -r '.[] | "| " + (if .severity == 0 then "error" else "warning" end) + " | " + .code + " | " + (.range.start.line + 1 | tostring) + " | " + (.message | gsub("\\|"; "\\|")) + " |"' "${RESULTS_FILE}"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
+
         if [ "${EXIT_CODE}" != "0" ]; then
           exit 1
         fi
