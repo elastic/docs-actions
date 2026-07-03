@@ -189,7 +189,7 @@ Each PR produces a file at `docs/changelog/{filename}.yaml` on the PR branch (wh
 
 ## Uploading to S3
 
-Changelog files on the default branch can be uploaded to S3. Files land in a **private bucket** (`elastic-docs-v3-changelog-bundles-private`), which is the internal source of truth. A scrubber Lambda automatically mirrors sanitized copies (with private repository references removed) to the **public bucket** served via CloudFront CDN. Changelogs are uploaded under `{product}/changelog/{filename}.yaml`.
+Changelog files can be uploaded to S3 from a push to any branch. Files land in a **private bucket** (`elastic-docs-v3-changelog-bundles-private`), which is the internal source of truth. A scrubber Lambda automatically mirrors sanitized copies (with private repository references removed) to the **public bucket** served via CloudFront CDN. Changelog entries are uploaded once per authoring org/repo/branch under `changelog/{org}/{repo}/{branch}/{filename}.yaml` (the owner and repo are resolved from `--owner`/`--repo`, `bundle.owner`/`bundle.repo` in `changelog.yml`, or the git remote origin; the branch from `--branch`, defaulting to the pushed branch). The branch is stored verbatim, so a branch name with `/` (e.g. `feature/foo`) becomes additional key segments.
 
 ### 1. Add the upload workflow
 
@@ -270,7 +270,7 @@ Setting up bundling comes down to two choices: **how the bundle is delivered** a
 
 | Your goal | Workflow | What you get |
 | --- | --- | --- |
-| Make the bundle available to docs rendering | [`changelog-bundle.yml`](#setup-1) | Uploads the bundle to S3 (`{product}/bundle/{file}`) |
+| Make the bundle available to docs rendering | [`changelog-bundle.yml`](#setup-1) | Uploads the bundle to S3 (`bundle/{product}/{file}`) |
 | Commit the bundle into your repository | [`changelog-bundle-pr.yml`](#bundle-pr-workflow-opt-in) | Opens a PR with the scrubbed bundle fetched from the CDN |
 | Both | run `changelog-bundle.yml`, then `changelog-bundle-pr.yml` | Upload first, then open the PR |
 
@@ -294,7 +294,7 @@ Each mode has a complete, copy-pasteable workflow file under [Setup](#setup-1).
 
 By default, the bundle command sources the individual changelog entries from the **public CDN**, scoped to the bundle's product(s), rather than from the local `bundle.directory`. This means a bundle reflects the same sanitized entries that have been published to S3, and a repository can produce a bundle without keeping every entry file checked out locally.
 
-CDN sourcing requires a resolvable product (from a profile's `products`/`output_products`, or `--input-products`) so the per-product registry (`{product}/changelog/registry.json`) can be located. When no product can be resolved (e.g. an option-mode PR/issue-only filter), the command automatically falls back to local sourcing.
+CDN sourcing locates each authoring pool's entry registry (`changelog/{org}/{repo}/{branch}/registry.json`) — repo from `--repo`/`bundle.repo`/git remote, org from `--owner`/`bundle.owner` (default `elastic`), branch from `--branch`/`bundle.branch` (default `main`) — to discover that pool's published entries. When the source repo can't be resolved (e.g. an option-mode PR/issue-only filter), the command automatically falls back to local sourcing.
 
 To always source entries from the local `bundle.directory` instead, set `use_local_changelogs: true` in the `bundle` section of your `docs/changelog.yml`. Passing an explicit `--directory`/`output` also forces local sourcing.
 
@@ -467,7 +467,9 @@ If your changelog configuration is not at `docs/changelog.yml`, pass the path ex
 
 ### Output
 
-The primary workflow (`changelog-bundle.yml`) uploads the bundle to the `elastic-docs-v3-changelog-bundles` S3 bucket under `{product}/bundle/{filename}`. The bundle is available to downstream rendering workflows immediately after upload.
+The primary workflow (`changelog-bundle.yml`) uploads the bundle to the `elastic-docs-v3-changelog-bundles` S3 bucket under `bundle/{product}/{filename}`. The bundle is available to downstream rendering workflows immediately after upload.
+
+> **Note:** Bundles are keyed by product, so a shared product (e.g. `cloud-serverless`) bundled by more than one repository shares the `bundle/{product}/` prefix. To avoid one repo's bundle overwriting another's, give each bundle a repo-qualified filename such as `{repo}-{dateOrVersion}.yaml` (e.g. `my-repo-2026-03.yaml`).
 
 ### Bundle PR workflow (opt-in)
 

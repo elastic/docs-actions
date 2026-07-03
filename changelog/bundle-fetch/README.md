@@ -9,9 +9,11 @@ sanitized bundle that the `changelog-bundle` workflow previously uploaded to S3 
 Lambda mirrored to the public CDN), so the resulting PR carries the scrubbed copy rather than a raw,
 locally-generated one. Pair it with [`bundle-pr`](../bundle-pr) which opens the pull request.
 
-Fetching from the CDN requires a resolvable product to scope the URL (`{base}/{product}/bundle/{file}`),
+Fetching from the CDN requires a resolvable product to scope the URL (`{base}/bundle/{product}/{file}`),
 so use a profile with `products`/`output_products`. PR/issue-only option-mode bundles cannot be located
 on the CDN — use the [`changelog-bundle`](../README.md) workflow for those.
+
+> **Note:** Bundles are keyed by product, so a shared product (e.g. `cloud-serverless`) is published by more than one repository under the same `bundle/{product}/` prefix. To avoid collisions, bundles should use a repo-qualified filename such as `{repo}-{dateOrVersion}.yaml` (e.g. `my-repo-2026-03.yaml`); fetch the specific file that matches the bundle you want.
 
 ## Inputs
 <!--inputs-->
