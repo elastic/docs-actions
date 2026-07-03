@@ -55,7 +55,7 @@ jobs:
           # uploads to elastic/<repo>/<branch>/openapi.yaml
 ```
 
-**Multiple specs** (e.g. Kibana's stateful and serverless specs) add a separate publish job per spec, setting `spec-name` to distinguish them:
+**Multiple specs** (e.g. Kibana's stateful and serverless specs): add a separate publish job per spec, setting `spec-name` per job:
 
 ```yaml
       - uses: elastic/docs-actions/openapi/upload@v1
@@ -65,7 +65,7 @@ jobs:
           # uploads to elastic/kibana/<branch>/kibana.yaml
 ```
 
-**Non-standard branch names.** `version` defaults to the triggering branch, which assumes `main`/`<major>.<minor>` branch names. Repos that don't follow this (e.g. `elastic/cloud`, whose default branch is `master` and whose release branches are named `ECE-4.1`) must set `version` explicitly:
+**Non-standard branch names**: repos like `elastic/cloud` (default branch `master`, release branches named `ECE-4.1`) must set `version` explicitly:
 
 ```yaml
       - uses: elastic/docs-actions/openapi/upload@v1

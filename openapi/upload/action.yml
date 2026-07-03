@@ -64,28 +64,26 @@ runs:
         }
 
         validate_path "$SPEC_PATH" "spec-path"
-        validate_path "$SPEC_NAME" "spec-name"
         validate_path "$S3_PREFIX" "s3-prefix"
-        validate_path "$VERSION" "version"
 
-        if [[ -z "$SPEC_NAME" ]]; then
-          echo "::error::spec-name must not be empty"
+        if [[ ! "$SPEC_NAME" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+          echo "::error::spec-name must match [a-zA-Z0-9._-]+: ${SPEC_NAME}"
           exit 1
         fi
-        if [[ -z "$VERSION" ]]; then
-          echo "::error::version must not be empty"
+        if [[ ! "$VERSION" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+          echo "::error::version must match [a-zA-Z0-9._-]+: ${VERSION}"
           exit 1
         fi
 
         case "$SPEC_PATH" in
-          *.yaml) ext=yaml; content_type=application/yaml ;;
-          *.yml) ext=yml; content_type=application/yaml ;;
-          *.json) ext=json; content_type=application/json ;;
+          *.yaml|*.yml) content_type=application/yaml ;;
+          *.json) content_type=application/json ;;
           *)
             echo "::error::spec-path must end in .yaml, .yml, or .json: ${SPEC_PATH}"
             exit 1
             ;;
         esac
+        ext="${SPEC_PATH##*.}"
 
         if [[ ! -f "$SPEC_PATH" ]]; then
           echo "::error::spec-path does not exist: ${SPEC_PATH}"
