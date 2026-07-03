@@ -1,0 +1,119 @@
+name: OpenAPI upload
+description: >
+  Uploads an already-linted, already-bundled OpenAPI spec to S3
+  (elastic-docs-openapi-specs) via OIDC. Does not lint and does not bundle —
+  the consumer workflow is responsible for both before calling this action.
+  Part of the RFC for publishing OpenAPI specs to S3
+  (elastic/docs-eng-team#634).
+
+inputs:
+  spec-path:
+    description: 'Path to the bundled OpenAPI spec, relative to the repo root (.yaml, .yml, or .json)'
+    required: true
+  spec-name:
+    description: >
+      Filename stem for the uploaded object. Repos publishing more than one
+      spec set this per upload (e.g. "kibana", "kibana-serverless").
+    default: 'openapi'
+  s3-bucket:
+    description: 'Target S3 bucket. Only override if a different bucket has been provisioned.'
+    default: 'elastic-docs-openapi-specs'
+  s3-prefix:
+    description: >
+      Key prefix under the bucket. Defaults to "<org>/<repo>", which is also
+      the prefix the OIDC role is scoped to write — only override within that
+      same repo prefix, or the upload will be denied.
+    default: '${{ github.repository }}'
+  version:
+    description: >
+      Version segment of the key. Defaults to the triggering branch name.
+      Override for repos whose branch names do not match the RFC convention
+      (e.g. elastic/cloud, whose default branch is "master" and whose release
+      branches are named "ECE-4.1").
+    default: '${{ github.ref_name }}'
+  aws-region:
+    description: 'The AWS region to use'
+    default: 'us-east-1'
+  aws-account-id:
+    description: 'The AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account.'
+    default: '197730964718'
+
+runs:
+  using: composite
+  steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        SPEC_PATH: ${{ inputs.spec-path }}
+        SPEC_NAME: ${{ inputs.spec-name }}
+        S3_PREFIX: ${{ inputs.s3-prefix }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        validate_path() {
+          local value="$1" name="$2"
+          [ -z "$value" ] && return
+          if [[ "$value" == /* ]]; then
+            echo "::error::${name} must be a relative path: ${value}"; exit 1
+          fi
+          if [[ "$value" == *..* ]]; then
+            echo "::error::${name} must not contain '..': ${value}"; exit 1
+          fi
+          if [[ "$value" == *$'\n'* || "$value" == *$'\r'* ]]; then
+            echo "::error::${name} must not contain newlines"; exit 1
+          fi
+        }
+
+        validate_path "$SPEC_PATH" "spec-path"
+        validate_path "$SPEC_NAME" "spec-name"
+        validate_path "$S3_PREFIX" "s3-prefix"
+        validate_path "$VERSION" "version"
+
+        if [[ -z "$SPEC_NAME" ]]; then
+          echo "::error::spec-name must not be empty"
+          exit 1
+        fi
+        if [[ -z "$VERSION" ]]; then
+          echo "::error::version must not be empty"
+          exit 1
+        fi
+
+        case "$SPEC_PATH" in
+          *.yaml) ext=yaml; content_type=application/yaml ;;
+          *.yml) ext=yml; content_type=application/yaml ;;
+          *.json) ext=json; content_type=application/json ;;
+          *)
+            echo "::error::spec-path must end in .yaml, .yml, or .json: ${SPEC_PATH}"
+            exit 1
+            ;;
+        esac
+
+        if [[ ! -f "$SPEC_PATH" ]]; then
+          echo "::error::spec-path does not exist: ${SPEC_PATH}"
+          exit 1
+        fi
+
+        echo "ext=${ext}" >> "$GITHUB_OUTPUT"
+        echo "content-type=${content_type}" >> "$GITHUB_OUTPUT"
+      id: resolve
+
+    - name: Authenticate with AWS
+      uses: elastic/docs-actions/aws/auth@v1
+      with:
+        aws_account_id: ${{ inputs.aws-account-id }}
+        aws_region: ${{ inputs.aws-region }}
+        aws_role_name_prefix: elastic-docs-openapi-
+
+    - name: Upload spec to S3
+      shell: bash
+      env:
+        SPEC_PATH: ${{ inputs.spec-path }}
+        SPEC_NAME: ${{ inputs.spec-name }}
+        S3_BUCKET: ${{ inputs.s3-bucket }}
+        S3_PREFIX: ${{ inputs.s3-prefix }}
+        VERSION: ${{ inputs.version }}
+        EXT: ${{ steps.resolve.outputs.ext }}
+        CONTENT_TYPE: ${{ steps.resolve.outputs.content-type }}
+      run: |
+        aws s3 cp --checksum-algorithm SHA256 --content-type "$CONTENT_TYPE" \
+          "$SPEC_PATH" \
+          "s3://${S3_BUCKET}/${S3_PREFIX}/${VERSION}/${SPEC_NAME}.${EXT}"
