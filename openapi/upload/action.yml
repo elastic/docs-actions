@@ -82,6 +82,11 @@ runs:
         esac
         ext="${SPEC_PATH##*.}"
 
+        if [[ -L "$SPEC_PATH" ]]; then
+          echo "::error::spec-path must not be a symlink: ${SPEC_PATH}"
+          exit 1
+        fi
+
         if [[ ! -f "$SPEC_PATH" ]]; then
           echo "::error::spec-path does not exist: ${SPEC_PATH}"
           exit 1
