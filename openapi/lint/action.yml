@@ -34,6 +34,8 @@ runs:
       env:
         SPEC_PATH: ${{ inputs.spec-path }}
       run: |
+        set -euo pipefail
+
         if [ -z "${SPEC_PATH}" ]; then
           echo "::error::spec-path is required"
           exit 1
@@ -61,7 +63,10 @@ runs:
         SPEC_PATH: ${{ inputs.spec-path }}
         FAIL_ON_WARN: ${{ inputs.fail-on-warn }}
       run: |
+        set -euo pipefail
+
         FAIL_SEV=error
+
         if [ "${FAIL_ON_WARN}" == "true" ]; then
           FAIL_SEV=warn
         fi
@@ -109,6 +114,8 @@ runs:
         WARNING_COUNT: ${{ steps.lint.outputs.warning-count }}
         EXIT_CODE: ${{ steps.lint.outputs.exit-code }}
       run: |
+        set -euo pipefail
+
         if [ -f "${RESULTS_FILE}" ]; then
           {
             echo "## OpenAPI Lint: ${SPEC_PATH}"
