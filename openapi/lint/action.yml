@@ -50,11 +50,16 @@ runs:
           echo "::warning::spec-path is absolute (${SPEC_PATH}); PR annotations may not anchor to a file. Use a repo-relative path."
         fi
 
-    - name: Cache Spectral CLI
-      uses: actions/cache@v4
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
       with:
-        path: ~/.npm/_npx
-        key: spectral-cli-6.16.1-${{ runner.os }}
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: ${{ github.action_path }}/package-lock.json
+
+    - name: Install Spectral CLI
+      shell: bash
+      run: npm ci --prefix "${{ github.action_path }}"
 
     - name: Run Spectral
       id: lint
@@ -74,7 +79,7 @@ runs:
         RESULTS="${RUNNER_TEMP}/spectral-results.json"
         EXIT=0
 
-        npx --yes @stoplight/spectral-cli@6.16.1 lint \
+        "${{ github.action_path }}/node_modules/.bin/spectral" lint \
           --ruleset "${{ github.action_path }}/ruleset.yaml" \
           -f github-actions -f json --output.json "${RESULTS}" \
           --fail-severity="${FAIL_SEV}" \

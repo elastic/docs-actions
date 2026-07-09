@@ -23,4 +23,12 @@ updates:
     interval: weekly
   cooldown:
     default-days: 14
+- directory: /openapi/lint
+  labels:
+  - dependencies
+  package-ecosystem: npm
+  schedule:
+    interval: weekly
+  cooldown:
+    default-days: 14
 version: 2

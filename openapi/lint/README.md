@@ -54,8 +54,10 @@ team agreement (see the analysis in elastic/docs-eng-team#639). Land them via PR
 `spec-path` should be repo-relative — PR annotations are anchored to the path as given, so an
 absolute path won't map back to a file in the diff.
 
-This action calls the public npm registry (`npx @stoplight/spectral-cli`) and needs no secrets,
-so it's safe to run on fork PRs.
+This action installs Spectral via `npm ci` against a lockfile committed in this directory
+(`openapi/lint/package-lock.json`), pinning the full dependency tree — not just the CLI version —
+so lint results are reproducible run to run. It only calls the public npm registry and needs no
+secrets, so it's safe to run on fork PRs.
 
 **Note:** an allowlist rule for `x-*` vendor extensions is planned as a follow-up and is not yet
 part of this ruleset.
