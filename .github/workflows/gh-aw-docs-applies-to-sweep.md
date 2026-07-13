@@ -7,6 +7,11 @@ description: |
 
 inlined-imports: true
 imports:
+  - uses: shared/apm.md
+    with:
+      target: copilot
+      packages:
+        - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
@@ -61,11 +66,12 @@ on:
         default: ""
     secrets:
       COPILOT_GITHUB_TOKEN:
-        required: true
+        required: false
 concurrency:
   group: gh-aw-docs-applies-to-sweep-${{ github.run_id }}
   cancel-in-progress: false
 permissions:
+  copilot-requests: write
   contents: read
   issues: read
 strict: false
@@ -252,6 +258,10 @@ steps:
 
 You are an `applies_to` validator for an Elastic documentation repository. Your job is to audit the `applies_to` frontmatter key on a deterministically-selected slice of pages and emit a single labeled fix-issue with structured findings.
 
+This workflow also installs the `docs-applies-to-tagging` APM skill from `elastic/elastic-docs-skills`.
+
+Use that installed skill when it helps interpret version, deployment, product, or lifecycle applicability rules. Treat it as additive guidance, not as permission to skip the verified references and explicit rule checks in this workflow.
+
 ## Pre-fetched data
 
 A pre-step has computed the in-scope file list:
@@ -264,7 +274,7 @@ Read with `cat` / `jq`. If `in_scope_count` is `0`, call `noop` with a path-awar
 
 ## Step 1: Validate applies_to autonomously
 
-This workflow is autonomous. Do not invoke runtime skills or depend on a skill package being installed. For each in-scope file, read the frontmatter block at the top of the copy under `/tmp/gh-aw/sweep-data/scope/` and inspect the `applies_to` key.
+This workflow is autonomous. For each in-scope file, read the frontmatter block at the top of the copy under `/tmp/gh-aw/sweep-data/scope/` and inspect the `applies_to` key.
 
 Audit only. Do not edit repo originals or scope copies. This sweep emits an issue, not a PR.
 
@@ -275,6 +285,8 @@ Before filing any validity finding, verify the rule from one of these sources:
 - Published syntax and placement guidance fetched during this run when body-level annotations are involved, especially the docs-builder applies_to syntax guide, badge placement guidance, and cumulative-docs example scenarios.
 
 Use the published reference as the source of truth for allowed dimensions, keys, lifecycle states, and version formats. If the MCP server is unavailable and no local schema is available, call `noop` with `"applies_to reference unavailable; skipping applies_to sweep"` rather than emitting unverified findings.
+
+When a finding depends on interpreting lifecycle, version-range, or dimension rules, explicitly use the installed `docs-applies-to-tagging` skill guidance.
 
 Apply these rules after verification:
 

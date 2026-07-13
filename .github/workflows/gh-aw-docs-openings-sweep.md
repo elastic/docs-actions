@@ -7,6 +7,14 @@ description: |
 
 inlined-imports: true
 imports:
+  - uses: shared/apm.md
+    with:
+      target: copilot
+      packages:
+        - elastic/elastic-docs-skills/skills/authoring/page-opening-optimizer
+        - elastic/elastic-docs-skills/skills/authoring/frontmatter-description
+        - elastic/elastic-docs-skills/skills/authoring/content-type-checker
+        - elastic/elastic-docs-skills/skills/review/docs-check-style
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
@@ -61,11 +69,12 @@ on:
         default: ""
     secrets:
       COPILOT_GITHUB_TOKEN:
-        required: true
+        required: false
 concurrency:
   group: gh-aw-docs-openings-sweep-${{ github.run_id }}
   cancel-in-progress: false
 permissions:
+  copilot-requests: write
   contents: read
   issues: read
 strict: false
@@ -254,6 +263,15 @@ steps:
 
 You are a page-opening reviewer for an Elastic documentation repository. Your job is to audit the opening of a deterministically-selected slice of pages — H1 specificity, opening paragraph quality, and "Before you begin" appropriateness — and emit a single labeled fix-issue with structured findings.
 
+This workflow also installs these APM skills from `elastic/elastic-docs-skills`:
+
+- `docs-page-opening-optimizer`
+- `docs-frontmatter-description`
+- `docs-content-type-checker`
+- `docs-check-style`
+
+Use those installed skills when they improve judgments about H1 quality, opening-paragraph scope, description alignment, and content-type-specific opening structure. Treat them as additive guidance, not as permission to skip the explicit checks in this workflow.
+
 ## Pre-fetched data
 
 A pre-step has computed the in-scope file list:
@@ -266,7 +284,7 @@ If `in_scope_count` is `0`, call `noop` with a path-aware or shard-aware message
 
 ## Step 1: Analyze page openings
 
-This workflow is autonomous. Do not invoke runtime skills or depend on a skill package being installed. Read each in-scope file from `/tmp/gh-aw/sweep-data/scope/`, inspect its frontmatter, H1, first substantive paragraph, and early task scaffolding, and produce findings only when the problem is visible in the file.
+This workflow is autonomous. Read each in-scope file from `/tmp/gh-aw/sweep-data/scope/`, inspect its frontmatter, H1, first substantive paragraph, and early task scaffolding, and produce findings only when the problem is visible in the file.
 
 Audit only. Do not edit repo originals or scope copies. This sweep emits an issue, not a PR.
 
@@ -287,6 +305,13 @@ Apply these checks:
 - Use bold for UI elements in the opening and monospace for technical elements.
 - Spell out acronyms on first use in the opening.
 - Do not rewrite, move, or remove important/warning admonitions in the first ~20 lines. Work around them.
+
+When the finding depends on opening strategy rather than simple surface structure, explicitly use the installed skill guidance:
+
+- `docs-page-opening-optimizer` for H1, opening-paragraph, and requirements-section judgments.
+- `docs-frontmatter-description` when the opening appears to duplicate or diverge from a weak description.
+- `docs-content-type-checker` for content-type-specific opening expectations.
+- `docs-check-style` for opening-specific style and UI-writing issues.
 - Do not add pre-9.0 version references to openings in Stack 9+ docs.
 
 Only call `noop` if you cannot produce any high-confidence findings from the in-scope files.

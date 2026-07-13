@@ -11,7 +11,7 @@ on:
       docs-builder-version:
         description: Version of docs-builder to use (e.g. edge, 1.2.3)
         required: false
-        default: "edge"
+        default: "latest"
         type: string
       path-pattern:
         description: The path pattern to check for changes
@@ -46,9 +46,12 @@ jobs:
         # Checkout is needed to get changed files when the event is not a pull request
         if: contains(fromJSON('["push", "merge_group", "workflow_dispatch"]'), github.event_name)
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+          persist-credentials: false
       - name: Check changes
         id: check-files
-        uses: tj-actions/changed-files@v47.0.6
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
           files: ${{ inputs.path-pattern }}
           files_ignore: |
@@ -70,6 +73,8 @@ jobs:
         # Skip this for now because it's not clear if we need to or should support it.
         # However, the rest of the workflow is designed to support pull_request_target.
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - uses: elastic/docs-actions/codex/build@v1
         if: needs.check.outputs.any_modified == 'true'
         id: codex-build
@@ -151,7 +156,9 @@ jobs:
       - name: AWS sync docs to S3
         id: s3-upload
         run: |
-          aws s3 sync docs "s3://elastic-codex-website-internal${PATH_PREFIX}" --delete --no-follow-symlinks
+          aws configure set default.s3.max_concurrent_requests "${AWS_CLI_S3_MAX_CONCURRENT_REQUESTS}"
+          aws configure set default.s3.max_queue_size "${AWS_CLI_S3_MAX_QUEUE_SIZE}"
+          aws s3 sync docs "s3://elastic-codex-website-internal${PATH_PREFIX}" --delete --no-follow-symlinks --only-show-errors
           aws cloudfront create-invalidation \
             --distribution-id E1BSBYLPE05D2R \
             --paths "${PATH_PREFIX}" "${PATH_PREFIX}/*"
@@ -159,6 +166,8 @@ jobs:
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
           AWS_RETRY_MODE: standard
           AWS_MAX_ATTEMPTS: 3
+          AWS_CLI_S3_MAX_CONCURRENT_REQUESTS: 32
+          AWS_CLI_S3_MAX_QUEUE_SIZE: 10000
       - name: Update deployment status
         uses: actions/github-script@v9
         if: always() && steps.deployment.outputs.result
@@ -166,7 +175,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
         with:
-          script: |
+          script: | # zizmor: ignore[template-injection] deployment_id from prior step output
             await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,

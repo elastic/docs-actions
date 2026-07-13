@@ -5,11 +5,11 @@ on:
       source-repo:
         description: "Repository to scan (owner/repo). Leave empty to scan this repo."
         required: false
-        default: "elastic/docs-content"
+        default: ""
       docs-root:
         description: "Root directory to sweep"
         required: false
-        default: "docs/"
+        default: "."
       target-path:
         description: "Optional docs-root-relative directory to sweep recursively (accepts a leading slash)"
         required: false
@@ -30,14 +30,6 @@ on:
         description: "Flag pages whose latest commit is older than this many months"
         required: false
         default: "24"
-      stale-screenshot-min-gap-months:
-        description: "Min gap between image and doc commit dates to flag a stale screenshot"
-        required: false
-        default: "6"
-      lychee-config:
-        description: "Path to a lychee config file in this repo (optional)"
-        required: false
-        default: ""
 
 permissions:
   actions: read
@@ -57,7 +49,5 @@ jobs:
       target-batch-size: ${{ inputs.target-batch-size }}
       max-per-fix-issue: ${{ inputs.max-per-fix-issue }}
       stale-content-months: ${{ inputs.stale-content-months }}
-      stale-screenshot-min-gap-months: ${{ inputs.stale-screenshot-min-gap-months }}
-      lychee-config: ${{ inputs.lychee-config }}
     secrets:
       COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}

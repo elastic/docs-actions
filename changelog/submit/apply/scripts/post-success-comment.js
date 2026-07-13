@@ -1,10 +1,5 @@
 const { TITLE, upsertComment, wrapInlineCode } = require('./comment-helper');
 
-// changelogFile / branch are validated upstream by ref-name regex
-// (`^[a-zA-Z0-9._/+-]+$`) plus OutputSanitizer in docs-builder, so they
-// are constrained to a small alphabet. wrapInlineCode is still used for
-// the visible filename so a stray backtick (or future loosening of the
-// upstream regex) cannot break out of the inline code span.
 module.exports = async ({ github, context, core }) => {
   const prNumber = parseInt(process.env.PR_NUMBER, 10);
   const branch = process.env.HEAD_REF;

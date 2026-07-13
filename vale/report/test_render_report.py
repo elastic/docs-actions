@@ -357,6 +357,36 @@ class TestCLI(unittest.TestCase):
         finally:
             os.unlink(inp_path)
 
+    def test_large_valid_file_within_limit_accepted(self):
+        issues = []
+        while True:
+            issues.append({
+                "path": f"docs/guide-{len(issues)}.md",
+                "line": 42,
+                "rule": "Elastic.Articles",
+                "severity": "warning",
+                "message": "Prefer the article that matches the following word in this sentence.",
+            })
+            data = _valid_data(issues=issues)
+            encoded = json.dumps(data)
+            if len(encoded.encode('utf-8')) > 110 * 1024:
+                break
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as inp:
+            inp.write(encoded)
+            inp_path = inp.name
+        out_path = inp_path + ".md"
+        try:
+            self.assertLess(os.path.getsize(inp_path), render_report.MAX_FILE_SIZE)
+            sys.argv = ["render_report.py", "--input", inp_path, "--output", out_path]
+            rc = render_report.main()
+            self.assertEqual(rc, 0)
+            self.assertTrue(os.path.exists(out_path))
+        finally:
+            os.unlink(inp_path)
+            if os.path.exists(out_path):
+                os.unlink(out_path)
+
     def test_symlink_input_rejected(self):
         """Refuse to read input if it is a symlink."""
         # Create a real file, then symlink to it

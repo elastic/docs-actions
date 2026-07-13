@@ -421,7 +421,7 @@ runs:
     - name: Determine files to lint
       id: files-to-lint
       shell: bash
-      run: |
+      run: | # zizmor: ignore[template-injection]
         # Intentionally NOT using env: for the files list. When a PR touches hundreds of
         # files (e.g. generated-docs reorganisations), passing the full space-separated list
         # as an environment variable causes the Linux kernel to reject the bash process with
@@ -438,7 +438,7 @@ runs:
             echo "No Markdown, MDX, YAML, or YML files in provided file list"
             echo "has_files=false" >> $GITHUB_OUTPUT
           fi
-        elif [ "${{ steps.changed-files.outputs.has_changes }}" == "true" ]; then
+        elif [ "${STEPS_CHANGED_FILES_OUTPUTS_HAS_CHANGES}" == "true" ]; then
           echo "Using changed files from PR"
           cp changed_files.txt files_to_lint.txt
           echo "has_files=true" >> $GITHUB_OUTPUT
@@ -446,6 +446,8 @@ runs:
           echo "No files to lint"
           echo "has_files=false" >> $GITHUB_OUTPUT
         fi
+      env:
+        STEPS_CHANGED_FILES_OUTPUTS_HAS_CHANGES: ${{ steps.changed-files.outputs.has_changes }}
 
     - name: Filter files by vale-paths
       id: filter-paths
@@ -581,7 +583,30 @@ runs:
 
         # Read files into an array to handle filenames safely
         mapfile -t VALE_FILES < files_to_lint.txt
-        timeout 300 vale --config=.vale.ini.temp --output=JSON "${VALE_FILES[@]}" > vale_output.json 2>"$VALE_STDERR" || VALE_EXIT=$?
+        FILE_COUNT=${#VALE_FILES[@]}
+
+        # Process in batches of 200 to avoid ARG_MAX with large generated-docs PRs
+        # (thousands of files as exec args exceed the Linux kernel E2BIG limit).
+        # Vale's --output=JSON produces a JSON object keyed by path; jq -s 'add'
+        # merges multiple objects from separate batch runs into one.
+        BATCH_SIZE=200
+        if [ "$FILE_COUNT" -le "$BATCH_SIZE" ]; then
+          timeout 300 vale --config=.vale.ini.temp --output=JSON "${VALE_FILES[@]}" > vale_output.json 2>"$VALE_STDERR" || VALE_EXIT=$?
+        else
+          echo "Large file list ($FILE_COUNT files); running Vale in batches of $BATCH_SIZE"
+          BATCH_DIR=$(mktemp -d)
+          for ((i=0; i<FILE_COUNT; i+=BATCH_SIZE)); do
+            batch=("${VALE_FILES[@]:i:BATCH_SIZE}")
+            batch_file="$BATCH_DIR/batch_$((i/BATCH_SIZE)).json"
+            timeout 300 vale --config=.vale.ini.temp --output=JSON "${batch[@]}" > "$batch_file" 2>>"$VALE_STDERR" || {
+              ec=$?
+              [ $ec -eq 124 ] && VALE_EXIT=$ec
+              [ "$VALE_EXIT" -eq 0 ] && VALE_EXIT=$ec
+            }
+          done
+          jq -s 'add // {}' "$BATCH_DIR"/*.json > vale_output.json
+          rm -rf "$BATCH_DIR"
+        fi
 
         if [ $VALE_EXIT -eq 124 ]; then
           echo "::error::Vale timed out after 5 minutes"
@@ -701,8 +726,10 @@ runs:
       if: inputs.fail_on_error == 'true' && steps.vale-report.outputs.error_count != '0'
       shell: bash
       run: |
-        echo "❌ Vale found ${{ steps.vale-report.outputs.error_count }} error-level issue(s)"
+        echo "❌ Vale found ${STEPS_VALE_REPORT_OUTPUTS_ERROR_COUNT} error-level issue(s)"
         exit 1
+      env:
+        STEPS_VALE_REPORT_OUTPUTS_ERROR_COUNT: ${{ steps.vale-report.outputs.error_count }}
 
     - name: Cleanup
       if: always()

@@ -8,11 +8,18 @@
 │   ├── formatting.md
 │   ├── rigor.md
 │   ├── mcp-pagination.md
-│   └── safe-output-add-comment.md
+│   ├── safe-output-add-comment.md
+│   ├── quality-bar.md                 # Triage quality bar and label taxonomy
+│   ├── triage-refine-logic.md         # Shared triage + refine prompt
+│   └── size-logic.md                  # Shared cost/benefit prompt
 ├── gh-aw-docs-issue-scope.md          # Workflow source
 ├── gh-aw-docs-issue-scope.lock.yml    # Compiled output
 ├── gh-aw-issue-triage.md              # Workflow source
 ├── gh-aw-issue-triage.lock.yml        # Compiled output
+├── gh-aw-issue-auto-triage.md         # Workflow source
+├── gh-aw-issue-auto-triage.lock.yml   # Compiled output
+├── gh-aw-issue-size.md                # Workflow source
+├── gh-aw-issue-size.lock.yml          # Compiled output
 ├── compile-check.yml                   # PR validation
 ├── check-aw-updates.yml               # Weekly recompilation
 └── ... (other CI workflows)
@@ -22,6 +29,12 @@ agentic-workflows/
 │   ├── example.yml                     # Trigger template for callers
 │   └── README.md                       # Usage docs
 ├── issue-triage/
+│   ├── example.yml
+│   └── README.md
+├── issue-auto-triage/
+│   ├── example.yml
+│   └── README.md
+├── issue-size/
 │   ├── example.yml
 │   └── README.md
 ├── README.md                           # Workflow index
@@ -102,8 +115,10 @@ on:
         default: ""
     secrets:
       COPILOT_GITHUB_TOKEN:
-        required: true
+        required: false
 ```
+
+For Copilot-based reusable workflows, prefer the built-in GitHub token path. Add `permissions.copilot-requests: write` in the workflow frontmatter, and document the same requirement in caller templates instead of hard-requiring `COPILOT_GITHUB_TOKEN`.
 
 ### Shared fragments
 
@@ -116,7 +131,7 @@ on:
 
 ### Self-contained prompts
 
-Agentic workflows should be autonomous. Do not require runtime skills or agent-local packages for core behavior. If a workflow needs specialized knowledge, embed the relevant rules directly in the prompt, keep them focused, and make `noop` the outcome when the agent cannot verify enough evidence.
+Agentic workflows should be autonomous. Prefer embedded rules and deterministic pre-steps for core behavior, even when you also install APM packages or skills. If a workflow uses runtime skills, keep the prompt usable without them so the workflow still behaves predictably when a skill is unavailable, not selected, or less decisive than local evidence.
 
 Prefer deterministic pre-steps for mechanical checks such as linting, spelling, file selection, and schema extraction. Feed those outputs to the agent as pre-fetched data, then have the agent classify, filter, and format findings.
 

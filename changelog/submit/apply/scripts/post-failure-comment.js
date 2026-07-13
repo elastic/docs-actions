@@ -6,7 +6,6 @@ module.exports = async ({ github, context, core }) => {
   const labelRows = (process.env.LABEL_TABLE || '').trim();
   const productLabelRows = (process.env.PRODUCT_LABEL_TABLE || '').trim();
   const skipLabels = process.env.SKIP_LABELS || '';
-
   const configFileCode = wrapInlineCode(configFile);
 
   const hasTypeIssue = !!labelRows;
@@ -35,7 +34,7 @@ module.exports = async ({ github, context, core }) => {
 
   let skipSection;
   if (skipLabels.trim()) {
-    const formatted = skipLabels.split(',').map(l => wrapInlineCode(l.trim())).join(', ');
+    const formatted = skipLabels.split(',').map(label => wrapInlineCode(label.trim())).join(', ');
     skipSection = `\n⏭️ To skip changelog generation, add one of these labels: ${formatted}`;
   } else {
     skipSection = `\n⏭️ No skip labels are configured. To allow skipping changelog generation, add a label to ${wrapInlineCode('rules.create.exclude')} in ${configFileCode}.`;

@@ -33,10 +33,42 @@ jobs:
       should-submit: ${{ steps.evaluate.outputs.should-submit }}
       is-org-member: ${{ steps.check-org-membership.outputs.is-member }}
     steps:
+      - name: Resolve PR author
+        id: pr-author
+        if: github.event.workflow_run.head_repository.full_name != github.repository
+        uses: actions/github-script@v9
+        with:
+          # language=js
+          script: |
+            const run = context.payload.workflow_run;
+            const { owner, repo } = context.repo;
+
+            let prNumber;
+            if (run.pull_requests?.length > 0) {
+              prNumber = run.pull_requests[0].number;
+            } else {
+              const headLabel = `${run.head_repository.owner.login}:${run.head_branch}`;
+              const { data: prs } = await github.rest.pulls.list({
+                owner, repo, state: 'open', head: headLabel
+              });
+              const match = prs.find(pr => pr.head.sha === run.head_sha);
+              if (match) prNumber = match.number;
+            }
+
+            if (!prNumber) {
+              core.setFailed('Could not resolve PR number for fork — cannot verify org membership. Failing closed.');
+              return;
+            }
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner, repo, pull_number: prNumber
+            });
+            core.setOutput('login', pr.user.login);
+
       - name: Fetch ephemeral GitHub token
         if: github.event.workflow_run.head_repository.full_name != github.repository
         id: fetch-ephemeral-token
-        uses: elastic/ci-gh-actions/fetch-github-token@v1.5.0
+        uses: elastic/ci-gh-actions/fetch-github-token@v1.5.3
         with:
           vault-instance: "ci-prod"
           vault-role: "token-policy-a71b1f2b88ec"
@@ -46,6 +78,7 @@ jobs:
         if: github.event.workflow_run.head_repository.full_name != github.repository
         uses: elastic/docs-actions/github/is-elastic-org-member@v1
         with:
+          username: ${{ steps.pr-author.outputs.login }}
           token: ${{ steps.fetch-ephemeral-token.outputs.token }}
 
       - name: Evaluate

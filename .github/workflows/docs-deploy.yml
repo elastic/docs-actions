@@ -176,7 +176,6 @@ jobs:
             core.setOutput('base-ref', pr.base.ref);
             core.setOutput('pr-author', pr.user.login);
 
-
             // --- Changed-files check (docs-relevant files only) ---
             const files = await github.paginate(github.rest.pulls.listFiles, {
               owner, repo, pull_number: prNumber
@@ -250,7 +249,7 @@ jobs:
         if: steps.context.outputs.is-fork == 'true' && steps.context.outputs.event == 'pull_request'
         continue-on-error: true
         id: fetch-ephemeral-token
-        uses: elastic/ci-gh-actions/fetch-github-token@v1.5.0
+        uses: elastic/ci-gh-actions/fetch-github-token@v1.5.3
         with:
           vault-instance: "ci-prod"
           vault-role: "token-policy-8c6a5ed19135"
@@ -260,6 +259,7 @@ jobs:
         if: steps.context.outputs.is-fork == 'true' && steps.context.outputs.event == 'pull_request'
         uses: elastic/docs-actions/github/is-elastic-org-member@v1
         with:
+          username: ${{ steps.context.outputs.pr-author }}
           token: ${{ steps.fetch-ephemeral-token.outputs.token }}
 
       - name: Evaluate
@@ -438,13 +438,8 @@ jobs:
           echo "PATH_PREFIX=${path_prefix}" >> "$GITHUB_ENV"
           echo "result=${path_prefix}" >> "$GITHUB_OUTPUT"
 
-      # Resolve the mutable :edge tag to an immutable RepoDigest, then
-      # verify the SLSA build-provenance attestation that
-      # `elastic/docs-builder`'s prerelease.yml mints for every push
-      # via `actions/attest-build-provenance` (see
-      # elastic/docs-eng-team#518). This proves the image was built by
-      # a known workflow on a known commit and has not been tampered
-      # with on the registry side.
+      # Resolve the mutable :edge tag once, verify its build provenance, and
+      # use the same immutable image digest throughout this job.
       - name: Pull and pin docs-builder image
         id: docker-image
         env:
@@ -455,7 +450,7 @@ jobs:
           IMAGE="ghcr.io/elastic/docs-builder:edge"
           docker pull "$IMAGE"
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE")
-          if [ -z "$DIGEST" ]; then
+          if [[ -z "$DIGEST" ]]; then
             echo "::error::Failed to resolve RepoDigest for ${IMAGE}"
             exit 1
           fi
@@ -474,9 +469,6 @@ jobs:
       # passed to the container — ACTIONS_RUNTIME_TOKEN, ACTIONS_CACHE_URL, and
       # OIDC env vars are excluded to prevent cache poisoning and credential
       # theft if the build tool is compromised via malicious content.
-      #
-      # The image is referenced by digest (resolved above) so the run is
-      # immutable for this workflow execution.
       #
       # Future: add --network none once docs-builder has an init command to
       # preload the link index before the build.
@@ -509,8 +501,8 @@ jobs:
 
           exit $EXIT_CODE
         env:
-          STRICT_FLAG: ${{ fromJSON(inputs.strict != '' && inputs.strict || 'true') }}
           IMAGE_DIGEST: ${{ steps.docker-image.outputs.digest }}
+          STRICT_FLAG: ${{ fromJSON(inputs.strict != '' && inputs.strict || 'true') }}
 
       - name: Upload links artifact
         id: upload-links
@@ -618,9 +610,13 @@ jobs:
         env:
           AWS_RETRY_MODE: standard
           AWS_MAX_ATTEMPTS: 6
+          AWS_CLI_S3_MAX_CONCURRENT_REQUESTS: 32
+          AWS_CLI_S3_MAX_QUEUE_SIZE: 10000
         # language=bash
         run: |
-          aws s3 sync docs-html "s3://elastic-docs-v3-website-preview${PATH_PREFIX}" --delete --no-follow-symlinks
+          aws configure set default.s3.max_concurrent_requests "${AWS_CLI_S3_MAX_CONCURRENT_REQUESTS}"
+          aws configure set default.s3.max_queue_size "${AWS_CLI_S3_MAX_QUEUE_SIZE}"
+          aws s3 sync docs-html "s3://elastic-docs-v3-website-preview${PATH_PREFIX}" --delete --no-follow-symlinks --only-show-errors
           aws cloudfront create-invalidation \
             --distribution-id EKT7LT5PM8RKS \
             --paths "${PATH_PREFIX}" "${PATH_PREFIX}/*"
@@ -632,7 +628,7 @@ jobs:
           LANDING_PAGE_PATH: ${{ needs.build.outputs.landing_page_path }}
         with:
           # language=js
-          script: |
+          script: | # zizmor: ignore[template-injection] deployment_id from prior step output
             await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,

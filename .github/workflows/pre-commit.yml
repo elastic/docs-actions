@@ -14,13 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v6
         with:
           python-version: "3.x"
       - name: Install gh-aw
-        run: gh extension install github/gh-aw --pin v0.75.0 --force
+        run: gh extension install github/gh-aw --pin v0.80.8 --force
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: pre-commit/action@v3.0.1
+      - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

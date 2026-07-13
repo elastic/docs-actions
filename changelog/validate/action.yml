@@ -25,6 +25,8 @@ runs:
   steps:
     - name: Checkout
       uses: actions/checkout@v6
+      with:
+        persist-credentials: false
 
     - name: Setup docs-builder
       uses: elastic/docs-actions/docs-builder/setup@v1
@@ -35,13 +37,7 @@ runs:
     - name: Stage PR body
       id: stage-body
       shell: bash
-      env:
-        PR_BODY: ${{ github.event.pull_request.body }}
-      run: |
-        BODY_FILE="${RUNNER_TEMP}/changelog-pr-body.md"
-        printf '%s' "${PR_BODY:-}" > "$BODY_FILE"
-        chmod 600 "$BODY_FILE"
-        echo "path=${BODY_FILE}" >> "$GITHUB_OUTPUT"
+      run: node "${{ github.action_path }}/scripts/stage-pr-body.js"
 
     - name: Evaluate PR
       id: evaluate

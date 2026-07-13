@@ -17,7 +17,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-review.yml
 ```
 
-Configure the `COPILOT_GITHUB_TOKEN` secret before running the workflow.
+Add `permissions.copilot-requests: write` to the caller workflow before running this workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
 
 ## Inputs
 
@@ -55,13 +55,21 @@ If the pull request is linked to a parent issue, the review also checks whether 
 
 ## Autonomous checks
 
-This workflow does not depend on runtime skills. A deterministic pre-step runs Vale with `elastic/vale-rules` on eligible changed markdown files, and the prompt embeds the remaining review rules directly. Vale is one input into the review, not a blocker for whether review happens. The workflow still reviews all eligible markdown files even when Vale finds nothing or is unavailable. It focuses on:
+This workflow combines deterministic pre-steps with runtime APM skills from `elastic/elastic-docs-skills`. A pre-step runs Vale with `elastic/vale-rules` on eligible changed markdown files, and the prompt still embeds the review rules directly so the workflow can continue making evidence-based judgments even when a specific skill is not decisive. Vale is one input into the review, not a blocker for whether review happens. The workflow still reviews all eligible markdown files even when Vale finds nothing or is unavailable. It focuses on:
 
 - Style and clarity issues from Vale, plus high-confidence Formatting, Accessibility, and UI writing checks from the embedded style guide checklist.
 - Elastic-internal jargon, outdated terms, informal shorthand, and unexplained acronyms that external readers will not understand.
 - Frontmatter quality for `description`, `products`, `navigation_title`, and verified `applies_to` guidance.
 - Content type fit and structure for overviews, how-to guides, tutorials, troubleshooting pages, and changelog entries.
 - Parent issue satisfaction when the pull request links to a docs issue.
+
+At runtime, the workflow imports these skills through APM:
+
+- `docs-check-style`.
+- `docs-flag-jargon-skill`.
+- `docs-frontmatter-audit`.
+- `docs-content-type-checker`.
+- `docs-applies-to-tagging`.
 
 The workflow uses the Elastic docs MCP server only for targeted verification, such as published cumulative-docs guidance or sibling-page context. It noops or skips a finding when it cannot verify the evidence.
 
@@ -77,6 +85,7 @@ on:
 
 permissions:
   actions: read
+  copilot-requests: write
   contents: read
   discussions: write
   pull-requests: write
@@ -92,8 +101,6 @@ jobs:
       additional-instructions: |
         This repository stores product documentation in `docs/`.
         Prefer concise review comments with exact replacement text when possible.
-    secrets:
-      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
 ```
 
 ## PR checkbox menus

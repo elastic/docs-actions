@@ -1,0 +1,138 @@
+name: 'Elastic OpenAPI Linter'
+description: 'Lint an OpenAPI 2.0 (Swagger), 3.0, or 3.1 spec against the centralized Elastic ruleset (Spectral)'
+author: 'Elastic'
+
+branding:
+  icon: 'check-circle'
+  color: 'blue'
+
+inputs:
+  spec-path:
+    description: 'Repo-relative path to the OpenAPI spec file (JSON or YAML)'
+    required: true
+  fail-on-warn:
+    description: 'Fail the check on warning-level convention issues, not just errors'
+    required: false
+    default: 'false'
+
+outputs:
+  error-count:
+    description: 'Number of error-level results'
+    value: ${{ steps.lint.outputs.error-count }}
+  warning-count:
+    description: 'Number of warning-level results'
+    value: ${{ steps.lint.outputs.warning-count }}
+  results-file:
+    description: 'Path to the machine-readable JSON results file'
+    value: ${{ steps.lint.outputs.results-file }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        SPEC_PATH: ${{ inputs.spec-path }}
+      run: |
+        set -euo pipefail
+
+        if [ -z "${SPEC_PATH}" ]; then
+          echo "::error::spec-path is required"
+          exit 1
+        fi
+
+        if [ ! -f "${SPEC_PATH}" ]; then
+          echo "::error::spec-path not found: ${SPEC_PATH}"
+          exit 1
+        fi
+
+        if [[ "${SPEC_PATH}" == /* ]]; then
+          echo "::warning::spec-path is absolute (${SPEC_PATH}); PR annotations may not anchor to a file. Use a repo-relative path."
+        fi
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Spectral CLI
+      shell: bash
+      run: npm ci --prefix "${{ github.action_path }}"
+
+    - name: Run Spectral
+      id: lint
+      shell: bash
+      env:
+        SPEC_PATH: ${{ inputs.spec-path }}
+        FAIL_ON_WARN: ${{ inputs.fail-on-warn }}
+      run: |
+        set -euo pipefail
+
+        FAIL_SEV=error
+
+        if [ "${FAIL_ON_WARN}" == "true" ]; then
+          FAIL_SEV=warn
+        fi
+
+        RESULTS="${RUNNER_TEMP}/spectral-results.json"
+        EXIT=0
+
+        "${{ github.action_path }}/node_modules/.bin/spectral" lint \
+          --ruleset "${{ github.action_path }}/ruleset.yaml" \
+          -f github-actions -f json --output.json "${RESULTS}" \
+          --fail-severity="${FAIL_SEV}" \
+          "${SPEC_PATH}" || EXIT=$?
+
+        # Diagnostic codes that always fail the check regardless of fail-on-warn:
+        # they mean the document isn't lintable at all, not that a rule was
+        # violated, so they can't be tiered via ruleset.yaml like normal rules.
+        # unrecognized-format is emitted by Spectral itself at warn severity.
+        ALWAYS_ERROR_CODES='["unrecognized-format"]'
+
+        read -r ERROR_COUNT WARNING_COUNT HAS_ALWAYS_ERROR < <(jq -r --argjson codes "${ALWAYS_ERROR_CODES}" '
+          [
+            ([.[] | select(.severity == 0)] | length),
+            ([.[] | select(.severity == 1)] | length),
+            (any(.[]; .code as $c | $codes | index($c) != null))
+          ] | @tsv
+        ' "${RESULTS}")
+
+        if [ "${HAS_ALWAYS_ERROR}" == "true" ]; then
+          echo "::error file=${SPEC_PATH}::Document failed a structural check (not a recognized OpenAPI 2.0/3.0/3.1 spec)"
+          EXIT=1
+        fi
+
+        echo "error-count=${ERROR_COUNT}" >> "$GITHUB_OUTPUT"
+        echo "warning-count=${WARNING_COUNT}" >> "$GITHUB_OUTPUT"
+        echo "results-file=${RESULTS}" >> "$GITHUB_OUTPUT"
+        echo "exit-code=${EXIT}" >> "$GITHUB_OUTPUT"
+
+    - name: Write job summary and enforce result
+      if: always()
+      shell: bash
+      env:
+        SPEC_PATH: ${{ inputs.spec-path }}
+        RESULTS_FILE: ${{ steps.lint.outputs.results-file }}
+        ERROR_COUNT: ${{ steps.lint.outputs.error-count }}
+        WARNING_COUNT: ${{ steps.lint.outputs.warning-count }}
+        EXIT_CODE: ${{ steps.lint.outputs.exit-code }}
+      run: |
+        set -euo pipefail
+
+        if [ -f "${RESULTS_FILE}" ]; then
+          {
+            echo "## OpenAPI Lint: ${SPEC_PATH}"
+            echo ""
+            echo "**Errors:** ${ERROR_COUNT} · **Warnings:** ${WARNING_COUNT}"
+            echo ""
+            if [ "$((ERROR_COUNT + WARNING_COUNT))" -gt 0 ]; then
+              echo "| Severity | Rule | Line | Message |"
+              echo "|---|---|---|---|"
+              jq -r '.[] | "| " + (if .severity == 0 then "error" else "warning" end) + " | " + .code + " | " + (.range.start.line + 1 | tostring) + " | " + (.message | gsub("\\|"; "\\|")) + " |"' "${RESULTS_FILE}"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+        if [ "${EXIT_CODE}" != "0" ]; then
+          exit 1
+        fi

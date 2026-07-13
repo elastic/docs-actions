@@ -1,0 +1,5 @@
+openapi: 3.0.3
+info:
+  title: Test API
+  description: Missing the required info.version field, to prove the linter fails OAS schema violations.
+paths: {}

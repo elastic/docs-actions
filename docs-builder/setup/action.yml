@@ -17,22 +17,17 @@ runs:
   steps:
     - name: Acquire docs-builder binary
       shell: bash
-      run: |
+      run: | # zizmor: ignore[github-env] append docs-builder to PATH via GITHUB_PATH
         INSTALL_DIR="${HOME}/.docs-builder/bin"
         mkdir -p "${INSTALL_DIR}"
 
         if [[ "${DOCS_BUILDER_VERSION}" == "edge" ]]; then
-            # Resolve :edge to a RepoDigest, then verify the SLSA
-            # build-provenance attestation minted by docs-builder's
-            # prerelease.yml (elastic/docs-eng-team#518). This matches
-            # the non-edge path's `gh attestation verify` step on the
-            # release zip below — :edge is no longer the unverified
-            # cousin. Fail closed if the attestation is missing or
-            # signed by an unexpected workflow.
+            # Resolve :edge to an immutable digest and fail closed unless its
+            # build-provenance attestation comes from elastic/docs-builder.
             EDGE_IMAGE="ghcr.io/elastic/docs-builder:edge"
             docker pull "${EDGE_IMAGE}"
             EDGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${EDGE_IMAGE}")
-            if [ -z "${EDGE_DIGEST}" ]; then
+            if [[ -z "${EDGE_DIGEST}" ]]; then
               echo "::error::Failed to resolve RepoDigest for ${EDGE_IMAGE}"
               exit 1
             fi
@@ -44,8 +39,12 @@ runs:
             gh attestation verify "oci://${EDGE_DIGEST}" -R elastic/docs-builder
 
             echo "::notice title=docs-builder image digest::${EDGE_DIGEST}"
+
             CONTAINER_ID=$(docker create "${EDGE_DIGEST}")
-            trap "docker rm -f ${CONTAINER_ID} >/dev/null 2>&1 || true" EXIT
+            cleanup_container() {
+              docker rm -f "${CONTAINER_ID}" >/dev/null 2>&1 || true
+            }
+            trap cleanup_container EXIT
             docker cp "${CONTAINER_ID}:/app/docs-builder" "${INSTALL_DIR}/docs-builder"
         else
             if [[ "${DOCS_BUILDER_VERSION}" == "latest" ]]; then
