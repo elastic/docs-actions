@@ -2,6 +2,8 @@
 
 Triages and refines an issue in a single pass. It classifies the issue type, validates the description against a quality bar, rewrites the description when it needs it, and applies labels. It reads `CODEOWNERS` and the issue's links to infer ownership and area. When it rewrites, it preserves valid allowed-domain links and meaningful uncertainty from the author. Repo-specific team mapping and label rules are supplied through the `additional-instructions` input.
 
+The workflow accepts issue content from public community contributors as untrusted input. Its GitHub tools use `min-integrity: none` so community-authored issues can be triaged, while all writes remain constrained by the configured safe outputs. Findings-only runs update a marker-delimited managed block and never replace the author's full issue body.
+
 For the same logic running automatically when an issue is opened, see [issue-auto-triage](../issue-auto-triage/).
 
 ## Triggers

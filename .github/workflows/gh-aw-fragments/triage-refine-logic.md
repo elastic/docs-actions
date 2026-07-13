@@ -45,6 +45,7 @@ starts with `/triage undo`:
   - `<!-- triagebot-meta -->…<!-- /triagebot-meta -->` block
   - `<details><summary>TriageBot` block (extract its inner content; you will prepend new
     findings above prior runs)
+  - `<!-- triagebot-findings:start -->…<!-- triagebot-findings:end -->` managed block
   - RefineBot watermark line (`🤖 _Refined by RefineBot…`)
   - `<details><summary>RefineBot` changelog block
   - `<!-- refinebot-undo-snapshot: begin -->…<!-- refinebot-undo-snapshot: end -->` block
@@ -75,22 +76,24 @@ Flag broken or closed links. Do this only for repos and URLs you can access.
 ## 4. Decide the outcome
 
 - **Complete** — type identified, all required sections present, no blocking ambiguity, all
-  cross-references valid. **You must still call `update_issue` to append a TriageBot findings
-  block** — the only thing you skip is the rewrite of the main content.
+  cross-references valid. **You must still call `update_issue` to append or update the managed
+  TriageBot findings block** — the only thing you skip is the rewrite of the main content.
 - **Needs refinement** — type is clear and enough information is present, but sections are
   weak, blocking ambiguity is present, or cross-references are broken.
 - **Human needed** — goal or type cannot be determined, or so much is missing that refinement
-  cannot proceed without author input. **You must still call `update_issue` to append a
-  TriageBot findings block** — the only thing you skip is the rewrite of the main content.
+  cannot proceed without author input. **You must still call `update_issue` to append or update
+  the managed TriageBot findings block** — the only thing you skip is the rewrite of the main
+  content.
 
 **Rewrite guard (auto-triage on issue open):** when this run was triggered automatically
 (no triggering comment), only rewrite when the outcome is "needs refinement" AND the body
 contains enough author-supplied information to rewrite without inventing facts. If it does
 not, downgrade to "human needed" or "complete" as appropriate and skip the rewrite.
 
-**Regardless of outcome, `update_issue` is always called** to record the findings block. The
-outcome only determines whether the main content is rewritten — it never means "skip the body
-update entirely".
+**Regardless of outcome, `update_issue` is normally called** to record the findings block. The
+outcome determines whether the main content is rewritten and therefore whether a full-body
+replacement is necessary. If the managed-block markers are malformed, do not risk overwriting the
+body; explain the required cleanup in the human-needed comment or in one concise comment.
 
 ## 5. Refine (only when outcome is "needs refinement")
 
@@ -121,18 +124,34 @@ with `remove_labels`. Skip this if no `needs-team` label exists.
 **If outcome is "Human needed":** post one comment listing the specific questions for the
 author so they receive a notification.
 
-**Update the issue body** using `update_issue` with `"operation": "replace"` and
-`"issue_number": ${{ github.event.issue.number }}`.
+**Update the issue body** using `update_issue` and
+`"issue_number": ${{ github.event.issue.number }}`. Choose the operation based on whether this run
+rewrote the main content:
 
-**IMPORTANT — body must be a plain string:** write the complete reconstructed body directly as
-the `body` parameter value. Do **not** use shell syntax, heredoc markers, command substitutions
-(`$(...)`, `` `...` ``), or file paths anywhere in the body string. These constructs are passed
-literally to the GitHub API and will corrupt the issue body. Write every section — including the
-undo snapshot — as verbatim text inline in the call.
+- **No rewrite:** never reconstruct or replace the full issue body. If neither managed-block marker
+  exists, append the complete managed findings block using `"operation": "append"`. If both markers
+  exist exactly once, update only that block using `"operation": "replace-island"`. If only one
+  marker exists or multiple marker pairs exist, do not guess or overwrite the body; ask for the
+  marker structure to be fixed.
+- **Rewrite happened:** reconstruct the full body as described below and use
+  `"operation": "replace"`. Preserve author content and existing bot blocks exactly except for the
+  deliberate refinement and the managed findings block.
 
-Reconstruct the full body in this exact order — do not omit or reorder sections:
+This distinction is a safety boundary: GitHub tools may normalize issue markup when reading it.
+Never round-trip the entire body merely to add findings.
 
-1. **Main content** — rewritten if phase 5 ran; otherwise the original main content unchanged.
+**IMPORTANT — body must be a plain string:** write the exact content required by the selected
+operation directly as the `body` parameter value: the complete managed block for `append` or
+`replace-island`, and the complete reconstructed body for `replace`. Do **not** use shell syntax,
+heredoc markers, command substitutions (`$(...)`, `` `...` ``), or file paths anywhere in the body
+string. These constructs are passed literally to the GitHub API and will corrupt the issue body.
+When replacing after a rewrite, write every section — including the undo snapshot — as verbatim
+text inline in the call.
+
+When a rewrite happened, reconstruct the full body in this exact order — do not omit or reorder
+sections:
+
+1. **Main content** — the content rewritten in phase 5.
 
 2. **RefineBot watermark and changelog** — include **only if a rewrite happened this run**:
    ```
@@ -178,10 +197,12 @@ Reconstruct the full body in this exact order — do not omit or reorder section
    ```
    Omit entirely if no relevant meta issue found.
 
-5. **TriageBot findings block** — always written; prepend the newest run above prior runs,
-   separated by `---`, newest-first. Omit `---` and prior content on the first triage run.
-   Omit any field within a run's section where there is nothing to report:
+5. **TriageBot findings block** — always written as a managed block; prepend the newest run above
+   prior runs, separated by `---`, newest-first. Omit `---` and prior content on the first triage
+   run. Omit any field within a run's section where there is nothing to report. Pass this same
+   complete marker-delimited block to `append` or `replace-island` when no rewrite happened:
    ```
+   <!-- triagebot-findings:start -->
    <details>
    <summary>TriageBot — [Complete / Needs refinement / Human needed]</summary>
 
@@ -205,4 +226,5 @@ Reconstruct the full body in this exact order — do not omit or reorder section
 
    [prior run content if any]
    </details>
+   <!-- triagebot-findings:end -->
    ```

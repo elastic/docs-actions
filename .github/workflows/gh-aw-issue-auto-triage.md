@@ -45,6 +45,7 @@ strict: false
 
 tools:
   github:
+    min-integrity: none
     toolsets: [issues, repos]
   bash: ["date"]
 
@@ -78,6 +79,7 @@ safe-outputs:
     - slack.com
     - "*.slack.com"
   add-labels:
+    target: triggering
     allowed:
       - "triaged"
       - "human-needed"
@@ -93,15 +95,17 @@ safe-outputs:
       - "cross-team"
     max: 6
   remove-labels:
+    target: triggering
     allowed:
       - "needs-team"
     max: 1
   add-comment:
+    target: triggering
     max: 1
   update-issue:
     body:
     max: 1
-    target: "*"
+    target: triggering
 
 timeout-minutes: 15
 ---
