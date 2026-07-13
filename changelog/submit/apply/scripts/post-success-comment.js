@@ -1,4 +1,4 @@
-const { TITLE, upsertComment, escapeMarkdown } = require('./comment-helper');
+const { TITLE, upsertComment, wrapInlineCode } = require('./comment-helper');
 
 module.exports = async ({ github, context, core }) => {
   const prNumber = parseInt(process.env.PR_NUMBER, 10);
@@ -13,7 +13,7 @@ module.exports = async ({ github, context, core }) => {
   const body = [
     TITLE,
     '',
-    `📝 Changelog entry committed: [\`${escapeMarkdown(changelogFile)}\`](${viewUrl})`,
+    `📝 Changelog entry committed: [${wrapInlineCode(changelogFile)}](${viewUrl})`,
     '',
     `✏️ [Edit this changelog](${editUrl})`,
   ].join('\n');

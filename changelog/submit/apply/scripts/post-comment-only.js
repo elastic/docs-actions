@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { TITLE, upsertComment, escapeMarkdown } = require('./comment-helper');
+const { TITLE, upsertComment, wrapCodeFence, wrapInlineCode } = require('./comment-helper');
 
 module.exports = async ({ github, context, core }) => {
   const prNumber = parseInt(process.env.PR_NUMBER, 10);
@@ -14,11 +14,9 @@ module.exports = async ({ github, context, core }) => {
   const bodyParts = [TITLE, ''];
   if (content) {
     bodyParts.push(
-      `Generated changelog entry for \`${escapeMarkdown(changelogDir + '/' + files[0])}\`:`,
+      `Generated changelog entry for ${wrapInlineCode(changelogDir + '/' + files[0])}:`,
       '',
-      '```yaml',
-      content,
-      '```',
+      wrapCodeFence(content, 'yaml'),
       '',
       'This comment is informational — editing it does not change what gets uploaded. On merge, the entry is regenerated from the live PR record (title, labels) and uploaded to S3. To change the preview, edit the PR title or labels and let the changelog workflow re-run.',
     );
