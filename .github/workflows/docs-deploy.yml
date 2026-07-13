@@ -581,9 +581,13 @@ jobs:
         env:
           AWS_RETRY_MODE: standard
           AWS_MAX_ATTEMPTS: 6
+          AWS_CLI_S3_MAX_CONCURRENT_REQUESTS: 32
+          AWS_CLI_S3_MAX_QUEUE_SIZE: 10000
         # language=bash
         run: |
-          aws s3 sync docs-html "s3://elastic-docs-v3-website-preview${PATH_PREFIX}" --delete --no-follow-symlinks
+          aws configure set default.s3.max_concurrent_requests "${AWS_CLI_S3_MAX_CONCURRENT_REQUESTS}"
+          aws configure set default.s3.max_queue_size "${AWS_CLI_S3_MAX_QUEUE_SIZE}"
+          aws s3 sync docs-html "s3://elastic-docs-v3-website-preview${PATH_PREFIX}" --delete --no-follow-symlinks --only-show-errors
           aws cloudfront create-invalidation \
             --distribution-id EKT7LT5PM8RKS \
             --paths "${PATH_PREFIX}" "${PATH_PREFIX}/*"

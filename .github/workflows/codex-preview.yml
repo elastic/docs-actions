@@ -156,7 +156,9 @@ jobs:
       - name: AWS sync docs to S3
         id: s3-upload
         run: |
-          aws s3 sync docs "s3://elastic-codex-website-internal${PATH_PREFIX}" --delete --no-follow-symlinks
+          aws configure set default.s3.max_concurrent_requests "${AWS_CLI_S3_MAX_CONCURRENT_REQUESTS}"
+          aws configure set default.s3.max_queue_size "${AWS_CLI_S3_MAX_QUEUE_SIZE}"
+          aws s3 sync docs "s3://elastic-codex-website-internal${PATH_PREFIX}" --delete --no-follow-symlinks --only-show-errors
           aws cloudfront create-invalidation \
             --distribution-id E1BSBYLPE05D2R \
             --paths "${PATH_PREFIX}" "${PATH_PREFIX}/*"
@@ -164,6 +166,8 @@ jobs:
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
           AWS_RETRY_MODE: standard
           AWS_MAX_ATTEMPTS: 3
+          AWS_CLI_S3_MAX_CONCURRENT_REQUESTS: 32
+          AWS_CLI_S3_MAX_QUEUE_SIZE: 10000
       - name: Update deployment status
         uses: actions/github-script@v9
         if: always() && steps.deployment.outputs.result
