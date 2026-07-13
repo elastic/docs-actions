@@ -1,5 +1,5 @@
-# gh-aw-metadata: {"schema_version":"v4","frontmatter_hash":"e0ec6e9f127e9cba3cf77661972e0e65e20da7fa1668f0967ff29e0ea391abf7","body_hash":"eea5c93263e35d2e68a6ba4c209c93734de41224a4f8e2761c93d6a5812b5e1e","compiler_version":"v0.80.8","agent_id":"copilot","engine_versions":{"copilot":"1.0.63"}}
-# gh-aw-manifest: {"version":1,"secrets":["GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/cache/restore","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/cache/save","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/checkout","sha":"9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0","version":"v7.0.0"},{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"bee9622162d2319e68ef2594442f58c815f28d7f","version":"v0.80.8"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.27.7","digest":"sha256:aae231e4635c8999d039c132f1602d3df850fe9b84a00aa2b5ac981179b5661c","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.27.7@sha256:aae231e4635c8999d039c132f1602d3df850fe9b84a00aa2b5ac981179b5661c"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.7","digest":"sha256:009caf2e3d88fa77b64e9a03a95a228fc58db0f1701c6d324b29ba5a3c7c79b6","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.7@sha256:009caf2e3d88fa77b64e9a03a95a228fc58db0f1701c6d324b29ba5a3c7c79b6"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.27.7","digest":"sha256:deb1d4e19de62d51cee0508057a596a19315c3423ada4d675cad136dc8037c96","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.27.7@sha256:deb1d4e19de62d51cee0508057a596a19315c3423ada4d675cad136dc8037c96"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.27","digest":"sha256:fe984bddde4ec05d756d9043edb0a32912e6b7b72f6a121b1082f29221421cc7","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.3.27@sha256:fe984bddde4ec05d756d9043edb0a32912e6b7b72f6a121b1082f29221421cc7"},{"image":"ghcr.io/github/gh-aw-node","digest":"sha256:529d02eb970b1161aa25c593a9c3df57fdfad5a8add328cb3b6eccef66f3183b","pinned_image":"ghcr.io/github/gh-aw-node@sha256:529d02eb970b1161aa25c593a9c3df57fdfad5a8add328cb3b6eccef66f3183b"},{"image":"ghcr.io/github/github-mcp-server:v1.4.0","digest":"sha256:2afb26356481d1a350e14544a6e160f7f7ec1561a1ea309b823665abf0309036","pinned_image":"ghcr.io/github/github-mcp-server:v1.4.0@sha256:2afb26356481d1a350e14544a6e160f7f7ec1561a1ea309b823665abf0309036"}]}
+# gh-aw-metadata: {"schema_version":"v4","frontmatter_hash":"70a76953221ee152ffd9ee5ee6fe2a47f6408b70d2ca66c000d267949cee5fa8","body_hash":"89f83f8b426cbbc2665609a17e3a04da8c499630f59007d0149a701ef7843f10","compiler_version":"v0.80.8","agent_id":"copilot","engine_versions":{"copilot":"1.0.63"}}
+# gh-aw-manifest: {"version":1,"secrets":["GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/cache/restore","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/cache/save","sha":"27d5ce7f107fe9357f9df03efb73ab90386fccae","version":"v5.0.5"},{"repo":"actions/checkout","sha":"9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0","version":"v7.0.0"},{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"bee9622162d2319e68ef2594442f58c815f28d7f","version":"v0.80.8"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.27.7","digest":"sha256:aae231e4635c8999d039c132f1602d3df850fe9b84a00aa2b5ac981179b5661c","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.27.7@sha256:aae231e4635c8999d039c132f1602d3df850fe9b84a00aa2b5ac981179b5661c"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.7","digest":"sha256:009caf2e3d88fa77b64e9a03a95a228fc58db0f1701c6d324b29ba5a3c7c79b6","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.7@sha256:009caf2e3d88fa77b64e9a03a95a228fc58db0f1701c6d324b29ba5a3c7c79b6"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.27.7","digest":"sha256:deb1d4e19de62d51cee0508057a596a19315c3423ada4d675cad136dc8037c96","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.27.7@sha256:deb1d4e19de62d51cee0508057a596a19315c3423ada4d675cad136dc8037c96"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.27","digest":"sha256:fe984bddde4ec05d756d9043edb0a32912e6b7b72f6a121b1082f29221421cc7","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.3.27@sha256:fe984bddde4ec05d756d9043edb0a32912e6b7b72f6a121b1082f29221421cc7"},{"image":"ghcr.io/github/gh-aw-node","digest":"sha256:529d02eb970b1161aa25c593a9c3df57fdfad5a8add328cb3b6eccef66f3183b","pinned_image":"ghcr.io/github/gh-aw-node@sha256:529d02eb970b1161aa25c593a9c3df57fdfad5a8add328cb3b6eccef66f3183b"},{"image":"ghcr.io/github/github-mcp-server:v1.4.0","digest":"sha256:2afb26356481d1a350e14544a6e160f7f7ec1561a1ea309b823665abf0309036","pinned_image":"ghcr.io/github/github-mcp-server:v1.4.0@sha256:2afb26356481d1a350e14544a6e160f7f7ec1561a1ea309b823665abf0309036"}]}
 # This file was automatically generated by gh-aw (v0.80.8). DO NOT EDIT. To debug this workflow, load the skill at https://github.com/github/gh-aw/blob/main/debug.md
 #
 #    ___                   _   _      
@@ -46,7 +46,6 @@
 #   - actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 #   - actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 #   - actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-#   - actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
 #   - actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
 #   - actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
 #   - actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -311,20 +310,20 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_fa9a5f1a5f7ee46f_EOF'
+          cat << 'GH_AW_PROMPT_bf166015a3ae3988_EOF'
           <system>
-          GH_AW_PROMPT_fa9a5f1a5f7ee46f_EOF
+          GH_AW_PROMPT_bf166015a3ae3988_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_fa9a5f1a5f7ee46f_EOF'
+          cat << 'GH_AW_PROMPT_bf166015a3ae3988_EOF'
           <safe-output-tools>
           Tools: add_comment, update_issue, add_labels(max:6), remove_labels, missing_tool, missing_data, noop
           </safe-output-tools>
-          GH_AW_PROMPT_fa9a5f1a5f7ee46f_EOF
+          GH_AW_PROMPT_bf166015a3ae3988_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/mcp_cli_tools_prompt.md"
-          cat << 'GH_AW_PROMPT_fa9a5f1a5f7ee46f_EOF'
+          cat << 'GH_AW_PROMPT_bf166015a3ae3988_EOF'
           <github-context>
           The following GitHub context information is available for this workflow:
           {{#if github.actor}}
@@ -353,9 +352,9 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_fa9a5f1a5f7ee46f_EOF
+          GH_AW_PROMPT_bf166015a3ae3988_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_fa9a5f1a5f7ee46f_EOF'
+          cat << 'GH_AW_PROMPT_bf166015a3ae3988_EOF'
           </system>
           ## Formatting Guidelines
           
@@ -499,6 +498,7 @@ jobs:
             - `…` block
             - `<details><summary>TriageBot` block (extract its inner content; you will prepend new
               findings above prior runs)
+            - `…` managed block
             - RefineBot watermark line (`🤖 _Refined by RefineBot…`)
             - `<details><summary>RefineBot` changelog block
             - `…` block
@@ -529,22 +529,24 @@ jobs:
           ## 4. Decide the outcome
           
           - **Complete** — type identified, all required sections present, no blocking ambiguity, all
-            cross-references valid. **You must still call `update_issue` to append a TriageBot findings
-            block** — the only thing you skip is the rewrite of the main content.
+            cross-references valid. **You must still call `update_issue` to append or update the managed
+            TriageBot findings block** — the only thing you skip is the rewrite of the main content.
           - **Needs refinement** — type is clear and enough information is present, but sections are
             weak, blocking ambiguity is present, or cross-references are broken.
           - **Human needed** — goal or type cannot be determined, or so much is missing that refinement
-            cannot proceed without author input. **You must still call `update_issue` to append a
-            TriageBot findings block** — the only thing you skip is the rewrite of the main content.
+            cannot proceed without author input. **You must still call `update_issue` to append or update
+            the managed TriageBot findings block** — the only thing you skip is the rewrite of the main
+            content.
           
           **Rewrite guard (auto-triage on issue open):** when this run was triggered automatically
           (no triggering comment), only rewrite when the outcome is "needs refinement" AND the body
           contains enough author-supplied information to rewrite without inventing facts. If it does
           not, downgrade to "human needed" or "complete" as appropriate and skip the rewrite.
           
-          **Regardless of outcome, `update_issue` is always called** to record the findings block. The
-          outcome only determines whether the main content is rewritten — it never means "skip the body
-          update entirely".
+          **Regardless of outcome, `update_issue` is normally called** to record the findings block. The
+          outcome determines whether the main content is rewritten and therefore whether a full-body
+          replacement is necessary. If the managed-block markers are malformed, do not risk overwriting the
+          body; explain the required cleanup in the human-needed comment or in one concise comment.
           
           ## 5. Refine (only when outcome is "needs refinement")
           
@@ -575,18 +577,34 @@ jobs:
           **If outcome is "Human needed":** post one comment listing the specific questions for the
           author so they receive a notification.
           
-          **Update the issue body** using `update_issue` with `"operation": "replace"` and
-          `"issue_number": __GH_AW_GITHUB_EVENT_ISSUE_NUMBER__`.
+          **Update the issue body** using `update_issue` and
+          `"issue_number": __GH_AW_GITHUB_EVENT_ISSUE_NUMBER__`. Choose the operation based on whether this run
+          rewrote the main content:
           
-          **IMPORTANT — body must be a plain string:** write the complete reconstructed body directly as
-          the `body` parameter value. Do **not** use shell syntax, heredoc markers, command substitutions
-          (`$(...)`, `` `...` ``), or file paths anywhere in the body string. These constructs are passed
-          literally to the GitHub API and will corrupt the issue body. Write every section — including the
-          undo snapshot — as verbatim text inline in the call.
+          - **No rewrite:** never reconstruct or replace the full issue body. If neither managed-block marker
+            exists, append the complete managed findings block using `"operation": "append"`. If both markers
+            exist exactly once, update only that block using `"operation": "replace-island"`. If only one
+            marker exists or multiple marker pairs exist, do not guess or overwrite the body; ask for the
+            marker structure to be fixed.
+          - **Rewrite happened:** reconstruct the full body as described below and use
+            `"operation": "replace"`. Preserve author content and existing bot blocks exactly except for the
+            deliberate refinement and the managed findings block.
           
-          Reconstruct the full body in this exact order — do not omit or reorder sections:
+          This distinction is a safety boundary: GitHub tools may normalize issue markup when reading it.
+          Never round-trip the entire body merely to add findings.
           
-          1. **Main content** — rewritten if phase 5 ran; otherwise the original main content unchanged.
+          **IMPORTANT — body must be a plain string:** write the exact content required by the selected
+          operation directly as the `body` parameter value: the complete managed block for `append` or
+          `replace-island`, and the complete reconstructed body for `replace`. Do **not** use shell syntax,
+          heredoc markers, command substitutions (`$(...)`, `` `...` ``), or file paths anywhere in the body
+          string. These constructs are passed literally to the GitHub API and will corrupt the issue body.
+          When replacing after a rewrite, write every section — including the undo snapshot — as verbatim
+          text inline in the call.
+          
+          When a rewrite happened, reconstruct the full body in this exact order — do not omit or reorder
+          sections:
+          
+          1. **Main content** — the content rewritten in phase 5.
           
           2. **RefineBot watermark and changelog** — include **only if a rewrite happened this run**:
              ```
@@ -632,10 +650,12 @@ jobs:
              ```
              Omit entirely if no relevant meta issue found.
           
-          5. **TriageBot findings block** — always written; prepend the newest run above prior runs,
-             separated by `---`, newest-first. Omit `---` and prior content on the first triage run.
-             Omit any field within a run's section where there is nothing to report:
+          5. **TriageBot findings block** — always written as a managed block; prepend the newest run above
+             prior runs, separated by `---`, newest-first. Omit `---` and prior content on the first triage
+             run. Omit any field within a run's section where there is nothing to report. Pass this same
+             complete marker-delimited block to `append` or `replace-island` when no rewrite happened:
              ```
+             <!-- triagebot-findings:start -->
              <details>
              <summary>TriageBot — [Complete / Needs refinement / Human needed]</summary>
           
@@ -659,6 +679,7 @@ jobs:
           
              [prior run content if any]
              </details>
+             <!-- triagebot-findings:end -->
              ```
           
           This run was triggered by a `/triage` slash command from a team member, or by a consumer
@@ -671,7 +692,7 @@ jobs:
           
           __GH_AW_EXPR_49B959F1__
           
-          GH_AW_PROMPT_fa9a5f1a5f7ee46f_EOF
+          GH_AW_PROMPT_bf166015a3ae3988_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -832,21 +853,104 @@ jobs:
         run: bash "${RUNNER_TEMP}/gh-aw/actions/configure_gh_for_ghe.sh"
         env:
           GH_TOKEN: ${{ github.token }}
-      - env:
-          SETUP_COMMANDS: ${{ inputs.setup-commands }}
-        name: Repo-specific setup
+      - name: Start DIFC Proxy
+        env:
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          DIFC_PROXY_POLICY: '{"allow-only":{"min-integrity":"none","repos":"all"}}'
+          DIFC_PROXY_IMAGE: 'ghcr.io/github/gh-aw-mcpg:v0.3.27'
+        run: |
+          bash "${RUNNER_TEMP}/gh-aw/actions/start_difc_proxy.sh"
+      - name: Repo-specific setup
         run: |
           if [ -n "$SETUP_COMMANDS" ]; then
             eval "$SETUP_COMMANDS"
           fi
-      - env:
-          COMMENT_BODY: ${{ github.event.comment.body || '' }}
-          GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number || 0 }}
-          REPOSITORY: ${{ github.repository }}
-        name: Prepare triage undo from edit history
-        run: "if [[ \"$COMMENT_BODY\" != /triage\\ undo* ]]; then\n  exit 0\nfi\n\nmkdir -p /tmp/gh-aw/agent\n\nquery='query($owner: String!, $name: String!, $number: Int!) {\n  repository(owner: $owner, name: $name) {\n    issue(number: $number) {\n      userContentEdits(first: 100) {\n        nodes {\n          editedAt\n          editor {\n            login\n          }\n          diff\n        }\n      }\n    }\n  }\n}'\n\nowner=\"${REPOSITORY%%/*}\"\nname=\"${REPOSITORY#*/}\"\nresponse_path=\"/tmp/gh-aw/agent/triage-undo-edits.json\"\ngh api graphql \\\n  -f query=\"$query\" \\\n  -f owner=\"$owner\" \\\n  -f name=\"$name\" \\\n  -F number=\"$ISSUE_NUMBER\" > \"$response_path\"\n\nnode <<'NODE'\nconst fs = require('fs');\n\nconst responsePath = '/tmp/gh-aw/agent/triage-undo-edits.json';\nconst bodyPath = '/tmp/gh-aw/agent/triage-undo-original-body.md';\nconst metadataPath = '/tmp/gh-aw/agent/triage-undo-original-body.json';\nconst response = JSON.parse(fs.readFileSync(responsePath, 'utf8'));\nconst edits = response?.data?.repository?.issue?.userContentEdits?.nodes ?? [];\nconst sorted = edits\n  .filter((edit) => typeof edit.diff === 'string' && edit.diff.trim().length > 0)\n  .sort((a, b) => new Date(a.editedAt) - new Date(b.editedAt));\n\nconst selected =\n  sorted.find((edit) => edit.editor?.login !== 'github-actions') ??\n  sorted[0];\n\nif (!selected) {\n  process.exit(0);\n}\n\nfs.writeFileSync(bodyPath, selected.diff, 'utf8');\nfs.writeFileSync(\n  metadataPath,\n  JSON.stringify(\n    {\n      editedAt: selected.editedAt,\n      editor: selected.editor?.login ?? null,\n      source: 'github-user-content-edits',\n    },\n    null,\n    2,\n  ),\n  'utf8',\n);\nNODE\n"
+        env:
+          GH_HOST: ${{ env.GH_HOST || 'github.com' }}
+          GH_REPO: ${{ github.repository }}
+          GITHUB_API_URL: https://localhost:18443/api/v3
+          GITHUB_GRAPHQL_URL: https://localhost:18443/api/graphql
+          NODE_EXTRA_CA_CERTS: /tmp/gh-aw/proxy-logs/proxy-tls/ca.crt
+          SETUP_COMMANDS: ${{ inputs.setup-commands }}
+      - name: Prepare triage undo from edit history
+        run: |
+          if [[ "$COMMENT_BODY" != /triage\ undo* ]]; then
+            exit 0
+          fi
 
+          mkdir -p /tmp/gh-aw/agent
+
+          query='query($owner: String!, $name: String!, $number: Int!) {
+            repository(owner: $owner, name: $name) {
+              issue(number: $number) {
+                userContentEdits(first: 100) {
+                  nodes {
+                    editedAt
+                    editor {
+                      login
+                    }
+                    diff
+                  }
+                }
+              }
+            }
+          }'
+
+          owner="${REPOSITORY%%/*}"
+          name="${REPOSITORY#*/}"
+          response_path="/tmp/gh-aw/agent/triage-undo-edits.json"
+          gh api graphql \
+            -f query="$query" \
+            -f owner="$owner" \
+            -f name="$name" \
+            -F number="$ISSUE_NUMBER" > "$response_path"
+
+          node <<'NODE'
+          const fs = require('fs');
+
+          const responsePath = '/tmp/gh-aw/agent/triage-undo-edits.json';
+          const bodyPath = '/tmp/gh-aw/agent/triage-undo-original-body.md';
+          const metadataPath = '/tmp/gh-aw/agent/triage-undo-original-body.json';
+          const response = JSON.parse(fs.readFileSync(responsePath, 'utf8'));
+          const edits = response?.data?.repository?.issue?.userContentEdits?.nodes ?? [];
+          const sorted = edits
+            .filter((edit) => typeof edit.diff === 'string' && edit.diff.trim().length > 0)
+            .sort((a, b) => new Date(a.editedAt) - new Date(b.editedAt));
+
+          const selected =
+            sorted.find((edit) => edit.editor?.login !== 'github-actions') ??
+            sorted[0];
+
+          if (!selected) {
+            process.exit(0);
+          }
+
+          fs.writeFileSync(bodyPath, selected.diff, 'utf8');
+          fs.writeFileSync(
+            metadataPath,
+            JSON.stringify(
+              {
+                editedAt: selected.editedAt,
+                editor: selected.editor?.login ?? null,
+                source: 'github-user-content-edits',
+              },
+              null,
+              2,
+            ),
+            'utf8',
+          );
+          NODE
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body || '' }}
+          GH_HOST: ${{ env.GH_HOST || 'github.com' }}
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_API_URL: https://localhost:18443/api/v3
+          GITHUB_GRAPHQL_URL: https://localhost:18443/api/graphql
+          ISSUE_NUMBER: ${{ github.event.issue.number || 0 }}
+          NODE_EXTRA_CA_CERTS: /tmp/gh-aw/proxy-logs/proxy-tls/ca.crt
+          REPOSITORY: ${{ github.repository }}
       - name: Configure Git credentials
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -873,16 +977,17 @@ jobs:
           GH_HOST: github.com
       - name: Install AWF binary
         run: bash "${RUNNER_TEMP}/gh-aw/actions/install_awf_binary.sh" v0.27.7
-      - name: Determine automatic lockdown mode for GitHub MCP Server
-        id: determine-automatic-lockdown
-        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
+      - name: Parse integrity filter lists
+        id: parse-guard-vars
         env:
-          GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
-          GH_AW_GITHUB_MCP_SERVER_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN }}
-        with:
-          script: |
-            const determineAutomaticLockdown = require('${{ runner.temp }}/gh-aw/actions/determine_automatic_lockdown.cjs');
-            await determineAutomaticLockdown(github, context, core);
+          GH_AW_BLOCKED_USERS_VAR: ${{ vars.GH_AW_GITHUB_BLOCKED_USERS || '' }}
+          GH_AW_TRUSTED_USERS_VAR: ${{ vars.GH_AW_GITHUB_TRUSTED_USERS || '' }}
+          GH_AW_APPROVAL_LABELS_VAR: ${{ vars.GH_AW_GITHUB_APPROVAL_LABELS || '' }}
+        run: bash "${RUNNER_TEMP}/gh-aw/actions/parse_guard_list.sh"
+      - name: Stop DIFC Proxy
+        if: always()
+        continue-on-error: true
+        run: bash "${RUNNER_TEMP}/gh-aw/actions/stop_difc_proxy.sh"
       - name: Download activation artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -1129,8 +1234,6 @@ jobs:
           GH_AW_SAFE_OUTPUTS: ${{ steps.set-runtime-paths.outputs.GH_AW_SAFE_OUTPUTS }}
           GH_AW_SAFE_OUTPUTS_CONFIG_PATH: ${{ steps.set-runtime-paths.outputs.GH_AW_SAFE_OUTPUTS_CONFIG_PATH }}
           GH_AW_SAFE_OUTPUTS_TOOLS_PATH: ${{ steps.set-runtime-paths.outputs.GH_AW_SAFE_OUTPUTS_TOOLS_PATH }}
-          GITHUB_MCP_GUARD_MIN_INTEGRITY: ${{ steps.determine-automatic-lockdown.outputs.min_integrity }}
-          GITHUB_MCP_GUARD_REPOS: ${{ steps.determine-automatic-lockdown.outputs.repos }}
           GITHUB_MCP_SERVER_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -1162,7 +1265,7 @@ jobs:
           
           mkdir -p "$HOME/.copilot"
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_10e12f319b97c08e_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_731d27b470540e6f_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "github": {
@@ -1176,8 +1279,11 @@ jobs:
                 },
                 "guard-policies": {
                   "allow-only": {
-                    "min-integrity": "$GITHUB_MCP_GUARD_MIN_INTEGRITY",
-                    "repos": "$GITHUB_MCP_GUARD_REPOS"
+                    "approval-labels": ${{ steps.parse-guard-vars.outputs.approval_labels }},
+                    "blocked-users": ${{ steps.parse-guard-vars.outputs.blocked_users }},
+                    "min-integrity": "none",
+                    "repos": "all",
+                    "trusted-users": ${{ steps.parse-guard-vars.outputs.trusted_users }}
                   }
                 }
               },
@@ -1219,7 +1325,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_10e12f319b97c08e_EOF
+          GH_AW_MCP_CONFIG_731d27b470540e6f_EOF
       - name: Mount MCP servers as CLIs
         id: mount-mcp-clis
         continue-on-error: true
@@ -1475,6 +1581,8 @@ jobs:
             /tmp/gh-aw/sandbox/agent/logs/
             /tmp/gh-aw/redacted-urls.log
             /tmp/gh-aw/mcp-logs/
+            /tmp/gh-aw/proxy-logs/
+            !/tmp/gh-aw/proxy-logs/proxy-tls/
             /tmp/gh-aw/agent_usage.json
             /tmp/gh-aw/agent-stdio.log
             /tmp/gh-aw/pre-agent-audit.txt

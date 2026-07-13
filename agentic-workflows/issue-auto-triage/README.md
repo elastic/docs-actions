@@ -4,6 +4,8 @@ Runs the same triage and refinement logic as [issue-triage](../issue-triage/), a
 
 Because there are no comments yet, it works from the issue body alone and applies a stricter rewrite guard: it only rewrites the description when the body already contains enough author-supplied information to do so without inventing facts. Issues opened by a bot are skipped.
 
+The workflow accepts issue content from public community contributors as untrusted input. Its GitHub tools use `min-integrity: none` so community-authored issues can be triaged, while all writes remain constrained by the configured safe outputs. Findings-only runs update a marker-delimited managed block and never replace the author's full issue body.
+
 ## Triggers
 
 | Event | Description |

@@ -45,6 +45,8 @@ strict: false
 
 tools:
   github:
+    lockdown: false
+    min-integrity: none
     toolsets: [issues, repos]
   bash: ["date"]
 
