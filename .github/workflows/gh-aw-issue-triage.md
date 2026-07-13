@@ -155,7 +155,7 @@ safe-outputs:
     - slack.com
     - "*.slack.com"
   add-labels:
-    target: triggering
+    target: "${{ github.event.issue.number }}"
     allowed:
       - "triaged"
       - "human-needed"
@@ -171,18 +171,18 @@ safe-outputs:
       - "cross-team"
     max: 6
   remove-labels:
-    target: triggering
+    target: "${{ github.event.issue.number }}"
     allowed:
       - "needs-team"
     max: 1
   add-comment:
-    target: triggering
+    target: "${{ github.event.issue.number }}"
     max: 1
     hide-older-comments: true
   update-issue:
     body:
     max: 1
-    target: triggering
+    target: "${{ github.event.issue.number }}"
   messages:
     run-started: "👀 TriageBot is triaging issue #${{ github.event.issue.number }}… [{run_url}]({run_url})"
     run-success: "✅ TriageBot finished. [{run_url}]({run_url})"
