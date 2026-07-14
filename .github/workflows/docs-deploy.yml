@@ -63,8 +63,7 @@ jobs:
       && github.event.repository.fork == false
     runs-on: ubuntu-latest
     permissions:
-      actions: read
-      contents: none
+      contents: read
       pull-requests: read
       id-token: write
     outputs:
@@ -81,17 +80,6 @@ jobs:
       vale-files-match: ${{ steps.context.outputs.vale-files-match }}
       link-index-eligible: ${{ steps.link-index-branch.outputs.eligible }}
     steps:
-      - name: Download check metadata
-        id: download-metadata
-        if: github.event.workflow_run.event == 'push'
-        continue-on-error: true
-        uses: actions/download-artifact@v8
-        with:
-          name: docs-build-check-metadata
-          run-id: ${{ github.event.workflow_run.id }}
-          path: /tmp/check-metadata
-          github-token: ${{ github.token }}
-
       - name: Resolve workflow run context
         id: context
         uses: actions/github-script@v9
@@ -102,6 +90,8 @@ jobs:
             .github/**
             README.md
           VALE_PATHS: ${{ inputs.vale-paths }}
+          USE_RELEASE_BRANCHES: ${{ inputs.use-release-branches }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         with:
           # language=js
           script: |
@@ -119,18 +109,66 @@ jobs:
             core.setOutput('head-repo', headRepo);
             core.setOutput('is-fork', isFork ? 'true' : 'false');
 
+            const pathPattern = process.env.PATH_PATTERN || '**';
+            const ignoreLines = (process.env.IGNORE_PATTERNS || '')
+              .split('\n').map(s => s.trim()).filter(Boolean);
+
+            const matchesPattern = (filename) => {
+              if (pathPattern === '**' || pathPattern === '') return true;
+              if (pathPattern.endsWith('/**')) {
+                return filename.startsWith(pathPattern.slice(0, -3) + '/');
+              }
+              return true;
+            };
+
+            const isIgnored = (filename) => {
+              for (const pattern of ignoreLines) {
+                if (pattern.endsWith('/**')) {
+                  if (filename.startsWith(pattern.slice(0, -3) + '/')) return true;
+                } else if (pattern.endsWith('/*')) {
+                  const dir = pattern.slice(0, -2);
+                  if (filename.startsWith(dir + '/') && !filename.slice(dir.length + 1).includes('/')) return true;
+                } else if (filename === pattern) {
+                  return true;
+                }
+              }
+              return false;
+            };
+
             if (event === 'push') {
               core.setOutput('base-ref', headBranch);
               core.setOutput('vale-files-match', 'false');
 
               let hasChanges = 'true';
               try {
-                const fs = require('fs');
-                const value = fs.readFileSync('/tmp/check-metadata/effective_any_modified', 'utf8').trim();
-                hasChanges = value === 'false' ? 'false' : 'true';
-                core.info(`Push has-changes from docs-build metadata: ${hasChanges}`);
+                const { data: commit } = await github.rest.repos.getCommit({
+                  owner, repo, ref: headSha,
+                });
+                const commitFiles = commit.files || [];
+                // GitHub caps getCommit file list at 300; if truncated, default to has-changes=true.
+                if (commitFiles.length >= 300) {
+                  core.warning('Commit has ≥300 files — change detection truncated, defaulting to has-changes=true');
+                } else {
+                  hasChanges = commitFiles.some(f => matchesPattern(f.filename) && !isIgnored(f.filename)) ? 'true' : 'false';
+                  core.info(`Push has-changes (commit diff): ${hasChanges}`);
+
+                  // Release-branch opt-in parity: a freshly-cut semver branch shares its
+                  // HEAD with the default branch (no diff) but still needs a build so
+                  // links.json is produced for the link index.
+                  const useRelease = process.env.USE_RELEASE_BRANCHES === 'true';
+                  const defaultBranch = process.env.DEFAULT_BRANCH;
+                  if (hasChanges === 'false' && useRelease && headBranch !== defaultBranch && /^[0-9]+\.[0-9]+(\.[0-9]+)?$/.test(headBranch)) {
+                    const cmp = await github.rest.repos.compareCommitsWithBasehead({
+                      owner, repo, basehead: `${defaultBranch}...${headSha}`,
+                    });
+                    if (cmp.data.ahead_by === 0) {
+                      hasChanges = 'true';
+                      core.info('Release-branch opt-in: freshly-cut semver branch — forcing has-changes=true');
+                    }
+                  }
+                }
               } catch (err) {
-                core.warning(`Could not read check metadata: ${err.message} — falling back to has-changes=true`);
+                core.warning(`Push change detection failed: ${err.message} — defaulting to has-changes=true`);
               }
 
               core.setOutput('has-changes', hasChanges);
@@ -180,32 +218,6 @@ jobs:
             const files = await github.paginate(github.rest.pulls.listFiles, {
               owner, repo, pull_number: prNumber
             });
-
-            const pathPattern = process.env.PATH_PATTERN || '**';
-            const ignoreLines = (process.env.IGNORE_PATTERNS || '')
-              .split('\n').map(s => s.trim()).filter(Boolean);
-
-            const matchesPattern = (filename) => {
-              if (pathPattern === '**' || pathPattern === '') return true;
-              if (pathPattern.endsWith('/**')) {
-                return filename.startsWith(pathPattern.slice(0, -3) + '/');
-              }
-              return true;
-            };
-
-            const isIgnored = (filename) => {
-              for (const pattern of ignoreLines) {
-                if (pattern.endsWith('/**')) {
-                  if (filename.startsWith(pattern.slice(0, -3) + '/')) return true;
-                } else if (pattern.endsWith('/*')) {
-                  const dir = pattern.slice(0, -2);
-                  if (filename.startsWith(dir + '/') && !filename.slice(dir.length + 1).includes('/')) return true;
-                } else if (filename === pattern) {
-                  return true;
-                }
-              }
-              return false;
-            };
 
             const hasChanges = files.some(f => matchesPattern(f.filename) && !isIgnored(f.filename));
             core.setOutput('has-changes', hasChanges ? 'true' : 'false');
