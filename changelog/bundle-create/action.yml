@@ -141,6 +141,19 @@ runs:
           fi
         fi
 
+        # Profile mode derives all filters from the config. docs-builder
+        # rejects --prs/--release-version alongside a profile, so the action
+        # must fail here rather than silently drop the inputs and publish a
+        # bundle filtered by the profile alone.
+        if [[ "$MODE" == "bundle" && -n "$PROFILE" ]]; then
+          if [ -n "$PRS" ]; then
+            echo "::error::profile and prs are mutually exclusive. Use prs-artifact to filter a profile bundle by a PR list"; exit 1
+          fi
+          if [ -n "$RELEASE_VERSION" ]; then
+            echo "::error::profile and release-version are mutually exclusive. Configure 'source: github_release' on the profile instead"; exit 1
+          fi
+        fi
+
         source "${GITHUB_ACTION_PATH}/../../scripts/validate-inputs.sh"
 
         validate_path "$CONFIG" "config"
@@ -172,10 +185,12 @@ runs:
         name: ${{ inputs.prs-artifact }}
         path: .bundle-prs
 
-    # The artifact must contain exactly one newline-delimited URL list file,
-    # holding only PR URLs or only issue URLs. The kind decides the option-mode
-    # flag (--prs vs --issues); per-line URL validation is enforced by
-    # docs-builder when the file is consumed.
+    # The artifact must contain exactly one newline-delimited URL list file in
+    # which every non-empty line is a fully-qualified GitHub PR URL or issue
+    # URL (one kind per file). The kind decides the option-mode flag
+    # (--prs vs --issues). Exhaustive anchored matching matters here: the
+    # option-mode docs-builder loaders accept any http(s) line, so a partially
+    # valid file would otherwise produce a silently partial bundle.
     - name: Resolve PR list file
       if: inputs.mode == 'bundle' && inputs.prs-artifact != ''
       id: prs-file
@@ -192,14 +207,15 @@ runs:
         fi
         PRS_FILE=$(find .bundle-prs -maxdepth 1 -type f)
 
-        PR_COUNT=$(grep -icE 'github\.com/[^/]+/[^/]+/pull/[0-9]+/?[[:space:]]*$' "$PRS_FILE" || true)
-        ISSUE_COUNT=$(grep -icE 'github\.com/[^/]+/[^/]+/issues/[0-9]+/?[[:space:]]*$' "$PRS_FILE" || true)
+        PR_COUNT=$(grep -icE '^[[:space:]]*https://github\.com/[^/]+/[^/]+/pull/[0-9]+/?[[:space:]]*$' "$PRS_FILE" || true)
+        ISSUE_COUNT=$(grep -icE '^[[:space:]]*https://github\.com/[^/]+/[^/]+/issues/[0-9]+/?[[:space:]]*$' "$PRS_FILE" || true)
+        TOTAL_COUNT=$(grep -cvE '^[[:space:]]*$' "$PRS_FILE" || true)
         if [ "$PR_COUNT" -gt 0 ] && [ "$ISSUE_COUNT" -gt 0 ]; then
           echo "::error::prs-artifact file must contain only pull request URLs or only issue URLs, not a mix"
           exit 1
         fi
-        if [ "$PR_COUNT" -eq 0 ] && [ "$ISSUE_COUNT" -eq 0 ]; then
-          echo "::error::prs-artifact file contains no GitHub pull request or issue URLs"
+        if [ "$TOTAL_COUNT" -eq 0 ] || [ $((PR_COUNT + ISSUE_COUNT)) -ne "$TOTAL_COUNT" ]; then
+          echo "::error::every non-empty line in the prs-artifact file must be a fully-qualified GitHub PR or issue URL (matched ${PR_COUNT} PR and ${ISSUE_COUNT} issue URLs out of ${TOTAL_COUNT} non-empty lines)"
           exit 1
         fi
         KIND=prs

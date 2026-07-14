@@ -442,7 +442,9 @@ jobs:
       prs-artifact: release-prs
 ```
 
-The `version` input drives `{version}`/`{lifecycle}` substitution in the profile's `output` and `output_products` patterns; the artifact supplies the filter. This works for stack-style versions (`9.2.0`) and date-based serverless targets (`2026-07-07`) alike. Because the artifact is downloaded inside the reusable workflow, the PR list never needs to be committed to the repository.
+The `version` input drives `{version}`/`{lifecycle}` substitution in the profile's `output` and `output_products` patterns; the artifact supplies the filter. Because the artifact is downloaded inside the reusable workflow, the PR list never needs to be committed to the repository.
+
+> **Note:** `{lifecycle}` is inferred from semver-style prerelease monikers (`9.2.0` → `ga`, `9.2.0-beta.1` → `beta`). Date-based targets such as `2026-07-07` are treated as having a prerelease suffix and infer `preview`, so for date-based releases omit `{lifecycle}` from your patterns (e.g. `output_products: "my-product {version}"`).
 
 #### GitHub release mode (`mode: gh-release`)
 
