@@ -81,27 +81,7 @@ runs:
         ARTIFACT_NAME: ${{ inputs.artifact-name }}
         CDN_BASE_URL: ${{ inputs.cdn-base-url }}
       run: |
-        validate_path() {
-          local value="$1" name="$2"
-          [ -z "$value" ] && return
-          if [[ "$value" == /* ]]; then
-            echo "::error::${name} must be a relative path: ${value}"; exit 1
-          fi
-          if [[ "$value" == *..* ]]; then
-            echo "::error::${name} must not contain '..': ${value}"; exit 1
-          fi
-          if [[ "$value" == *$'\n'* || "$value" == *$'\r'* ]]; then
-            echo "::error::${name} must not contain newlines"; exit 1
-          fi
-        }
-
-        validate_identifier() {
-          local value="$1" name="$2" pattern="$3"
-          [ -z "$value" ] && return
-          if [[ ! "$value" =~ $pattern ]]; then
-            echo "::error::${name} contains disallowed characters: ${value}"; exit 1
-          fi
-        }
+        source "${GITHUB_ACTION_PATH}/../../scripts/validate-inputs.sh"
 
         validate_path "$CONFIG" "config"
         validate_path "$OUTPUT" "output"
