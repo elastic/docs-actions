@@ -506,6 +506,7 @@ runs:
           echo "::warning::Could not fetch PR patches; line-range filtering will be skipped (Vale will lint entire files)"
         else
           > "$TEMP_DIR/line_ranges.txt"
+          patches_complete=true
 
           while IFS= read -r file; do
             # Extract the patch for this file from the API response.
@@ -514,6 +515,7 @@ runs:
               '.[] | select(.filename == $f) | .patch // empty')
 
             if [ -n "$patch" ]; then
+              has_additions=false
               new_line=0
               while IFS= read -r pline; do
                 case "$pline" in
@@ -524,6 +526,7 @@ runs:
                     ;;
                   +*)
                     echo "$file|$new_line|1" >> "$TEMP_DIR/line_ranges.txt"
+                    has_additions=true
                     new_line=$((new_line + 1))
                     ;;
                   -*)
@@ -533,10 +536,18 @@ runs:
                     ;;
                 esac
               done <<< "$patch"
+              if [ "$has_additions" = false ]; then
+                # Record the file with an empty range so the reporter can
+                # distinguish a delete-only diff from unavailable patch data.
+                echo "$file|0|0" >> "$TEMP_DIR/line_ranges.txt"
+              fi
+            else
+              patches_complete=false
+              echo "::warning::Patch unavailable for $file; line-range filtering will be skipped (Vale will lint entire files)"
             fi
           done < files_to_lint.txt
 
-          if [ -s "$TEMP_DIR/line_ranges.txt" ]; then
+          if [ "$patches_complete" = true ] && [ -s "$TEMP_DIR/line_ranges.txt" ]; then
             echo "Modified line ranges:"
             cat "$TEMP_DIR/line_ranges.txt"
             cp "$TEMP_DIR/line_ranges.txt" line_ranges.txt

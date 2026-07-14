@@ -102,12 +102,14 @@ def load_modified_ranges(file_path: str, debug: bool = False) -> Dict[str, List[
                     if normalized_file not in modified_ranges:
                         modified_ranges[normalized_file] = []
                     start_line = int(start)
-                    # Ensure at least 1 line in range (count=0 edge case)
-                    line_count = max(1, int(count)) if count else 1
-                    end_line = start_line + line_count
-                    modified_ranges[normalized_file].append((start_line, end_line))
-                    if debug:
-                        print(f"::debug::Modified range: {normalized_file} lines {start_line}-{end_line}", file=sys.stderr)
+                    line_count = max(0, int(count)) if count else 1
+                    if line_count > 0:
+                        end_line = start_line + line_count
+                        modified_ranges[normalized_file].append((start_line, end_line))
+                        if debug:
+                            print(f"::debug::Modified range: {normalized_file} lines {start_line}-{end_line}", file=sys.stderr)
+                    elif debug:
+                        print(f"::debug::Modified file has no added lines: {normalized_file}", file=sys.stderr)
     except (IOError, ValueError) as e:
         print(f"::warning::Failed to load modified line ranges: {e}", file=sys.stderr)
 
