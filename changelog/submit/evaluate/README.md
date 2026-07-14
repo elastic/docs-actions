@@ -6,13 +6,12 @@ Read-only action that resolves PR context, evaluates whether a changelog should 
 
 ## Inputs
 <!--inputs-->
-| Name                 | Description                                                                            | Required | Default               |
-|----------------------|----------------------------------------------------------------------------------------|----------|-----------------------|
-| `config`             | Path to changelog.yml configuration file                                               | `false`  | `docs/changelog.yml`  |
-| `strip-title-prefix` | Remove [Prefix]: from PR titles                                                        | `false`  | `true`                |
-| `github-token`       | GitHub token (contents:read is sufficient)                                             | `false`  | `${{ github.token }}` |
-| `comment-only`       | Post changelog as a PR comment instead of committing to the branch                     | `false`  | `false`               |
-| `is-org-member`      | Whether the PR author is a verified elastic org member (enables trusted fork checkout) | `false`  | `false`               |
+| Name            | Description                                                                            | Required | Default               |
+|-----------------|----------------------------------------------------------------------------------------|----------|-----------------------|
+| `config`        | Path to changelog.yml configuration file                                               | `false`  | `docs/changelog.yml`  |
+| `github-token`  | GitHub token (contents:read is sufficient)                                             | `false`  | `${{ github.token }}` |
+| `comment-only`  | Post changelog as a PR comment instead of committing to the branch                     | `false`  | `false`               |
+| `is-org-member` | Whether the PR author is a verified elastic org member (enables trusted fork checkout) | `false`  | `false`               |
 <!--/inputs-->
 
 ## Outputs

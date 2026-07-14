@@ -8,9 +8,6 @@ inputs:
   config:
     description: 'Path to changelog.yml configuration file'
     default: 'docs/changelog.yml'
-  strip-title-prefix:
-    description: 'Remove [Prefix]: from PR titles'
-    default: 'true'
   github-token:
     description: 'GitHub token for API access'
     default: '${{ github.token }}'
@@ -51,7 +48,6 @@ runs:
         EVENT_ACTION: ${{ github.event.action }}
         TITLE_CHANGED: ${{ github.event.changes.title != null }}
         BODY_CHANGED: ${{ github.event.changes.body != null }}
-        STRIP_PREFIX: ${{ inputs.strip-title-prefix }}
       run: |
         TITLE_FLAG=""
         if [ "$TITLE_CHANGED" = "true" ]; then
@@ -61,11 +57,6 @@ runs:
         BODY_FLAG=""
         if [ "$BODY_CHANGED" = "true" ]; then
           BODY_FLAG="--body-changed"
-        fi
-
-        PREFIX_FLAG=""
-        if [ "$STRIP_PREFIX" = "true" ]; then
-          PREFIX_FLAG="--strip-title-prefix"
         fi
 
         docs-builder changelog evaluate-pr \
@@ -80,7 +71,7 @@ runs:
           --event-action "$EVENT_ACTION" \
           $TITLE_FLAG \
           $BODY_FLAG \
-          $PREFIX_FLAG
+          --strip-title-prefix
 
     - name: Gate
       shell: bash

@@ -8,9 +8,6 @@ inputs:
   config:
     description: 'Path to changelog.yml configuration file'
     default: 'docs/changelog.yml'
-  strip-title-prefix:
-    description: 'Remove [Prefix]: from PR titles'
-    default: 'true'
   github-token:
     description: 'GitHub token (contents:read is sufficient)'
     default: '${{ github.token }}'
@@ -168,13 +165,7 @@ runs:
         PR_LABELS: ${{ steps.pr-data.outputs.labels }}
         HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
         HEAD_SHA: ${{ steps.pr-data.outputs.head-sha }}
-        STRIP_PREFIX: ${{ inputs.strip-title-prefix }}
       run: |
-        PREFIX_FLAG=""
-        if [ "$STRIP_PREFIX" = "true" ]; then
-          PREFIX_FLAG="--strip-title-prefix"
-        fi
-
         docs-builder changelog evaluate-pr \
           --config "$CONFIG_FILE" \
           --owner "$REPO_OWNER" \
@@ -184,7 +175,7 @@ runs:
           --pr-labels "$PR_LABELS" \
           --head-ref "$HEAD_REF" \
           --head-sha "$HEAD_SHA" \
-          $PREFIX_FLAG
+          --strip-title-prefix
 
     - name: Generate changelog
       id: generate

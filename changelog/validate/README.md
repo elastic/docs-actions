@@ -6,11 +6,10 @@ Lightweight gate that evaluates whether a PR needs changelog generation. Runs PR
 
 ## Inputs
 <!--inputs-->
-| Name                 | Description                              | Required | Default               |
-|----------------------|------------------------------------------|----------|-----------------------|
-| `config`             | Path to changelog.yml configuration file | `false`  | `docs/changelog.yml`  |
-| `strip-title-prefix` | Remove [Prefix]: from PR titles          | `false`  | `true`                |
-| `github-token`       | GitHub token for API access              | `false`  | `${{ github.token }}` |
+| Name           | Description                              | Required | Default               |
+|----------------|------------------------------------------|----------|-----------------------|
+| `config`       | Path to changelog.yml configuration file | `false`  | `docs/changelog.yml`  |
+| `github-token` | GitHub token for API access              | `false`  | `${{ github.token }}` |
 <!--/inputs-->
 
 ## Outputs
