@@ -18,7 +18,8 @@ on:
       profile:
         description: >
           Bundle profile name from bundle.profiles in changelog.yml.
-          Mutually exclusive with release-version and prs.
+          Mutually exclusive with release-version and prs. A report or
+          prs-artifact may supply the filter source.
         type: string
       version:
         description: >
@@ -39,8 +40,17 @@ on:
         type: string
       prs:
         description: >
-          Comma-separated PR URLs or numbers, or a path to a newline-delimited file.
-          Mutually exclusive with profile, release-version, and report.
+          Comma-separated PR URLs or numbers, or a path to a newline-delimited
+          file committed to the repository. Mutually exclusive with profile,
+          release-version, report, and prs-artifact.
+        type: string
+      prs-artifact:
+        description: >
+          Name of a workflow artifact, uploaded earlier in the same run,
+          containing a single newline-delimited file of fully-qualified GitHub
+          PR or issue URLs to use as the bundle filter source. Works in both
+          profile and option mode. Mutually exclusive with prs, report, and
+          release-version.
         type: string
       output:
         description: >
@@ -94,6 +104,7 @@ jobs:
           release-version: ${{ inputs.release-version }}
           report: ${{ inputs.report }}
           prs: ${{ inputs.prs }}
+          prs-artifact: ${{ inputs.prs-artifact }}
           output: ${{ inputs.output }}
           repo: ${{ inputs.repo }}
           owner: ${{ inputs.owner }}

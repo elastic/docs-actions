@@ -278,15 +278,16 @@ The PR workflow is **fetch-only**: it downloads the already-uploaded, scrubbed b
 
 ### 2. Choose how entries are selected
 
-Pick exactly one — `profile`, `release-version`, `report`, and `prs` are mutually exclusive.
+Pick exactly one filter source — `release-version`, `report`, `prs`, and `prs-artifact` are mutually exclusive. `profile` combines with `version`, and optionally with `report` or `prs-artifact` as the filter source.
 
 | Situation | Mode | Key inputs |
 | --- | --- | --- |
 | You accumulate entry files and tag releases (most teams) | **Profile** _(recommended)_ | `profile` + `version` |
+| You generate the shipped-PR list at release time (e.g. from a commit range) | **Profile + PR list** | `profile` + `version` + `prs-artifact` |
 | You build changelogs from a GitHub release's notes rather than entry files | **gh-release** | `mode: gh-release` + `repo` + `version` |
 | You want everything in a given release tag | **Option** | `release-version` (+ `output`) |
 | You want everything in a Buildkite promotion report | **Option** | `report` (+ `output`) |
-| You want a specific set of PRs | **Option** | `prs` (+ `output`) |
+| You want a specific set of PRs | **Option** | `prs` or `prs-artifact` (+ `output`) |
 
 Each mode has a complete, copy-pasteable workflow file under [Setup](#setup-1).
 
@@ -365,6 +366,77 @@ jobs:
 
 The `output` input is not needed — the action resolves the output path from `bundle.output_directory` and the profile's `output` pattern via the `--plan` step.
 
+#### Profile-based bundling from a PR list (`prs-artifact`)
+
+For releases where the source of truth is a PR list produced at release time (for example, derived from a start/end commit range), generate the list in a preceding job, upload it as a workflow artifact, and pass the artifact name via `prs-artifact`. The artifact must contain exactly one newline-delimited file of fully-qualified GitHub PR (or issue) URLs:
+
+```txt
+https://github.com/elastic/my-repo/pull/123
+https://github.com/elastic/my-repo/pull/456
+```
+
+The profile supplies the output pattern and product metadata. It must **not** define a `products` pattern — a products filter cannot be combined with a PR-list filter:
+
+```yaml
+bundle:
+  directory: docs/changelog
+  output_directory: docs/releases
+  resolve: true
+  repo: my-repo
+  owner: elastic
+  profiles:
+    my-release:
+      output: "{version}.yaml"
+      output_products: "my-product {version} {lifecycle}"
+```
+
+**`.github/workflows/changelog-bundle.yml`**
+
+```yaml
+name: changelog-bundle
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 9.2.0 or 2026-07-07)'
+        required: true
+
+permissions: {}
+
+jobs:
+  discover-prs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Build PR list
+        run: echo "# your logic to produce prs.txt (one PR URL per line)"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-prs
+          path: prs.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  bundle:
+    needs: discover-prs
+    permissions:
+      contents: read    # checkout and read release data
+      packages: read    # pull the docs-builder image from GHCR
+      id-token: write   # OIDC token for AWS authentication on the upload job
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
+    with:
+      profile: my-release
+      version: ${{ inputs.version }}
+      prs-artifact: release-prs
+```
+
+The `version` input drives `{version}`/`{lifecycle}` substitution in the profile's `output` and `output_products` patterns; the artifact supplies the filter. Because the artifact is downloaded inside the reusable workflow, the PR list never needs to be committed to the repository.
+
 #### GitHub release mode (`mode: gh-release`)
 
 For repositories that do not use the validate/submit workflow to accumulate individual changelog files, `gh-release` mode creates changelogs directly from a GitHub release's notes and bundles them in a single step.
@@ -395,7 +467,7 @@ jobs:
 
 #### Option-based bundling with S3 upload
 
-You can also use option-based filtering instead of profiles. The `release-version`, `report`, and `prs` inputs are supported.
+You can also use option-based filtering instead of profiles. The `release-version`, `report`, `prs`, and `prs-artifact` inputs are supported. Option mode has no profile to derive the bundle's product metadata from, so the products are inferred from the matched changelog entries; prefer profile mode when you need explicit `output_products`.
 
 **Stack / product releases:**
 
@@ -453,6 +525,19 @@ jobs:
       report: ${{ needs.discover-report.outputs.report-url }}
       output: docs/releases/${{ needs.discover-report.outputs.release-date }}.yaml
 ```
+
+**Specific set of PRs:**
+
+Pass a short list inline with `prs` (comma-separated URLs or numbers, or a path to a newline-delimited file committed to the repository):
+
+```yaml
+    uses: elastic/docs-actions/.github/workflows/changelog-bundle.yml@v1
+    with:
+      prs: "https://github.com/elastic/my-repo/pull/123,https://github.com/elastic/my-repo/pull/456"
+      output: docs/releases/my-bundle.yaml
+```
+
+For PR lists generated during the run, upload the list file as an artifact and pass `prs-artifact` instead — see [Profile-based bundling from a PR list](#profile-based-bundling-from-a-pr-list-prs-artifact), which also works with `output` in option mode.
 
 #### Custom config path
 

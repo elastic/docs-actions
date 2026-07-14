@@ -2,8 +2,9 @@ name: Changelog bundle create
 description: >
   Checks out the repository, runs docs-builder changelog bundle in Docker
   to generate a fully-resolved bundle file, and uploads the result as an
-  artifact. Supports option-based filtering (release-version, report, prs),
-  profile-based bundling, and gh-release mode (creates changelogs from a
+  artifact. Supports option-based filtering (release-version, report, prs,
+  prs-artifact), profile-based bundling (optionally filtered by a report or
+  a PR-list artifact), and gh-release mode (creates changelogs from a
   GitHub release). Uses --network none where possible.
 
 inputs:
@@ -21,7 +22,8 @@ inputs:
     description: >
       Bundle profile name from bundle.profiles in changelog.yml.
       Mutually exclusive with release-version and prs. When set,
-      all paths and filters come from the config.
+      all paths and output settings come from the config; a report
+      or prs-artifact may supply the filter source.
   version:
     description: >
       Version string for profile mode (e.g. 9.2.0, 2026-03).
@@ -40,8 +42,18 @@ inputs:
   prs:
     description: >
       Comma-separated PR URLs or numbers, or a path to a newline-delimited
-      file. Mutually exclusive with profile, release-version, and report.
-      Bare numbers require repo/owner to be set in changelog.yml or inputs.
+      file committed to the repository. Mutually exclusive with profile,
+      release-version, report, and prs-artifact. Bare numbers require
+      repo/owner to be set in changelog.yml or inputs.
+  prs-artifact:
+    description: >
+      Name of a workflow artifact, uploaded earlier in the same run,
+      containing a single newline-delimited file of fully-qualified GitHub
+      PR or issue URLs to use as the bundle filter source. Unlike prs, this
+      works in profile mode (passed as the positional filter argument) as
+      well as option mode (passed via --prs), and supports PR lists generated
+      at release time. Mutually exclusive with prs, report, and
+      release-version.
   output:
     description: >
       Output file path for the bundle, relative to the repo root.
@@ -94,6 +106,7 @@ runs:
         OUTPUT: ${{ inputs.output }}
         REPORT: ${{ inputs.report }}
         PRS: ${{ inputs.prs }}
+        PRS_ARTIFACT: ${{ inputs.prs-artifact }}
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
         ARTIFACT_NAME: ${{ inputs.artifact-name }}
@@ -106,6 +119,18 @@ runs:
         if [[ "$MODE" == "gh-release" && -z "$REPO" ]]; then
           echo "::error::repo is required in gh-release mode"
           exit 1
+        fi
+
+        if [ -n "$PRS_ARTIFACT" ]; then
+          if [ -n "$PRS" ]; then
+            echo "::error::prs and prs-artifact are mutually exclusive"; exit 1
+          fi
+          if [ -n "$REPORT" ]; then
+            echo "::error::report and prs-artifact are mutually exclusive"; exit 1
+          fi
+          if [ -n "$RELEASE_VERSION" ]; then
+            echo "::error::release-version and prs-artifact are mutually exclusive"; exit 1
+          fi
         fi
 
         source "${GITHUB_ACTION_PATH}/../../scripts/validate-inputs.sh"
@@ -126,10 +151,39 @@ runs:
         validate_identifier "$REPO" "repo" '^[a-zA-Z0-9._-]+$'
         validate_identifier "$OWNER" "owner" '^[a-zA-Z0-9._-]+$'
         validate_identifier "$ARTIFACT_NAME" "artifact-name" '^[a-zA-Z0-9._-]+$'
+        validate_identifier "$PRS_ARTIFACT" "prs-artifact" '^[a-zA-Z0-9._-]+$'
 
         if [ -n "$REPORT" ] && [[ "$REPORT" == http://* ]]; then
           echo "::error::Report URL must use HTTPS: ${REPORT}"; exit 1
         fi
+
+    - name: Download PR list artifact
+      if: inputs.mode == 'bundle' && inputs.prs-artifact != ''
+      uses: actions/download-artifact@v8
+      with:
+        name: ${{ inputs.prs-artifact }}
+        path: .bundle-prs
+
+    # The artifact must contain exactly one newline-delimited URL list file.
+    # Content validation (fully-qualified GitHub PR/issue URLs, no mixing) is
+    # enforced by docs-builder when the file is consumed.
+    - name: Resolve PR list file
+      if: inputs.mode == 'bundle' && inputs.prs-artifact != ''
+      id: prs-file
+      shell: bash
+      run: |
+        if find .bundle-prs -type l | grep -q .; then
+          echo "::error::prs-artifact contains symlinks — refusing to use it"
+          exit 1
+        fi
+        FILE_COUNT=$(find .bundle-prs -maxdepth 1 -type f | wc -l)
+        if [ "$FILE_COUNT" -ne 1 ]; then
+          echo "::error::prs-artifact must contain exactly one newline-delimited URL list file (found ${FILE_COUNT})"
+          exit 1
+        fi
+        PRS_FILE=$(find .bundle-prs -maxdepth 1 -type f)
+        echo "path=${PRS_FILE}" >> "$GITHUB_OUTPUT"
+        echo "::notice title=PR list::Using ${PRS_FILE} as the bundle filter source"
 
     - name: Setup docs-builder
       uses: elastic/docs-actions/docs-builder/setup@v1
@@ -148,6 +202,7 @@ runs:
         RELEASE_VERSION: ${{ inputs.release-version }}
         REPORT: ${{ inputs.report }}
         PRS: ${{ inputs.prs }}
+        PRS_FILE: ${{ steps.prs-file.outputs.path }}
         OUTPUT: ${{ inputs.output }}
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
@@ -158,11 +213,13 @@ runs:
           ARGS+=("$PROFILE")
           [ -n "$VERSION" ] && ARGS+=("$VERSION")
           [ -n "$REPORT" ] && ARGS+=("$REPORT")
+          [ -n "$PRS_FILE" ] && ARGS+=("$PRS_FILE")
         else
           ARGS+=(--config "$CONFIG" --resolve)
           [ -n "$RELEASE_VERSION" ] && ARGS+=(--release-version "$RELEASE_VERSION")
           [ -n "$REPORT" ] && ARGS+=(--report "$REPORT")
           [ -n "$PRS" ] && ARGS+=(--prs "$PRS")
+          [ -n "$PRS_FILE" ] && ARGS+=(--prs "$PRS_FILE")
           [ -n "$OUTPUT" ] && ARGS+=(--output "$OUTPUT")
           [ -n "$REPO" ] && ARGS+=(--repo "$REPO")
           [ -n "$OWNER" ] && ARGS+=(--owner "$OWNER")
@@ -214,6 +271,7 @@ runs:
         RELEASE_VERSION: ${{ inputs.release-version }}
         REPORT: ${{ inputs.report }}
         PRS: ${{ inputs.prs }}
+        PRS_FILE: ${{ steps.prs-file.outputs.path }}
         OUTPUT: ${{ inputs.output }}
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
@@ -240,11 +298,13 @@ runs:
           BUNDLE_ARGS+=("$PROFILE")
           [ -n "$VERSION" ] && BUNDLE_ARGS+=("$VERSION")
           [ -n "$REPORT" ] && BUNDLE_ARGS+=("$(resolve_report "$REPORT")")
+          [ -n "$PRS_FILE" ] && BUNDLE_ARGS+=("$PRS_FILE")
         else
           BUNDLE_ARGS+=(--config "$CONFIG" --resolve)
           [ -n "$RELEASE_VERSION" ] && BUNDLE_ARGS+=(--release-version "$RELEASE_VERSION")
           [ -n "$REPORT" ] && BUNDLE_ARGS+=(--report "$(resolve_report "$REPORT")")
           [ -n "$PRS" ] && BUNDLE_ARGS+=(--prs "$PRS")
+          [ -n "$PRS_FILE" ] && BUNDLE_ARGS+=(--prs "$PRS_FILE")
           [ -n "$OUTPUT" ] && BUNDLE_ARGS+=(--output "$OUTPUT")
           [ -n "$REPO" ] && BUNDLE_ARGS+=(--repo "$REPO")
           [ -n "$OWNER" ] && BUNDLE_ARGS+=(--owner "$OWNER")

@@ -1,6 +1,6 @@
 # Changelog bundle create
 
-Checks out the repository, runs docs-builder in Docker to generate a fully-resolved bundle file, and uploads the result as an artifact. Supports option-based filtering (release-version, report, prs), profile-based bundling, and gh-release mode (creates changelogs from a GitHub release). Uses `--network none` where possible.
+Checks out the repository, runs docs-builder in Docker to generate a fully-resolved bundle file, and uploads the result as an artifact. Supports option-based filtering (release-version, report, prs, prs-artifact), profile-based bundling (optionally filtered by a report or a PR-list artifact), and gh-release mode (creates changelogs from a GitHub release). Uses `--network none` where possible.
 
 ## Modes
 
@@ -23,7 +23,8 @@ CDN sourcing requires a resolvable product. When none can be resolved (e.g. an o
 | `version`              | Version string (e.g. 9.2.0). Profile substitution in bundle mode; release tag in gh-release mode    | `false`  |                       |
 | `release-version`      | GitHub release tag for PR filtering (bundle mode, option-based only)                                | `false`  |                       |
 | `report`               | Buildkite promotion report URL or local file path                                                   | `false`  |                       |
-| `prs`                  | Comma-separated PR URLs/numbers, or path to a newline-delimited file                                | `false`  |                       |
+| `prs`                  | Comma-separated PR URLs/numbers, or path to a newline-delimited file committed to the repo         | `false`  |                       |
+| `prs-artifact`         | Name of a same-run workflow artifact containing one newline-delimited file of PR/issue URLs        | `false`  |                       |
 | `output`               | Output file path, relative to repo root                                                             | `false`  |                       |
 | `repo`                 | GitHub repository name. Required for gh-release mode                                                | `false`  |                       |
 | `owner`                | GitHub repository owner                                                                             | `false`  |                       |
@@ -47,6 +48,16 @@ steps:
     with:
       profile: elasticsearch-release
       version: 9.2.0
+```
+
+Bundle mode (profile + PR-list artifact — the artifact is uploaded by an earlier job in the same run and must contain exactly one newline-delimited file of fully-qualified GitHub PR or issue URLs):
+```yaml
+steps:
+  - uses: elastic/docs-actions/changelog/bundle-create@v1
+    with:
+      profile: elasticsearch-release
+      version: 9.2.0
+      prs-artifact: release-prs
 ```
 
 Bundle mode (option-based):
