@@ -11,16 +11,10 @@ inputs:
     default: ${{ github.token }}
     description: 'GitHub token for posting PR comments'
     required: false
-  download_artifacts:
-    description: 'Whether to download Vale results from artifacts from the linting workflow'
-    default: true
-    required: false
-
 runs:
   using: 'composite'
   steps:
     - name: Download Vale results
-      if: inputs.download_artifacts == 'true'
       uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
       with:
         name: vale-results
