@@ -368,12 +368,14 @@ The `output` input is not needed — the action resolves the output path from `b
 
 #### Profile-based bundling from a PR list (`prs-artifact`)
 
-For releases where the source of truth is a PR list produced at release time (for example, derived from a start/end commit range), generate the list in a preceding job, upload it as a workflow artifact, and pass the artifact name via `prs-artifact`. The artifact must contain exactly one newline-delimited file of fully-qualified GitHub PR (or issue) URLs:
+For releases where the source of truth is a PR list produced at release time (for example, derived from a start/end commit range), generate the list in a preceding job, upload it as a workflow artifact, and pass the artifact name via `prs-artifact`. The artifact must contain exactly one newline-delimited file of fully-qualified GitHub PR URLs — or issue URLs, but not a mix of both:
 
 ```txt
 https://github.com/elastic/my-repo/pull/123
 https://github.com/elastic/my-repo/pull/456
 ```
+
+In profile mode, `version` is required alongside `prs-artifact`: it drives `{version}`/`{lifecycle}` substitution in the profile's `output` and `output_products` patterns, and the resolved output path depends on it.
 
 The profile supplies the output pattern and product metadata. It must **not** define a `products` pattern — a products filter cannot be combined with a PR-list filter:
 
@@ -414,7 +416,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Build PR list
-        run: echo "# your logic to produce prs.txt (one PR URL per line)"
+        run: |
+          # Replace with your discovery logic (e.g. derive the merged PRs
+          # from a start/end commit range). One fully-qualified URL per line.
+          printf '%s\n' \
+            "https://github.com/elastic/my-repo/pull/123" \
+            "https://github.com/elastic/my-repo/pull/456" > prs.txt
       - uses: actions/upload-artifact@v7
         with:
           name: release-prs
@@ -435,7 +442,7 @@ jobs:
       prs-artifact: release-prs
 ```
 
-The `version` input drives `{version}`/`{lifecycle}` substitution in the profile's `output` and `output_products` patterns; the artifact supplies the filter. Because the artifact is downloaded inside the reusable workflow, the PR list never needs to be committed to the repository.
+The `version` input drives `{version}`/`{lifecycle}` substitution in the profile's `output` and `output_products` patterns; the artifact supplies the filter. This works for stack-style versions (`9.2.0`) and date-based serverless targets (`2026-07-07`) alike. Because the artifact is downloaded inside the reusable workflow, the PR list never needs to be committed to the repository.
 
 #### GitHub release mode (`mode: gh-release`)
 

@@ -24,7 +24,7 @@ CDN sourcing requires a resolvable product. When none can be resolved (e.g. an o
 | `release-version`      | GitHub release tag for PR filtering (bundle mode, option-based only)                                | `false`  |                       |
 | `report`               | Buildkite promotion report URL or local file path                                                   | `false`  |                       |
 | `prs`                  | Comma-separated PR URLs/numbers, or path to a newline-delimited file committed to the repo         | `false`  |                       |
-| `prs-artifact`         | Name of a same-run workflow artifact containing one newline-delimited file of PR/issue URLs        | `false`  |                       |
+| `prs-artifact`         | Name of a same-run workflow artifact with one newline-delimited file of PR or issue URLs (no mix)  | `false`  |                       |
 | `output`               | Output file path, relative to repo root                                                             | `false`  |                       |
 | `repo`                 | GitHub repository name. Required for gh-release mode                                                | `false`  |                       |
 | `owner`                | GitHub repository owner                                                                             | `false`  |                       |
@@ -50,7 +50,7 @@ steps:
       version: 9.2.0
 ```
 
-Bundle mode (profile + PR-list artifact — the artifact is uploaded by an earlier job in the same run and must contain exactly one newline-delimited file of fully-qualified GitHub PR or issue URLs):
+Bundle mode (profile + PR-list artifact — the artifact is uploaded by an earlier job in the same run and must contain exactly one newline-delimited file of fully-qualified GitHub PR URLs, or issue URLs, but not both; `version` is required with `profile`):
 ```yaml
 steps:
   - uses: elastic/docs-actions/changelog/bundle-create@v1

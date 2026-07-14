@@ -48,8 +48,9 @@ on:
         description: >
           Name of a workflow artifact, uploaded earlier in the same run,
           containing a single newline-delimited file of fully-qualified GitHub
-          PR or issue URLs to use as the bundle filter source. Works in both
-          profile and option mode. Mutually exclusive with prs, report, and
+          PR or issue URLs (one kind per file, no mixing) to use as the bundle
+          filter source. Works in both profile mode (version is then required)
+          and option mode. Mutually exclusive with prs, report, and
           release-version.
         type: string
       output:

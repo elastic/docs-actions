@@ -49,11 +49,12 @@ inputs:
     description: >
       Name of a workflow artifact, uploaded earlier in the same run,
       containing a single newline-delimited file of fully-qualified GitHub
-      PR or issue URLs to use as the bundle filter source. Unlike prs, this
-      works in profile mode (passed as the positional filter argument) as
-      well as option mode (passed via --prs), and supports PR lists generated
-      at release time. Mutually exclusive with prs, report, and
-      release-version.
+      PR or issue URLs (one kind per file, no mixing) to use as the bundle
+      filter source. Unlike prs, this works in profile mode (passed as the
+      positional filter argument; version is then required) as well as
+      option mode (passed via --prs or --issues based on the detected URL
+      kind), and supports PR lists generated at release time. Mutually
+      exclusive with prs, report, and release-version.
   output:
     description: >
       Output file path for the bundle, relative to the repo root.
@@ -131,6 +132,13 @@ runs:
           if [ -n "$RELEASE_VERSION" ]; then
             echo "::error::release-version and prs-artifact are mutually exclusive"; exit 1
           fi
+          # Without a version the URL list file becomes the second positional
+          # argument: the --plan step would substitute the file path into
+          # {version} placeholders while the real run substitutes "unknown",
+          # so the planned output path diverges from the generated one.
+          if [ -n "$PROFILE" ] && [ -z "$VERSION" ]; then
+            echo "::error::version is required when prs-artifact is used with profile ({version}/{lifecycle} substitution and the resolved output path depend on it)"; exit 1
+          fi
         fi
 
         source "${GITHUB_ACTION_PATH}/../../scripts/validate-inputs.sh"
@@ -164,9 +172,10 @@ runs:
         name: ${{ inputs.prs-artifact }}
         path: .bundle-prs
 
-    # The artifact must contain exactly one newline-delimited URL list file.
-    # Content validation (fully-qualified GitHub PR/issue URLs, no mixing) is
-    # enforced by docs-builder when the file is consumed.
+    # The artifact must contain exactly one newline-delimited URL list file,
+    # holding only PR URLs or only issue URLs. The kind decides the option-mode
+    # flag (--prs vs --issues); per-line URL validation is enforced by
+    # docs-builder when the file is consumed.
     - name: Resolve PR list file
       if: inputs.mode == 'bundle' && inputs.prs-artifact != ''
       id: prs-file
@@ -182,8 +191,23 @@ runs:
           exit 1
         fi
         PRS_FILE=$(find .bundle-prs -maxdepth 1 -type f)
+
+        PR_COUNT=$(grep -icE 'github\.com/[^/]+/[^/]+/pull/[0-9]+/?[[:space:]]*$' "$PRS_FILE" || true)
+        ISSUE_COUNT=$(grep -icE 'github\.com/[^/]+/[^/]+/issues/[0-9]+/?[[:space:]]*$' "$PRS_FILE" || true)
+        if [ "$PR_COUNT" -gt 0 ] && [ "$ISSUE_COUNT" -gt 0 ]; then
+          echo "::error::prs-artifact file must contain only pull request URLs or only issue URLs, not a mix"
+          exit 1
+        fi
+        if [ "$PR_COUNT" -eq 0 ] && [ "$ISSUE_COUNT" -eq 0 ]; then
+          echo "::error::prs-artifact file contains no GitHub pull request or issue URLs"
+          exit 1
+        fi
+        KIND=prs
+        [ "$ISSUE_COUNT" -gt 0 ] && KIND=issues
+
         echo "path=${PRS_FILE}" >> "$GITHUB_OUTPUT"
-        echo "::notice title=PR list::Using ${PRS_FILE} as the bundle filter source"
+        echo "kind=${KIND}" >> "$GITHUB_OUTPUT"
+        echo "::notice title=PR list::Using ${PRS_FILE} (${KIND}) as the bundle filter source"
 
     - name: Setup docs-builder
       uses: elastic/docs-actions/docs-builder/setup@v1
@@ -203,6 +227,7 @@ runs:
         REPORT: ${{ inputs.report }}
         PRS: ${{ inputs.prs }}
         PRS_FILE: ${{ steps.prs-file.outputs.path }}
+        PRS_KIND: ${{ steps.prs-file.outputs.kind }}
         OUTPUT: ${{ inputs.output }}
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
@@ -219,7 +244,9 @@ runs:
           [ -n "$RELEASE_VERSION" ] && ARGS+=(--release-version "$RELEASE_VERSION")
           [ -n "$REPORT" ] && ARGS+=(--report "$REPORT")
           [ -n "$PRS" ] && ARGS+=(--prs "$PRS")
-          [ -n "$PRS_FILE" ] && ARGS+=(--prs "$PRS_FILE")
+          if [ -n "$PRS_FILE" ]; then
+            [ "$PRS_KIND" = "issues" ] && ARGS+=(--issues "$PRS_FILE") || ARGS+=(--prs "$PRS_FILE")
+          fi
           [ -n "$OUTPUT" ] && ARGS+=(--output "$OUTPUT")
           [ -n "$REPO" ] && ARGS+=(--repo "$REPO")
           [ -n "$OWNER" ] && ARGS+=(--owner "$OWNER")
@@ -272,6 +299,7 @@ runs:
         REPORT: ${{ inputs.report }}
         PRS: ${{ inputs.prs }}
         PRS_FILE: ${{ steps.prs-file.outputs.path }}
+        PRS_KIND: ${{ steps.prs-file.outputs.kind }}
         OUTPUT: ${{ inputs.output }}
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
@@ -304,7 +332,9 @@ runs:
           [ -n "$RELEASE_VERSION" ] && BUNDLE_ARGS+=(--release-version "$RELEASE_VERSION")
           [ -n "$REPORT" ] && BUNDLE_ARGS+=(--report "$(resolve_report "$REPORT")")
           [ -n "$PRS" ] && BUNDLE_ARGS+=(--prs "$PRS")
-          [ -n "$PRS_FILE" ] && BUNDLE_ARGS+=(--prs "$PRS_FILE")
+          if [ -n "$PRS_FILE" ]; then
+            [ "$PRS_KIND" = "issues" ] && BUNDLE_ARGS+=(--issues "$PRS_FILE") || BUNDLE_ARGS+=(--prs "$PRS_FILE")
+          fi
           [ -n "$OUTPUT" ] && BUNDLE_ARGS+=(--output "$OUTPUT")
           [ -n "$REPO" ] && BUNDLE_ARGS+=(--repo "$REPO")
           [ -n "$OWNER" ] && BUNDLE_ARGS+=(--owner "$OWNER")
