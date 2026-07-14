@@ -38,4 +38,3 @@ jobs:
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git tag "v${MAJOR_VERSION}"
           git push -f origin "refs/tags/v${MAJOR_VERSION}"
-          git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
