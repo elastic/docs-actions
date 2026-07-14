@@ -646,18 +646,7 @@ runs:
           echo "has_issues=false" >> $GITHUB_OUTPUT
           echo "error_count=0" >> $GITHUB_OUTPUT
 
-          # Create clean report
-          {
-            echo "## ✅ Elastic Docs Style Checker (Vale)"
-            echo ""
-            echo "**No issues found on modified lines!**"
-            echo ""
-            echo "---"
-            echo ""
-            echo "The Vale linter checks documentation changes against the [Elastic Docs style guide](https://www.elastic.co/docs/contribute-docs/style-guide). To use Vale locally or report issues, refer to [Elastic style guide for Vale](https://www.elastic.co/docs/contribute-docs/vale-linter)."
-          } > vale_report.md
-
-          # Also create issue_counts.txt and vale_results.json for artifact upload
+          # Create issue_counts.txt and vale_results.json for artifact upload
           echo "errors=0" > issue_counts.txt
           echo "warnings=0" >> issue_counts.txt
           echo "suggestions=0" >> issue_counts.txt
@@ -703,9 +692,18 @@ runs:
     - name: Write Job Summary
       if: always() && steps.final-files-check.outputs.has_files == 'true'
       shell: bash
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
       run: |
-        if [ -f vale_report.md ]; then
-          cat vale_report.md >> $GITHUB_STEP_SUMMARY
+        # Render the summary from the JSON report with the shared renderer
+        if [ -f vale_results.json ]; then
+          python3 ${{ github.action_path }}/../report/render_report.py \
+            --input vale_results.json \
+            --output /tmp/vale_step_summary.md \
+            --repo "$GITHUB_REPOSITORY" \
+            --pr "$PR_NUMBER" \
+          && cat /tmp/vale_step_summary.md >> $GITHUB_STEP_SUMMARY \
+          || echo "::warning::Failed to render step summary"
         fi
 
     - name: Upload Vale results
@@ -714,7 +712,6 @@ runs:
       with:
         name: ${{ inputs.artifact_name }}
         path: |
-          vale_report.md
           vale_results.json
           issue_counts.txt
         retention-days: 1
