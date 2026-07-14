@@ -164,6 +164,7 @@ runs:
         REPO_NAME: ${{ github.event.repository.name }}
         PR_NUMBER: ${{ steps.pr.outputs.number }}
         PR_TITLE: ${{ steps.pr-data.outputs.title }}
+        # Not referenced below: docs-builder's evaluate-pr reads PR_BODY from the environment
         PR_BODY: ${{ steps.pr-data.outputs.body }}
         PR_LABELS: ${{ steps.pr-data.outputs.labels }}
         HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
