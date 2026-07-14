@@ -21,11 +21,11 @@ runs:
   steps:
     - name: Download Vale results
       if: inputs.download_artifacts == 'true'
-      uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
+      uses: actions/download-artifact@v8
       with:
         name: vale-results
-        github_token: ${{ inputs.github_token }}
-        run_id: ${{ github.event.workflow_run.id }}
+        github-token: ${{ inputs.github_token }}
+        run-id: ${{ github.event.workflow_run.id }}
         path: .vale-artifacts
 
     - name: Check for unexpected files in artifact
