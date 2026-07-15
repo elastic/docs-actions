@@ -2,7 +2,13 @@
 
 A `workflow_dispatch`-triggered orchestrator that fans out to all seven docs quality sweep workflows in parallel jobs. Use this in your docs repo as the single entry point: one click runs frontmatter, applies_to, openings, style, typos, staleness, and coherence in one go (or any subset).
 
-Each sweep is independent: a failure in one job doesn't kill the others, and each opens its own labeled fix-issue. There is no aggregated dashboard or quality score — those are deferred to a later iteration.
+Each sweep is independent: a failure in one job doesn't kill the others, and each opens its own labeled fix-issue.
+
+## Where to find results
+
+After the orchestrator dispatches the selected sweeps, its Actions summary lists a link to each child workflow run. Open a child run to review its logs and outcome.
+
+The orchestrator does not wait for child runs or aggregate their findings. When a sweep finds actionable results, it opens its own labeled fix-issue in the calling repository. A sweep that finds nothing actionable reports `noop` in its child run.
 
 ## Where to install
 
