@@ -415,6 +415,7 @@ jobs:
           repository: ${{ needs.preflight.outputs.head-repo }}
           ref: ${{ needs.preflight.outputs.head-sha }}
           persist-credentials: false
+          allow-unsafe-pr-checkout: true
 
       - name: Validate checkout SHA
         # language=bash
