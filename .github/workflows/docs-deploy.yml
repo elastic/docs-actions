@@ -410,11 +410,12 @@ jobs:
           exit 1
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ needs.preflight.outputs.head-repo }}
           ref: ${{ needs.preflight.outputs.head-sha }}
           persist-credentials: false
+          allow-unsafe-pr-checkout: true
 
       - name: Validate checkout SHA
         # language=bash
