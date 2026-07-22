@@ -185,6 +185,121 @@ jobs:
               log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             })
 
+  comment:
+    if: needs.deploy.result == 'success'
+    needs:
+      - build
+      - deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+      id-token: none
+      deployments: none
+      pull-requests: write
+    steps:
+      - name: Comment preview links on PR
+        continue-on-error: true
+        uses: actions/github-script@v9
+        env:
+          PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
+        with:
+          # language=js
+          script: |
+            const title = '## 🔍 Preview links for changed Codex pages'
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner, repo, pull_number: prNumber
+            });
+
+            const changedMdFiles = files
+              .map(f => f.filename)
+              .filter(i => i.endsWith('.md'))
+              .filter(i => !i.includes('/_snippets/'));
+
+            if (changedMdFiles.length === 0) {
+              const hasSnippetOrCsv = files
+                .map(f => f.filename)
+                .some(f => f.includes('/_snippets/') || f.endsWith('.csv'));
+              if (!hasSnippetOrCsv) return;
+
+              const previewUrl = `https://codex.elastic.dev${process.env.PATH_PREFIX}`;
+              const body = [
+                title,
+                '',
+                'This PR only changes snippets or data files. No direct page links are available.',
+                `[Browse the full preview](${previewUrl})`,
+              ].join('\n');
+
+              const { data: comments } = await github.rest.issues.listComments({
+                owner, repo, issue_number: prNumber
+              });
+              const existing = comments.find(c =>
+                c.user.type === 'Bot' &&
+                c.body.startsWith(title)
+              );
+              if (existing) {
+                await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+              } else {
+                await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
+              }
+              return;
+            }
+
+            const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
+            const toMarkdownLink = (file) => {
+              const path = file
+                .replace(/^docs\//, '')
+                .replace(/\/index.md$/, '')
+                .replace(/\.md$/, '');
+              return `[${escapeMarkdown(file)}](https://codex.elastic.dev${process.env.PATH_PREFIX}/${path})`;
+            }
+
+            const links = changedMdFiles.map(toMarkdownLink)
+
+            const body = [
+              title,
+              ...links.slice(0, 10).map(i => `- ${i}`),
+            ]
+
+            if (links.length > 10) {
+              body.push('<details>');
+              body.push('<summary> More links … </summary>');
+              body.push('');
+              for (const link of links.slice(10, 100)) {
+                body.push(`- ${link}`);
+              }
+              body.push('');
+              body.push('</details>');
+            }
+
+            if (links.length > 100) {
+              body.push('');
+              body.push(`<sub> In total, ${links.length} files changed. </sub>`);
+            }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number: prNumber
+            });
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.startsWith(title)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo,
+                comment_id: existing.id,
+                body: body.join('\n'),
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo,
+                issue_number: prNumber,
+                body: body.join('\n'),
+              });
+            }
+
   update-link-index:
     needs:
       - build
