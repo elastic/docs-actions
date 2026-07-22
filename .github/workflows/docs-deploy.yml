@@ -663,7 +663,42 @@ jobs:
               .filter(i => i.endsWith('.md'))
               .filter(i => !i.includes('/_snippets/'));
 
-            if (changedMdFiles.length === 0) return;
+            if (changedMdFiles.length === 0) {
+              const hasSnippetOrCsv = files
+                .map(f => f.filename)
+                .some(f => f.includes('/_snippets/') || f.endsWith('.csv'));
+              if (!hasSnippetOrCsv) return;
+
+              const previewUrl = `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}`;
+              const body = [
+                title,
+                '',
+                'This PR only changes snippets or data files. No direct page links are available.',
+                `[Browse the full preview](${previewUrl})`,
+              ].join('\n');
+
+              const { data: comments } = await github.rest.issues.listComments({
+                owner, repo, issue_number: prNumber
+              });
+              const existing = comments.find(c =>
+                c.user.type === 'Bot' &&
+                c.body.startsWith(title)
+              );
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner, repo,
+                  comment_id: existing.id,
+                  body,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner, repo,
+                  issue_number: prNumber,
+                  body,
+                });
+              }
+              return;
+            }
 
             const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
             const toMarkdownLink = (file) => {
