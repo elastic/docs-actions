@@ -192,9 +192,6 @@ jobs:
       - deploy
     runs-on: ubuntu-latest
     permissions:
-      contents: none
-      id-token: none
-      deployments: none
       pull-requests: write
     steps:
       - name: Comment preview links on PR
