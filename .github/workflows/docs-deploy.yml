@@ -79,6 +79,10 @@ jobs:
       is-org-member: ${{ steps.check-org-membership.outputs.is-member }}
       vale-files-match: ${{ steps.context.outputs.vale-files-match }}
       link-index-eligible: ${{ steps.link-index-branch.outputs.eligible }}
+      # JSON-encoded array of changed files that are include targets (snippets
+      # under _snippets/ and CSVs). Consumed by the build job to expand into
+      # page-level preview links via `docs-builder list-dependents`.
+      non-page-changed-files: ${{ steps.context.outputs.non-page-changed-files }}
     steps:
       - name: Resolve workflow run context
         id: context
@@ -221,6 +225,18 @@ jobs:
 
             const hasChanges = files.some(f => matchesPattern(f.filename) && !isIgnored(f.filename));
             core.setOutput('has-changes', hasChanges ? 'true' : 'false');
+
+            // --- Non-page changed files (snippets + CSVs) ---
+            // These don't appear as standalone pages, so the preview comment
+            // currently has no URL to link to when they're the only change.
+            // The build job expands them via `docs-builder list-dependents`.
+            const isIncludeTarget = (filename) =>
+              (filename.endsWith('.md') && filename.includes('/_snippets/')) ||
+              filename.endsWith('.csv');
+            const nonPageChangedFiles = files
+              .map(f => f.filename)
+              .filter(f => matchesPattern(f) && !isIgnored(f) && isIncludeTarget(f));
+            core.setOutput('non-page-changed-files', JSON.stringify(nonPageChangedFiles));
 
             // --- Vale files check (vale-paths filtering) ---
             const valePathLines = (process.env.VALE_PATHS || '')
@@ -393,6 +409,10 @@ jobs:
       path_prefix: ${{ steps.generate-path-prefix.outputs.result }}
       landing_page_path: ${{ steps.docs-build.outputs.landing-page-path || steps.generate-path-prefix.outputs.result }}
       links_uploaded: ${{ steps.upload-links.outcome == 'success' && 'true' || 'false' }}
+      # JSON-encoded list of pages that transitively include the changed
+      # snippets/CSVs. Consumed by the comment job to surface preview URLs
+      # when only non-page files were edited in the PR.
+      snippet_dependents: ${{ steps.list-dependents.outputs.dependents }}
     env:
       EVENT: ${{ needs.preflight.outputs.event }}
       PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
@@ -487,6 +507,42 @@ jobs:
           exit $EXIT_CODE
         env:
           STRICT_FLAG: ${{ fromJSON(inputs.strict != '' && inputs.strict || 'true') }}
+
+      # Resolves the page-level dependents of any snippets/CSVs that changed in
+      # the PR, so the preview comment can list pages that re-render even when
+      # the diff only touches non-page files. Skipped on push (no PR comment).
+      # Runs in the same Docker context as the build above so the docs source
+      # is already mounted; reads the JSON list from preflight, returns a JSON
+      # array of page paths via the standard $GITHUB_OUTPUT plumbing.
+      - name: Resolve snippet dependents
+        id: list-dependents
+        if: >
+          env.EVENT == 'pull_request'
+          && steps.docs-build.outcome == 'success'
+          && steps.docs-build.outputs.skip != 'true'
+          && needs.preflight.outputs.non-page-changed-files != ''
+          && needs.preflight.outputs.non-page-changed-files != '[]'
+        env:
+          NON_PAGE_FILES: ${{ needs.preflight.outputs.non-page-changed-files }}
+        # language=bash
+        run: |
+          # Convert JSON array → comma-separated string for the CLI.
+          FILES_CSV=$(echo "$NON_PAGE_FILES" | jq -r '. | join(",")')
+          if [ -z "$FILES_CSV" ]; then
+            echo "dependents=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CONTAINER_OUTPUT=$(mktemp)
+          docker run --rm \
+            -v "${PWD}:/github/workspace" \
+            -w /github/workspace \
+            ghcr.io/elastic/docs-builder:edge \
+            list-dependents --files "$FILES_CSV" --format json > "$CONTAINER_OUTPUT" || true
+
+          # Extract a flat array of unique dependent page paths.
+          DEPENDENTS=$(jq -c '[.results[]?.dependents[]?] | unique' "$CONTAINER_OUTPUT" 2>/dev/null || echo "[]")
+          echo "dependents=${DEPENDENTS}" >> "$GITHUB_OUTPUT"
 
       - name: Upload links artifact
         id: upload-links
@@ -647,6 +703,7 @@ jobs:
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
+          SNIPPET_DEPENDENTS: ${{ needs.build.outputs.snippet_dependents }}
         with:
           # language=js
           script: |
@@ -663,7 +720,20 @@ jobs:
               .filter(i => i.endsWith('.md'))
               .filter(i => !i.includes('/_snippets/'));
 
-            if (changedMdFiles.length === 0) return;
+            // Pages that include the changed snippets/CSVs — produced by
+            // the build job's `Resolve snippet dependents` step. These are
+            // source-relative paths (no `docs/` prefix) so we add it back
+            // to match `changedMdFiles` shape before deduping.
+            let snippetDependents = [];
+            try {
+              snippetDependents = JSON.parse(process.env.SNIPPET_DEPENDENTS || '[]')
+                .map(p => p.startsWith('docs/') ? p : `docs/${p}`);
+            } catch (e) {
+              core.warning(`Could not parse snippet dependents: ${e.message}`);
+            }
+
+            const allFiles = [...new Set([...changedMdFiles, ...snippetDependents])];
+            if (allFiles.length === 0) return;
 
             const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
             const toMarkdownLink = (file) => {
@@ -674,7 +744,7 @@ jobs:
               return `[${escapeMarkdown(file)}](https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path})`;
             }
 
-            const links = changedMdFiles.map(toMarkdownLink)
+            const links = allFiles.map(toMarkdownLink)
 
             const body = [
               title,
