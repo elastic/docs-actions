@@ -118,8 +118,7 @@ The `DOCS_LITELLM_API_KEY` secret must be available in any repository that calls
 jobs:
   run:
     uses: elastic/docs-actions/.github/workflows/gh-aw-<name>.lock.yml@v1
-    secrets:
-      DOCS_LITELLM_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
+    secrets: inherit
 ```
 
 Add `elastic.litellm-prod.ai` to `network.allowed` in every new workflow source so the engine can reach the gateway.

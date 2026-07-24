@@ -44,5 +44,4 @@ jobs:
       scope-mode: ${{ inputs.scope-mode }}
       target-batch-size: ${{ inputs.target-batch-size }}
       max-per-fix-issue: ${{ inputs.max-per-fix-issue }}
-    secrets:
-      DOCS_LITELLM_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
+    secrets: inherit
