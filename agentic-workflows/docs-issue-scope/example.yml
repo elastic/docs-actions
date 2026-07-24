@@ -18,4 +18,4 @@ jobs:
       startsWith(github.event.comment.body, '/docs-issue-scope')
     uses: elastic/docs-actions/.github/workflows/gh-aw-docs-issue-scope.lock.yml@v1
     secrets:
-      LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}

@@ -16,12 +16,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-issue-scope.yml
 ```
 
-Pass `LITELLM_API_KEY` via a repository or organization secret. The caller job must forward it:
-
-```yaml
-    secrets:
-      LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
-```
+Add `permissions.copilot-requests: write` to the caller workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
 
 ## Inputs
 
@@ -70,6 +65,7 @@ on:
 
 permissions:
   actions: read
+  copilot-requests: write
   contents: read
   discussions: write
   issues: write

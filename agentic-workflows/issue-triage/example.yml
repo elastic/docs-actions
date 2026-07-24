@@ -35,4 +35,4 @@ jobs:
         **Internal projects**: If the issue seems related to an internal documentation project, initiative, or content strategy effort, apply `Team:Projects`.
         **Fallback**: If you genuinely cannot determine the owning team, apply `cross-team` so the issue stays visible to all teams.
     secrets:
-      LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
