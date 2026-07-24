@@ -15,8 +15,15 @@ inputs:
     description: Block Kit blocks as a JSON array string
     required: false
     default: ''
+  fail-on-error:
+    description: Fail the step when Slack delivery fails
+    required: false
+    default: 'false'
 
 outputs:
+  success:
+    description: Whether the message was posted successfully
+    value: ${{ steps.invoke.outputs.success }}
   channel:
     description: Slack channel ID from the posted message
     value: ${{ steps.invoke.outputs.channel }}
@@ -41,6 +48,7 @@ runs:
         SLACK_CHANNEL: ${{ inputs.channel }}
         SLACK_TEXT: ${{ inputs.text }}
         SLACK_BLOCKS: ${{ inputs.blocks }}
+        FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
       run: |
         set -euo pipefail
 
@@ -83,9 +91,14 @@ runs:
         if jq -e '.FunctionError' invoke-meta.json >/dev/null; then
           error_type="$(jq -r '.errorType // "Unknown"' invoke-response.json)"
           error_message="$(jq -r '.errorMessage // "Unknown error"' invoke-response.json)"
-          echo "::error::Slack notifier failed ($error_type): $error_message"
-          exit 1
+          echo "success=false" >> "$GITHUB_OUTPUT"
+          echo "::warning::Slack notifier failed ($error_type): $error_message"
+          if [ "$FAIL_ON_ERROR" = "true" ]; then
+            exit 1
+          fi
+          exit 0
         fi
 
+        echo "success=true" >> "$GITHUB_OUTPUT"
         echo "channel=$(jq -r '.channel' invoke-response.json)" >> "$GITHUB_OUTPUT"
         echo "ts=$(jq -r '.ts' invoke-response.json)" >> "$GITHUB_OUTPUT"
