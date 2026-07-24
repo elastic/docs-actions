@@ -51,10 +51,10 @@ describe('formatMentions', () => {
 
 describe('statusColor', () => {
   it('maps terminal statuses to Slack colors', () => {
-    assert.equal(statusColor('success'), 'good');
-    assert.equal(statusColor('failure'), 'danger');
-    assert.equal(statusColor('cancelled'), 'warning');
-    assert.equal(statusColor('unknown'), '#949494');
+    assert.equal(statusColor('success'), '#2EB67D');
+    assert.equal(statusColor('failure'), '#E01E5A');
+    assert.equal(statusColor('cancelled'), '#ECB22E');
+    assert.equal(statusColor('unknown'), '#9CA3AF');
   });
 });
 
@@ -67,21 +67,28 @@ describe('buildStatusMessage', () => {
       repository: 'elastic/docs-actions',
       workflow: 'test-slack-notify-status',
       ref: 'main',
-      actor: 'reakaleek',
-      eventName: 'pull_request',
       runUrl: 'https://github.com/elastic/docs-actions/actions/runs/1',
     });
 
     const attachment = message.attachments[0];
     const serialized = JSON.stringify(message);
 
-    assert.match(message.text, /Workflow status: failed/);
-    assert.equal(attachment.color, 'danger');
+    assert.equal('text' in message, false);
+    assert.equal(attachment.color, '#E01E5A');
     assert.equal(attachment.fallback, 'Workflow failed · elastic/docs-actions');
     assert.equal(attachment.blocks[0].type, 'header');
     assert.equal(attachment.blocks.some((block) => block.type === 'divider'), true);
     assert.equal(attachment.blocks.some((block) => block.type === 'actions'), true);
+    assert.equal(
+      attachment.blocks.some(
+        (block) => block.type === 'section' && Array.isArray(block.fields)
+      ),
+      false
+    );
     assert.match(serialized, /Deploy failed during smoke tests/);
+    assert.doesNotMatch(serialized, /Summary/);
+    assert.doesNotMatch(serialized, /Actor/);
+    assert.doesNotMatch(serialized, /Event/);
     assert.match(serialized, /<@U0123456789>/);
     assert.match(serialized, /View workflow run/);
   });
@@ -97,7 +104,7 @@ describe('buildStatusMessage', () => {
 
     const attachment = message.attachments[0];
 
-    assert.equal(attachment.color, 'good');
+    assert.equal(attachment.color, '#2EB67D');
     assert.equal(attachment.blocks.some((block) => block.type === 'header'), true);
     assert.equal(attachment.blocks.some((block) => block.type === 'actions'), true);
     assert.equal(attachment.blocks.some((block) => block.type === 'section' && block.text), false);

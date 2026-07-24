@@ -48,8 +48,6 @@ runs:
         REPOSITORY: ${{ github.repository }}
         WORKFLOW: ${{ github.workflow }}
         REF: ${{ github.ref_name }}
-        ACTOR: ${{ github.actor }}
-        EVENT_NAME: ${{ github.event_name }}
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       with:
         script: |
@@ -61,11 +59,8 @@ runs:
             repository: process.env.REPOSITORY,
             workflow: process.env.WORKFLOW,
             ref: process.env.REF,
-            actor: process.env.ACTOR,
-            eventName: process.env.EVENT_NAME,
             runUrl: process.env.RUN_URL,
           });
-          core.setOutput('text', message.text);
           core.setOutput('attachments', JSON.stringify(message.attachments));
 
     - name: Post status to Slack
@@ -73,6 +68,5 @@ runs:
       uses: elastic/docs-actions/slack/notify@v1
       with:
         channel: ${{ inputs.channel }}
-        text: ${{ steps.format.outputs.text }}
         attachments: ${{ steps.format.outputs.attachments }}
         fail-on-error: ${{ inputs.fail-on-error }}
