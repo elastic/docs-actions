@@ -14,12 +14,10 @@ on:
       - 'slack/**'
       - '.github/workflows/test-slack-notify-status.yml'
 
-permissions:
-  id-token: write
-
 jobs:
   unit:
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -31,6 +29,8 @@ jobs:
   notify:
     needs: unit
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v6
         with:
