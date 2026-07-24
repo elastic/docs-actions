@@ -103,7 +103,7 @@ All workflows use the `claude` engine routed through Elastic's internal LiteLLM 
 engine:
   id: claude
   env:
-    ANTHROPIC_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+    ANTHROPIC_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
     ANTHROPIC_BASE_URL: https://elastic.litellm-prod.ai
     ENABLE_PROMPT_CACHING_1H: '1'
     ANTHROPIC_DEFAULT_OPUS_MODEL: llm-gateway/claude-opus-4-7[1m]
@@ -112,14 +112,14 @@ engine:
 model: sonnet
 ```
 
-The `LITELLM_API_KEY` secret must be available in any repository that calls these workflows. Consumer repos pass it through the `workflow_call` secrets interface:
+The `DOCS_LITELLM_API_KEY` secret must be available in any repository that calls these workflows. Consumer repos pass it through the `workflow_call` secrets interface:
 
 ```yaml
 jobs:
   run:
     uses: elastic/docs-actions/.github/workflows/gh-aw-<name>.lock.yml@v1
     secrets:
-      LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+      DOCS_LITELLM_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
 ```
 
 Add `elastic.litellm-prod.ai` to `network.allowed` in every new workflow source so the engine can reach the gateway.
@@ -143,7 +143,7 @@ on:
         required: false
         default: ""
     secrets:
-      LITELLM_API_KEY:
+      DOCS_LITELLM_API_KEY:
         required: false
 ```
 

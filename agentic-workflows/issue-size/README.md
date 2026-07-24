@@ -17,11 +17,11 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-size.yml
 ```
 
-Pass `LITELLM_API_KEY` via a repository or organization secret. The caller job must forward it:
+Pass `DOCS_LITELLM_API_KEY` via a repository or organization secret. The caller job must forward it:
 
 ```yaml
     secrets:
-      LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+      DOCS_LITELLM_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
 ```
 
 ## Inputs

@@ -22,7 +22,7 @@ model: sonnet
 engine:
   id: claude
   env:
-    ANTHROPIC_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+    ANTHROPIC_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
     ANTHROPIC_BASE_URL: https://elastic.litellm-prod.ai
     ENABLE_PROMPT_CACHING_1H: '1'
     ANTHROPIC_DEFAULT_OPUS_MODEL: llm-gateway/claude-opus-4-7[1m]
@@ -73,7 +73,7 @@ on:
         required: false
         default: ""
     secrets:
-      LITELLM_API_KEY:
+      DOCS_LITELLM_API_KEY:
         required: false
 concurrency:
   group: gh-aw-docs-openings-sweep-${{ github.run_id }}

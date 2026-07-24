@@ -18,4 +18,4 @@ jobs:
       startsWith(github.event.comment.body, '/size')
     uses: elastic/docs-actions/.github/workflows/gh-aw-issue-size.lock.yml@v1
     secrets:
-      LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+      DOCS_LITELLM_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
