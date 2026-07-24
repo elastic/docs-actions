@@ -96,24 +96,32 @@ function buildStatusMessage({
   repository = '',
   workflow = '',
   ref = '',
+  eventName = '',
+  pullRequestNumber = '',
+  pullRequestUrl = '',
+  sha = '',
+  commitUrl = '',
   runUrl = '',
 }) {
   const normalizedStatus = normalizeStatus(status);
   const headerText = statusHeader(normalizedStatus);
-  const blocks = [
-    {
-      type: 'header',
-      text: {
-        type: 'plain_text',
-        text: headerText,
-      },
-    },
-  ];
+  const blocks = [];
+
+  let source = '';
+  if (pullRequestNumber && pullRequestUrl) {
+    source = `<${pullRequestUrl}|#${pullRequestNumber}>`;
+  } else if (eventName === 'push') {
+    const shortSha = String(sha).slice(0, 7);
+    const commit = shortSha && commitUrl ? `<${commitUrl}|\`${shortSha}\`>` : '';
+    source = [ref ? `\`${ref}\`` : '', commit].filter(Boolean).join('  ·  ');
+  } else if (ref) {
+    source = `\`${ref}\``;
+  }
 
   const summary = contextLine([
     workflow ? `*${workflow}*` : '',
     repository ? `\`${repository}\`` : '',
-    ref ? `\`${ref}\`` : '',
+    source,
   ]);
   if (summary) {
     blocks.push(summary);
@@ -154,6 +162,7 @@ function buildStatusMessage({
   }
 
   return {
+    text: headerText,
     attachments: [
       {
         color: statusColor(normalizedStatus),
