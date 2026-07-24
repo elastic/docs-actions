@@ -1,6 +1,6 @@
 # Docs review
 
-Reviews changed markdown files in pull requests by using Copilot with self-contained Elastic docs review rules. By default, the workflow reviews files under `docs/`, and repositories such as `docs-content` can set `review-scope: repo-wide-markdown` to review changed markdown across the repository. It publishes a pull request review with a concise summary plus inline comments for actionable findings.
+Reviews changed markdown files in pull requests using self-contained Elastic docs review rules. By default, the workflow reviews files under `docs/`, and repositories such as `docs-content` can set `review-scope: repo-wide-markdown` to review changed markdown across the repository. It publishes a pull request review with a concise summary plus inline comments for actionable findings.
 
 ## Triggers
 
@@ -85,7 +85,6 @@ on:
 
 permissions:
   actions: read
-  copilot-requests: write
   contents: read
   discussions: write
   pull-requests: write

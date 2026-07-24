@@ -50,4 +50,4 @@ jobs:
       max-per-fix-issue: ${{ inputs.max-per-fix-issue }}
       codespell-args: ${{ inputs.codespell-args }}
     secrets:
-      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+      LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}

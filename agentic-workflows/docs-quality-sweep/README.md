@@ -30,7 +30,12 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-quality-sweep.yml
 ```
 
-Add `permissions.copilot-requests: write` to the calling workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
+Pass `LITELLM_API_KEY` via a repository or organization secret. The caller job must forward it:
+
+```yaml
+    secrets:
+      LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+```
 
 Run via the Actions UI or:
 
