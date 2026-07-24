@@ -9,7 +9,11 @@ imports:
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
 engine:
-  id: copilot
+  id: claude
+  env:
+    ANTHROPIC_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
+    ANTHROPIC_BASE_URL: https://elastic.litellm-prod.ai
+model: llm-gateway/claude-sonnet-4-6
 
 on:
   roles: [admin, maintainer, write]
@@ -26,8 +30,8 @@ on:
         required: false
         default: ""
     secrets:
-      COPILOT_GITHUB_TOKEN:
-        required: true
+      DOCS_LITELLM_API_KEY:
+        required: false
 concurrency:
   group: gh-aw-docs-issue-triage-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
