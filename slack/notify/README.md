@@ -58,3 +58,20 @@ jobs:
             ]
 ```
 <!--/usage-->
+
+## Repository access
+
+Workflows can only invoke the Slack notifier if their repository is on the OIDC allowlist in [docs-infra](https://github.com/elastic/docs-infra).
+
+1. Add the repository to [`aws/elastic-web/eu-west-1/slack-notifier/repositories.yml`](https://github.com/elastic/docs-infra/blob/main/aws/elastic-web/eu-west-1/slack-notifier/repositories.yml):
+
+   ```yaml
+   repositories:
+     - name: elastic/your-repo
+   ```
+
+2. Open a PR in `elastic/docs-infra`. Merging to `main` deploys the change through the terragrunt workflow.
+
+3. In the calling workflow, set `permissions: id-token: write`.
+
+Fork PRs do not receive OIDC tokens, so the action cannot authenticate from fork workflows.
