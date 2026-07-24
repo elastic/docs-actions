@@ -25,7 +25,7 @@ mkdir -p .github/workflows && curl -sL \
 
 Configure both secrets:
 
-- `permissions.copilot-requests: write` in the caller workflow — required for built-in Copilot auth. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default path.
+- `LITELLM_API_KEY` passed as a secret in the caller job (`secrets: { LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }} }`).
 - `DOCS_FIX_ISSUES_TOKEN` — token with `issues:write` on `elastic/docs-content-internal` (where fix-issues are filed). See the parent README for context.
 
 ## Inputs
