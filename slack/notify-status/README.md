@@ -120,6 +120,7 @@ jobs:
 
 ## Notes
 
+- Requires `slack/notify` with attachment support from https://github.com/elastic/docs-actions/pull/247. Merge and release that change before using this action with `elastic/docs-actions/slack/notify@v1`.
 - When `status` is omitted, the action uses the current job status at invocation time.
 - For soft failures created with `continue-on-error: true`, pass an explicit `status` derived from `steps.<id>.outcome` if you need the notification to reflect the failed step.
 - Messages use Block Kit metadata inside a colored Slack attachment. Slack still requires attachments for the status color bar.

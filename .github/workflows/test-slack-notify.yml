@@ -5,13 +5,13 @@ on:
     branches:
       - main
     paths:
-      - 'slack/**'
+      - 'slack/notify/**'
       - '.github/workflows/test-slack-notify.yml'
   push:
     branches:
       - main
     paths:
-      - 'slack/**'
+      - 'slack/notify/**'
       - '.github/workflows/test-slack-notify.yml'
 
 permissions:

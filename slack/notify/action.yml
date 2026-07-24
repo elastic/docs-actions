@@ -15,10 +15,6 @@ inputs:
     description: Block Kit blocks as a JSON array string
     required: false
     default: ''
-  attachments:
-    description: Slack attachments as a JSON array string
-    required: false
-    default: ''
   fail-on-error:
     description: Fail the step when Slack delivery fails
     required: false
@@ -52,6 +48,57 @@ runs:
         SLACK_CHANNEL: ${{ inputs.channel }}
         SLACK_TEXT: ${{ inputs.text }}
         SLACK_BLOCKS: ${{ inputs.blocks }}
-        SLACK_ATTACHMENTS: ${{ inputs.attachments }}
         FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
-      run: bash "${{ github.action_path }}/../scripts/post-to-slack.sh"
+      run: |
+        set -euo pipefail
+
+        if [ -z "$SLACK_TEXT" ] && [ -z "$SLACK_BLOCKS" ]; then
+          echo "::error::At least one of text or blocks is required"
+          exit 1
+        fi
+
+        if [ -n "$SLACK_BLOCKS" ]; then
+          if ! echo "$SLACK_BLOCKS" | jq -e 'type == "array"' >/dev/null 2>&1; then
+            echo "::error::blocks must be a JSON array"
+            exit 1
+          fi
+        fi
+
+        if [ -n "$SLACK_BLOCKS" ] && [ -n "$SLACK_TEXT" ]; then
+          payload="$(jq -n \
+            --arg channel "$SLACK_CHANNEL" \
+            --arg text "$SLACK_TEXT" \
+            --argjson blocks "$SLACK_BLOCKS" \
+            '{channel: $channel, text: $text, blocks: $blocks}')"
+        elif [ -n "$SLACK_BLOCKS" ]; then
+          payload="$(jq -n \
+            --arg channel "$SLACK_CHANNEL" \
+            --argjson blocks "$SLACK_BLOCKS" \
+            '{channel: $channel, blocks: $blocks}')"
+        else
+          payload="$(jq -n \
+            --arg channel "$SLACK_CHANNEL" \
+            --arg text "$SLACK_TEXT" \
+            '{channel: $channel, text: $text}')"
+        fi
+
+        aws lambda invoke \
+          --function-name "$LAMBDA_ARN" \
+          --payload "$payload" \
+          --cli-binary-format raw-in-base64-out \
+          invoke-response.json > invoke-meta.json
+
+        if jq -e '.FunctionError' invoke-meta.json >/dev/null; then
+          error_type="$(jq -r '.errorType // "Unknown"' invoke-response.json)"
+          error_message="$(jq -r '.errorMessage // "Unknown error"' invoke-response.json)"
+          echo "success=false" >> "$GITHUB_OUTPUT"
+          echo "::warning::Slack notifier failed ($error_type): $error_message"
+          if [ "$FAIL_ON_ERROR" = "true" ]; then
+            exit 1
+          fi
+          exit 0
+        fi
+
+        echo "success=true" >> "$GITHUB_OUTPUT"
+        echo "channel=$(jq -r '.channel' invoke-response.json)" >> "$GITHUB_OUTPUT"
+        echo "ts=$(jq -r '.ts' invoke-response.json)" >> "$GITHUB_OUTPUT"

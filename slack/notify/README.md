@@ -7,13 +7,12 @@ Requires `permissions: id-token: write` in the calling workflow.
 
 ## Inputs
 <!--inputs-->
-| Name            | Description                              | Required | Default |
-|-----------------|------------------------------------------|----------|---------|
-| `channel`       | Slack channel ID or name                 | `true`   | ` `     |
-| `text`          | Plain text message body                  | `false`  | ` `     |
-| `blocks`        | Block Kit blocks as a JSON array string  | `false`  | ` `     |
-| `attachments`   | Slack attachments as a JSON array string | `false`  | ` `     |
-| `fail-on-error` | Fail the step when Slack delivery fails  | `false`  | `false` |
+| Name            | Description                             | Required | Default |
+|-----------------|-----------------------------------------|----------|---------|
+| `channel`       | Slack channel ID or name                | `true`   | ` `     |
+| `text`          | Plain text message body                 | `false`  | ` `     |
+| `blocks`        | Block Kit blocks as a JSON array string | `false`  | ` `     |
+| `fail-on-error` | Fail the step when Slack delivery fails | `false`  | `false` |
 <!--/inputs-->
 
 ## Outputs
