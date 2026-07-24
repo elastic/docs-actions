@@ -13,7 +13,7 @@ engine:
   env:
     ANTHROPIC_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
     ANTHROPIC_BASE_URL: https://elastic.litellm-prod.ai
-model: llm-gateway/claude-sonnet-4-6
+model: llm-gateway/claude-haiku-4-5
 
 on:
   roles: [admin, maintainer, write]
