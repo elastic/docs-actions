@@ -12,7 +12,7 @@ Requires `permissions: id-token: write` in the calling workflow.
 | `channel`       | Slack channel ID or name                                                                                     | `true`   | ` `     |
 | `status`        | Status to report (success, failure, cancelled, or skipped). Defaults to the current job status when omitted. | `false`  | ` `     |
 | `mention`       | Optional Slack user ID, subteam ID, or formatted mention token to include in the message                     | `false`  | ` `     |
-| `description`   | Optional reason or summary shown above the workflow metadata                                                 | `false`  | ` `     |
+| `description`   | Optional resolution notes, runbook links, or other supporting text                                           | `false`  | ` `     |
 | `fail-on-error` | Fail the step when Slack delivery fails                                                                      | `false`  | `false` |
 <!--/inputs-->
 
@@ -56,7 +56,7 @@ Notify only on failure:
   with:
     channel: C0123456789
     status: failure
-    description: Deploy failed during smoke tests
+    description: See https://example.com/runbook for recovery steps
     mention: S0123456789
 ```
 
@@ -123,6 +123,7 @@ jobs:
 - Requires `elastic/docs-actions/slack/notify@v1` with attachment support (available from release 1.36.0 onward).
 - When `status` is omitted, the action uses the current job status at invocation time.
 - For soft failures created with `continue-on-error: true`, pass an explicit `status` derived from `steps.<id>.outcome` if you need the notification to reflect the failed step.
+- Top-level text uses the repository and workflow name. The attachment shows status color, PR or commit metadata, optional resolution text, and a workflow run link inside a `card` block.
 - Messages use Block Kit metadata inside a colored Slack attachment. Slack still requires attachments for the status color bar.
 - `mention` accepts Slack user IDs (`U…`), subteam IDs (`S…`), already-formatted tokens such as `<@U0123456789>`, or comma-separated combinations.
 

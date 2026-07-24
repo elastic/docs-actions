@@ -16,7 +16,7 @@ inputs:
     required: false
     default: ''
   description:
-    description: Optional reason or summary shown above the workflow metadata
+    description: Optional resolution notes, runbook links, or other supporting text
     required: false
     default: ''
   fail-on-error:

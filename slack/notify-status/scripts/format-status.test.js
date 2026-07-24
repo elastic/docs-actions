@@ -7,8 +7,12 @@ const {
   buildStatusMessage,
   formatMentionToken,
   formatMentions,
+  messageText,
   normalizeStatus,
+  sourceMetadata,
+  statusAlertLevel,
   statusColor,
+  truncateText,
 } = require('./format-status.js');
 
 describe('normalizeStatus', () => {
@@ -58,11 +62,59 @@ describe('statusColor', () => {
   });
 });
 
+describe('statusAlertLevel', () => {
+  it('maps terminal statuses to alert levels', () => {
+    assert.equal(statusAlertLevel('success'), 'success');
+    assert.equal(statusAlertLevel('failure'), 'error');
+    assert.equal(statusAlertLevel('cancelled'), 'warning');
+    assert.equal(statusAlertLevel('unknown'), 'default');
+  });
+});
+
+describe('messageText', () => {
+  it('combines repository and workflow names', () => {
+    assert.equal(messageText('elastic/docs-actions', 'docs-deploy'), 'elastic/docs-actions · docs-deploy');
+  });
+});
+
+describe('truncateText', () => {
+  it('truncates long descriptions for card bodies', () => {
+    const value = 'x'.repeat(210);
+    assert.equal(truncateText(value, 200).length, 200);
+    assert.match(truncateText(value, 200), /…$/);
+  });
+});
+
+describe('sourceMetadata', () => {
+  it('links pull request numbers', () => {
+    assert.equal(
+      sourceMetadata({
+        pullRequestNumber: '245',
+        pullRequestUrl: 'https://github.com/elastic/docs-actions/pull/245',
+      }),
+      '<https://github.com/elastic/docs-actions/pull/245|#245>'
+    );
+  });
+
+  it('links branch and commit for push events', () => {
+    assert.equal(
+      sourceMetadata({
+        eventName: 'push',
+        ref: 'main',
+        sha: 'a1b2c3d4e5f6789012345678901234567890abcd',
+        commitUrl:
+          'https://github.com/elastic/docs-actions/commit/a1b2c3d4e5f6789012345678901234567890abcd',
+      }),
+      '`main`  ·  <https://github.com/elastic/docs-actions/commit/a1b2c3d4e5f6789012345678901234567890abcd|`a1b2c3d`>'
+    );
+  });
+});
+
 describe('buildStatusMessage', () => {
-  it('builds a rich colored attachment with metadata blocks', () => {
+  it('builds a card-based pull request status message', () => {
     const message = buildStatusMessage({
       status: 'failure',
-      description: 'Deploy failed during smoke tests.',
+      description: 'See <https://example.com/runbook|the deploy runbook> for recovery steps.',
       mention: 'U0123456789',
       repository: 'elastic/docs-actions',
       workflow: 'test-slack-notify-status',
@@ -74,30 +126,23 @@ describe('buildStatusMessage', () => {
     });
 
     const attachment = message.attachments[0];
+    const card = attachment.blocks[0];
     const serialized = JSON.stringify(message);
 
-    assert.equal(message.text, 'test-slack-notify-status: Workflow failed');
+    assert.equal(message.text, 'elastic/docs-actions · test-slack-notify-status');
+    assert.equal(message.statusAlertLevel, 'error');
     assert.equal(attachment.color, '#E01E5A');
-    assert.equal(attachment.fallback, 'Workflow failed · elastic/docs-actions');
-    assert.equal(attachment.blocks.some((block) => block.type === 'header'), false);
-    assert.equal(attachment.blocks.some((block) => block.type === 'divider'), true);
-    assert.equal(attachment.blocks.some((block) => block.type === 'actions'), true);
-    assert.equal(
-      attachment.blocks.some(
-        (block) => block.type === 'section' && Array.isArray(block.fields)
-      ),
-      false
-    );
-    assert.match(serialized, /Deploy failed during smoke tests/);
-    assert.doesNotMatch(serialized, /Summary/);
-    assert.doesNotMatch(serialized, /Actor/);
-    assert.doesNotMatch(serialized, /Event/);
-    assert.match(serialized, /<https:\/\/github.com\/elastic\/docs-actions\/pull\/245\|#245>/);
-    assert.match(serialized, /<@U0123456789>/);
-    assert.match(serialized, /View workflow run/);
+    assert.equal(card.type, 'card');
+    assert.equal(card.title.text, 'elastic/docs-actions · test-slack-notify-status');
+    assert.match(card.subtitle.text, /Failed  ·  <https:\/\/github.com\/elastic\/docs-actions\/pull\/245\|#245>/);
+    assert.match(card.body.text, /deploy runbook/);
+    assert.equal(card.subtext.text, 'cc <@U0123456789>');
+    assert.equal(card.actions[0].url, 'https://github.com/elastic/docs-actions/actions/runs/1');
+    assert.doesNotMatch(serialized, /"type":"alert"/);
+    assert.doesNotMatch(serialized, /"type":"divider"/);
   });
 
-  it('links the branch and commit for push events', () => {
+  it('builds a push status message with branch and commit metadata', () => {
     const message = buildStatusMessage({
       status: 'success',
       repository: 'elastic/docs-actions',
@@ -110,17 +155,19 @@ describe('buildStatusMessage', () => {
       runUrl: 'https://github.com/elastic/docs-actions/actions/runs/2',
     });
 
+    const card = message.attachments[0].blocks[0];
     const serialized = JSON.stringify(message);
 
-    assert.equal(message.text, 'docs-deploy: Workflow succeeded');
-    assert.match(serialized, /`main`/);
+    assert.equal(message.text, 'elastic/docs-actions · docs-deploy');
+    assert.equal(message.statusAlertLevel, 'success');
+    assert.match(card.subtitle.text, /Succeeded  ·  `main`/);
     assert.match(
       serialized,
       /<https:\/\/github.com\/elastic\/docs-actions\/commit\/a1b2c3d4e5f6789012345678901234567890abcd\|`a1b2c3d`>/
     );
   });
 
-  it('omits optional sections when values are empty', () => {
+  it('omits optional card fields when values are empty', () => {
     const message = buildStatusMessage({
       status: 'success',
       repository: 'elastic/docs-actions',
@@ -129,11 +176,11 @@ describe('buildStatusMessage', () => {
       runUrl: 'https://github.com/elastic/docs-actions/actions/runs/2',
     });
 
-    const attachment = message.attachments[0];
+    const card = message.attachments[0].blocks[0];
 
-    assert.equal(attachment.color, '#2EB67D');
-    assert.equal(attachment.blocks.some((block) => block.type === 'header'), false);
-    assert.equal(attachment.blocks.some((block) => block.type === 'actions'), true);
-    assert.equal(attachment.blocks.some((block) => block.type === 'section' && block.text), false);
+    assert.equal(message.statusAlertLevel, 'success');
+    assert.equal(card.body, undefined);
+    assert.equal(card.subtext, undefined);
+    assert.equal(card.actions.length, 1);
   });
 });

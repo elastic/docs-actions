@@ -7,11 +7,18 @@ const STATUS_COLORS = {
   skipped: '#9CA3AF',
 };
 
-const STATUS_HEADERS = {
-  success: 'Workflow succeeded',
-  failure: 'Workflow failed',
-  cancelled: 'Workflow cancelled',
-  skipped: 'Workflow skipped',
+const STATUS_LABELS = {
+  success: 'Succeeded',
+  failure: 'Failed',
+  cancelled: 'Cancelled',
+  skipped: 'Skipped',
+};
+
+const STATUS_ALERT_LEVELS = {
+  success: 'success',
+  failure: 'error',
+  cancelled: 'warning',
+  skipped: 'default',
 };
 
 function normalizeStatus(status) {
@@ -26,13 +33,17 @@ function statusColor(status) {
   return STATUS_COLORS[status] || '#9CA3AF';
 }
 
-function statusHeader(status) {
-  if (STATUS_HEADERS[status]) {
-    return STATUS_HEADERS[status];
+function statusLabel(status) {
+  if (STATUS_LABELS[status]) {
+    return STATUS_LABELS[status];
   }
 
   const label = status.charAt(0).toUpperCase() + status.slice(1);
-  return `Workflow ${label}`;
+  return label;
+}
+
+function statusAlertLevel(status) {
+  return STATUS_ALERT_LEVELS[status] || 'default';
 }
 
 function formatMentionToken(raw) {
@@ -72,21 +83,102 @@ function formatMentions(raw) {
     .join(' ');
 }
 
-function contextLine(parts) {
-  const text = parts.filter(Boolean).join('  ·  ');
-  if (!text) {
-    return null;
+function messageText(repository, workflow) {
+  if (repository && workflow) {
+    return `${repository} · ${workflow}`;
   }
 
-  return {
-    type: 'context',
-    elements: [
-      {
-        type: 'mrkdwn',
-        text,
-      },
-    ],
+  return repository || workflow || 'Workflow status';
+}
+
+function truncateText(text, maxLength) {
+  const value = String(text || '').trim();
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 1)}…`;
+}
+
+function sourceMetadata({
+  eventName,
+  pullRequestNumber,
+  pullRequestUrl,
+  ref,
+  sha,
+  commitUrl,
+}) {
+  if (pullRequestNumber && pullRequestUrl) {
+    return `<${pullRequestUrl}|#${pullRequestNumber}>`;
+  }
+
+  if (eventName === 'push') {
+    const shortSha = String(sha).slice(0, 7);
+    const commit = shortSha && commitUrl ? `<${commitUrl}|\`${shortSha}\`>` : '';
+    return [ref ? `\`${ref}\`` : '', commit].filter(Boolean).join('  ·  ');
+  }
+
+  if (ref) {
+    return `\`${ref}\``;
+  }
+
+  return '';
+}
+
+function buildCardBlock({
+  title,
+  subtitle,
+  body,
+  subtext,
+  runUrl,
+}) {
+  const card = {
+    type: 'card',
+    title: {
+      type: 'mrkdwn',
+      text: title,
+      verbatim: false,
+    },
   };
+
+  if (subtitle) {
+    card.subtitle = {
+      type: 'mrkdwn',
+      text: subtitle,
+      verbatim: false,
+    };
+  }
+
+  if (body) {
+    card.body = {
+      type: 'mrkdwn',
+      text: body,
+      verbatim: false,
+    };
+  }
+
+  if (subtext) {
+    card.subtext = {
+      type: 'mrkdwn',
+      text: subtext,
+      verbatim: false,
+    };
+  }
+
+  if (runUrl) {
+    card.actions = [
+      {
+        type: 'button',
+        text: {
+          type: 'plain_text',
+          text: 'View workflow run',
+        },
+        url: runUrl,
+      },
+    ];
+  }
+
+  return card;
 }
 
 function buildStatusMessage({
@@ -104,80 +196,51 @@ function buildStatusMessage({
   runUrl = '',
 }) {
   const normalizedStatus = normalizeStatus(status);
-  const headerText = statusHeader(normalizedStatus);
-  const blocks = [];
-
-  let source = '';
-  if (pullRequestNumber && pullRequestUrl) {
-    source = `<${pullRequestUrl}|#${pullRequestNumber}>`;
-  } else if (eventName === 'push') {
-    const shortSha = String(sha).slice(0, 7);
-    const commit = shortSha && commitUrl ? `<${commitUrl}|\`${shortSha}\`>` : '';
-    source = [ref ? `\`${ref}\`` : '', commit].filter(Boolean).join('  ·  ');
-  } else if (ref) {
-    source = `\`${ref}\``;
-  }
-
-  const summary = contextLine([
-    workflow ? `*${workflow}*` : '',
-    repository ? `\`${repository}\`` : '',
-    source,
-  ]);
-  if (summary) {
-    blocks.push(summary);
-  }
-
-  blocks.push({ type: 'divider' });
-
-  const trimmedDescription = String(description || '').trim();
-  if (trimmedDescription) {
-    blocks.push({
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
-        text: trimmedDescription,
-      },
-    });
-  }
-
-  if (runUrl) {
-    blocks.push({
-      type: 'actions',
-      elements: [
-        {
-          type: 'button',
-          text: {
-            type: 'plain_text',
-            text: 'View workflow run',
-          },
-          url: runUrl,
-        },
-      ],
-    });
-  }
-
+  const label = statusLabel(normalizedStatus);
+  const title = messageText(repository, workflow);
+  const source = sourceMetadata({
+    eventName,
+    pullRequestNumber,
+    pullRequestUrl,
+    ref,
+    sha,
+    commitUrl,
+  });
+  const subtitle = [label, source].filter(Boolean).join('  ·  ');
+  const trimmedDescription = truncateText(description, 200);
   const formattedMention = formatMentions(mention);
-  if (formattedMention) {
-    blocks.push(contextLine([`*Notify:* ${formattedMention}`]));
-  }
+
+  const card = buildCardBlock({
+    title,
+    subtitle,
+    body: trimmedDescription,
+    subtext: formattedMention ? `cc ${formattedMention}` : '',
+    runUrl,
+  });
 
   return {
-    text: workflow ? `${workflow}: ${headerText}` : headerText,
+    text: title,
     attachments: [
       {
         color: statusColor(normalizedStatus),
-        fallback: `${headerText}${repository ? ` · ${repository}` : ''}`,
-        blocks,
+        fallback: `${title} · ${label}`,
+        blocks: [card],
       },
     ],
+    statusAlertLevel: statusAlertLevel(normalizedStatus),
   };
 }
 
 module.exports = {
   buildStatusMessage,
+  buildCardBlock,
   formatMentionToken,
   formatMentions,
+  messageText,
   normalizeStatus,
+  sourceMetadata,
+  statusAlertLevel,
   statusColor,
-  statusHeader,
+  statusLabel,
+  truncateText,
 };
