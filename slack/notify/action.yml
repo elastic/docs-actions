@@ -81,8 +81,9 @@ runs:
           invoke-response.json > invoke-meta.json
 
         if jq -e '.FunctionError' invoke-meta.json >/dev/null; then
-          echo "Slack notifier invocation failed:"
-          jq . invoke-response.json
+          error_type="$(jq -r '.errorType // "Unknown"' invoke-response.json)"
+          error_message="$(jq -r '.errorMessage // "Unknown error"' invoke-response.json)"
+          echo "::error::Slack notifier failed ($error_type): $error_message"
           exit 1
         fi
 

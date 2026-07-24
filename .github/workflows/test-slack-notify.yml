@@ -29,6 +29,7 @@ jobs:
           channel: docs-internal-workflows
           text: |
             slack/notify test from ${{ github.repository }} (${{ github.event_name }} on ${{ github.ref_name }})
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Verify outputs
         run: |
