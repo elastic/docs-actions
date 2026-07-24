@@ -41,7 +41,7 @@ on:
         required: false
         default: ""
 concurrency:
-  group: gh-aw-docs-review-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+  group: gh-aw-docs-review-copilot-benchmark-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
   job-discriminator: ${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
 permissions:
