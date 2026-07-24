@@ -22,11 +22,10 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-triage.yml
 ```
 
-Pass `DOCS_LITELLM_API_KEY` via a repository or organization secret. The caller job must forward it:
+Use `secrets: inherit` on the caller job to forward the `DOCS_LITELLM_API_KEY` org secret:
 
 ```yaml
-    secrets:
-      DOCS_LITELLM_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
+    secrets: inherit
 ```
 
 ## Inputs

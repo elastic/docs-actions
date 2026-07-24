@@ -17,5 +17,4 @@ jobs:
     uses: elastic/docs-actions/.github/workflows/gh-aw-docs-review.lock.yml@v1
     with:
       review-scope: docs-subtree
-    secrets:
-      DOCS_LITELLM_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
+    secrets: inherit
