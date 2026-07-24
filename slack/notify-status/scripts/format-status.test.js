@@ -59,7 +59,7 @@ describe('statusColor', () => {
 });
 
 describe('buildStatusMessage', () => {
-  it('builds a colored attachment with metadata blocks', () => {
+  it('builds a rich colored attachment with metadata blocks', () => {
     const message = buildStatusMessage({
       status: 'failure',
       description: 'Deploy failed during smoke tests.',
@@ -72,12 +72,15 @@ describe('buildStatusMessage', () => {
       runUrl: 'https://github.com/elastic/docs-actions/actions/runs/1',
     });
 
-    assert.match(message.text, /Workflow Failure/);
-    assert.equal(message.attachments.length, 1);
-    assert.equal(message.attachments[0].color, 'danger');
-    assert.equal(message.attachments[0].blocks.length, 4);
-
+    const attachment = message.attachments[0];
     const serialized = JSON.stringify(message);
+
+    assert.match(message.text, /Workflow status: failed/);
+    assert.equal(attachment.color, 'danger');
+    assert.equal(attachment.fallback, 'Workflow failed · elastic/docs-actions');
+    assert.equal(attachment.blocks[0].type, 'header');
+    assert.equal(attachment.blocks.some((block) => block.type === 'divider'), true);
+    assert.equal(attachment.blocks.some((block) => block.type === 'actions'), true);
     assert.match(serialized, /Deploy failed during smoke tests/);
     assert.match(serialized, /<@U0123456789>/);
     assert.match(serialized, /View workflow run/);
@@ -87,10 +90,16 @@ describe('buildStatusMessage', () => {
     const message = buildStatusMessage({
       status: 'success',
       repository: 'elastic/docs-actions',
+      workflow: 'docs-deploy',
+      ref: 'main',
       runUrl: 'https://github.com/elastic/docs-actions/actions/runs/2',
     });
 
-    assert.equal(message.attachments[0].color, 'good');
-    assert.equal(message.attachments[0].blocks.length, 2);
+    const attachment = message.attachments[0];
+
+    assert.equal(attachment.color, 'good');
+    assert.equal(attachment.blocks.some((block) => block.type === 'header'), true);
+    assert.equal(attachment.blocks.some((block) => block.type === 'actions'), true);
+    assert.equal(attachment.blocks.some((block) => block.type === 'section' && block.text), false);
   });
 });

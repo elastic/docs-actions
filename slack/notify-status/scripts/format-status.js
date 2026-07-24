@@ -7,11 +7,11 @@ const STATUS_COLORS = {
   skipped: '#949494',
 };
 
-const STATUS_LABELS = {
-  success: 'Success',
-  failure: 'Failure',
-  cancelled: 'Cancelled',
-  skipped: 'Skipped',
+const STATUS_HEADERS = {
+  success: 'Workflow succeeded',
+  failure: 'Workflow failed',
+  cancelled: 'Workflow cancelled',
+  skipped: 'Workflow skipped',
 };
 
 const STATUS_EMOJI = {
@@ -33,8 +33,13 @@ function statusColor(status) {
   return STATUS_COLORS[status] || '#949494';
 }
 
-function statusLabel(status) {
-  return STATUS_LABELS[status] || status.charAt(0).toUpperCase() + status.slice(1);
+function statusHeader(status) {
+  if (STATUS_HEADERS[status]) {
+    return STATUS_HEADERS[status];
+  }
+
+  const label = status.charAt(0).toUpperCase() + status.slice(1);
+  return `Workflow ${label}`;
 }
 
 function statusEmoji(status) {
@@ -85,6 +90,23 @@ function fieldBlock(label, value) {
   };
 }
 
+function contextLine(parts) {
+  const text = parts.filter(Boolean).join('  ·  ');
+  if (!text) {
+    return null;
+  }
+
+  return {
+    type: 'context',
+    elements: [
+      {
+        type: 'mrkdwn',
+        text,
+      },
+    ],
+  };
+}
+
 function buildStatusMessage({
   status,
   description = '',
@@ -97,17 +119,29 @@ function buildStatusMessage({
   runUrl = '',
 }) {
   const normalizedStatus = normalizeStatus(status);
-  const label = statusLabel(normalizedStatus);
   const emoji = statusEmoji(normalizedStatus);
+  const headerText = statusHeader(normalizedStatus);
   const blocks = [
     {
-      type: 'section',
+      type: 'header',
       text: {
-        type: 'mrkdwn',
-        text: `${emoji} *Workflow ${label}*`,
+        type: 'plain_text',
+        text: `${emoji} ${headerText}`,
+        emoji: true,
       },
     },
   ];
+
+  const summary = contextLine([
+    repository ? `*Repository:* \`${repository}\`` : '',
+    workflow ? `*Workflow:* \`${workflow}\`` : '',
+    ref ? `*Ref:* \`${ref}\`` : '',
+  ]);
+  if (summary) {
+    blocks.push(summary);
+  }
+
+  blocks.push({ type: 'divider' });
 
   const trimmedDescription = String(description || '').trim();
   if (trimmedDescription) {
@@ -115,50 +149,55 @@ function buildStatusMessage({
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: trimmedDescription,
+        text: `*Summary*\n${trimmedDescription}`,
       },
+    });
+  }
+
+  const detailFields = [];
+  if (actor) {
+    detailFields.push(fieldBlock('Actor', actor));
+  }
+  if (eventName) {
+    detailFields.push(fieldBlock('Event', `\`${eventName}\``));
+  }
+  if (workflow && !summary) {
+    detailFields.push(fieldBlock('Workflow', workflow));
+  }
+  if (ref && !summary) {
+    detailFields.push(fieldBlock('Ref', `\`${ref}\``));
+  }
+
+  if (detailFields.length > 0) {
+    blocks.push({
+      type: 'section',
+      fields: detailFields,
+    });
+  }
+
+  if (runUrl) {
+    blocks.push({
+      type: 'actions',
+      elements: [
+        {
+          type: 'button',
+          text: {
+            type: 'plain_text',
+            text: 'View workflow run',
+            emoji: true,
+          },
+          url: runUrl,
+        },
+      ],
     });
   }
 
   const formattedMention = formatMentions(mention);
   if (formattedMention) {
-    blocks.push({
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
-        text: formattedMention,
-      },
-    });
+    blocks.push(contextLine([`*Notify:* ${formattedMention}`]));
   }
 
-  const fields = [];
-  if (repository) {
-    fields.push(fieldBlock('Repository', repository));
-  }
-  if (workflow) {
-    fields.push(fieldBlock('Workflow', workflow));
-  }
-  if (ref) {
-    fields.push(fieldBlock('Ref', ref));
-  }
-  if (actor) {
-    fields.push(fieldBlock('Actor', actor));
-  }
-  if (eventName) {
-    fields.push(fieldBlock('Event', eventName));
-  }
-  if (runUrl) {
-    fields.push(fieldBlock('Run', `<${runUrl}|View workflow run>`));
-  }
-
-  if (fields.length > 0) {
-    blocks.push({
-      type: 'section',
-      fields,
-    });
-  }
-
-  const fallbackParts = [`Workflow ${label}`];
+  const fallbackParts = [headerText.replace(/^Workflow /, 'Workflow status: ')];
   if (repository) {
     fallbackParts.push(repository);
   }
@@ -174,6 +213,7 @@ function buildStatusMessage({
     attachments: [
       {
         color: statusColor(normalizedStatus),
+        fallback: `${headerText}${repository ? ` · ${repository}` : ''}`,
         blocks,
       },
     ],
@@ -187,5 +227,5 @@ module.exports = {
   normalizeStatus,
   statusColor,
   statusEmoji,
-  statusLabel,
+  statusHeader,
 };
