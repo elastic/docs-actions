@@ -22,6 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - uses: ./slack/notify
         id: slack
@@ -32,6 +34,9 @@ jobs:
             ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Verify outputs
+        env:
+          SLACK_CHANNEL: ${{ steps.slack.outputs.channel }}
+          SLACK_TS: ${{ steps.slack.outputs.ts }}
         run: |
-          test -n "${{ steps.slack.outputs.channel }}"
-          test -n "${{ steps.slack.outputs.ts }}"
+          test -n "${SLACK_CHANNEL}"
+          test -n "${SLACK_TS}"
