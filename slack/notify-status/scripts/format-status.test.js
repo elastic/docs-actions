@@ -76,7 +76,7 @@ describe('buildStatusMessage', () => {
     const attachment = message.attachments[0];
     const serialized = JSON.stringify(message);
 
-    assert.equal(message.text, 'Workflow failed');
+    assert.equal(message.text, 'test-slack-notify-status: Workflow failed');
     assert.equal(attachment.color, '#E01E5A');
     assert.equal(attachment.fallback, 'Workflow failed · elastic/docs-actions');
     assert.equal(attachment.blocks.some((block) => block.type === 'header'), false);
@@ -112,7 +112,7 @@ describe('buildStatusMessage', () => {
 
     const serialized = JSON.stringify(message);
 
-    assert.equal(message.text, 'Workflow succeeded');
+    assert.equal(message.text, 'docs-deploy: Workflow succeeded');
     assert.match(serialized, /`main`/);
     assert.match(
       serialized,

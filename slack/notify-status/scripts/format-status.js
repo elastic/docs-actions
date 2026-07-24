@@ -162,7 +162,7 @@ function buildStatusMessage({
   }
 
   return {
-    text: headerText,
+    text: workflow ? `${workflow}: ${headerText}` : headerText,
     attachments: [
       {
         color: statusColor(normalizedStatus),
