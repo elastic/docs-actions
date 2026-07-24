@@ -28,7 +28,6 @@ engine:
     ANTHROPIC_DEFAULT_OPUS_MODEL: llm-gateway/claude-opus-4-7[1m]
     ANTHROPIC_DEFAULT_HAIKU_MODEL: llm-gateway/claude-haiku-4-5
     ANTHROPIC_DEFAULT_SONNET_MODEL: llm-gateway/claude-sonnet-4-6
-    CLAUDE_CODE_MAX_THINKING_TOKENS: '0'
 on:
   roles: [admin, maintainer, write]
   workflow_call:
