@@ -78,7 +78,7 @@ network:
 strict: false
 safe-outputs:
   allowed-domains:
-    - "*.elastic.co"
+    - elastic.co
     - docs-v3-preview.elastic.dev
     - github.com
   noop:
