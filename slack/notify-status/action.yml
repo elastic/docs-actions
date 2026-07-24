@@ -68,11 +68,19 @@ runs:
           core.setOutput('text', message.text);
           core.setOutput('attachments', JSON.stringify(message.attachments));
 
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+      with:
+        aws-region: eu-west-1
+        role-to-assume: arn:aws:iam::197730964718:role/elastic-docs-slack-notifier-invoker
+
     - name: Post status to Slack
       id: notify
-      uses: ${{ github.action_path }}/../notify
-      with:
-        channel: ${{ inputs.channel }}
-        text: ${{ steps.format.outputs.text }}
-        attachments: ${{ steps.format.outputs.attachments }}
-        fail-on-error: ${{ inputs.fail-on-error }}
+      shell: bash
+      env:
+        LAMBDA_ARN: arn:aws:lambda:eu-west-1:197730964718:function:elastic-docs-slack-notifier
+        SLACK_CHANNEL: ${{ inputs.channel }}
+        SLACK_TEXT: ${{ steps.format.outputs.text }}
+        SLACK_ATTACHMENTS: ${{ steps.format.outputs.attachments }}
+        FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+      run: bash "${{ github.action_path }}/../scripts/post-to-slack.sh"
