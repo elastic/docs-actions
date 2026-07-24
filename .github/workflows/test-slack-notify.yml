@@ -1,0 +1,43 @@
+name: test-slack-notify
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'slack/notify/**'
+      - '.github/workflows/test-slack-notify.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'slack/notify/**'
+      - '.github/workflows/test-slack-notify.yml'
+
+permissions:
+  id-token: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: ./slack/notify
+        id: slack
+        with:
+          channel: docs-internal-workflows
+          fail-on-error: true
+          text: |
+            slack/notify test from ${{ github.repository }} (${{ github.event_name }} on ${{ github.ref_name }})
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Verify outputs
+        env:
+          SLACK_CHANNEL: ${{ steps.slack.outputs.channel }}
+          SLACK_TS: ${{ steps.slack.outputs.ts }}
+        run: |
+          test -n "${SLACK_CHANNEL}"
+          test -n "${SLACK_TS}"
