@@ -1,0 +1,90 @@
+name: slack/notify
+description: |
+  Post a Slack message through the elastic-docs-slack-notifier Lambda.
+  Requires `permissions: id-token: write` in the calling workflow.
+
+inputs:
+  channel:
+    description: Slack channel ID or name
+    required: true
+  text:
+    description: Plain text message body
+    required: false
+    default: ''
+  blocks:
+    description: Block Kit blocks as a JSON array string
+    required: false
+    default: ''
+
+outputs:
+  channel:
+    description: Slack channel ID from the posted message
+    value: ${{ steps.invoke.outputs.channel }}
+  ts:
+    description: Slack message timestamp for threaded replies
+    value: ${{ steps.invoke.outputs.ts }}
+
+runs:
+  using: composite
+  steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+      with:
+        aws-region: eu-west-1
+        role-to-assume: arn:aws:iam::197730964718:role/elastic-docs-slack-notifier-invoker
+
+    - name: Post to Slack
+      id: invoke
+      shell: bash
+      env:
+        LAMBDA_ARN: arn:aws:lambda:eu-west-1:197730964718:function:elastic-docs-slack-notifier
+        SLACK_CHANNEL: ${{ inputs.channel }}
+        SLACK_TEXT: ${{ inputs.text }}
+        SLACK_BLOCKS: ${{ inputs.blocks }}
+      run: |
+        set -euo pipefail
+
+        if [ -z "$SLACK_TEXT" ] && [ -z "$SLACK_BLOCKS" ]; then
+          echo "::error::At least one of text or blocks is required"
+          exit 1
+        fi
+
+        if [ -n "$SLACK_BLOCKS" ]; then
+          if ! echo "$SLACK_BLOCKS" | jq -e 'type == "array"' >/dev/null 2>&1; then
+            echo "::error::blocks must be a JSON array"
+            exit 1
+          fi
+        fi
+
+        if [ -n "$SLACK_BLOCKS" ] && [ -n "$SLACK_TEXT" ]; then
+          payload="$(jq -n \
+            --arg channel "$SLACK_CHANNEL" \
+            --arg text "$SLACK_TEXT" \
+            --argjson blocks "$SLACK_BLOCKS" \
+            '{channel: $channel, text: $text, blocks: $blocks}')"
+        elif [ -n "$SLACK_BLOCKS" ]; then
+          payload="$(jq -n \
+            --arg channel "$SLACK_CHANNEL" \
+            --argjson blocks "$SLACK_BLOCKS" \
+            '{channel: $channel, blocks: $blocks}')"
+        else
+          payload="$(jq -n \
+            --arg channel "$SLACK_CHANNEL" \
+            --arg text "$SLACK_TEXT" \
+            '{channel: $channel, text: $text}')"
+        fi
+
+        aws lambda invoke \
+          --function-name "$LAMBDA_ARN" \
+          --payload "$payload" \
+          --cli-binary-format raw-in-base64-out \
+          invoke-response.json > invoke-meta.json
+
+        if jq -e '.FunctionError' invoke-meta.json >/dev/null; then
+          echo "Slack notifier invocation failed:"
+          jq . invoke-response.json
+          exit 1
+        fi
+
+        echo "channel=$(jq -r '.channel' invoke-response.json)" >> "$GITHUB_OUTPUT"
+        echo "ts=$(jq -r '.ts' invoke-response.json)" >> "$GITHUB_OUTPUT"
