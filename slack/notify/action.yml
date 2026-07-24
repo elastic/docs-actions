@@ -91,8 +91,19 @@ runs:
         if jq -e '.FunctionError' invoke-meta.json >/dev/null; then
           error_type="$(jq -r '.errorType // "Unknown"' invoke-response.json)"
           error_message="$(jq -r '.errorMessage // "Unknown error"' invoke-response.json)"
+          request_id="$(jq -r '.requestId // empty' invoke-response.json)"
+          if [ -z "$request_id" ]; then
+            request_id="$(jq -r '.RequestId // empty' invoke-meta.json)"
+          fi
           echo "success=false" >> "$GITHUB_OUTPUT"
           echo "::warning::Slack notifier failed ($error_type): $error_message"
+          cw_log_group='$252Faws$252Flambda$252Felastic-docs-slack-notifier'
+          if [ -n "$request_id" ]; then
+            cw_url="https://eu-west-1.console.aws.amazon.com/cloudwatch/home?region=eu-west-1#logsV2:log-groups/log-group/${cw_log_group}/log-events\$3FfilterPattern\$3D\$2522${request_id}\$2522"
+          else
+            cw_url="https://eu-west-1.console.aws.amazon.com/cloudwatch/home?region=eu-west-1#logsV2:log-groups/log-group/${cw_log_group}"
+          fi
+          echo "::warning::CloudWatch logs: ${cw_url}"
           if [ "$FAIL_ON_ERROR" = "true" ]; then
             exit 1
           fi
