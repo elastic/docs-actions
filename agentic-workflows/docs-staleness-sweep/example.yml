@@ -50,4 +50,4 @@ jobs:
       max-per-fix-issue: ${{ inputs.max-per-fix-issue }}
       stale-content-months: ${{ inputs.stale-content-months }}
     secrets:
-      DOCS_LITELLM_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
+      LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
