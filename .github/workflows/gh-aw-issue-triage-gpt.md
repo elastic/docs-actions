@@ -10,10 +10,10 @@ imports:
   - gh-aw-fragments/mcp-pagination.md
 engine:
   id: codex
-  model: gpt-5.4-mini
+  api-target: elastic.litellm-prod.ai
   env:
     OPENAI_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
-    OPENAI_BASE_URL: https://elastic.litellm-prod.ai
+model: gpt-5.4-mini
 
 on:
   roles: [admin, maintainer, write]
