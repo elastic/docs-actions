@@ -14,13 +14,6 @@ const STATUS_LABELS = {
   skipped: 'Skipped',
 };
 
-const STATUS_ALERT_LEVELS = {
-  success: 'success',
-  failure: 'error',
-  cancelled: 'warning',
-  skipped: 'default',
-};
-
 function normalizeStatus(status) {
   const value = String(status || '').trim().toLowerCase();
   if (!value) {
@@ -40,10 +33,6 @@ function statusLabel(status) {
 
   const label = status.charAt(0).toUpperCase() + status.slice(1);
   return label;
-}
-
-function statusAlertLevel(status) {
-  return STATUS_ALERT_LEVELS[status] || 'default';
 }
 
 function formatMentionToken(raw) {
@@ -91,13 +80,20 @@ function messageText(repository, workflow) {
   return repository || workflow || 'Workflow status';
 }
 
-function truncateText(text, maxLength) {
-  const value = String(text || '').trim();
-  if (value.length <= maxLength) {
-    return value;
+function contextBlock(text) {
+  if (!text) {
+    return null;
   }
 
-  return `${value.slice(0, maxLength - 1)}…`;
+  return {
+    type: 'context',
+    elements: [
+      {
+        type: 'mrkdwn',
+        text,
+      },
+    ],
+  };
 }
 
 function sourceMetadata({
@@ -125,62 +121,6 @@ function sourceMetadata({
   return '';
 }
 
-function buildCardBlock({
-  title,
-  subtitle,
-  body,
-  subtext,
-  runUrl,
-}) {
-  const card = {
-    type: 'card',
-    title: {
-      type: 'mrkdwn',
-      text: title,
-      verbatim: false,
-    },
-  };
-
-  if (subtitle) {
-    card.subtitle = {
-      type: 'mrkdwn',
-      text: subtitle,
-      verbatim: false,
-    };
-  }
-
-  if (body) {
-    card.body = {
-      type: 'mrkdwn',
-      text: body,
-      verbatim: false,
-    };
-  }
-
-  if (subtext) {
-    card.subtext = {
-      type: 'mrkdwn',
-      text: subtext,
-      verbatim: false,
-    };
-  }
-
-  if (runUrl) {
-    card.actions = [
-      {
-        type: 'button',
-        text: {
-          type: 'plain_text',
-          text: 'View workflow run',
-        },
-        url: runUrl,
-      },
-    ];
-  }
-
-  return card;
-}
-
 function buildStatusMessage({
   status,
   description = '',
@@ -206,17 +146,46 @@ function buildStatusMessage({
     sha,
     commitUrl,
   });
-  const subtitle = [label, source].filter(Boolean).join('  ·  ');
-  const trimmedDescription = truncateText(description, 200);
+  const metadata = contextBlock([label, source].filter(Boolean).join('  ·  '));
+  const trimmedDescription = String(description || '').trim();
   const formattedMention = formatMentions(mention);
+  const blocks = [];
 
-  const card = buildCardBlock({
-    title,
-    subtitle,
-    body: trimmedDescription,
-    subtext: formattedMention ? `cc ${formattedMention}` : '',
-    runUrl,
-  });
+  if (metadata) {
+    blocks.push(metadata);
+    blocks.push({ type: 'divider' });
+  }
+
+  if (trimmedDescription) {
+    blocks.push({
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: trimmedDescription,
+      },
+    });
+  }
+
+  if (runUrl) {
+    blocks.push({
+      type: 'actions',
+      elements: [
+        {
+          type: 'button',
+          text: {
+            type: 'plain_text',
+            text: 'View workflow run',
+          },
+          url: runUrl,
+        },
+      ],
+    });
+  }
+
+  const mentionBlock = contextBlock(formattedMention ? `cc ${formattedMention}` : '');
+  if (mentionBlock) {
+    blocks.push(mentionBlock);
+  }
 
   return {
     text: title,
@@ -224,23 +193,20 @@ function buildStatusMessage({
       {
         color: statusColor(normalizedStatus),
         fallback: `${title} · ${label}`,
-        blocks: [card],
+        blocks,
       },
     ],
-    statusAlertLevel: statusAlertLevel(normalizedStatus),
   };
 }
 
 module.exports = {
   buildStatusMessage,
-  buildCardBlock,
+  contextBlock,
   formatMentionToken,
   formatMentions,
   messageText,
   normalizeStatus,
   sourceMetadata,
-  statusAlertLevel,
   statusColor,
   statusLabel,
-  truncateText,
 };
