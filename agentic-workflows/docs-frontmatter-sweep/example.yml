@@ -45,4 +45,4 @@ jobs:
       target-batch-size: ${{ inputs.target-batch-size }}
       max-per-fix-issue: ${{ inputs.max-per-fix-issue }}
     secrets:
-      LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+      DOCS_LITELLM_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}

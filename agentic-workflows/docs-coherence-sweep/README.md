@@ -23,7 +23,7 @@ mkdir -p .github/workflows && curl -sL \
 
 Configure both secrets:
 
-- `LITELLM_API_KEY` passed as a secret in the caller job (`secrets: { LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }} }`).
+- `DOCS_LITELLM_API_KEY` passed as a secret in the caller job (`secrets: { DOCS_LITELLM_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }} }`).
 - `DOCS_FIX_ISSUES_TOKEN` — token with `issues:write` on `elastic/docs-content-internal`.
 
 ## Inputs

@@ -50,4 +50,4 @@ jobs:
       max-per-fix-issue: ${{ inputs.max-per-fix-issue }}
       codespell-args: ${{ inputs.codespell-args }}
     secrets:
-      LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+      DOCS_LITELLM_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
