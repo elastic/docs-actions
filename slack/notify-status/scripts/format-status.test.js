@@ -4,7 +4,6 @@ const assert = require('node:assert/strict');
 const { describe, it } = require('node:test');
 
 const {
-  ATTRIBUTION_LABEL,
   GITHUB_ICON_URL,
   attributionBlock,
   buildStatusMessage,
@@ -106,7 +105,7 @@ describe('attributionBlock', () => {
     assert.equal(block.elements[0].image_url, GITHUB_ICON_URL);
     assert.equal(
       block.elements[1].text,
-      `<https://github.com/elastic/docs-actions|elastic/docs-actions> | ${ATTRIBUTION_LABEL}`
+      '<https://github.com/elastic/docs-actions|elastic/docs-actions>'
     );
   });
 });
@@ -144,9 +143,9 @@ describe('buildStatusMessage', () => {
     assert.equal(attachment.blocks[2].elements[0].url, 'https://github.com/elastic/docs-actions/actions/runs/1');
     assert.equal(attachment.blocks[3].elements[0].text, 'cc <@U0123456789>');
     assert.equal(attribution.elements[0].image_url, GITHUB_ICON_URL);
-    assert.match(
+    assert.equal(
       attribution.elements[1].text,
-      /<https:\/\/github.com\/elastic\/docs-actions\|elastic\/docs-actions> \| Added by Docs Bot/
+      '<https://github.com/elastic/docs-actions|elastic/docs-actions>'
     );
     assert.doesNotMatch(serialized, /"type":"card"/);
   });
@@ -195,6 +194,9 @@ describe('buildStatusMessage', () => {
     assert.match(blocks[0].text.text, /Succeeded  ·  `main`/);
     assert.equal(blocks[1].type, 'actions');
     assert.equal(blocks[1].elements[0].url, 'https://github.com/elastic/docs-actions/actions/runs/2');
-    assert.match(blocks.at(-1).elements[1].text, /Added by Docs Bot/);
+    assert.equal(
+      blocks.at(-1).elements[1].text,
+      '<https://github.com/elastic/docs-actions|elastic/docs-actions>'
+    );
   });
 });

@@ -15,9 +15,7 @@ const STATUS_LABELS = {
 };
 
 const GITHUB_ICON_URL =
-  'https://slack-imgs.com/?c=1&o1=wi32.he32.si&url=https%3A%2F%2Fslack.github.com%2Fstatic%2Fimg%2Ffavicon-neutral.png';
-
-const ATTRIBUTION_LABEL = 'Added by Docs Bot';
+  'https://slack-imgs.com/?c=1&o1=wi16.he16.si&url=https%3A%2F%2Fslack.github.com%2Fstatic%2Fimg%2Ffavicon-neutral.png';
 
 function normalizeStatus(status) {
   const value = String(status || '').trim().toLowerCase();
@@ -136,11 +134,10 @@ function actionsBlock(runUrl) {
 }
 
 function attributionBlock({ repository, repositoryUrl }) {
-  const repoText =
+  const text =
     repository && repositoryUrl
       ? `<${repositoryUrl}|${repository}>`
       : repository;
-  const text = [repoText, ATTRIBUTION_LABEL].filter(Boolean).join(' | ');
 
   if (!text) {
     return null;
@@ -256,7 +253,6 @@ function buildStatusMessage({
 }
 
 module.exports = {
-  ATTRIBUTION_LABEL,
   GITHUB_ICON_URL,
   actionsBlock,
   attributionBlock,
