@@ -113,11 +113,18 @@ steps:
     env:
       GH_TOKEN: ${{ github.token }}
       REVIEW_SCOPE: ${{ inputs.review-scope }}
+      # Expressions propagate the original event context even through workflow_call;
+      # $GITHUB_EVENT_PATH on disk only has the workflow_call payload when called
+      # via uses:, so we pass the PR number via env to avoid the jq returning empty.
+      PR_NUMBER_FROM_CONTEXT: ${{ github.event.pull_request.number || github.event.issue.number }}
     run: |
       set -euo pipefail
       mkdir -p /tmp/gh-aw/docs-review-data/scope
 
-      PR_NUMBER=$(jq -r 'if .pull_request then .pull_request.number elif .issue.pull_request then .issue.number else empty end' "$GITHUB_EVENT_PATH")
+      PR_NUMBER="$PR_NUMBER_FROM_CONTEXT"
+      if [ -z "$PR_NUMBER" ]; then
+        PR_NUMBER=$(jq -r 'if .pull_request then .pull_request.number elif .issue.pull_request then .issue.number else empty end' "$GITHUB_EVENT_PATH")
+      fi
       if [ -z "$PR_NUMBER" ]; then
         : > /tmp/gh-aw/docs-review-data/eligible-files.txt
         echo '{}' > /tmp/gh-aw/docs-review-data/vale.json
