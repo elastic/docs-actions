@@ -1,46 +1,112 @@
 name: github/is-elastic-org-member
 description: >
-  Checks whether a GitHub user is a member of the elastic org using a
-  GitHub token with read:org scope.
+  Checks whether a GitHub user and the actors associated with a workflow_run
+  are members of the elastic org using a GitHub token with read:org scope.
 
 inputs:
   username:
-    description: GitHub username to check
+    description: GitHub username to check, typically the pull request opener
     required: true
+  collect-from-workflow-run:
+    description: >
+      Also check workflow_run.actor and workflow_run.triggering_actor when a
+      workflow_run payload is available
+    required: false
+    default: 'true'
   token:
     description: GitHub token with the necessary scope
     required: true
 
 outputs:
   is-member:
-    description: "'true' if the user is a confirmed elastic org member, 'false' otherwise"
+    description: "'true' if every resolved user is a confirmed elastic org member, 'false' otherwise"
     value: ${{ steps.check.outputs.is-member }}
+  non-members:
+    description: Newline-separated usernames that could not be confirmed as elastic org members
+    value: ${{ steps.check.outputs.non-members }}
+  checked-usernames:
+    description: Newline-separated usernames checked after case-insensitive deduplication
+    value: ${{ steps.check.outputs.checked-usernames }}
 
 runs:
   using: composite
   steps:
     - name: Check org membership
       id: check
-      shell: bash
+      uses: actions/github-script@v9
       env:
-        GH_TOKEN: ${{ inputs.token }}
+        COLLECT_FROM_WORKFLOW_RUN: ${{ inputs.collect-from-workflow-run }}
+        ORG_MEMBER_TOKEN: ${{ inputs.token }}
         USERNAME: ${{ inputs.username }}
-      run: |
-        if [[ -z "$GH_TOKEN" || -z "$USERNAME" ]]; then
-          echo "is-member=false" >> "$GITHUB_OUTPUT"
-          echo "::warning::Token or username not available — cannot verify org membership"
-          exit 0
-        fi
+      with:
+        github-token: ${{ inputs.token }}
+        # language=js
+        script: |
+          const candidates = [];
+          const explicitUsername = String(process.env.USERNAME ?? '').trim();
+          if (explicitUsername) candidates.push(explicitUsername);
 
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-          -H "Authorization: token $GH_TOKEN" \
-          -H "Accept: application/vnd.github+json" \
-          "https://api.github.com/orgs/elastic/members/${USERNAME}")
+          let resolutionFailed = false;
+          if (process.env.COLLECT_FROM_WORKFLOW_RUN === 'true') {
+            const run = context.payload?.workflow_run;
+            if (run) {
+              if (run.actor?.login) {
+                candidates.push(run.actor.login);
+              } else {
+                core.warning('workflow_run.actor is unavailable — failing closed');
+                resolutionFailed = true;
+              }
 
-        if [[ "$HTTP_CODE" == "204" ]]; then
-          echo "is-member=true" >> "$GITHUB_OUTPUT"
-          echo "::notice::${USERNAME} is a member of the elastic org"
-        else
-          echo "is-member=false" >> "$GITHUB_OUTPUT"
-          echo "::notice::${USERNAME} is not a confirmed member of the elastic org (HTTP ${HTTP_CODE})"
-        fi
+              // On a re-run, triggering_actor identifies the account that
+              // requested the re-run. On the original run it normally matches
+              // actor; either way, every distinct account must be a member.
+              if (run.triggering_actor?.login) {
+                candidates.push(run.triggering_actor.login);
+              }
+            } else {
+              core.info('No workflow_run payload is present; checking only the explicit username');
+            }
+          }
+
+          const seen = new Set();
+          const checked = [];
+          for (const candidate of candidates) {
+            const key = candidate.toLowerCase();
+            if (seen.has(key)) continue;
+            seen.add(key);
+            checked.push(candidate);
+          }
+
+          core.setOutput('checked-usernames', checked.join('\n'));
+
+          if (!process.env.ORG_MEMBER_TOKEN) {
+            core.warning('Token is unavailable — failing closed');
+            core.setOutput('is-member', 'false');
+            core.setOutput('non-members', checked.join('\n'));
+            return;
+          }
+
+          if (resolutionFailed || checked.length === 0) {
+            if (checked.length === 0) core.warning('No usernames were resolved — failing closed');
+            core.setOutput('is-member', 'false');
+            core.setOutput('non-members', '');
+            return;
+          }
+
+          const nonMembers = [];
+          for (const username of checked) {
+            try {
+              await github.rest.orgs.checkMembershipForUser({
+                org: 'elastic',
+                username,
+              });
+              core.info(`${username} is a member of the elastic org`);
+            } catch (error) {
+              const status = error.status ?? 'unknown';
+              core.info(`${username} is not a confirmed member of the elastic org (status ${status})`);
+              nonMembers.push(username);
+            }
+          }
+
+          core.setOutput('is-member', nonMembers.length === 0 ? 'true' : 'false');
+          core.setOutput('non-members', nonMembers.join('\n'));

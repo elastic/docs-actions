@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { TITLE, upsertComment, escapeMarkdown } = require('./comment-helper');
+const { TITLE, upsertComment, wrapCodeFence, wrapInlineCode } = require('./comment-helper');
 
 module.exports = async ({ github, context, core }) => {
   const prNumber = parseInt(process.env.PR_NUMBER, 10);
@@ -25,11 +25,9 @@ module.exports = async ({ github, context, core }) => {
     }
 
     bodyParts.push(
-      `Generated changelog entry for \`${escapeMarkdown(changelogDir + '/' + files[0])}\`:`,
+      `Generated changelog entry for ${wrapInlineCode(changelogDir + '/' + files[0])}:`,
       '',
-      '```yaml',
-      content,
-      '```',
+      wrapCodeFence(content, 'yaml'),
       '',
       guidance,
     );
