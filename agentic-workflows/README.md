@@ -32,4 +32,6 @@ These workflows use `COPILOT_GITHUB_TOKEN` for authentication. Pass `secrets.COP
 
 Skill imports are workflow-specific. Some workflows install APM skills from `elastic/elastic-docs-skills`, while others intentionally rely only on embedded rules and deterministic pre-steps.
 
-For the sweep family, `docs-root` defines the default corpus, `target-path` narrows that corpus to one subtree under the root, and `scope-mode` controls whether the matched set is scanned in full or sharded.
+For the sweep family, `docs-root` defines the default corpus, `target-path` narrows that corpus to one subtree under the root, and `scope-mode` controls whether the matched set is scanned in full or sharded. `target-files` overrides both to sweep an explicit list of files (ideal for post-merge "check only what changed" runs).
+
+Every sweep finding carries a `confidence` rating (`high` / `medium` / `low`) alongside its `severity`. A fix-issue that contains any medium- or low-confidence finding is labeled `needs-human-review` and kept off the `good-for-ai` auto-delegation track, so uncertain output is not applied to the docs without a human sign-off.
