@@ -24,6 +24,7 @@ Add `copilot-requests: write` to the caller job `permissions:` block — no secr
 |-------|------|----------|---------|-------------|
 | `docs-root` | string | No | `docs/` | Root directory to sweep. |
 | `target-path` | string | No | `""` | Optional `docs-root`-relative directory to sweep recursively. Accepts a leading slash, such as `/solutions/observability`. |
+| `target-files` | string | No | `""` | Newline- or comma-separated list of `docs-root`-relative file paths to sweep. When set, overrides `target-path` and `scope-mode` — the sweep processes exactly these files. |
 | `scope-mode` | string | No | `auto` | Scope behavior for the matched markdown files. `auto` preserves the existing behavior, `full` scans all matched files, and `shard` shards within the matched set. |
 | `target-batch-size` | string | No | `100` | Pages per slice. |
 | `max-per-fix-issue` | string | No | `20` | Findings cap per fix-issue. |
@@ -37,11 +38,15 @@ Add `copilot-requests: write` to the caller job `permissions:` block — no secr
 | `noop` | — | — |
 | `create-issue` | 1 | `docs-quality-sweep`, `docs-fix:openings` |
 
+When any finding in the issue is `medium`- or `low`-confidence, the sweep also adds a `needs-human-review` label and a review-before-acting callout above the findings. Issues where every finding is `high`-confidence carry no such label and are safe to delegate to a fix-agent.
+
+Each finding carries a `confidence` field (`high`/`medium`/`low`) that signals how safe it is to act on without human verification — a separate axis from `severity`.
+
 ## How it works
 
 1. Pre-step enumerates `*.md` under the matched scope (`docs-root`, optionally narrowed by `target-path`), then either scans them all or computes the rotating slice plus recently-changed pages based on `scope-mode`.
 2. The agent reads the copied slice and applies embedded checks for content type, H1 specificity, opening paragraph quality, task prerequisites, substitutions, UI/technical formatting in openings, and navigation titles.
-3. Categories: `missing-h1`, `vague-h1`, `missing-h1-anchor`, `weak-opening`, `missing-before-you-begin`, `inadequate-navigation-title`.
+3. Categories: `missing-h1`, `vague-h1`, `weak-opening`, `missing-before-you-begin`, `inadequate-navigation-title`.
 4. The agent may use Elastic docs MCP to compare sibling page titles when H1 specificity needs published-doc context.
 5. The workflow does not edit files or push changes — only the structured findings are emitted in the fix-issue.
 

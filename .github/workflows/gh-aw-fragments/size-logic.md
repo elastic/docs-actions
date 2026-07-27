@@ -108,6 +108,9 @@ Decide whether to apply the `good-for-ai` label. Apply it only when **all** of t
 - There are no blocking human-only steps (e.g. design sign-off, credentials an agent cannot
   obtain).
 - The effort is `hours` or `weeks: <1`.
+- The issue is **not** labeled `needs-human-review`. That label marks findings (for example, from
+  a docs quality sweep) that a human must sign off on before any automated action. Never put such
+  an issue on the `good-for-ai` track, regardless of effort.
 
 Otherwise, do not apply it.
 

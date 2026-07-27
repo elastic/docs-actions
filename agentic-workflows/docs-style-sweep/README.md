@@ -24,6 +24,7 @@ Add `copilot-requests: write` to the caller job `permissions:` block — no secr
 |-------|------|----------|---------|-------------|
 | `docs-root` | string | No | `docs/` | Root directory to sweep. |
 | `target-path` | string | No | `""` | Optional `docs-root`-relative directory to sweep recursively. Accepts a leading slash, such as `/solutions/observability`. |
+| `target-files` | string | No | `""` | Newline- or comma-separated list of `docs-root`-relative file paths to sweep. When set, overrides `target-path` and `scope-mode` — the sweep processes exactly these files. |
 | `scope-mode` | string | No | `auto` | Scope behavior for the matched markdown files. `auto` preserves the existing behavior, `full` scans all matched files, and `shard` shards within the matched set. |
 | `target-batch-size` | string | No | `100` | Pages per slice. |
 | `max-per-fix-issue` | string | No | `20` | Findings cap per fix-issue. |
@@ -36,6 +37,10 @@ Add `copilot-requests: write` to the caller job `permissions:` block — no secr
 |--------|-----|--------|
 | `noop` | — | — |
 | `create-issue` | 1 | `docs-quality-sweep`, `docs-fix:style` |
+
+When any finding in the issue is `medium`- or `low`-confidence, the sweep also adds a `needs-human-review` label and a review-before-acting callout above the findings. Issues where every finding is `high`-confidence carry no such label and are safe to delegate to a fix-agent.
+
+Each finding carries a `confidence` field (`high`/`medium`/`low`) that signals how safe it is to act on without human verification — a separate axis from `severity`.
 
 ## How it works
 

@@ -37,6 +37,8 @@ Add `copilot-requests: write` to the caller job `permissions:` block — no secr
 
 This workflow explicitly sets `tools.github.min-integrity: none` so it can scope docs work from public community issues in public repositories. Treat issue and comment content as untrusted input, and rely on the workflow prompt and safe outputs to keep the analysis constrained.
 
+Because of this, every recommendation in the managed block carries a **Confidence** rating (High / Medium / Low). Terminology or capabilities that appear only in the issue or a linked PR — and cannot be verified against the code or the published docs — are attributed ("the issue describes …") rather than asserted as fact, and marked **Low**, with a caveat line under the recommendations table. This is the signal that prevents a contributor's incorrect phrasing from propagating into a docs recommendation.
+
 ## Managed issue block
 
 When `/docs-issue-scope` runs on an issue, the workflow prefers to maintain a bot-managed block between:
