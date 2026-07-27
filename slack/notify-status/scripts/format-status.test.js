@@ -4,6 +4,9 @@ const assert = require('node:assert/strict');
 const { describe, it } = require('node:test');
 
 const {
+  ATTRIBUTION_LABEL,
+  GITHUB_ICON_URL,
+  attributionBlock,
   buildStatusMessage,
   formatMentionToken,
   formatMentions,
@@ -91,6 +94,23 @@ describe('sourceMetadata', () => {
   });
 });
 
+describe('attributionBlock', () => {
+  it('renders a GitHub icon and repository attribution line', () => {
+    const block = attributionBlock({
+      repository: 'elastic/docs-actions',
+      repositoryUrl: 'https://github.com/elastic/docs-actions',
+    });
+
+    assert.equal(block.type, 'context');
+    assert.equal(block.elements[0].type, 'image');
+    assert.equal(block.elements[0].image_url, GITHUB_ICON_URL);
+    assert.equal(
+      block.elements[1].text,
+      `<https://github.com/elastic/docs-actions|elastic/docs-actions> | ${ATTRIBUTION_LABEL}`
+    );
+  });
+});
+
 describe('buildStatusMessage', () => {
   it('builds a pull request status message with standard blocks', () => {
     const message = buildStatusMessage({
@@ -98,6 +118,7 @@ describe('buildStatusMessage', () => {
       description: 'See <https://example.com/runbook|the deploy runbook> for recovery steps.',
       mention: 'U0123456789',
       repository: 'elastic/docs-actions',
+      repositoryUrl: 'https://github.com/elastic/docs-actions',
       workflow: 'test-slack-notify-status',
       ref: 'main',
       eventName: 'pull_request',
@@ -108,6 +129,7 @@ describe('buildStatusMessage', () => {
 
     const attachment = message.attachments[0];
     const serialized = JSON.stringify(message);
+    const attribution = attachment.blocks.at(-1);
 
     assert.equal(message.text, 'elastic/docs-actions · test-slack-notify-status');
     assert.equal(attachment.color, '#E01E5A');
@@ -118,18 +140,22 @@ describe('buildStatusMessage', () => {
     );
     assert.equal(attachment.blocks[1].type, 'context');
     assert.match(attachment.blocks[1].elements[0].text, /deploy runbook/);
-    assert.equal(attachment.blocks[2].type, 'section');
-    assert.equal(attachment.blocks[2].text.text, '<https://github.com/elastic/docs-actions/actions/runs/1|View workflow run>');
+    assert.equal(attachment.blocks[2].type, 'actions');
+    assert.equal(attachment.blocks[2].elements[0].url, 'https://github.com/elastic/docs-actions/actions/runs/1');
     assert.equal(attachment.blocks[3].elements[0].text, 'cc <@U0123456789>');
+    assert.equal(attribution.elements[0].image_url, GITHUB_ICON_URL);
+    assert.match(
+      attribution.elements[1].text,
+      /<https:\/\/github.com\/elastic\/docs-actions\|elastic\/docs-actions> \| Added by Docs Bot/
+    );
     assert.doesNotMatch(serialized, /"type":"card"/);
-    assert.doesNotMatch(serialized, /"type":"actions"/);
-    assert.doesNotMatch(serialized, /"type":"divider"/);
   });
 
   it('builds a push status message with branch and commit metadata', () => {
     const message = buildStatusMessage({
       status: 'success',
       repository: 'elastic/docs-actions',
+      repositoryUrl: 'https://github.com/elastic/docs-actions',
       workflow: 'docs-deploy',
       ref: 'main',
       eventName: 'push',
@@ -156,6 +182,7 @@ describe('buildStatusMessage', () => {
     const message = buildStatusMessage({
       status: 'success',
       repository: 'elastic/docs-actions',
+      repositoryUrl: 'https://github.com/elastic/docs-actions',
       workflow: 'docs-deploy',
       ref: 'main',
       runUrl: 'https://github.com/elastic/docs-actions/actions/runs/2',
@@ -163,11 +190,11 @@ describe('buildStatusMessage', () => {
 
     const blocks = message.attachments[0].blocks;
 
-    assert.equal(blocks.some((block) => block.type === 'context'), false);
-    assert.equal(blocks.some((block) => block.type === 'actions'), false);
+    assert.equal(blocks.some((block) => block.type === 'context' && block.elements[0].type === 'mrkdwn' && block.elements[0].text.startsWith('cc ')), false);
     assert.equal(blocks[0].type, 'section');
     assert.match(blocks[0].text.text, /Succeeded  ·  `main`/);
-    assert.equal(blocks[1].type, 'section');
-    assert.match(blocks[1].text.text, /View workflow run/);
+    assert.equal(blocks[1].type, 'actions');
+    assert.equal(blocks[1].elements[0].url, 'https://github.com/elastic/docs-actions/actions/runs/2');
+    assert.match(blocks.at(-1).elements[1].text, /Added by Docs Bot/);
   });
 });

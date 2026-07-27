@@ -123,8 +123,7 @@ jobs:
 - Requires `elastic/docs-actions/slack/notify@v1` with attachment support (available from release 1.36.0 onward).
 - When `status` is omitted, the action uses the current job status at invocation time.
 - For soft failures created with `continue-on-error: true`, pass an explicit `status` derived from `steps.<id>.outcome` if you need the notification to reflect the failed step.
-- Top-level text uses the repository and workflow name. The attachment shows status color, a normal status line, optional runbook text in smaller context styling, and a workflow run link.
-- The workflow run link is plain mrkdwn, not a button, so the Slack app does not need Interactivity enabled.
+- Top-level text uses the repository and workflow name. The attachment shows status color, a normal status line, optional runbook text in smaller context styling, a workflow run button, optional cc mentions, and a GitHub attribution footer.
 - Messages use Block Kit metadata inside a colored Slack attachment. Slack still requires attachments for the status color bar.
 - `mention` accepts Slack user IDs (`U…`), subteam IDs (`S…`), already-formatted tokens such as `<@U0123456789>`, or comma-separated combinations.
 

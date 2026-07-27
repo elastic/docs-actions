@@ -14,6 +14,11 @@ const STATUS_LABELS = {
   skipped: 'Skipped',
 };
 
+const GITHUB_ICON_URL =
+  'https://slack-imgs.com/?c=1&o1=wi32.he32.si&url=https%3A%2F%2Fslack.github.com%2Fstatic%2Fimg%2Ffavicon-neutral.png';
+
+const ATTRIBUTION_LABEL = 'Added by Docs Bot';
+
 function normalizeStatus(status) {
   const value = String(status || '').trim().toLowerCase();
   if (!value) {
@@ -110,6 +115,53 @@ function contextBlock(text) {
   };
 }
 
+function actionsBlock(runUrl) {
+  if (!runUrl) {
+    return null;
+  }
+
+  return {
+    type: 'actions',
+    elements: [
+      {
+        type: 'button',
+        text: {
+          type: 'plain_text',
+          text: 'View workflow run',
+        },
+        url: runUrl,
+      },
+    ],
+  };
+}
+
+function attributionBlock({ repository, repositoryUrl }) {
+  const repoText =
+    repository && repositoryUrl
+      ? `<${repositoryUrl}|${repository}>`
+      : repository;
+  const text = [repoText, ATTRIBUTION_LABEL].filter(Boolean).join(' | ');
+
+  if (!text) {
+    return null;
+  }
+
+  return {
+    type: 'context',
+    elements: [
+      {
+        type: 'image',
+        image_url: GITHUB_ICON_URL,
+        alt_text: 'GitHub',
+      },
+      {
+        type: 'mrkdwn',
+        text,
+      },
+    ],
+  };
+}
+
 function sourceMetadata({
   eventName,
   pullRequestNumber,
@@ -140,6 +192,7 @@ function buildStatusMessage({
   description = '',
   mention = '',
   repository = '',
+  repositoryUrl = '',
   workflow = '',
   ref = '',
   eventName = '',
@@ -175,14 +228,19 @@ function buildStatusMessage({
     blocks.push(descriptionBlock);
   }
 
-  const runLink = sectionBlock(runUrl ? `<${runUrl}|View workflow run>` : '');
-  if (runLink) {
-    blocks.push(runLink);
+  const runButton = actionsBlock(runUrl);
+  if (runButton) {
+    blocks.push(runButton);
   }
 
   const mentionBlock = contextBlock(formattedMention ? `cc ${formattedMention}` : '');
   if (mentionBlock) {
     blocks.push(mentionBlock);
+  }
+
+  const attribution = attributionBlock({ repository, repositoryUrl });
+  if (attribution) {
+    blocks.push(attribution);
   }
 
   return {
@@ -198,6 +256,10 @@ function buildStatusMessage({
 }
 
 module.exports = {
+  ATTRIBUTION_LABEL,
+  GITHUB_ICON_URL,
+  actionsBlock,
+  attributionBlock,
   buildStatusMessage,
   contextBlock,
   formatMentionToken,

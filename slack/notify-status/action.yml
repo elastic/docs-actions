@@ -46,6 +46,7 @@ runs:
         MENTION: ${{ inputs.mention }}
         DESCRIPTION: ${{ inputs.description }}
         REPOSITORY: ${{ github.repository }}
+        REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
         WORKFLOW: ${{ github.workflow }}
         REF: ${{ github.ref_name }}
         EVENT_NAME: ${{ github.event_name }}
@@ -62,6 +63,7 @@ runs:
             mention: process.env.MENTION,
             description: process.env.DESCRIPTION,
             repository: process.env.REPOSITORY,
+            repositoryUrl: process.env.REPOSITORY_URL,
             workflow: process.env.WORKFLOW,
             ref: process.env.REF,
             eventName: process.env.EVENT_NAME,
