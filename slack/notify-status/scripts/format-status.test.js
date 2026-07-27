@@ -4,13 +4,12 @@ const assert = require('node:assert/strict');
 const { describe, it } = require('node:test');
 
 const {
-  GITHUB_ICON_URL,
-  attributionBlock,
   buildStatusMessage,
   formatMentionToken,
   formatMentions,
   messageText,
   normalizeStatus,
+  plainMessageText,
   sourceMetadata,
   statusColor,
 } = require('./format-status.js');
@@ -63,8 +62,22 @@ describe('statusColor', () => {
 });
 
 describe('messageText', () => {
-  it('combines repository and workflow names', () => {
-    assert.equal(messageText('elastic/docs-actions', 'docs-deploy'), 'elastic/docs-actions · docs-deploy');
+  it('links the repository and workflow names', () => {
+    assert.equal(
+      messageText({
+        repository: 'elastic/docs-actions',
+        repositoryUrl: 'https://github.com/elastic/docs-actions',
+        workflow: 'docs-deploy',
+        runUrl: 'https://github.com/elastic/docs-actions/actions/runs/2',
+      }),
+      '<https://github.com/elastic/docs-actions|elastic/docs-actions> · <https://github.com/elastic/docs-actions/actions/runs/2|docs-deploy>'
+    );
+  });
+});
+
+describe('plainMessageText', () => {
+  it('builds an unlinked fallback title', () => {
+    assert.equal(plainMessageText('elastic/docs-actions', 'docs-deploy'), 'elastic/docs-actions · docs-deploy');
   });
 });
 
@@ -93,25 +106,8 @@ describe('sourceMetadata', () => {
   });
 });
 
-describe('attributionBlock', () => {
-  it('renders a GitHub icon and repository attribution line', () => {
-    const block = attributionBlock({
-      repository: 'elastic/docs-actions',
-      repositoryUrl: 'https://github.com/elastic/docs-actions',
-    });
-
-    assert.equal(block.type, 'context');
-    assert.equal(block.elements[0].type, 'image');
-    assert.equal(block.elements[0].image_url, GITHUB_ICON_URL);
-    assert.equal(
-      block.elements[1].text,
-      '<https://github.com/elastic/docs-actions|elastic/docs-actions>'
-    );
-  });
-});
-
 describe('buildStatusMessage', () => {
-  it('builds a pull request status message with standard blocks', () => {
+  it('builds a pull request status message with linked title text', () => {
     const message = buildStatusMessage({
       status: 'failure',
       description: 'See <https://example.com/runbook|the deploy runbook> for recovery steps.',
@@ -128,10 +124,13 @@ describe('buildStatusMessage', () => {
 
     const attachment = message.attachments[0];
     const serialized = JSON.stringify(message);
-    const attribution = attachment.blocks.at(-1);
 
-    assert.equal(message.text, 'elastic/docs-actions · test-slack-notify-status');
+    assert.equal(
+      message.text,
+      '<https://github.com/elastic/docs-actions|elastic/docs-actions> · <https://github.com/elastic/docs-actions/actions/runs/1|test-slack-notify-status>'
+    );
     assert.equal(attachment.color, '#E01E5A');
+    assert.equal(attachment.fallback, 'elastic/docs-actions · test-slack-notify-status · Failed');
     assert.equal(attachment.blocks[0].type, 'section');
     assert.match(
       attachment.blocks[0].text.text,
@@ -142,12 +141,8 @@ describe('buildStatusMessage', () => {
     assert.equal(attachment.blocks[2].type, 'actions');
     assert.equal(attachment.blocks[2].elements[0].url, 'https://github.com/elastic/docs-actions/actions/runs/1');
     assert.equal(attachment.blocks[3].elements[0].text, 'cc <@U0123456789>');
-    assert.equal(attribution.elements[0].image_url, GITHUB_ICON_URL);
-    assert.equal(
-      attribution.elements[1].text,
-      '<https://github.com/elastic/docs-actions|elastic/docs-actions>'
-    );
     assert.doesNotMatch(serialized, /"type":"card"/);
+    assert.doesNotMatch(serialized, /favicon-neutral/);
   });
 
   it('builds a push status message with branch and commit metadata', () => {
@@ -166,7 +161,10 @@ describe('buildStatusMessage', () => {
 
     const serialized = JSON.stringify(message);
 
-    assert.equal(message.text, 'elastic/docs-actions · docs-deploy');
+    assert.match(
+      message.text,
+      /<https:\/\/github.com\/elastic\/docs-actions\|elastic\/docs-actions> · <https:\/\/github.com\/elastic\/docs-actions\/actions\/runs\/2\|docs-deploy>/
+    );
     assert.match(
       message.attachments[0].blocks[0].text.text,
       /Succeeded  ·  `main`/
@@ -189,14 +187,10 @@ describe('buildStatusMessage', () => {
 
     const blocks = message.attachments[0].blocks;
 
-    assert.equal(blocks.some((block) => block.type === 'context' && block.elements[0].type === 'mrkdwn' && block.elements[0].text.startsWith('cc ')), false);
+    assert.equal(blocks.some((block) => block.type === 'context'), false);
     assert.equal(blocks[0].type, 'section');
     assert.match(blocks[0].text.text, /Succeeded  ·  `main`/);
     assert.equal(blocks[1].type, 'actions');
     assert.equal(blocks[1].elements[0].url, 'https://github.com/elastic/docs-actions/actions/runs/2');
-    assert.equal(
-      blocks.at(-1).elements[1].text,
-      '<https://github.com/elastic/docs-actions|elastic/docs-actions>'
-    );
   });
 });

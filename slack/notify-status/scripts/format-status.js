@@ -14,9 +14,6 @@ const STATUS_LABELS = {
   skipped: 'Skipped',
 };
 
-const GITHUB_ICON_URL =
-  'https://slack-imgs.com/?c=1&o1=wi16.he16.si&url=https%3A%2F%2Fslack.github.com%2Fstatic%2Fimg%2Ffavicon-neutral.png';
-
 function normalizeStatus(status) {
   const value = String(status || '').trim().toLowerCase();
   if (!value) {
@@ -75,7 +72,24 @@ function formatMentions(raw) {
     .join(' ');
 }
 
-function messageText(repository, workflow) {
+function messageText({ repository, repositoryUrl, workflow, runUrl }) {
+  const repo =
+    repository && repositoryUrl
+      ? `<${repositoryUrl}|${repository}>`
+      : repository;
+  const workflowLink =
+    workflow && runUrl
+      ? `<${runUrl}|${workflow}>`
+      : workflow;
+
+  if (repo && workflowLink) {
+    return `${repo} · ${workflowLink}`;
+  }
+
+  return repo || workflowLink || 'Workflow status';
+}
+
+function plainMessageText(repository, workflow) {
   if (repository && workflow) {
     return `${repository} · ${workflow}`;
   }
@@ -133,32 +147,6 @@ function actionsBlock(runUrl) {
   };
 }
 
-function attributionBlock({ repository, repositoryUrl }) {
-  const text =
-    repository && repositoryUrl
-      ? `<${repositoryUrl}|${repository}>`
-      : repository;
-
-  if (!text) {
-    return null;
-  }
-
-  return {
-    type: 'context',
-    elements: [
-      {
-        type: 'image',
-        image_url: GITHUB_ICON_URL,
-        alt_text: 'GitHub',
-      },
-      {
-        type: 'mrkdwn',
-        text,
-      },
-    ],
-  };
-}
-
 function sourceMetadata({
   eventName,
   pullRequestNumber,
@@ -201,7 +189,8 @@ function buildStatusMessage({
 }) {
   const normalizedStatus = normalizeStatus(status);
   const label = statusLabel(normalizedStatus);
-  const title = messageText(repository, workflow);
+  const title = messageText({ repository, repositoryUrl, workflow, runUrl });
+  const fallbackTitle = plainMessageText(repository, workflow);
   const source = sourceMetadata({
     eventName,
     pullRequestNumber,
@@ -235,17 +224,12 @@ function buildStatusMessage({
     blocks.push(mentionBlock);
   }
 
-  const attribution = attributionBlock({ repository, repositoryUrl });
-  if (attribution) {
-    blocks.push(attribution);
-  }
-
   return {
     text: title,
     attachments: [
       {
         color: statusColor(normalizedStatus),
-        fallback: `${title} · ${label}`,
+        fallback: `${fallbackTitle} · ${label}`,
         blocks,
       },
     ],
@@ -253,15 +237,14 @@ function buildStatusMessage({
 }
 
 module.exports = {
-  GITHUB_ICON_URL,
   actionsBlock,
-  attributionBlock,
   buildStatusMessage,
   contextBlock,
   formatMentionToken,
   formatMentions,
   messageText,
   normalizeStatus,
+  plainMessageText,
   sectionBlock,
   sourceMetadata,
   statusColor,
