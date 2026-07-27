@@ -111,17 +111,19 @@ describe('buildStatusMessage', () => {
 
     assert.equal(message.text, 'elastic/docs-actions · test-slack-notify-status');
     assert.equal(attachment.color, '#E01E5A');
-    assert.equal(attachment.blocks[0].type, 'context');
+    assert.equal(attachment.blocks[0].type, 'section');
     assert.match(
-      attachment.blocks[0].elements[0].text,
+      attachment.blocks[0].text.text,
       /Failed  ·  <https:\/\/github.com\/elastic\/docs-actions\/pull\/245\|#245>/
     );
-    assert.equal(attachment.blocks[1].type, 'divider');
-    assert.match(attachment.blocks[2].text.text, /deploy runbook/);
-    assert.equal(attachment.blocks[3].type, 'actions');
-    assert.equal(attachment.blocks[3].elements[0].url, 'https://github.com/elastic/docs-actions/actions/runs/1');
-    assert.equal(attachment.blocks[4].elements[0].text, 'cc <@U0123456789>');
+    assert.equal(attachment.blocks[1].type, 'context');
+    assert.match(attachment.blocks[1].elements[0].text, /deploy runbook/);
+    assert.equal(attachment.blocks[2].type, 'section');
+    assert.equal(attachment.blocks[2].text.text, '<https://github.com/elastic/docs-actions/actions/runs/1|View workflow run>');
+    assert.equal(attachment.blocks[3].elements[0].text, 'cc <@U0123456789>');
     assert.doesNotMatch(serialized, /"type":"card"/);
+    assert.doesNotMatch(serialized, /"type":"actions"/);
+    assert.doesNotMatch(serialized, /"type":"divider"/);
   });
 
   it('builds a push status message with branch and commit metadata', () => {
@@ -141,7 +143,7 @@ describe('buildStatusMessage', () => {
 
     assert.equal(message.text, 'elastic/docs-actions · docs-deploy');
     assert.match(
-      message.attachments[0].blocks[0].elements[0].text,
+      message.attachments[0].blocks[0].text.text,
       /Succeeded  ·  `main`/
     );
     assert.match(
@@ -161,8 +163,11 @@ describe('buildStatusMessage', () => {
 
     const blocks = message.attachments[0].blocks;
 
-    assert.equal(blocks.some((block) => block.type === 'section'), false);
-    assert.equal(blocks.some((block) => block.type === 'actions'), true);
-    assert.equal(blocks.some((block) => block.type === 'context' && block.elements[0].text.startsWith('cc ')), false);
+    assert.equal(blocks.some((block) => block.type === 'context'), false);
+    assert.equal(blocks.some((block) => block.type === 'actions'), false);
+    assert.equal(blocks[0].type, 'section');
+    assert.match(blocks[0].text.text, /Succeeded  ·  `main`/);
+    assert.equal(blocks[1].type, 'section');
+    assert.match(blocks[1].text.text, /View workflow run/);
   });
 });

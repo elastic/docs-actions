@@ -80,6 +80,20 @@ function messageText(repository, workflow) {
   return repository || workflow || 'Workflow status';
 }
 
+function sectionBlock(text) {
+  if (!text) {
+    return null;
+  }
+
+  return {
+    type: 'section',
+    text: {
+      type: 'mrkdwn',
+      text,
+    },
+  };
+}
+
 function contextBlock(text) {
   if (!text) {
     return null;
@@ -146,40 +160,24 @@ function buildStatusMessage({
     sha,
     commitUrl,
   });
-  const metadata = contextBlock([label, source].filter(Boolean).join('  ·  '));
+  const statusLine = [label, source].filter(Boolean).join('  ·  ');
   const trimmedDescription = String(description || '').trim();
   const formattedMention = formatMentions(mention);
   const blocks = [];
 
-  if (metadata) {
-    blocks.push(metadata);
-    blocks.push({ type: 'divider' });
+  const statusBlock = sectionBlock(statusLine);
+  if (statusBlock) {
+    blocks.push(statusBlock);
   }
 
-  if (trimmedDescription) {
-    blocks.push({
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
-        text: trimmedDescription,
-      },
-    });
+  const descriptionBlock = contextBlock(trimmedDescription);
+  if (descriptionBlock) {
+    blocks.push(descriptionBlock);
   }
 
-  if (runUrl) {
-    blocks.push({
-      type: 'actions',
-      elements: [
-        {
-          type: 'button',
-          text: {
-            type: 'plain_text',
-            text: 'View workflow run',
-          },
-          url: runUrl,
-        },
-      ],
-    });
+  const runLink = sectionBlock(runUrl ? `<${runUrl}|View workflow run>` : '');
+  if (runLink) {
+    blocks.push(runLink);
   }
 
   const mentionBlock = contextBlock(formattedMention ? `cc ${formattedMention}` : '');
@@ -206,6 +204,7 @@ module.exports = {
   formatMentions,
   messageText,
   normalizeStatus,
+  sectionBlock,
   sourceMetadata,
   statusColor,
   statusLabel,
