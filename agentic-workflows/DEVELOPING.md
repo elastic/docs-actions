@@ -97,31 +97,32 @@ The repo pins the `gh-aw` compiler version in `Makefile` so local compilation an
 
 ### Engine and authentication
 
-All workflows use the `claude` engine routed through Elastic's internal LiteLLM gateway:
+All workflows use the `copilot` engine with GitHub's built-in Copilot token — no external API key or secret required. Add `permissions.copilot-requests: write` to the reusable-workflow source:
 
 ```yaml
+model: claude-sonnet-5   # or gpt-5-mini for lightweight triage/size workflows
 engine:
-  id: claude
-  env:
-    ANTHROPIC_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
-    ANTHROPIC_BASE_URL: https://elastic.litellm-prod.ai
-    ENABLE_PROMPT_CACHING_1H: '1'
-    ANTHROPIC_DEFAULT_OPUS_MODEL: llm-gateway/claude-opus-4-7[1m]
-    ANTHROPIC_DEFAULT_HAIKU_MODEL: llm-gateway/claude-haiku-4-5
-    ANTHROPIC_DEFAULT_SONNET_MODEL: llm-gateway/claude-sonnet-4-6
-model: sonnet
+  id: copilot
+
+permissions:
+  contents: read
+  issues: read
+  copilot-requests: write
 ```
 
-The `DOCS_LITELLM_API_KEY` secret must be available in any repository that calls these workflows. Consumer repos pass it through the `workflow_call` secrets interface:
+Consumer repos calling these reusable workflows also need `copilot-requests: write` in their caller job `permissions:` block — no `secrets:` passthrough is needed:
 
 ```yaml
 jobs:
   run:
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+      pull-requests: write
+      copilot-requests: write
     uses: elastic/docs-actions/.github/workflows/gh-aw-<name>.lock.yml@v1
-    secrets: inherit
 ```
-
-Add `elastic.litellm-prod.ai` to `network.allowed` in every new workflow source so the engine can reach the gateway.
 
 ### workflow_call Convention
 
@@ -141,9 +142,6 @@ on:
         type: string
         required: false
         default: ""
-    secrets:
-      DOCS_LITELLM_API_KEY:
-        required: false
 ```
 
 ### Shared fragments
