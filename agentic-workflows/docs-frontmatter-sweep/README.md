@@ -16,11 +16,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-frontmatter-sweep.yml
 ```
 
-Use `secrets: inherit` on the caller job to forward the `DOCS_LITELLM_API_KEY` org secret:
-
-```yaml
-    secrets: inherit
-```
+Add `copilot-requests: write` to the caller job `permissions:` block — no secret passthrough needed.
 
 Issues are filed in the **calling repo** (where the workflow runs). Install this in the repo where you want fix-issues to land — typically `elastic/docs-content-internal` if the docs being scanned are in `elastic/docs-content`. The example template ships with `source-repo: elastic/docs-content`.
 
