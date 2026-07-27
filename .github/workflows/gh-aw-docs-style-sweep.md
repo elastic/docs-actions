@@ -16,16 +16,9 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-model: sonnet
+model: claude-sonnet-5
 engine:
-  id: claude
-  env:
-    ANTHROPIC_API_KEY: ${{ secrets.DOCS_LITELLM_API_KEY }}
-    ANTHROPIC_BASE_URL: https://elastic.litellm-prod.ai
-    ENABLE_PROMPT_CACHING_1H: '1'
-    ANTHROPIC_DEFAULT_OPUS_MODEL: llm-gateway/claude-opus-4-7[1m]
-    ANTHROPIC_DEFAULT_HAIKU_MODEL: llm-gateway/claude-haiku-4-5
-    ANTHROPIC_DEFAULT_SONNET_MODEL: llm-gateway/claude-sonnet-5
+  id: copilot
 on:
   bots: ["github-actions[bot]"]
   workflow_call:
@@ -70,15 +63,13 @@ on:
         type: string
         required: false
         default: ""
-    secrets:
-      DOCS_LITELLM_API_KEY:
-        required: false
 concurrency:
   group: gh-aw-docs-style-sweep-${{ github.run_id }}
   cancel-in-progress: false
 permissions:
   contents: read
   issues: read
+  copilot-requests: write
 strict: false
 tools:
   github:

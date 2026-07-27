@@ -37,6 +37,7 @@ permissions:
   discussions: write
   issues: write
   pull-requests: read
+  copilot-requests: write
 
 jobs:
   run:
@@ -49,4 +50,3 @@ jobs:
       target-batch-size: ${{ inputs.target-batch-size }}
       max-per-fix-issue: ${{ inputs.max-per-fix-issue }}
       stale-content-months: ${{ inputs.stale-content-months }}
-    secrets: inherit

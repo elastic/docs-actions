@@ -21,9 +21,8 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-coherence-sweep.yml
 ```
 
-Configure both secrets:
+Add `copilot-requests: write` to the caller job `permissions:` block. Also configure this secret:
 
-- `secrets: inherit` on the caller job (forwards the `DOCS_LITELLM_API_KEY` org secret).
 - `DOCS_FIX_ISSUES_TOKEN` — token with `issues:write` on `elastic/docs-content-internal`.
 
 ## Inputs

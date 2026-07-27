@@ -30,11 +30,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-quality-sweep.yml
 ```
 
-Use `secrets: inherit` on the caller job to forward the `DOCS_LITELLM_API_KEY` org secret:
-
-```yaml
-    secrets: inherit
-```
+Add `copilot-requests: write` to the caller job `permissions:` block — no secret passthrough needed.
 
 Run via the Actions UI or:
 
