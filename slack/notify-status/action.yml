@@ -1,0 +1,86 @@
+name: slack/notify-status
+description: |
+  Post a color-coded Slack status notification for the current GitHub job or workflow.
+  Requires `permissions: id-token: write` in the calling workflow.
+
+inputs:
+  channel:
+    description: Slack channel ID or name
+    required: true
+  status:
+    description: Status to report (success, failure, cancelled, or skipped). Defaults to the current job status when omitted.
+    required: false
+    default: ''
+  mention:
+    description: Optional Slack user ID, subteam ID, or formatted mention token to include in the message
+    required: false
+    default: ''
+  description:
+    description: Optional resolution notes, runbook links, or other supporting text
+    required: false
+    default: ''
+  fail-on-error:
+    description: Fail the step when Slack delivery fails
+    required: false
+    default: 'false'
+
+outputs:
+  success:
+    description: Whether the message was posted successfully
+    value: ${{ steps.notify.outputs.success }}
+  channel:
+    description: Slack channel ID from the posted message
+    value: ${{ steps.notify.outputs.channel }}
+  ts:
+    description: Slack message timestamp for threaded replies
+    value: ${{ steps.notify.outputs.ts }}
+
+runs:
+  using: composite
+  steps:
+    - name: Build status message
+      id: format
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      env:
+        STATUS: ${{ inputs.status != '' && inputs.status || job.status }}
+        MENTION: ${{ inputs.mention }}
+        DESCRIPTION: ${{ inputs.description }}
+        REPOSITORY: ${{ github.repository }}
+        REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
+        WORKFLOW: ${{ github.workflow }}
+        REF: ${{ github.ref_name }}
+        EVENT_NAME: ${{ github.event_name }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_URL: ${{ github.event.pull_request.html_url }}
+        SHA: ${{ github.sha }}
+        COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      with:
+        script: |
+          const { buildStatusMessage } = require('${{ github.action_path }}/scripts/format-status.js');
+          const message = buildStatusMessage({
+            status: process.env.STATUS,
+            mention: process.env.MENTION,
+            description: process.env.DESCRIPTION,
+            repository: process.env.REPOSITORY,
+            repositoryUrl: process.env.REPOSITORY_URL,
+            workflow: process.env.WORKFLOW,
+            ref: process.env.REF,
+            eventName: process.env.EVENT_NAME,
+            pullRequestNumber: process.env.PR_NUMBER,
+            pullRequestUrl: process.env.PR_URL,
+            sha: process.env.SHA,
+            commitUrl: process.env.COMMIT_URL,
+            runUrl: process.env.RUN_URL,
+          });
+          core.setOutput('text', message.text);
+          core.setOutput('attachments', JSON.stringify(message.attachments));
+
+    - name: Post status to Slack
+      id: notify
+      uses: elastic/docs-actions/slack/notify@v1
+      with:
+        channel: ${{ inputs.channel }}
+        text: ${{ steps.format.outputs.text }}
+        attachments: ${{ steps.format.outputs.attachments }}
+        fail-on-error: ${{ inputs.fail-on-error }}
