@@ -47,6 +47,9 @@ jobs:
           - fixture: not-openapi.yaml
             fail-on-warn: 'false'
             expect: failure
+          - fixture: invalid-json.json
+            fail-on-warn: 'false'
+            expect: failure
           - fixture: convention-warnings.yaml
             fail-on-warn: 'false'
             expect: success
@@ -94,3 +97,18 @@ jobs:
             exit 1
           fi
           echo "Output counts verified: errors=${ERROR_COUNT} warnings=${WARNING_COUNT}"
+
+      - name: Verify processing error output
+        if: matrix.fixture == 'not-openapi.yaml' || matrix.fixture == 'invalid-json.json'
+        env:
+          ERROR_COUNT: ${{ steps.lint.outputs.error-count }}
+          RESULTS_FILE: ${{ steps.lint.outputs.results-file }}
+        run: |
+          if [ "${ERROR_COUNT}" != "1" ]; then
+            echo "::error::Expected 1 processing error, got ${ERROR_COUNT}"
+            exit 1
+          fi
+          if ! jq -e '.problems | any(.ruleId == "redocly-processing-error")' "${RESULTS_FILE}" > /dev/null; then
+            echo "::error::Expected a redocly-processing-error result"
+            exit 1
+          fi

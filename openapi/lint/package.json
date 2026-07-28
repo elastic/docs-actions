@@ -1,8 +1,8 @@
 {
   "name": "elastic-openapi-lint",
   "private": true,
-  "description": "Pinned Spectral toolchain for the Elastic OpenAPI Linter action",
+  "description": "Pinned Redocly toolchain for the Elastic OpenAPI Linter action",
   "dependencies": {
-    "@stoplight/spectral-cli": "6.16.1"
+    "@redocly/cli": "2.41.0"
   }
 }
