@@ -1,0 +1,57 @@
+name: slack/notify
+description: |
+  Post a Slack message through the elastic-docs-slack-notifier Lambda.
+  Requires `permissions: id-token: write` in the calling workflow.
+
+inputs:
+  channel:
+    description: Slack channel ID or name
+    required: true
+  text:
+    description: Plain text message body
+    required: false
+    default: ''
+  blocks:
+    description: Block Kit blocks as a JSON array string
+    required: false
+    default: ''
+  attachments:
+    description: Slack attachments as a JSON array string
+    required: false
+    default: ''
+  fail-on-error:
+    description: Fail the step when Slack delivery fails
+    required: false
+    default: 'false'
+
+outputs:
+  success:
+    description: Whether the message was posted successfully
+    value: ${{ steps.invoke.outputs.success }}
+  channel:
+    description: Slack channel ID from the posted message
+    value: ${{ steps.invoke.outputs.channel }}
+  ts:
+    description: Slack message timestamp for threaded replies
+    value: ${{ steps.invoke.outputs.ts }}
+
+runs:
+  using: composite
+  steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+      with:
+        aws-region: eu-west-1
+        role-to-assume: arn:aws:iam::197730964718:role/elastic-docs-slack-notifier-invoker
+
+    - name: Post to Slack
+      id: invoke
+      shell: bash
+      env:
+        LAMBDA_ARN: arn:aws:lambda:eu-west-1:197730964718:function:elastic-docs-slack-notifier
+        SLACK_CHANNEL: ${{ inputs.channel }}
+        SLACK_TEXT: ${{ inputs.text }}
+        SLACK_BLOCKS: ${{ inputs.blocks }}
+        SLACK_ATTACHMENTS: ${{ inputs.attachments }}
+        FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+      run: bash "${{ github.action_path }}/../scripts/post-to-slack.sh"

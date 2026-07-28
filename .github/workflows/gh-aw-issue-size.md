@@ -10,6 +10,7 @@ imports:
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/size-logic.md
+model: gpt-5-mini
 engine:
   id: copilot
 
@@ -29,19 +30,16 @@ on:
         type: string
         required: false
         default: ""
-    secrets:
-      COPILOT_GITHUB_TOKEN:
-        required: false
 concurrency:
   group: gh-aw-issue-size-${{ github.event.issue.number || github.run_id }}
   cancel-in-progress: true
   job-discriminator: ${{ github.event.issue.number || github.run_id }}
 
 permissions:
-  copilot-requests: write
   contents: read
   issues: read
   pull-requests: read
+  copilot-requests: write
 
 strict: false
 

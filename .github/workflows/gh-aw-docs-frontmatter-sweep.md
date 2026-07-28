@@ -10,18 +10,17 @@ inlined-imports: true
 imports:
   - uses: shared/apm.md
     with:
-      target: copilot
+      target: claude
       packages:
         - elastic/elastic-docs-skills/skills/review/frontmatter-audit
         - elastic/elastic-docs-skills/skills/authoring/frontmatter-description
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
+  - gh-aw-fragments/findings-contract.md
+model: claude-sonnet-5
 engine:
   id: copilot
-  concurrency:
-    group: "gh-aw-copilot-docs-frontmatter-sweep-${{ github.run_id }}"
-    cancel-in-progress: false
 on:
   bots: ["github-actions[bot]"]
   workflow_call:
@@ -38,6 +37,11 @@ on:
         default: "docs/"
       target-path:
         description: "Optional docs-root-relative directory to sweep recursively. Accepts a leading slash."
+        type: string
+        required: false
+        default: ""
+      target-files:
+        description: "Optional newline- or comma-separated list of docs-root-relative file paths to sweep. When set, overrides target-path and scope-mode: the sweep processes exactly these files."
         type: string
         required: false
         default: ""
@@ -66,16 +70,13 @@ on:
         type: string
         required: false
         default: ""
-    secrets:
-      COPILOT_GITHUB_TOKEN:
-        required: false
 concurrency:
   group: gh-aw-docs-frontmatter-sweep-${{ github.run_id }}
   cancel-in-progress: false
 permissions:
-  copilot-requests: write
   contents: read
   issues: read
+  copilot-requests: write
 strict: false
 tools:
   github:
@@ -118,6 +119,7 @@ steps:
     env:
       DOCS_ROOT: ${{ inputs.docs-root }}
       TARGET_PATH: ${{ inputs.target-path }}
+      TARGET_FILES: ${{ inputs.target-files }}
       SCOPE_MODE: ${{ inputs.scope-mode }}
       TARGET_BATCH: ${{ inputs.target-batch-size }}
     run: |
@@ -138,6 +140,69 @@ steps:
           exit 1
           ;;
       esac
+
+      # target-files overrides target-path and scope-mode: audit exactly the
+      # listed files (newline- or comma-separated, docs-root-relative).
+      if [ -n "$TARGET_FILES" ]; then
+        SELECTION_MODE="files"
+        : > /tmp/gh-aw/sweep-data/all.txt
+        : > /tmp/gh-aw/sweep-data/shard.txt
+        : > /tmp/gh-aw/sweep-data/recent.txt
+        : > /tmp/gh-aw/sweep-data/in-scope.txt
+
+        REQUESTED_COUNT=0
+        printf '%s' "$TARGET_FILES" | tr ',' '\n' > /tmp/gh-aw/sweep-data/target-files.raw
+        while IFS= read -r raw || [ -n "$raw" ]; do
+          entry=$(printf '%s' "$raw" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+          [ -z "$entry" ] && continue
+          REQUESTED_COUNT=$(( REQUESTED_COUNT + 1 ))
+          entry=${entry#/}
+          if [ "$DOCS_ROOT_CLEAN" = "." ] || [ -z "$DOCS_ROOT_CLEAN" ]; then
+            resolved="$entry"
+          else
+            case "$entry" in
+              "$DOCS_ROOT_CLEAN"/*) resolved="$entry" ;;
+              *) resolved="$DOCS_ROOT_CLEAN/$entry" ;;
+            esac
+          fi
+          if [ -f "$resolved" ]; then
+            echo "$resolved" >> /tmp/gh-aw/sweep-data/all.txt
+          else
+            echo "target-files: '$resolved' not found; skipping"
+          fi
+        done < /tmp/gh-aw/sweep-data/target-files.raw
+
+        sort -u /tmp/gh-aw/sweep-data/all.txt > /tmp/gh-aw/sweep-data/in-scope.txt
+        cp /tmp/gh-aw/sweep-data/in-scope.txt /tmp/gh-aw/sweep-data/all.txt
+
+        while IFS= read -r f; do
+          [ -z "$f" ] && continue
+          [ ! -f "$f" ] && continue
+          mkdir -p "/tmp/gh-aw/sweep-data/scope/$(dirname "$f")"
+          cp "$f" "/tmp/gh-aw/sweep-data/scope/$f"
+        done < /tmp/gh-aw/sweep-data/in-scope.txt
+
+        IN_SCOPE_COUNT=$(wc -l < /tmp/gh-aw/sweep-data/in-scope.txt | tr -d ' ')
+      cat > /tmp/gh-aw/sweep-data/stats.json <<EOF
+      {
+        "total": $IN_SCOPE_COUNT,
+        "shard_n": 1,
+        "shard_slot": 0,
+        "shard_count": $IN_SCOPE_COUNT,
+        "recent_count": 0,
+        "in_scope_count": $IN_SCOPE_COUNT,
+        "requested_count": $REQUESTED_COUNT,
+        "iso_week": "$(date +%G-W%V)",
+        "docs_root": "$DOCS_ROOT",
+        "scope_mode": "files",
+        "selection_mode": "files",
+        "target_path": "$TARGET_PATH_CLEAN",
+        "scope_root": "$DOCS_ROOT_CLEAN"
+      }
+      EOF
+        echo "Sweep targets (file list): requested=$REQUESTED_COUNT in_scope=$IN_SCOPE_COUNT"
+        exit 0
+      fi
 
       if [ -n "$TARGET_PATH_CLEAN" ]; then
         if [ "$DOCS_ROOT_CLEAN" = "." ] || [ -z "$DOCS_ROOT_CLEAN" ]; then
@@ -287,6 +352,9 @@ If `in_scope_count` is `0`, call `noop` with a short message including the corpu
 - Full mode without `target_path`: `Empty full sweep for <docs_root> (0 pages)`.
 - Shard mode with `target_path`: `Empty subtree shard for /<target_path> (shard <slot>/<n>, 0 pages)`.
 - Shard mode without `target_path`: `All files in this rotation are unaudited (shard <slot>/<n>, 0 pages)`.
+- Files mode (`selection_mode` is `files`): `Empty file list (0 of <requested_count> requested files found)`.
+
+**Files mode**: when `selection_mode` is `files`, the caller supplied an explicit file list via `target-files`; audit exactly those files and ignore `target_path`/shard framing. In the title, scope-summary, and `noop` messages, describe the scope as an explicit file list — for example title `file list — <in_scope_count> pages`, scope-summary `Explicit file list · <in_scope_count> of <requested_count> requested files in scope.`, and no-findings `noop` `No high-confidence frontmatter issues in the requested file list (<in_scope_count> files)`.
 
 ## Step 1: Audit the frontmatter
 
@@ -319,8 +387,9 @@ For each finding, extract:
 
 - `file` — the original repository-relative path (strip the `/tmp/gh-aw/sweep-data/scope/` prefix from any scoped file path).
 - `line` — `1` for missing/invalid frontmatter keys (frontmatter starts at line 1); for description-quality findings use the line of the `description:` key.
-- `category` — one of: `missing-description`, `weak-description`, `description-too-long`, `missing-products`, `missing-navigation-title`. **Do not emit `missing-applies-to` or `invalid-applies-to`** — those belong to `gh-aw-docs-applies-to-sweep`. If another source suggests them, drop them silently.
+- `category` — one of: `missing-description`, `weak-description`, `description-too-long`, `missing-products`, `missing-navigation-title`. These five are the complete category allowlist for this sweep (see the **Findings contract**). **Do not emit `missing-applies-to` or `invalid-applies-to`** — those belong to `gh-aw-docs-applies-to-sweep`. If another source suggests them, drop them silently.
 - `severity` — `high` for missing required fields; `medium` for weak/long/invalid; `low` for nits.
+- `confidence` — `high`, `medium`, or `low` per the **Findings contract**. Missing required-field findings verified from the file are usually `high`; description-quality rewrites that involve wording judgment are usually `medium`.
 - `evidence` — one short sentence quoting or naming the exact problem.
 - `suggested_fix` — concrete YAML snippet ready to paste into the file's frontmatter when you can produce one confidently. For audit-only findings, or a missing field with no verified value, omit `suggested_fix`.
 
@@ -369,6 +438,7 @@ Use one of these scope-summary lines:
   line: 1
   category: missing-description
   severity: high
+  confidence: high
   evidence: "frontmatter has no `description` field"
   suggested_fix: |
     description: "How to configure X for Y use cases."
@@ -376,6 +446,7 @@ Use one of these scope-summary lines:
   line: 1
   category: weak-description
   severity: medium
+  confidence: medium
   evidence: "description is generic ('Learn about X')"
   suggested_fix: |
     description: "<concrete replacement>"
@@ -391,7 +462,7 @@ Use one of these scope-summary lines:
 <!-- gh-aw-docs-frontmatter-sweep:run=<iso_week>:shard=<slot>/<n> -->
 ```
 
-Keep the YAML block parseable — every entry must have `file`, `line`, `category`, `severity`, `evidence`. Use the literal `|` block scalar for multi-line `suggested_fix` values. Do not include comments inside the YAML block.
+Keep the YAML block parseable — every entry must have `file`, `line`, `category`, `severity`, `confidence`, `evidence`. Use the literal `|` block scalar for multi-line `suggested_fix` values. Do not include comments inside the YAML block.
 
 ## What to skip
 

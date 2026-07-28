@@ -20,7 +20,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-auto-triage.yml
 ```
 
-Add `permissions.copilot-requests: write` to the caller workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
+Add `copilot-requests: write` to the caller job `permissions:` block — no secret passthrough needed.
 
 ## Inputs
 

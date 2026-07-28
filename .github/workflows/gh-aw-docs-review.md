@@ -8,7 +8,7 @@ inlined-imports: true
 imports:
   - uses: shared/apm.md
     with:
-      target: copilot
+      target: claude
       packages:
         - elastic/elastic-docs-skills/skills/review/docs-check-style
         - elastic/elastic-docs-skills/skills/review/flag-jargon-skill
@@ -18,6 +18,7 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
+model: claude-sonnet-5
 engine:
   id: copilot
 on:
@@ -39,18 +40,15 @@ on:
         type: string
         required: false
         default: ""
-    secrets:
-      COPILOT_GITHUB_TOKEN:
-        required: false
 concurrency:
   group: gh-aw-docs-review-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
   job-discriminator: ${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
 permissions:
-  copilot-requests: write
   contents: read
   issues: read
   pull-requests: read
+  copilot-requests: write
 tools:
   github:
     lockdown: false
@@ -71,7 +69,7 @@ network:
 strict: false
 safe-outputs:
   allowed-domains:
-    - www.elastic.co
+    - elastic.co
     - docs-v3-preview.elastic.dev
     - github.com
   noop:
@@ -115,17 +113,27 @@ steps:
     env:
       GH_TOKEN: ${{ github.token }}
       REVIEW_SCOPE: ${{ inputs.review-scope }}
+      # Expressions propagate the original event context even through workflow_call;
+      # $GITHUB_EVENT_PATH on disk only has the workflow_call payload when called
+      # via uses:, so we pass the PR number via env to avoid the jq returning empty.
+      PR_NUMBER_FROM_CONTEXT: ${{ github.event.pull_request.number || github.event.issue.number }}
     run: |
       set -euo pipefail
       mkdir -p /tmp/gh-aw/docs-review-data/scope
 
-      PR_NUMBER=$(jq -r 'if .pull_request then .pull_request.number elif .issue.pull_request then .issue.number else empty end' "$GITHUB_EVENT_PATH")
+      PR_NUMBER="$PR_NUMBER_FROM_CONTEXT"
+      if [ -z "$PR_NUMBER" ]; then
+        PR_NUMBER=$(jq -r 'if .pull_request then .pull_request.number elif .issue.pull_request then .issue.number else empty end' "$GITHUB_EVENT_PATH")
+      fi
       if [ -z "$PR_NUMBER" ]; then
         : > /tmp/gh-aw/docs-review-data/eligible-files.txt
         echo '{}' > /tmp/gh-aw/docs-review-data/vale.json
         echo '{"finding_count":0,"file_count":0,"eligible_count":0,"vale_exit":0,"skipped":"not a pull request context"}' > /tmp/gh-aw/docs-review-data/vale-stats.json
+        echo '{"pr_number":null,"is_pr_context":false}' > /tmp/gh-aw/docs-review-data/trigger-context.json
         exit 0
       fi
+
+      echo "{\"pr_number\":$PR_NUMBER,\"is_pr_context\":true}" > /tmp/gh-aw/docs-review-data/trigger-context.json
 
       if [ "$REVIEW_SCOPE" != "docs-subtree" ] && [ "$REVIEW_SCOPE" != "repo-wide-markdown" ]; then
         : > /tmp/gh-aw/docs-review-data/eligible-files.txt
@@ -220,7 +228,7 @@ Configured review scope for this run: `${{ inputs.review-scope }}`.
 
 When the workflow runs:
 
-- Confirm that the triggering item is a pull request or a PR comment context. If this is not a PR context, call `noop` with a short explanation.
+- Read `/tmp/gh-aw/docs-review-data/trigger-context.json` first. If `is_pr_context` is `false`, call `noop`. If `is_pr_context` is `true`, proceed — `pr_number` contains the resolved PR number. Do not use the `pull-request-number` context variable to gate this check: for `issue_comment` triggers (e.g., the AI PR menu), `pull-request-number` is always null even on real PRs.
 - Validate `inputs.review-scope`. If it is not `docs-subtree` or `repo-wide-markdown`, call `noop` with a short explanation.
 - Review only files that both changed in the PR and match the configured review scope.
 - Ignore every other changed file outside the configured review scope.

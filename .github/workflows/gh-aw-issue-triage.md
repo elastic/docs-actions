@@ -11,6 +11,7 @@ imports:
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/quality-bar.md
   - gh-aw-fragments/triage-refine-logic.md
+model: gpt-5-mini
 engine:
   id: copilot
 
@@ -30,19 +31,16 @@ on:
         type: string
         required: false
         default: ""
-    secrets:
-      COPILOT_GITHUB_TOKEN:
-        required: false
 concurrency:
   group: gh-aw-issue-triage-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
   job-discriminator: ${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
 
 permissions:
-  copilot-requests: write
   contents: read
   issues: read
   pull-requests: read
+  copilot-requests: write
 
 strict: false
 

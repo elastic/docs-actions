@@ -16,7 +16,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-issue-scope.yml
 ```
 
-Add `permissions.copilot-requests: write` to the caller workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
+Add `copilot-requests: write` to the caller job `permissions:` block — no secret passthrough needed.
 
 ## Inputs
 
@@ -36,6 +36,8 @@ Add `permissions.copilot-requests: write` to the caller workflow. You do not nee
 ## Integrity model
 
 This workflow explicitly sets `tools.github.min-integrity: none` so it can scope docs work from public community issues in public repositories. Treat issue and comment content as untrusted input, and rely on the workflow prompt and safe outputs to keep the analysis constrained.
+
+Because of this, every recommendation in the managed block carries a **Confidence** rating (High / Medium / Low). Terminology or capabilities that appear only in the issue or a linked PR — and cannot be verified against the code or the published docs — are attributed ("the issue describes …") rather than asserted as fact, and marked **Low**, with a caveat line under the recommendations table. This is the signal that prevents a contributor's incorrect phrasing from propagating into a docs recommendation.
 
 ## Managed issue block
 
@@ -65,7 +67,6 @@ on:
 
 permissions:
   actions: read
-  copilot-requests: write
   contents: read
   discussions: write
   issues: write

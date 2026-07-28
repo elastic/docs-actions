@@ -23,9 +23,8 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-staleness-sweep.yml
 ```
 
-Configure both secrets:
+Add `copilot-requests: write` to the caller job `permissions:` block. Also configure this secret:
 
-- `permissions.copilot-requests: write` in the caller workflow — required for built-in Copilot auth. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default path.
 - `DOCS_FIX_ISSUES_TOKEN` — token with `issues:write` on `elastic/docs-content-internal` (where fix-issues are filed). See the parent README for context.
 
 ## Inputs
@@ -34,6 +33,7 @@ Configure both secrets:
 |-------|---------|-------------|
 | `docs-root` | `docs/` | Root directory to sweep. |
 | `target-path` | `""` | Optional `docs-root`-relative directory to sweep recursively. Accepts a leading slash, such as `/solutions/observability`. |
+| `target-files` | `""` | Newline- or comma-separated list of `docs-root`-relative file paths to sweep. When set, overrides `target-path` and `scope-mode` — the sweep processes exactly these files. |
 | `scope-mode` | `auto` | Scope behavior for the matched markdown files. `auto` preserves the existing behavior, `full` scans all matched files, and `shard` shards within the matched set. |
 | `target-batch-size` | `100` | Approximate pages per slice. |
 | `max-per-fix-issue` | `30` | Findings cap per fix-issue. |
@@ -49,6 +49,10 @@ Configure both secrets:
 |--------|-----|--------|
 | `noop` | — | — |
 | `create-issue` | 1 | `docs-quality-sweep`, `docs-fix:staleness` (filed in `elastic/docs-content-internal`) |
+
+When any finding in the issue is `medium`- or `low`-confidence, the sweep also adds a `needs-human-review` label and a review-before-acting callout above the findings. Issues where every finding is `high`-confidence carry no such label and are safe to delegate to a fix-agent.
+
+Each finding carries a `confidence` field (`high`/`medium`/`low`) that signals how safe it is to act on without human verification — a separate axis from `severity`.
 
 ## How it works
 

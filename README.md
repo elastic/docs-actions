@@ -14,6 +14,8 @@ Reusable GitHub Actions and agentic workflows for Elastic documentation.
 | [`docs-builder/setup`](docs-builder/setup/) | Install the docs-builder CLI |
 | [`git/setup`](git/setup/) | Configure git user and token auth |
 | [`openapi/lint`](openapi/lint/) | Lint OpenAPI specs against the centralized Elastic ruleset |
+| [`slack/notify`](slack/notify/) | Post a Slack message through the docs notifier Lambda |
+| [`slack/notify-status`](slack/notify-status/) | Post a color-coded Slack status notification for a GitHub job or workflow |
 | [`vale/lint`](vale/lint/) | Run Vale with the Elastic style guide |
 | [`vale/report`](vale/report/) | Post Vale linting results as a pull request comment |
 

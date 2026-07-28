@@ -1,0 +1,53 @@
+name: test-slack-notify-status
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'slack/**'
+      - '.github/workflows/test-slack-notify-status.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'slack/**'
+      - '.github/workflows/test-slack-notify-status.yml'
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run formatter tests
+        run: node --test slack/notify-status/scripts/format-status.test.js
+
+  notify:
+    needs: unit
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: ./slack/notify-status
+        id: slack
+        with:
+          channel: docs-internal-workflows
+          status: success
+          description: slack/notify-status integration test from ${{ github.repository }} (${{ github.event_name }} on ${{ github.ref_name }})
+          fail-on-error: true
+
+      - name: Verify outputs
+        env:
+          SLACK_CHANNEL: ${{ steps.slack.outputs.channel }}
+          SLACK_TS: ${{ steps.slack.outputs.ts }}
+        run: |
+          test -n "${SLACK_CHANNEL}"
+          test -n "${SLACK_TS}"

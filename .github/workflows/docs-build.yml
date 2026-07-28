@@ -223,21 +223,6 @@ jobs:
           fi
           echo "effective_any_modified=${effective}" >> "$GITHUB_OUTPUT"
 
-      - name: Write check metadata
-        if: always() && steps.effective-any-modified.outputs.effective_any_modified != ''
-        run: |
-          echo "${STEPS_EFFECTIVE_ANY_MODIFIED_OUTPUTS_EFFECTIVE_ANY_MODIFIED}" > /tmp/effective_any_modified
-        env:
-          STEPS_EFFECTIVE_ANY_MODIFIED_OUTPUTS_EFFECTIVE_ANY_MODIFIED: ${{ steps.effective-any-modified.outputs.effective_any_modified }}
-
-      - name: Upload check metadata
-        if: always() && steps.effective-any-modified.outputs.effective_any_modified != ''
-        uses: actions/upload-artifact@v7
-        with:
-          name: docs-build-check-metadata
-          path: /tmp/effective_any_modified
-          retention-days: 1
-
   # This check skips the job when the workflow runs on a fork repo itself (e.g.
   # user/kibana), not when a fork PR targets upstream. Fork PRs to upstream run
   # fine because github.event.repository is the upstream repo (not a fork).

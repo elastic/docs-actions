@@ -61,16 +61,6 @@ jobs:
           upload_artifact: 'false'
           debug: 'true'
 
-      - name: Verify report was generated
-        run: |
-          if [ ! -f vale_report.md ]; then
-            echo "::error::vale_report.md was not generated"
-            exit 1
-          fi
-          echo "vale_report.md exists"
-          echo "Report contents:"
-          cat vale_report.md
-
       - name: Verify issues were found
         run: |
           if [ ! -f issue_counts.txt ]; then
@@ -106,7 +96,7 @@ jobs:
 
           failed=0
           for rule in "${rules_to_check[@]}"; do
-            if grep -q "$rule" vale_report.md; then
+            if jq -e --arg r "$rule" 'any(.issues[]; .rule == $r)' vale_results.json > /dev/null; then
               echo "$rule fired"
             else
               echo "::error::$rule did not fire - rule may be broken"
@@ -144,7 +134,6 @@ jobs:
         with:
           name: test-results-${{ matrix.style_source }}
           path: |
-            vale_report.md
             vale_results.json
             issue_counts.txt
           retention-days: 5
@@ -214,7 +203,7 @@ jobs:
           if [ "$total" -gt 0 ]; then
             echo "::error::Clean file should have 0 issues but found $total"
             echo "Report contents:"
-            cat vale_report.md
+            cat vale_results.json
             exit 1
           fi
 
@@ -253,19 +242,19 @@ jobs:
 
       - name: Verify filtering worked
         run: |
-          if [ ! -f vale_report.md ]; then
-            echo "::error::vale_report.md was not generated"
+          if [ ! -f vale_results.json ]; then
+            echo "::error::vale_results.json was not generated"
             exit 1
           fi
 
-          if grep -q "team-a" vale_report.md; then
+          if jq -e 'any(.issues[]; .path | contains("team-a"))' vale_results.json > /dev/null; then
             echo "team-a files were linted"
           else
             echo "::error::team-a files should have been linted"
             exit 1
           fi
 
-          if grep -q "team-b" vale_report.md; then
+          if jq -e 'any(.issues[]; .path | contains("team-b"))' vale_results.json > /dev/null; then
             echo "::error::team-b files should have been filtered out"
             exit 1
           else
@@ -307,19 +296,19 @@ jobs:
 
       - name: Verify negation filtering worked
         run: |
-          if [ ! -f vale_report.md ]; then
-            echo "::error::vale_report.md was not generated"
+          if [ ! -f vale_results.json ]; then
+            echo "::error::vale_results.json was not generated"
             exit 1
           fi
 
-          if grep -q "team-a/doc.md" vale_report.md; then
+          if jq -e 'any(.issues[]; .path | contains("team-a/doc.md"))' vale_results.json > /dev/null; then
             echo "team-a/doc.md was linted"
           else
             echo "::error::team-a/doc.md should have been linted"
             exit 1
           fi
 
-          if grep -q "team-a/excluded" vale_report.md; then
+          if jq -e 'any(.issues[]; .path | contains("team-a/excluded"))' vale_results.json > /dev/null; then
             echo "::error::team-a/excluded/doc.md should have been excluded by negation"
             exit 1
           else
@@ -352,25 +341,25 @@ jobs:
 
       - name: Verify YAML files were linted
         run: |
-          if [ ! -f vale_report.md ]; then
-            echo "::error::vale_report.md was not generated"
+          if [ ! -f vale_results.json ]; then
+            echo "::error::vale_results.json was not generated"
             exit 1
           fi
 
-          if grep -q "manifest.yml" vale_report.md && grep -q "fields.yaml" vale_report.md; then
+          if jq -e 'any(.issues[]; .path | contains("manifest.yml")) and any(.issues[]; .path | contains("fields.yaml"))' vale_results.json > /dev/null; then
             echo "YAML and YML files were linted"
           else
             echo "::error::Expected both YAML fixtures in the Vale report"
-            cat vale_report.md
+            cat vale_results.json
             exit 1
           fi
 
-          fixture_count=$(grep -c "Elastic.Please" vale_report.md || echo "0")
+          fixture_count=$(jq '[.issues[] | select(.rule == "Elastic.Please")] | length' vale_results.json)
           if [ "$fixture_count" -ge 2 ]; then
             echo "Elastic.Please fired for both YAML fixtures"
           else
             echo "::error::Expected Elastic.Please to fire for both YAML fixtures but found $fixture_count"
-            cat vale_report.md
+            cat vale_results.json
             exit 1
           fi
 
@@ -406,18 +395,18 @@ jobs:
 
       - name: Verify spelling did not fire without override
         run: |
-          if [ ! -f vale_report.md ]; then
-            echo "::error::vale_report.md was not generated"
+          if [ ! -f vale_results.json ]; then
+            echo "::error::vale_results.json was not generated"
             exit 1
           fi
 
-          if grep -q "Elastic.Spelling" vale_report.md; then
+          if jq -e 'any(.issues[]; .rule == "Elastic.Spelling")' vale_results.json > /dev/null; then
             echo "::error::Elastic.Spelling fired without an override"
             exit 1
           fi
 
           echo "Elastic.Spelling correctly disabled by default"
-          rm -f vale_report.md issue_counts.txt
+          rm -f vale_results.json issue_counts.txt
 
       - name: Run lint with inline override
         id: lint-inline-override
@@ -435,23 +424,23 @@ jobs:
 
       - name: Verify spelling fired via inline override
         run: |
-          if [ ! -f vale_report.md ]; then
-            echo "::error::vale_report.md was not generated"
+          if [ ! -f vale_results.json ]; then
+            echo "::error::vale_results.json was not generated"
             exit 1
           fi
 
-          spelling_count=$(grep -c "Elastic.Spelling" vale_report.md || echo "0")
+          spelling_count=$(jq '[.issues[] | select(.rule == "Elastic.Spelling")] | length' vale_results.json)
 
           if [ "$spelling_count" -ge 2 ]; then
             echo "Elastic.Spelling fired $spelling_count times via inline vale-overrides"
           else
             echo "::error::Expected at least 2 Elastic.Spelling hits from inline override but found $spelling_count"
             echo "Report contents:"
-            cat vale_report.md
+            cat vale_results.json
             exit 1
           fi
 
-          rm -f vale_report.md issue_counts.txt
+          rm -f vale_results.json issue_counts.txt
 
       - name: Place override file in repo root
         run: cp vale/test-fixtures/vale-overrides/.vale-overrides.ini .vale-overrides.ini
@@ -470,19 +459,19 @@ jobs:
 
       - name: Verify spelling fired via override
         run: |
-          if [ ! -f vale_report.md ]; then
-            echo "::error::vale_report.md was not generated"
+          if [ ! -f vale_results.json ]; then
+            echo "::error::vale_results.json was not generated"
             exit 1
           fi
 
-          spelling_count=$(grep -c "Elastic.Spelling" vale_report.md || echo "0")
+          spelling_count=$(jq '[.issues[] | select(.rule == "Elastic.Spelling")] | length' vale_results.json)
 
           if [ "$spelling_count" -ge 2 ]; then
             echo "Elastic.Spelling fired $spelling_count times via .vale-overrides.ini"
           else
             echo "::error::Expected at least 2 Elastic.Spelling hits from repo override but found $spelling_count"
             echo "Report contents:"
-            cat vale_report.md
+            cat vale_results.json
             exit 1
           fi
 
@@ -503,7 +492,6 @@ jobs:
         with:
           name: vale-results
           path: |
-            vale_report.md
             vale_results.json
             issue_counts.txt
           retention-days: 1

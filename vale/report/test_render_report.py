@@ -317,8 +317,6 @@ class TestCLI(unittest.TestCase):
             inp_path = inp.name
         out_path = inp_path + ".md"
         try:
-            rc = render_report.main.__wrapped__(inp_path, out_path, "owner/repo", "1") if hasattr(render_report.main, '__wrapped__') else None
-            # Fall back to calling via subprocess-like approach using argparse
             sys.argv = ["render_report.py", "--input", inp_path, "--output", out_path, "--repo", "owner/repo", "--pr", "1"]
             rc = render_report.main()
             self.assertEqual(rc, 0)
@@ -346,7 +344,7 @@ class TestCLI(unittest.TestCase):
 
     def test_oversized_file_rejected(self):
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as inp:
-            # Write > 100KB
+            # Write more than MAX_FILE_SIZE
             inp.write(" " * (render_report.MAX_FILE_SIZE + 1))
             inp_path = inp.name
         out_path = inp_path + ".md"
