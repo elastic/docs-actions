@@ -1,4 +1,4 @@
-const { TITLE, upsertComment } = require('./comment-helper');
+const { TITLE, upsertComment, wrapInlineCode } = require('./comment-helper');
 
 module.exports = async ({ github, context, core }) => {
   const prNumber = parseInt(process.env.PR_NUMBER, 10);
@@ -6,6 +6,7 @@ module.exports = async ({ github, context, core }) => {
   const labelRows = (process.env.LABEL_TABLE || '').trim();
   const productLabelRows = (process.env.PRODUCT_LABEL_TABLE || '').trim();
   const skipLabels = process.env.SKIP_LABELS || '';
+  const configFileCode = wrapInlineCode(configFile);
 
   const hasTypeIssue = !!labelRows;
   const hasProductIssue = !!productLabelRows;
@@ -24,7 +25,7 @@ module.exports = async ({ github, context, core }) => {
   if (hasTypeIssue) {
     sections.push(['', '🔖 Add one of these **type** labels to your PR:', '', labelRows].join('\n'));
   } else if (!hasProductIssue) {
-    sections.push(`\nAdd a type label that matches your \`pivot.types\` configuration in \`${configFile}\`.`);
+    sections.push(`\nAdd a type label that matches your ${wrapInlineCode('pivot.types')} configuration in ${configFileCode}.`);
   }
 
   if (hasProductIssue) {
@@ -33,10 +34,10 @@ module.exports = async ({ github, context, core }) => {
 
   let skipSection;
   if (skipLabels.trim()) {
-    const formatted = skipLabels.split(',').map(l => `\`${l.trim()}\``).join(', ');
+    const formatted = skipLabels.split(',').map(label => wrapInlineCode(label.trim())).join(', ');
     skipSection = `\n⏭️ To skip changelog generation, add one of these labels: ${formatted}`;
   } else {
-    skipSection = `\n⏭️ No skip labels are configured. To allow skipping changelog generation, add a label to \`rules.create.exclude\` in \`${configFile}\`.`;
+    skipSection = `\n⏭️ No skip labels are configured. To allow skipping changelog generation, add a label to ${wrapInlineCode('rules.create.exclude')} in ${configFileCode}.`;
   }
 
   const body = [
@@ -46,7 +47,7 @@ module.exports = async ({ github, context, core }) => {
     ...sections,
     skipSection,
     '',
-    `📄 See \`${configFile}\` for the full changelog configuration.`,
+    `📄 See ${configFileCode} for the full changelog configuration.`,
   ].join('\n');
 
   await upsertComment({ github, context, prNumber, body });

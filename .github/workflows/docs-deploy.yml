@@ -387,6 +387,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
     outputs:
       build_outcome: ${{ steps.docs-build.outcome == 'success' && 'success' || '' }}
       skip: ${{ steps.docs-build.outputs.skip }}
@@ -450,6 +451,22 @@ jobs:
           echo "PATH_PREFIX=${path_prefix}" >> "$GITHUB_ENV"
           echo "result=${path_prefix}" >> "$GITHUB_OUTPUT"
 
+      # Resolve the mutable :edge tag once so every later use in this job is
+      # tied to the same immutable image digest.
+      - name: Pull and pin docs-builder image
+        id: docker-image
+        # language=bash
+        run: |
+          IMAGE="ghcr.io/elastic/docs-builder:edge"
+          docker pull "$IMAGE"
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE")
+          if [[ -z "$DIGEST" ]]; then
+            echo "::error::Failed to resolve RepoDigest for ${IMAGE}"
+            exit 1
+          fi
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "::notice title=docs-builder image digest::${DIGEST}"
+
       # Run docs-builder in Docker isolation. Only explicitly listed env vars are
       # passed to the container — ACTIONS_RUNTIME_TOKEN, ACTIONS_CACHE_URL, and
       # OIDC env vars are excluded to prevent cache poisoning and credential
@@ -478,7 +495,7 @@ jobs:
             -e GITHUB_REF="refs/heads/${HEAD_BRANCH}" \
             -e INPUT_PREFIX="${PATH_PREFIX}" \
             -e INPUT_STRICT="${STRICT_FLAG}" \
-            ghcr.io/elastic/docs-builder:edge || EXIT_CODE=$?
+            "${IMAGE_DIGEST}" || EXIT_CODE=$?
 
           if [ -s "$CONTAINER_OUTPUT" ]; then
             cat "$CONTAINER_OUTPUT" >> "$GITHUB_OUTPUT"
@@ -486,6 +503,7 @@ jobs:
 
           exit $EXIT_CODE
         env:
+          IMAGE_DIGEST: ${{ steps.docker-image.outputs.digest }}
           STRICT_FLAG: ${{ fromJSON(inputs.strict != '' && inputs.strict || 'true') }}
 
       - name: Upload links artifact
