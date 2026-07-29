@@ -119,7 +119,8 @@ describe('buildStatusMessage', () => {
       eventName: 'pull_request',
       pullRequestNumber: '245',
       pullRequestUrl: 'https://github.com/elastic/docs-actions/pull/245',
-      runUrl: 'https://github.com/elastic/docs-actions/actions/runs/1',
+      runAttempt: '1',
+      runUrl: 'https://github.com/elastic/docs-actions/actions/runs/1/attempts/1',
     });
 
     const attachment = message.attachments[0];
@@ -127,19 +128,23 @@ describe('buildStatusMessage', () => {
 
     assert.equal(
       message.text,
-      '<https://github.com/elastic/docs-actions|elastic/docs-actions> · <https://github.com/elastic/docs-actions/actions/runs/1|test-slack-notify-status>'
+      '<https://github.com/elastic/docs-actions|elastic/docs-actions> · <https://github.com/elastic/docs-actions/actions/runs/1/attempts/1|test-slack-notify-status>'
     );
     assert.equal(attachment.color, '#E01E5A');
     assert.equal(attachment.fallback, 'elastic/docs-actions · test-slack-notify-status · Failed');
     assert.equal(attachment.blocks[0].type, 'section');
     assert.match(
       attachment.blocks[0].text.text,
-      /Failed  ·  <https:\/\/github.com\/elastic\/docs-actions\/pull\/245\|#245>/
+      /Failed  ·  <https:\/\/github.com\/elastic\/docs-actions\/pull\/245\|#245>$/
     );
+    assert.doesNotMatch(attachment.blocks[0].text.text, /attempt/);
     assert.equal(attachment.blocks[1].type, 'context');
     assert.match(attachment.blocks[1].elements[0].text, /deploy runbook/);
     assert.equal(attachment.blocks[2].type, 'actions');
-    assert.equal(attachment.blocks[2].elements[0].url, 'https://github.com/elastic/docs-actions/actions/runs/1');
+    assert.equal(
+      attachment.blocks[2].elements[0].url,
+      'https://github.com/elastic/docs-actions/actions/runs/1/attempts/1'
+    );
     assert.equal(attachment.blocks[3].elements[0].text, 'cc <@U0123456789>');
     assert.doesNotMatch(serialized, /"type":"card"/);
     assert.doesNotMatch(serialized, /favicon-neutral/);
@@ -156,22 +161,52 @@ describe('buildStatusMessage', () => {
       sha: 'a1b2c3d4e5f6789012345678901234567890abcd',
       commitUrl:
         'https://github.com/elastic/docs-actions/commit/a1b2c3d4e5f6789012345678901234567890abcd',
-      runUrl: 'https://github.com/elastic/docs-actions/actions/runs/2',
+      runAttempt: '1',
+      runUrl: 'https://github.com/elastic/docs-actions/actions/runs/2/attempts/1',
     });
 
     const serialized = JSON.stringify(message);
 
     assert.match(
       message.text,
-      /<https:\/\/github.com\/elastic\/docs-actions\|elastic\/docs-actions> · <https:\/\/github.com\/elastic\/docs-actions\/actions\/runs\/2\|docs-deploy>/
+      /<https:\/\/github.com\/elastic\/docs-actions\|elastic\/docs-actions> · <https:\/\/github.com\/elastic\/docs-actions\/actions\/runs\/2\/attempts\/1\|docs-deploy>/
     );
     assert.match(
       message.attachments[0].blocks[0].text.text,
       /Succeeded  ·  `main`/
     );
+    assert.doesNotMatch(message.attachments[0].blocks[0].text.text, /attempt/);
     assert.match(
       serialized,
       /<https:\/\/github.com\/elastic\/docs-actions\/commit\/a1b2c3d4e5f6789012345678901234567890abcd\|`a1b2c3d`>/
+    );
+  });
+
+  it('appends attempt to the status line when runAttempt is greater than 1', () => {
+    const message = buildStatusMessage({
+      status: 'failure',
+      repository: 'elastic/docs-actions',
+      repositoryUrl: 'https://github.com/elastic/docs-actions',
+      workflow: 'test-slack-notify-status',
+      ref: 'main',
+      eventName: 'pull_request',
+      pullRequestNumber: '245',
+      pullRequestUrl: 'https://github.com/elastic/docs-actions/pull/245',
+      runAttempt: '2',
+      runUrl: 'https://github.com/elastic/docs-actions/actions/runs/1/attempts/2',
+    });
+
+    assert.equal(
+      message.text,
+      '<https://github.com/elastic/docs-actions|elastic/docs-actions> · <https://github.com/elastic/docs-actions/actions/runs/1/attempts/2|test-slack-notify-status>'
+    );
+    assert.equal(
+      message.attachments[0].blocks[0].text.text,
+      'Failed  ·  <https://github.com/elastic/docs-actions/pull/245|#245>  ·  attempt 2'
+    );
+    assert.equal(
+      message.attachments[0].blocks[1].elements[0].url,
+      'https://github.com/elastic/docs-actions/actions/runs/1/attempts/2'
     );
   });
 
@@ -182,7 +217,7 @@ describe('buildStatusMessage', () => {
       repositoryUrl: 'https://github.com/elastic/docs-actions',
       workflow: 'docs-deploy',
       ref: 'main',
-      runUrl: 'https://github.com/elastic/docs-actions/actions/runs/2',
+      runUrl: 'https://github.com/elastic/docs-actions/actions/runs/2/attempts/1',
     });
 
     const blocks = message.attachments[0].blocks;
@@ -190,7 +225,11 @@ describe('buildStatusMessage', () => {
     assert.equal(blocks.some((block) => block.type === 'context'), false);
     assert.equal(blocks[0].type, 'section');
     assert.match(blocks[0].text.text, /Succeeded  ·  `main`/);
+    assert.doesNotMatch(blocks[0].text.text, /attempt/);
     assert.equal(blocks[1].type, 'actions');
-    assert.equal(blocks[1].elements[0].url, 'https://github.com/elastic/docs-actions/actions/runs/2');
+    assert.equal(
+      blocks[1].elements[0].url,
+      'https://github.com/elastic/docs-actions/actions/runs/2/attempts/1'
+    );
   });
 });

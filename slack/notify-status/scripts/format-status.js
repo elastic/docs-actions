@@ -185,6 +185,7 @@ function buildStatusMessage({
   pullRequestUrl = '',
   sha = '',
   commitUrl = '',
+  runAttempt = '',
   runUrl = '',
 }) {
   const normalizedStatus = normalizeStatus(status);
@@ -199,7 +200,9 @@ function buildStatusMessage({
     sha,
     commitUrl,
   });
-  const statusLine = [label, source].filter(Boolean).join('  ·  ');
+  const attemptNumber = Number(runAttempt);
+  const attempt = attemptNumber > 1 ? `attempt ${attemptNumber}` : '';
+  const statusLine = [label, source, attempt].filter(Boolean).join('  ·  ');
   const trimmedDescription = String(description || '').trim();
   const formattedMention = formatMentions(mention);
   const blocks = [];
