@@ -54,7 +54,8 @@ runs:
         PR_URL: ${{ github.event.pull_request.html_url }}
         SHA: ${{ github.sha }}
         COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
-        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        RUN_ATTEMPT: ${{ github.run_attempt }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
       with:
         script: |
           const { buildStatusMessage } = require('${{ github.action_path }}/scripts/format-status.js');
@@ -71,6 +72,7 @@ runs:
             pullRequestUrl: process.env.PR_URL,
             sha: process.env.SHA,
             commitUrl: process.env.COMMIT_URL,
+            runAttempt: process.env.RUN_ATTEMPT,
             runUrl: process.env.RUN_URL,
           });
           core.setOutput('text', message.text);
