@@ -387,7 +387,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: read
     outputs:
       build_outcome: ${{ steps.docs-build.outcome == 'success' && 'success' || '' }}
       skip: ${{ steps.docs-build.outputs.skip }}
