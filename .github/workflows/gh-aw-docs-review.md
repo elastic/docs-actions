@@ -68,6 +68,7 @@ network:
     - "docs-v3-preview.elastic.dev"
 strict: false
 safe-outputs:
+  urls: allowed-or-code-region
   allowed-domains:
     - elastic.co
     - docs-v3-preview.elastic.dev
