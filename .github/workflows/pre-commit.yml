@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: "3.x"
       - name: Install gh-aw
-        run: gh extension install github/gh-aw --pin v0.83.1 --force
+        run: gh extension install github/gh-aw --pin v0.83.4 --force
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
