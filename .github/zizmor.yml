@@ -17,6 +17,7 @@ rules:
   template-injection:
     ignore:
       - agentics-maintenance.yml
+      - docs-agent-experimental.lock.yml
       - gh-aw-docs-applies-to-sweep.lock.yml
       - gh-aw-docs-coherence-sweep.lock.yml
       - gh-aw-docs-frontmatter-sweep.lock.yml
@@ -36,6 +37,7 @@ rules:
   # (d746ffe3…). Suppressed here because the compiler owns these files.
   ref-version-mismatch:
     ignore:
+      - docs-agent-experimental.lock.yml
       - gh-aw-docs-applies-to-sweep.lock.yml
       - gh-aw-docs-coherence-sweep.lock.yml
       - gh-aw-docs-frontmatter-sweep.lock.yml
