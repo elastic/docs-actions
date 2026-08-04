@@ -105,6 +105,11 @@ steps:
 
 safe-outputs:
   staged: false
+  messages:
+    run-started: "🧪 [docs-agent-experimental]({run_url}) is analyzing this issue. This comment will be updated when the run finishes."
+    run-success: "✅ [docs-agent-experimental]({run_url}) finished processing this issue."
+    run-failure: "❌ [docs-agent-experimental]({run_url}) could not complete this issue. Open the run for details."
+    pull-request-created: "✅ Draft pull request created: [#{item_number}]({item_url})"
   allowed-domains:
     - www.elastic.co
     - docs-v3-preview.elastic.dev
