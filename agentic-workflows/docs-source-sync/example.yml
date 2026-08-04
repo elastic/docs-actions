@@ -1,0 +1,48 @@
+name: Docs source sync
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Mondays 09:00 UTC
+  workflow_dispatch:
+    inputs:
+      lookback-window:
+        description: "Git lookback window"
+        required: false
+        default: "7 days ago"
+
+permissions:
+  id-token: write
+  actions: read
+  contents: read
+  discussions: write
+  issues: write
+  pull-requests: write
+  copilot-requests: write
+
+jobs:
+  fetch-token:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      token: ${{ steps.fetch.outputs.token }}
+    steps:
+      - id: fetch
+        uses: elastic/ci-gh-actions/fetch-github-token@v1
+        with:
+          vault-instance: ci-prod
+
+  sync:
+    needs: fetch-token
+    uses: elastic/docs-actions/.github/workflows/gh-aw-docs-source-sync.lock.yml@v1
+    with:
+      lookback-window: ${{ inputs.lookback-window || '7 days ago' }}
+      source-repos: elastic/docs-builder,elastic/docs-infra,elastic/docs-internal-workflows
+      target-repo: elastic/docs-eng-team
+      docs-root: docs/
+      repo-path-mapping: |
+        elastic/docs-builder -> build-system/, getting-started/ (CLI/setup UX only)
+        elastic/docs-infra -> infrastructure/
+        elastic/docs-internal-workflows -> github-actions/, content-pipeline/ (pipeline/authoring only)
+    secrets:
+      github_token: ${{ needs.fetch-token.outputs.token }}
