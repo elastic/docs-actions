@@ -29,6 +29,12 @@ on:
   issues:
     types: [labeled]
   labels: [docs-agent]
+  workflow_call:
+    inputs:
+      issue_number:
+        description: "Issue number to process"
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       issue_number:
@@ -133,6 +139,25 @@ safe-outputs:
       - openapi/**/*.md
       - slack/**/*.md
       - vale/**/*.md
+      - docs/**
+      - 404.md
+      - archive.md
+      - index.md
+      - versions.md
+      - docset.yml
+      - redirects.yml
+      - cloud-account/**
+      - contribute-docs/**
+      - deploy-manage/**
+      - explore-analyze/**
+      - extend/**
+      - get-started/**
+      - manage-data/**
+      - reference/**
+      - release-notes/**
+      - serverless/**
+      - solutions/**
+      - troubleshoot/**
 ---
 
 # Experimental documentation maintenance agent
