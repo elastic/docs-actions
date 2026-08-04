@@ -24,6 +24,7 @@ rules:
       - gh-aw-docs-issue-scope.lock.yml
       - gh-aw-docs-openings-sweep.lock.yml
       - gh-aw-docs-review.lock.yml
+      - gh-aw-docs-source-sync.lock.yml
       - gh-aw-docs-staleness-sweep.lock.yml
       - gh-aw-docs-style-sweep.lock.yml
       - gh-aw-docs-typos-sweep.lock.yml
@@ -44,6 +45,7 @@ rules:
       - gh-aw-docs-issue-scope.lock.yml
       - gh-aw-docs-openings-sweep.lock.yml
       - gh-aw-docs-review.lock.yml
+      - gh-aw-docs-source-sync.lock.yml
       - gh-aw-docs-staleness-sweep.lock.yml
       - gh-aw-docs-style-sweep.lock.yml
       - gh-aw-docs-typos-sweep.lock.yml
