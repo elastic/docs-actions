@@ -23,6 +23,11 @@ on:
         required: false
         default: ''
         type: string
+      build-env:
+        description: Environment variables for the docs-builder process, one KEY=VALUE per line.
+        required: false
+        default: ''
+        type: string
       path-pattern-ignore:
         description: The path pattern to ignore changes
         required: false
@@ -87,6 +92,7 @@ jobs:
         with:
           docs-builder-version: ${{ inputs.docs-builder-version }}
           path: ${{ inputs.path }}
+          build-env: ${{ inputs.build-env }}
       - name: Warn about fork PR
         if: >
           startsWith(github.event_name, 'pull_request')
