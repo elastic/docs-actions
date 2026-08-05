@@ -76,10 +76,14 @@ runs:
         fi
         # Exported here rather than written to $GITHUB_ENV so the variables reach docs-builder
         # without leaking into later steps of the caller's job.
+        line_number=0
         while IFS= read -r entry; do
-          [[ -z "${entry}" ]] && continue
+          line_number=$((line_number + 1))
+          entry="${entry%$'\r'}"
+          [[ -z "${entry//[[:space:]]/}" ]] && continue
           if [[ ! "${entry}" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
-            echo "::error title=Invalid build-env entry::Expected KEY=VALUE, got '${entry}'"
+            # The line is not echoed back: a malformed entry may still hold a secret.
+            echo "::error title=Invalid build-env entry::Line ${line_number} is not KEY=VALUE."
             exit 1
           fi
           export "${entry?}"
