@@ -10,6 +10,10 @@ inputs:
     description: Root directory of the documentation source. Defaults to the docs-builder default.
     required: false
     default: ""
+  build-env:
+    description: Environment variables for the docs-builder process, one KEY=VALUE per line.
+    required: false
+    default: ""
 
 outputs:
   path-prefix:
@@ -70,10 +74,25 @@ runs:
         if [[ -n "${DOCS_PATH}" ]]; then
           args+=(--path "${DOCS_PATH}")
         fi
+        # Exported here rather than written to $GITHUB_ENV so the variables reach docs-builder
+        # without leaking into later steps of the caller's job.
+        line_number=0
+        while IFS= read -r entry; do
+          line_number=$((line_number + 1))
+          entry="${entry%$'\r'}"
+          [[ -z "${entry//[[:space:]]/}" ]] && continue
+          if [[ ! "${entry}" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
+            # The line is not echoed back: a malformed entry may still hold a secret.
+            echo "::error title=Invalid build-env entry::Line ${line_number} is not KEY=VALUE."
+            exit 1
+          fi
+          export "${entry?}"
+        done <<< "${BUILD_ENV}"
         docs-builder "${args[@]}"
       env:
         PATH_PREFIX: ${{ env.PATH_PREFIX }}
         DOCS_PATH: ${{ inputs.path }}
+        BUILD_ENV: ${{ inputs.build-env }}
         GITHUB_TOKEN: ${{ steps.fetch-ephemeral-token.outputs.token }}
     - name: Upload docs
       uses: actions/upload-artifact@v7
