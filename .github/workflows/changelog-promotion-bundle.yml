@@ -1,0 +1,133 @@
+# No-op stub for the shared date-promotion release-notes bundle workflow (RFC S1).
+#
+# Covers any product that publishes release notes keyed by date rather than a
+# semver tag: serverless, Cloud ECE, Cloud Hosted, and similar cadences.
+#
+# Product quality-gate / promotion pipelines dispatch a product-owned GitHub
+# workflow, which calls this reusable workflow. Real resolve/build/upload
+# behavior will replace this stub; keep the input contract stable so callers
+# can wire ahead of that implementation.
+#
+# Caller shape (product repo):
+#
+#   jobs:
+#     publish:
+#       permissions:
+#         contents: read
+#         packages: read
+#         id-token: write
+#       uses: elastic/docs-actions/.github/workflows/changelog-promotion-bundle.yml@<ref>
+#       with:
+#         profile: serverless   # or ece / cloud-hosted / …
+#         git-ref: ${{ inputs.service_version }}
+#         build-url: ${{ inputs.build_url }}
+#         # optional, when the product gate has them:
+#         target-env: ${{ inputs.target_env }}
+#         deployment-slices: ${{ inputs.deployment_slices }}
+
+name: Changelog promotion bundle
+
+on:
+  workflow_call:
+    inputs:
+      profile:
+        description: >
+          Bundle profile name from bundle.profiles in changelog.yml.
+          Selects product mapping and inclusion rules for the date-promotion cut.
+        type: string
+        required: true
+      git-ref:
+        description: >
+          Published endpoint git ref from the quality gate / promotion
+          (e.g. SERVICE_VERSION). Becomes the bundle git_ref metadata when
+          implemented.
+        type: string
+        required: true
+      start-git-ref:
+        description: >
+          Previous published endpoint git ref. Optional while this workflow is a
+          no-op; the real implementation may require it (caller-side resolution)
+          or derive it from deployment history (e.g. serverless-gitops).
+        type: string
+        required: false
+      target-env:
+        description: >
+          Optional target environment from the quality gate (ENVIRONMENT),
+          e.g. production-noncanary. Used when the product gate has env semantics
+          (serverless); omit for products that do not.
+        type: string
+        required: false
+      deployment-slices:
+        description: >
+          Optional comma-delimited deployment slices from the quality gate
+          (DEPLOYMENT_SLICES). Used when the product gate has slice semantics
+          (serverless); omit for products that do not.
+        type: string
+        required: false
+      build-url:
+        description: 'Buildkite (or other CI) build URL for traceability back to the promotion run'
+        type: string
+        required: false
+    outputs:
+      status:
+        description: 'noop until resolve/build/upload is implemented'
+        value: ${{ jobs.noop.outputs.status }}
+      version:
+        description: 'UTC date (YYYY-MM-DD) derived at run time for the date-promotion bundle'
+        value: ${{ jobs.noop.outputs.version }}
+      git-ref:
+        description: 'Echo of the published endpoint ref input'
+        value: ${{ jobs.noop.outputs.git-ref }}
+      start-git-ref:
+        description: 'Echo of the previous endpoint ref input (empty if omitted)'
+        value: ${{ jobs.noop.outputs.start-git-ref }}
+
+permissions: {}
+
+concurrency:
+  group: changelog-promotion-bundle-${{ inputs.profile }}-${{ inputs.git-ref }}
+  cancel-in-progress: false
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      status: ${{ steps.log.outputs.status }}
+      version: ${{ steps.log.outputs.version }}
+      git-ref: ${{ steps.log.outputs.git-ref }}
+      start-git-ref: ${{ steps.log.outputs.start-git-ref }}
+    steps:
+      - id: log
+        name: Log promotion bundle inputs (no-op)
+        env:
+          PROFILE: ${{ inputs.profile }}
+          GIT_REF: ${{ inputs.git-ref }}
+          START_GIT_REF: ${{ inputs.start-git-ref }}
+          TARGET_ENV: ${{ inputs.target-env }}
+          DEPLOYMENT_SLICES: ${{ inputs.deployment-slices }}
+          BUILD_URL: ${{ inputs.build-url }}
+        run: |
+          set -euo pipefail
+
+          # Date-promotion cuts are always date-versioned; derive here so callers
+          # cannot pass a mismatched stack-style semver.
+          version="$(date -u +%Y-%m-%d)"
+
+          echo "::notice::changelog-promotion-bundle is a no-op stub; inputs accepted, no bundle built or uploaded"
+
+          echo "profile=${PROFILE}"
+          echo "version=${version}"
+          echo "git-ref=${GIT_REF}"
+          echo "start-git-ref=${START_GIT_REF:-}"
+          echo "target-env=${TARGET_ENV:-}"
+          echo "deployment-slices=${DEPLOYMENT_SLICES:-}"
+          echo "build-url=${BUILD_URL:-}"
+
+          {
+            echo "status=noop"
+            echo "version=${version}"
+            echo "git-ref=${GIT_REF}"
+            echo "start-git-ref=${START_GIT_REF:-}"
+          } >> "${GITHUB_OUTPUT}"
