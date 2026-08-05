@@ -60,7 +60,7 @@ on:
         required: false
         default: ""
     secrets:
-      github_token:
+      source_sync_token:
         description: "Token for reading source repos and opening the docs PR. Pass an ephemeral token, for example from elastic/ci-gh-actions/fetch-github-token."
         required: true
 concurrency:
@@ -75,11 +75,11 @@ strict: false
 checkout:
   - repository: ${{ inputs.target-repo || github.repository }}
     fetch-depth: 0
-    github-token: ${{ secrets.github_token }}
+    github-token: ${{ secrets.source_sync_token }}
     current: true
 tools:
   github:
-    github-token: ${{ secrets.github_token }}
+    github-token: ${{ secrets.source_sync_token }}
     toolsets: [repos, pull_requests, search, issues]
   bash:
     - "cat *"
@@ -95,7 +95,7 @@ network:
     - "docs-v3-preview.elastic.dev"
     - "www.elastic.co"
 safe-outputs:
-  github-token: ${{ secrets.github_token }}
+  github-token: ${{ secrets.source_sync_token }}
   noop:
   create-pull-request:
     title-prefix: ${{ inputs.title-prefix }}
@@ -108,7 +108,7 @@ timeout-minutes: 30
 steps:
   - name: Digest source repo changes
     env:
-      GH_TOKEN: ${{ secrets.github_token }}
+      GH_TOKEN: ${{ secrets.source_sync_token }}
       SOURCE_REPOS: ${{ inputs.source-repos }}
       LOOKBACK_WINDOW: ${{ inputs.lookback-window }}
       REPO_PATH_MAPPING: ${{ inputs.repo-path-mapping }}

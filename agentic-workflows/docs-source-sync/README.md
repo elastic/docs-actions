@@ -22,7 +22,7 @@ Edit the `sync` job's `with:` block to set your own `source-repos`, `target-repo
 
 ### Token
 
-This workflow takes a token as a `secrets.github_token` input instead of using the ambient `GITHUB_TOKEN`, because it usually needs read access to repositories other than the one it runs in. The example fetches an ephemeral token via [`elastic/ci-gh-actions/fetch-github-token`](https://github.com/elastic/ci-gh-actions/tree/main/fetch-github-token):
+This workflow takes a token as a `secrets.source_sync_token` input instead of using the ambient `GITHUB_TOKEN`, because it usually needs read access to repositories other than the one it runs in. The example fetches an ephemeral token via [`elastic/ci-gh-actions/fetch-github-token`](https://github.com/elastic/ci-gh-actions/tree/main/fetch-github-token):
 
 - Add `permissions.id-token: write` on the token-fetch job, as shown in `example.yml`.
 - Set up a TokenPolicy (in `elastic/catalog-info`) that grants the ephemeral token read access to every `source-repos` entry and contents + pull-requests write access to `target-repo`.

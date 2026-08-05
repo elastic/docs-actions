@@ -45,4 +45,4 @@ jobs:
         elastic/docs-infra -> infrastructure/
         elastic/docs-internal-workflows -> github-actions/, content-pipeline/ (pipeline/authoring only)
     secrets:
-      github_token: ${{ needs.fetch-token.outputs.token }}
+      source_sync_token: ${{ needs.fetch-token.outputs.token }}
