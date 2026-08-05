@@ -6,9 +6,10 @@ Builds the codex documentation
 
 ## Inputs
 <!--inputs-->
-| Name                   | Description                        | Required | Default |
-|------------------------|------------------------------------|----------|---------|
-| `docs-builder-version` | The version of docs-builder to use | `false`  | `edge`  |
+| Name                   | Description                                                                       | Required | Default |
+|------------------------|-----------------------------------------------------------------------------------|----------|---------|
+| `docs-builder-version` | The version of docs-builder to use                                                | `false`  | `edge`  |
+| `path`                 | Root directory of the documentation source. Defaults to the docs-builder default. | `false`  | ` `     |
 <!--/inputs-->
 
 ## Outputs
