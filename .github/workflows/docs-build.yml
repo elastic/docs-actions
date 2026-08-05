@@ -108,19 +108,12 @@ jobs:
       deleted_files: ${{ steps.check-modified-file-detail.outputs.deleted_files }}
       renamed_files: ${{ steps.check-modified-file-detail.outputs.renamed_files }}
     steps:
-      - name: Checkout
-        if: contains(fromJSON('["push", "merge_group", "workflow_dispatch"]'), github.event_name)
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.ref }}
-          fetch-depth: 2
-          persist-credentials: false
-
       - name: Get changed files
         if: contains(fromJSON('["push", "merge_group", "pull_request"]'), github.event_name)
         id: check-files
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
+          use_rest_api: true
           files: ${{ inputs.path-pattern != '' && inputs.path-pattern || '**' }}
           files_ignore: |
             ${{ inputs.path-pattern-ignore != '' && inputs.path-pattern-ignore || '' }}

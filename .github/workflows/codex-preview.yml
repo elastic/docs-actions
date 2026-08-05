@@ -44,8 +44,8 @@ jobs:
       all_changed_files: ${{ steps.check-files.outputs.all_changed_files }}
     steps:
       - name: Checkout
-        # Checkout is needed to get changed files when the event is not a pull request
-        if: contains(fromJSON('["push", "merge_group", "workflow_dispatch"]'), github.event_name)
+        # REST API mode is not supported for workflow_dispatch, so keep local git history for manual runs.
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v6
         with:
           fetch-depth: 2
@@ -54,6 +54,7 @@ jobs:
         id: check-files
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
+          use_rest_api: ${{ contains(fromJSON('["push", "merge_group", "pull_request"]'), github.event_name) }}
           files: ${{ inputs.path-pattern }}
           files_ignore: |
             ${{ inputs.path-pattern-ignore }}
