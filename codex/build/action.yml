@@ -6,6 +6,10 @@ inputs:
     description: The version of docs-builder to use
     required: false
     default: "edge"
+  path:
+    description: Root directory of the documentation source. Defaults to the docs-builder default.
+    required: false
+    default: ""
 
 outputs:
   path-prefix:
@@ -60,10 +64,16 @@ runs:
           vault-instance: "ci-prod"
           vault-role: "${{ steps.generate-vault-role.outputs.result }}"
     - name: Build
-      run: docs-builder --output ./.artifacts/docs/html --path-prefix ${PATH_PREFIX}
       shell: bash
+      run: |
+        args=(--output ./.artifacts/docs/html --path-prefix "${PATH_PREFIX}")
+        if [[ -n "${DOCS_PATH}" ]]; then
+          args+=(--path "${DOCS_PATH}")
+        fi
+        docs-builder "${args[@]}"
       env:
         PATH_PREFIX: ${{ env.PATH_PREFIX }}
+        DOCS_PATH: ${{ inputs.path }}
         GITHUB_TOKEN: ${{ steps.fetch-ephemeral-token.outputs.token }}
     - name: Upload docs
       uses: actions/upload-artifact@v7
