@@ -14,9 +14,9 @@ on:
         default: "latest"
         type: string
       path-pattern:
-        description: The path pattern to check for changes
+        description: Path pattern for change detection. Empty derives from path (or ** if path is also empty).
         required: false
-        default: '**'
+        default: ''
         type: string
       path:
         description: Root directory of the documentation source. Defaults to the docs-builder default.
@@ -59,7 +59,7 @@ jobs:
         id: check-files
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
-          files: ${{ inputs.path-pattern }}
+          files: ${{ inputs.path-pattern || (inputs.path && format('{0}/**', inputs.path)) || '**' }}
           files_ignore: |
             ${{ inputs.path-pattern-ignore }}
             .github/**
