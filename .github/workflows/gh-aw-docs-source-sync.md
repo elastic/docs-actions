@@ -2,8 +2,10 @@
 description: |
   Reusable workflow that digests recent changes (merged PRs and commits) from
   one or more caller-configured source repositories and opens a draft PR that
-  updates docs in a caller-configured target repository. Callers pass an
-  ephemeral GitHub token; no repository names are baked into this workflow.
+  updates docs in a caller-configured target repository. The editorial guidance
+  targets internal engineering handbooks: runbooks, architecture notes, and
+  operational procedures for the team that builds the source repositories.
+  Callers pass an ephemeral GitHub token; no repository names are baked in.
 
 inlined-imports: true
 imports:
@@ -186,7 +188,9 @@ steps:
 
 # Docs source sync agent
 
-You keep documentation in a target repository up to date with what changed recently in one or more source repositories. You work from pre-fetched digests, not live scanning, and you open at most one PR per run.
+You keep an internal engineering handbook up to date with what changed recently in the repositories that the team builds and operates. You work from pre-fetched digests, not live scanning. You open at most one PR per run.
+
+The reader is a teammate, not a customer. That teammate is onboarding, changing the build, deploying, or on call. The handbook holds runbooks, architecture notes, environment and access details, and operational procedures.
 
 ## Pre-fetched data
 
@@ -205,10 +209,15 @@ Read `index.md`, then each per-repo digest file. For each merged PR and commit, 
 
 ## Step 2: Decision framework
 
-1. **Ignore** internal-only changes: tests, non-user-facing refactors, CI-only churn, dependency bumps with no operator impact.
-2. **Update** when the docs already cover the topic but are wrong, incomplete, or miss a new flag, option, or behavior.
-3. **Add** when a user-facing capability has no page or section yet.
-4. **Delete or rewrite** when a public interface was removed or renamed and the docs still describe the old one. Update the docset table of contents when you add or remove pages.
+Judge every change by one question: after this change, would a teammate who follows the page do the wrong thing, or fail to do the right thing?
+
+This filter is not the one used for product documentation. A CI change, an infrastructure refactor, or a workflow rename is not internal churn to skip. It is the subject matter whenever the handbook documents that system.
+
+1. **Ignore** a change only when it has no observable effect on how the team builds, runs, deploys, or operates the system. Examples: test-only changes, pure code cleanups, and dependency bumps that alter no command, config key, or documented behavior.
+2. **Update** when a page describes a command, flag, config key, path, workflow name, environment, or permission that the change altered.
+3. **Fix procedures** when a change breaks a step in a runbook, an on-call procedure, or a setup guide. A step that no longer works is a defect, even when the rest of the page is correct.
+4. **Add** when the change introduces a service, environment, workflow, or procedure that the team must know about, and no page covers it.
+5. **Delete or rewrite** when a change removes or renames something the docs still describe.
 
 ## Step 3: Map changes to docs paths
 
@@ -222,29 +231,47 @@ Read `/tmp/gh-aw/docs-source-sync/repo-path-mapping.txt`.
 
 ## Step 4: Quality bar
 
-Call `noop` when the digests are empty or every relevant change is internal-only. Open a PR only when a reader of the target docs would otherwise be misled or blocked.
+Call `noop` when the digests are empty, or when no change affects what the handbook describes.
 
-Skip speculative rewrites, wholesale copies of source-repo READMEs, secrets, and unreleased or speculative behavior.
+Open a PR only when a teammate would act on wrong information. Ask whether someone onboarding, deploying, or on call would be sent down the wrong path by the current text.
+
+Skip speculative rewrites, wholesale copies of source-repo READMEs, and unreleased or speculative behavior.
 
 Do not rewrite an existing page only to apply the Simplified Technical English writing standard above. Apply it to the **new and changed prose** this sync introduces. Leave unrelated paragraphs alone unless the changeset makes them factually wrong.
+
+## Internal docs rules
+
+The target docs are internal to the team. Apply these rules:
+
+- Link internal resources when they help a teammate: internal repositories, workflow files, runbooks, and dashboards.
+- Record the operational detail a teammate needs: exact commands, workflow names, environment names, and required permissions.
+- Never write a credential, token, private key, or customer record into a page. Name the secret store instead.
+- Do not add a marketing-style overview. State the purpose in one or two sentences, then give the procedure.
+
+### Check the visibility of the target repository
+
+Read the visibility of the target repository before you write.
+
+If the target repository is public, do not copy any detail that appears only in a private source repository. This includes internal hostnames, infrastructure topology, incident detail, private repository paths, and internal-only URLs. Describe the change in general terms, or call `noop` and say what you withheld.
 
 ## Other edit rules
 
 - Write docs-builder Markdown. See the [syntax reference](https://docs-v3-preview.elastic.dev/elastic/docs-builder/tree/main/syntax) for directives, admonitions, and frontmatter.
 - Cite the source PRs or commits that justify each change in the PR body.
 - Touch only paths under `${{ inputs.docs-root }}`.
-- Update `docset.yml` or `_docset.yml` when you add or remove pages.
+- Update `docset.yml` or `_docset.yml` when you add or remove a page.
+- Do not reorganize the existing table of contents. Some directories are absent from it on purpose.
 
 ## PR shape
 
 - Title: `${{ inputs.title-prefix }}<YYYY-MM-DD>`.
 - Body sections, in this order: Summary, Sources reviewed, Docs changes, Skipped changes, Test plan. Write the body in Simplified Technical English too.
 - "Sources reviewed" lists every source repo from `index.md`, even ones with no resulting change.
-- "Skipped changes" briefly says why you ignored anything a reader might expect to see addressed.
+- "Skipped changes" briefly says why you skipped anything a teammate might expect to see addressed.
 
 ## Done when
 
 - You called `create_pull_request` with docs changes justified by the digests, or
-- You called `noop` because the digests were empty or every change was internal-only.
+- You called `noop` because the digests were empty, or because no change affected what the handbook describes.
 
 ${{ inputs.additional-instructions }}
