@@ -17,6 +17,7 @@ AI-powered workflows for Elastic documentation tasks. Each directory contains a 
 | [docs-typos-sweep](docs-typos-sweep/) | Run codespell across the docs corpus, or one selected subtree, and emit a structured fix-issue | `workflow_dispatch` | `create-issue` (label `docs-fix:typos`) |
 | [docs-staleness-sweep](docs-staleness-sweep/) | Flag stale content, stale screenshots, broken external links, and unsupported-version mentions on a rotating slice, or one selected subtree | `workflow_dispatch` | `create-issue` (label `docs-fix:staleness`) |
 | [docs-coherence-sweep](docs-coherence-sweep/) | Detect duplicates and contradictions vs. published Elastic docs on a rotating slice, or one selected subtree | `workflow_dispatch` | `create-issue` (label `docs-fix:coherence`) |
+| [docs-source-sync](docs-source-sync/) | Digest recent changes from caller-configured source repos and open a draft PR updating an internal engineering handbook in a caller-configured target repo | `workflow_call` (example: weekly `schedule`) | `create-pull-request` |
 
 ## Installation
 
