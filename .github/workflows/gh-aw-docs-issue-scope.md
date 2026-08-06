@@ -63,6 +63,7 @@ network:
     - github
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
+    - "ela.st"
 strict: false
 safe-outputs:
   allowed-domains:

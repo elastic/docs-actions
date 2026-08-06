@@ -99,6 +99,7 @@ network:
     - defaults
     - github
     - "www.elastic.co"
+    - "ela.st"
 safe-outputs:
   noop:
   create-issue:

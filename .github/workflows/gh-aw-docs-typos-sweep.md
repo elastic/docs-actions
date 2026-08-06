@@ -88,6 +88,7 @@ network:
   allowed:
     - defaults
     - github
+    - "ela.st"
 safe-outputs:
   noop:
   create-issue:
