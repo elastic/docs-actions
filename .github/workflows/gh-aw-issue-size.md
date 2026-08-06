@@ -56,6 +56,7 @@ network:
     - "*.figma.com"
     - "slack.com"
     - "*.slack.com"
+    - "ela.st"
 
 steps:
   - name: Repo-specific setup

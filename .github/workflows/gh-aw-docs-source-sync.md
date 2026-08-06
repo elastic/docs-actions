@@ -96,6 +96,7 @@ network:
     - github
     - "docs-v3-preview.elastic.dev"
     - "elastic.co"
+    - "ela.st"
 safe-outputs:
   github-token: ${{ secrets.source_sync_token }}
   noop:
