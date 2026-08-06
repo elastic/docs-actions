@@ -28,6 +28,14 @@ inputs:
       (e.g. elastic/cloud, whose default branch is "master" and whose release
       branches are named "ECE-4.1").
     default: '${{ github.ref_name }}'
+  branch:
+    description: >
+      Git branch that triggered the upload. Stored as S3 object metadata, not
+      used in the object key. Defaults to the triggering branch name.
+    default: '${{ github.ref_name }}'
+  commit:
+    description: 'Full git commit SHA that produced the uploaded spec.'
+    default: '${{ github.sha }}'
   aws-region:
     description: 'The AWS region to use'
     default: 'us-east-1'
@@ -45,6 +53,8 @@ runs:
         SPEC_NAME: ${{ inputs.spec-name }}
         S3_PREFIX: ${{ inputs.s3-prefix }}
         VERSION: ${{ inputs.version }}
+        BRANCH: ${{ inputs.branch }}
+        COMMIT: ${{ inputs.commit }}
       run: |
         source "${GITHUB_ACTION_PATH}/../../scripts/validate-inputs.sh"
 
@@ -52,6 +62,24 @@ runs:
         validate_path "$S3_PREFIX" "s3-prefix"
         validate_segment "$SPEC_NAME" "spec-name"
         validate_segment "$VERSION" "version"
+
+        if [[ -z "$BRANCH" ]]; then
+          echo "::error::branch must not be empty"
+          exit 1
+        fi
+        if [[ "$BRANCH" == *$'\n'* || "$BRANCH" == *$'\r'* ]]; then
+          echo "::error::branch must not contain newlines"
+          exit 1
+        fi
+        if [[ "$BRANCH" =~ [[:cntrl:]] ]]; then
+          echo "::error::branch must not contain control characters: ${BRANCH}"
+          exit 1
+        fi
+
+        if [[ ! "$COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+          echo "::error::commit must be a 40-character lowercase hex SHA: ${COMMIT}"
+          exit 1
+        fi
 
         case "$SPEC_PATH" in
           *.yaml|*.yml) content_type=application/yaml ;;
@@ -92,9 +120,12 @@ runs:
         S3_BUCKET: ${{ inputs.s3-bucket }}
         S3_PREFIX: ${{ inputs.s3-prefix }}
         VERSION: ${{ inputs.version }}
+        BRANCH: ${{ inputs.branch }}
+        COMMIT: ${{ inputs.commit }}
         EXT: ${{ steps.resolve.outputs.ext }}
         CONTENT_TYPE: ${{ steps.resolve.outputs.content-type }}
       run: |
         aws s3 cp --checksum-algorithm SHA256 --content-type "$CONTENT_TYPE" \
+          --metadata "commit=${COMMIT},repository=${S3_PREFIX},branch=${BRANCH}" \
           "$SPEC_PATH" \
           "s3://${S3_BUCKET}/${S3_PREFIX}/${VERSION}/${SPEC_NAME}.${EXT}"
