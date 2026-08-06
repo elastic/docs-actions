@@ -131,7 +131,7 @@ safe-outputs:
     expires: 14d
     max: 1
     fallback-as-issue: true
-    auto-close-issue: false
+    auto-close-issue: true
     max-patch-files: 20
     max-patch-size: 512
     allowed-files:
@@ -254,7 +254,7 @@ If the reader test finds a blocking documentation gap that can be resolved from 
 
 ## 4. Open a draft pull request
 
-When the focused draft passes reader testing, use `create_pull_request` exactly once. Keep it a draft and do not enable auto-merge. Link the triggering issue without closing it. Do not run Vale, docs-builder validation, or a documentation review; those happen separately after the draft is created.
+When the focused draft passes reader testing, use `create_pull_request` exactly once. Keep it a draft and do not enable auto-merge. Link the triggering issue with an active closing keyword so merging the pull request closes the issue. Do not run Vale, docs-builder validation, or a documentation review; those happen separately after the draft is created.
 
 The pull request body must contain:
 
@@ -262,7 +262,7 @@ The pull request body must contain:
 - A short triage rationale explaining which issue and implementation evidence made the task sufficiently specified for autonomous handling.
 - A `Drafting sources` section listing the contribution-guideline pages, published documentation, and linked implementation evidence consulted.
 - A `Reader test` section listing the reader goal, number of test rounds, and whether any blocking comprehension gaps remained.
-- `Related to #<issue number>`.
+- `Closes #<issue number>`.
 - This note: `This draft PR was produced autonomously by docs-agent-experimental in experimental mode.`
 - This CI note: `Safe-output PRs do not trigger CI by default. A maintainer must trigger the required checks manually.`
 
