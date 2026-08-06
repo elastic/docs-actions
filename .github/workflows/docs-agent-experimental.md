@@ -128,6 +128,7 @@ safe-outputs:
     draft: true
     title-prefix: "[docs-agent] "
     labels: [automation, docs-agent]
+    assignees: ${{ github.actor }}
     expires: 14d
     max: 1
     fallback-as-issue: true
