@@ -36,6 +36,7 @@ concurrency:
   job-discriminator: ${{ github.event.issue.number || github.run_id }}
 
 permissions:
+  actions: write
   contents: read
   issues: read
   pull-requests: read

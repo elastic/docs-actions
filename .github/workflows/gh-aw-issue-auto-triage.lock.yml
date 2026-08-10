@@ -929,7 +929,7 @@ jobs:
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
           cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_c815faa9d261d287_EOF'
-          {"add_comment":{"max":1,"target":"${{ github.event.issue.number }}"},"add_labels":{"allowed":["triaged","human-needed","bug","enhancement","question","documentation","Team:Admin","Team:Developer","Team:DocsEng","Team:SKI","Team:Projects","cross-team"],"max":6,"target":"${{ github.event.issue.number }}"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"remove_labels":{"allowed":["needs-team"],"max":1,"target":"${{ github.event.issue.number }}"},"report_incomplete":{},"update_issue":{"allow_body":true,"max":1,"target":"${{ github.event.issue.number }}"}}
+          {"add_comment":{"max":1,"target":"${{ github.event.issue.number }}"},"add_labels":{"allowed":["triaged","human-needed","bug","enhancement","question","documentation","Team:Admin","Team:Developer","Team:DocsEng","Team:Experience","Team:Ingest","Team:SKI","Team:Projects","cross-team"],"max":6,"target":"${{ github.event.issue.number }}"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"remove_labels":{"allowed":["needs-team"],"max":1,"target":"${{ github.event.issue.number }}"},"report_incomplete":{},"update_issue":{"allow_body":true,"max":1,"target":"${{ github.event.issue.number }}"}}
           GH_AW_SAFE_OUTPUTS_CONFIG_c815faa9d261d287_EOF
       - name: Generate Safe Outputs Tools
         env:
@@ -937,7 +937,7 @@ jobs:
             {
               "description_suffixes": {
                 "add_comment": " CONSTRAINTS: Maximum 1 comment(s) can be added. Target: ${{ github.event.issue.number }}. Supports reply_to_id for discussion threading.",
-                "add_labels": " CONSTRAINTS: Maximum 6 label(s) can be added. Only these labels are allowed: [\"triaged\" \"human-needed\" \"bug\" \"enhancement\" \"question\" \"documentation\" \"Team:Admin\" \"Team:Developer\" \"Team:DocsEng\" \"Team:SKI\" \"Team:Projects\" \"cross-team\"]. Target: ${{ github.event.issue.number }}.",
+                "add_labels": " CONSTRAINTS: Maximum 6 label(s) can be added. Only these labels are allowed: [\"triaged\" \"human-needed\" \"bug\" \"enhancement\" \"question\" \"documentation\" \"Team:Admin\" \"Team:Developer\" \"Team:DocsEng\" \"Team:Experience\" \"Team:Ingest\" \"Team:SKI\" \"Team:Projects\" \"cross-team\"]. Target: ${{ github.event.issue.number }}.",
                 "remove_labels": " CONSTRAINTS: Maximum 1 label(s) can be removed. Only these labels can be removed: [needs-team]. Target: ${{ github.event.issue.number }}.",
                 "update_issue": " CONSTRAINTS: Maximum 1 issue(s) can be updated. Target: ${{ github.event.issue.number }}. Body updates are allowed."
               },
@@ -1495,6 +1495,7 @@ jobs:
       needs.activation.outputs.daily_ai_credits_exceeded == 'true')
     runs-on: ubuntu-slim
     permissions:
+      actions: write
       contents: read
       issues: write
       pull-requests: write

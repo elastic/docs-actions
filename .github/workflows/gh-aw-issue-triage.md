@@ -37,6 +37,7 @@ concurrency:
   job-discriminator: ${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
 
 permissions:
+  actions: write
   contents: read
   issues: read
   pull-requests: read
@@ -167,6 +168,8 @@ safe-outputs:
       - "Team:Admin"
       - "Team:Developer"
       - "Team:DocsEng"
+      - "Team:Experience"
+      - "Team:Ingest"
       - "Team:SKI"
       - "Team:Projects"
       - "cross-team"
