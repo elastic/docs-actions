@@ -64,6 +64,8 @@ network:
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
     - "ela.st"
+    - "docs.bump.sh"
+    - "search.elastic.co"
 strict: false
 safe-outputs:
   allowed-domains:

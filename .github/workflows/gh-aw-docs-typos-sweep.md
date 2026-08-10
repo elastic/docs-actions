@@ -89,6 +89,8 @@ network:
     - defaults
     - github
     - "ela.st"
+    - "docs.bump.sh"
+    - "search.elastic.co"
 safe-outputs:
   noop:
   create-issue:

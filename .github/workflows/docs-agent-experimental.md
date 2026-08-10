@@ -83,6 +83,8 @@ network:
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
     - "ela.st"
+    - "docs.bump.sh"
+    - "search.elastic.co"
 
 steps:
   - name: Read issue context
