@@ -57,6 +57,8 @@ network:
     - "slack.com"
     - "*.slack.com"
     - "ela.st"
+    - "docs.bump.sh"
+    - "search.elastic.co"
 
 steps:
   - name: Repo-specific setup
