@@ -60,6 +60,7 @@ timeout-minutes: 45
 max-ai-credits: 2000
 
 tools:
+  bash: true
   github:
     mode: gh-proxy
     toolsets: [default]
