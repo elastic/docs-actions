@@ -124,7 +124,7 @@ safe-outputs:
 timeout-minutes: 30
 steps:
   - name: Checkout source docs repo
-    uses: actions/checkout@v6
+    uses: actions/checkout@v7.0.1
     with:
       repository: ${{ inputs.source-repo || github.repository }}
       fetch-depth: 0
