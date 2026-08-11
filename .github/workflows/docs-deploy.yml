@@ -89,7 +89,7 @@ jobs:
         id: context
         uses: actions/github-script@v9
         env:
-          PATH_PATTERN: ${{ inputs.path-pattern }}
+          PATH_PATTERN: ${{ inputs.path-pattern || (inputs.path && format('{0}/**', inputs.path)) || 'docs/**' }}
           IGNORE_PATTERNS: |
             ${{ inputs.path-pattern-ignore }}
             .github/**
