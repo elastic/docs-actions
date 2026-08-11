@@ -13,6 +13,7 @@ imports:
         - elastic/elastic-docs-skills/skills/review/docs-check-style
         - elastic/elastic-docs-skills/skills/review/flag-jargon-skill
         - elastic/elastic-docs-skills/skills/review/frontmatter-audit
+        - elastic/elastic-docs-skills/skills/review/check-contradictions
         - elastic/elastic-docs-skills/skills/authoring/content-type-checker
         - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
   - gh-aw-fragments/formatting.md
@@ -292,6 +293,7 @@ When a changed file would benefit from one of the installed APM skills, explicit
 - `docs-frontmatter-audit` for frontmatter metadata issues.
 - `docs-content-type-checker` for content-type fit and required-structure judgments.
 - `docs-applies-to-tagging` for `applies_to` validity and lifecycle-scope judgments.
+- `docs-check-contradictions` for detecting contradictions between changed content and existing docs (see Step 4).
 
 Before making manual style or clarity judgments, refresh the published Elastic style guidance with `elastic-docs.get_document_by_url`. At minimum, read the style guide overview once per run when there are eligible files. Then fetch the relevant subpage when a potential finding depends on a specific area such as voice and tone, accessibility, grammar and spelling, word choice, formatting, or UI writing.
 
@@ -442,7 +444,26 @@ Treat this as a PR review, not a full repository audit:
 - If the pull request appears linked to a parent issue, assess whether the issue's documentation ask is fully satisfied, only partially satisfied, or still unsupported by the PR.
 - If the linked issue is not satisfied, explain the gap in the review summary and only leave inline comments where the gap maps to a specific changed file or hunk.
 
-## What to report
+## Step 4: Check for contradictions
+
+After completing Step 3, run the `docs-check-contradictions` skill on the eligible changed files to find places in the existing docs — both in the local repo and in published Elastic docs — that contradict or conflict with the new or updated content.
+
+Call the skill once for each eligible file, passing the file path as the argument. If there are many eligible files, group them by directory and call the skill once per directory instead.
+
+The skill searches for contradictions in two places. When the Elastic Docs MCP server is available, use it for the cross-repo search:
+
+- Call `elastic-docs.search_docs` with the key claim or term (use product or section filters when you know them) to find published pages on the same topic. Optionally call `elastic-docs.find_related_docs` to widen coverage.
+- For the most on-topic hits, call `elastic-docs.get_document_by_url` with `includeBody: true` to read the actual content and compare it against the claims in the changed file.
+- Optionally call `elastic-docs.find_docs_inconsistencies` on the main topic to surface additional candidate pages. Treat its output as discovery only — every candidate still needs to be read and compared before reporting it as a contradiction.
+
+If the MCP server is unavailable, fall back to `WebFetch` on specific published doc URLs and note in the review body that the cross-repo check used WebFetch with narrower coverage.
+
+Use the skill's findings as follows:
+
+- **High severity** contradictions: include as inline review comments using `create_pull_request_review_comment`, pointed at the relevant changed line or the nearest changed hunk. Use the skill's "Recommendation" field as the comment body.
+- **Medium and Low severity** contradictions: summarize in the `Contradictions` section of the review body (see review body format). Do not open inline comments for medium/low findings unless they overlap with an existing inline comment slot.
+
+Do not report contradictions the skill found in files outside the configured review scope, in `release-notes/` directories, or in `_snippets/` directories.
 
 Report only findings that are:
 
@@ -515,6 +536,7 @@ Submit one final review body in this shape:
 - Jargon: <short result>.
 - Frontmatter and applies_to: <short result>.
 - Content type fit: <short result>.
+- Contradictions: <No contradictions found | N found (X local, Y cross-repo) — see inline comments or list below>.
 - Parent issue satisfaction: <Not applicable | Satisfied | Partially satisfied | Not satisfied>.
 
 ### Nits
