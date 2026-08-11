@@ -723,9 +723,11 @@ jobs:
               return;
             }
 
-            const docsRoot = (process.env.DOCS_PATH || 'docs')
-              .replace(/^\.\//, '')
-              .replace(/\/+$/, '');
+            const docsRoot = (
+              process.env.DOCS_PATH ||
+              (process.env.PATH_PATTERN || '').replace(/\/?\*\*$/, '').replace(/\/?\*$/, '') ||
+              'docs'
+            ).replace(/^\.\//, '').replace(/\/+$/, '');
             const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
 
