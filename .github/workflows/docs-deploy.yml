@@ -42,6 +42,11 @@ on:
         type: string
         default: ''
         required: false
+      path:
+        description: 'Root directory of the documentation source (e.g. docs or generated/docs). Used to strip the correct prefix from preview comment links. Defaults to docs.'
+        type: string
+        default: ''
+        required: false
       use-release-branches:
         description: >
           When true, update-link-index runs for semver release branches (e.g. 9.4) as well as the default branch.
@@ -84,7 +89,7 @@ jobs:
         id: context
         uses: actions/github-script@v9
         env:
-          PATH_PATTERN: ${{ inputs.path-pattern }}
+          PATH_PATTERN: ${{ inputs.path-pattern || (inputs.path && format('{0}/**', inputs.path)) || 'docs/**' }}
           IGNORE_PATTERNS: |
             ${{ inputs.path-pattern-ignore }}
             .github/**
@@ -664,6 +669,7 @@ jobs:
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
+          DOCS_PATH: ${{ inputs.path }}
         with:
           # language=js
           script: |
@@ -717,11 +723,17 @@ jobs:
               return;
             }
 
+            const docsRoot = (process.env.DOCS_PATH || 'docs')
+              .replace(/^\.\//, '')
+              .replace(/\/+$/, '');
+            const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
+
             const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
             const toMarkdownLink = (file) => {
               const path = file
-                .replace(/^docs\//, '')
-                .replace(/\/index.md$/, '')
+                .replace(rootPattern, '')
+                .replace(/\/index\.md$/, '')
                 .replace(/\.md$/, '');
               return `[${escapeMarkdown(file)}](https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path})`;
             }
