@@ -664,6 +664,7 @@ jobs:
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
+          PATH_PATTERN: ${{ inputs.path-pattern }}
         with:
           # language=js
           script: |
@@ -717,11 +718,17 @@ jobs:
               return;
             }
 
+            // Derive the docs root prefix from path-pattern (e.g. 'generated/docs/**' → 'generated/docs/')
+            // so that repos with a non-standard docs directory (not 'docs/') get correct preview URLs.
+            const docsRoot = (process.env.PATH_PATTERN || 'docs/**')
+              .replace(/\/?\*\*$/, '')
+              .replace(/\/?\*$/, '') + '/';
+
             const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
             const toMarkdownLink = (file) => {
               const path = file
-                .replace(/^docs\//, '')
-                .replace(/\/index.md$/, '')
+                .replace(docsRoot, '')
+                .replace(/\/index\.md$/, '')
                 .replace(/\.md$/, '');
               return `[${escapeMarkdown(file)}](https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path})`;
             }
