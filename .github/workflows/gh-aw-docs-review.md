@@ -450,6 +450,14 @@ After completing Step 3, run the `docs-check-contradictions` skill on the eligib
 
 Call the skill once for each eligible file, passing the file path as the argument. If there are many eligible files, group them by directory and call the skill once per directory instead.
 
+The skill searches for contradictions in two places. When the Elastic Docs MCP server is available, use it for the cross-repo search:
+
+- Call `elastic-docs.search_docs` with the key claim or term (use product or section filters when you know them) to find published pages on the same topic. Optionally call `elastic-docs.find_related_docs` to widen coverage.
+- For the most on-topic hits, call `elastic-docs.get_document_by_url` with `includeBody: true` to read the actual content and compare it against the claims in the changed file.
+- Optionally call `elastic-docs.find_docs_inconsistencies` on the main topic to surface additional candidate pages. Treat its output as discovery only — every candidate still needs to be read and compared before reporting it as a contradiction.
+
+If the MCP server is unavailable, fall back to `WebFetch` on specific published doc URLs and note in the review body that the cross-repo check used WebFetch with narrower coverage.
+
 Use the skill's findings as follows:
 
 - **High severity** contradictions: include as inline review comments using `create_pull_request_review_comment`, pointed at the relevant changed line or the nearest changed hunk. Use the skill's "Recommendation" field as the comment body.
