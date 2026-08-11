@@ -13,6 +13,7 @@ imports:
         - elastic/elastic-docs-skills/skills/review/docs-check-style
         - elastic/elastic-docs-skills/skills/review/flag-jargon-skill
         - elastic/elastic-docs-skills/skills/review/frontmatter-audit
+        - elastic/elastic-docs-skills/skills/review/check-contradictions
         - elastic/elastic-docs-skills/skills/authoring/content-type-checker
         - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
   - gh-aw-fragments/formatting.md
@@ -292,6 +293,7 @@ When a changed file would benefit from one of the installed APM skills, explicit
 - `docs-frontmatter-audit` for frontmatter metadata issues.
 - `docs-content-type-checker` for content-type fit and required-structure judgments.
 - `docs-applies-to-tagging` for `applies_to` validity and lifecycle-scope judgments.
+- `docs-check-contradictions` for detecting contradictions between changed content and existing docs (see Step 4).
 
 Before making manual style or clarity judgments, refresh the published Elastic style guidance with `elastic-docs.get_document_by_url`. At minimum, read the style guide overview once per run when there are eligible files. Then fetch the relevant subpage when a potential finding depends on a specific area such as voice and tone, accessibility, grammar and spelling, word choice, formatting, or UI writing.
 
@@ -442,7 +444,18 @@ Treat this as a PR review, not a full repository audit:
 - If the pull request appears linked to a parent issue, assess whether the issue's documentation ask is fully satisfied, only partially satisfied, or still unsupported by the PR.
 - If the linked issue is not satisfied, explain the gap in the review summary and only leave inline comments where the gap maps to a specific changed file or hunk.
 
-## What to report
+## Step 4: Check for contradictions
+
+After completing Step 3, run the `docs-check-contradictions` skill on the eligible changed files to find places in the existing docs — both in the local repo and in published Elastic docs — that contradict or conflict with the new or updated content.
+
+Call the skill once for each eligible file, passing the file path as the argument. If there are many eligible files, group them by directory and call the skill once per directory instead.
+
+Use the skill's findings as follows:
+
+- **High severity** contradictions: include as inline review comments using `create_pull_request_review_comment`, pointed at the relevant changed line or the nearest changed hunk. Use the skill's "Recommendation" field as the comment body.
+- **Medium and Low severity** contradictions: summarize in the `Contradictions` section of the review body (see review body format). Do not open inline comments for medium/low findings unless they overlap with an existing inline comment slot.
+
+Do not report contradictions the skill found in files outside the configured review scope, in `release-notes/` directories, or in `_snippets/` directories.
 
 Report only findings that are:
 
@@ -515,6 +528,7 @@ Submit one final review body in this shape:
 - Jargon: <short result>.
 - Frontmatter and applies_to: <short result>.
 - Content type fit: <short result>.
+- Contradictions: <No contradictions found | N found (X local, Y cross-repo) — see inline comments or list below>.
 - Parent issue satisfaction: <Not applicable | Satisfied | Partially satisfied | Not satisfied>.
 
 ### Nits
