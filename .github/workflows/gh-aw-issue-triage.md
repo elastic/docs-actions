@@ -1,8 +1,9 @@
 ---
 description: >
-  Triages and refines an issue in one pass — classifies the issue type, validates it against the
-  quality bar, rewrites the description when it needs it, and applies labels.
-  Triggered by a /triage slash command, or via workflow_call from a consumer repository.
+  Full triage — classifies the issue type, validates it against the quality bar, rewrites the
+  description when it needs it, and applies labels. This is the opt-in path: it runs when a
+  team member posts a /triage slash command, or when a consumer workflow calls it explicitly.
+  For the lightweight auto-triage that runs on issue open, see gh-aw-issue-auto-triage.
 
 inlined-imports: true
 imports:
