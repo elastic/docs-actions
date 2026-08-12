@@ -51,12 +51,21 @@ and contribution rules in `AGENTS.md`, move the team map out of the caller workf
 triage instructions file, and summarize only the issue-quality checks relevant to triage.
 
 Set `project-instructions-path` to another repository-relative path, or to an empty string to
-disable the file. Use `additional-instructions` for short inline additions or overrides. Inline
-instructions take precedence within the customizable topics above.
+disable the file. The existing `additional-instructions` input remains fully supported, so
+current callers do not need to migrate immediately. When the project file is absent, the inline
+instructions continue to provide all repository-specific context. When both are present, the
+inline instructions can refine or override the file within the customizable topics above.
+
+The precedence model is:
+
+1. The immutable workflow contract
+2. Inline `additional-instructions` from the caller
+3. The project instructions file
 
 Project instructions cannot override the security policy, safe-output limits, read-only GitHub
 access, outcome templates, no-body-edit rule, green reaction-only behavior, one-comment limit, or
-the rule that `human-needed` is the only label applied to red issues.
+the rule that `human-needed` is the only label applied to red issues. Inline instructions cannot
+override these rules either.
 
 ## Inputs
 

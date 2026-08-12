@@ -33,6 +33,7 @@ agentic-workflows/
 │   └── README.md
 ├── issue-auto-triage/
 │   ├── example.yml
+│   ├── project-instructions.example.md
 │   └── README.md
 ├── issue-size/
 │   ├── example.yml
@@ -143,6 +144,11 @@ on:
         required: false
         default: ""
 ```
+
+Workflows can add inputs for their own context model. For example, issue auto-triage adds
+`project-instructions-path`, which defaults to `.github/triage-instructions.md` in the consumer
+repository. Its precedence is the immutable workflow contract, then the caller's inline
+`additional-instructions`, then the project instructions file.
 
 ### Shared fragments
 
