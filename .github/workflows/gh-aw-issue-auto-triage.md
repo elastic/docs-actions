@@ -140,7 +140,8 @@ wait for it to finish before starting the next one.
 
 The traffic-light comment has a strict output contract. Before calling `add_comment`, verify that:
 
-- Its first Unicode character is exactly one of `🟢`, `🟠`, or `🔴`.
+- Its first line is exactly one of the three `TriageBot Results` status lines in the
+  `content-checker` instructions. An emoji by itself is invalid.
 - It uses the matching template from the `content-checker` instructions verbatim, replacing only
   the angle-bracketed placeholder bullets.
 - It does not spell out or substitute a color name such as "green", "yellow", "orange", or "red"
@@ -241,21 +242,25 @@ Do not flag hedging or broad scope when it communicates uncertainty or an explor
 ### 3. Rate the issue and post one comment
 
 The templates below are an exact output contract, not examples. Copy the selected template
-verbatim and replace only its angle-bracketed placeholder bullet. The first character of the
-comment must be the displayed emoji. Never replace an emoji with a color name or add a heading
-before it.
+verbatim and replace only its angle-bracketed placeholder bullet. The first line must contain the
+displayed emoji and its complete `TriageBot Results` summary. Never shorten the status line to an
+emoji alone, replace an emoji with a color name, or add a heading before it.
 
 **🟢 Complete** — all required sections present and substantive, no blocking ambiguity:
 
 ```
-🟢 This issue has all the information needed to be actioned.
+🟢 TriageBot Results: Sufficient context
+
+This issue has all the information needed to be actioned.
 ```
 
 **🟠 Needs more detail** — sections are weak or partially filled, but the issue is still
 actionable. Apply no extra labels. Post:
 
 ```
-🟠 This issue can be actioned but some information is missing or unclear:
+🟠 TriageBot Results: Insufficient context
+
+This issue can be actioned but some information is missing or unclear:
 
 - <one bullet per weak or missing section, specific and actionable>
 
@@ -266,7 +271,9 @@ Adding these details will help the team resolve it faster.
 input. Apply `human-needed`. Post:
 
 ```
-🔴 This issue needs more information before it can be picked up. Could you clarify:
+🔴 TriageBot Results: Not actionable
+
+This issue needs more information before it can be picked up. Could you clarify:
 
 - <one bullet per specific question for the author>
 
@@ -274,7 +281,8 @@ The issue has been flagged so the team can follow up once it is updated.
 ```
 
 Post exactly one comment. Do not summarize or restate information already in the issue.
-Before posting, verify that the comment starts with the emoji for the selected rating and matches
-its template. If it does not, correct it before calling `add_comment`.
+Before posting, verify that the comment's first line exactly matches the selected `TriageBot
+Results` status line and that the rest matches its template. If it does not, correct it before
+calling `add_comment`.
 
 ## end agent: `content-checker`
