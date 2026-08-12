@@ -249,7 +249,7 @@ emoji alone, replace an emoji with a color name, or add a heading before it.
 **🟢 Complete** — all required sections present and substantive, no blocking ambiguity:
 
 ```
-🟢 TriageBot Results: Sufficient context
+🟢 TriageBot Results: Issue looks good
 
 This issue has all the information needed to be actioned.
 ```
