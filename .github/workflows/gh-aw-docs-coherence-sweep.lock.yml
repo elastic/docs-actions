@@ -1,5 +1,5 @@
-# gh-aw-metadata: {"schema_version":"v4","frontmatter_hash":"fa894d7ba0f821ce83faffb1c0576127d12029dbea446902b34edbbab86904a0","body_hash":"2105c836ec996b9dbac8851d52f0fc7ca551badee9375f3301264847e5c75947","compiler_version":"v0.86.2","agent_id":"copilot","agent_model":"claude-sonnet-5","engine_versions":{"copilot":"1.0.78"}}
-# gh-aw-manifest: {"version":1,"secrets":["GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/cache/restore","sha":"55cc8345863c7cc4c66a329aec7e433d2d1c52a9","version":"v6.1.0"},{"repo":"actions/cache/save","sha":"55cc8345863c7cc4c66a329aec7e433d2d1c52a9","version":"v6.1.0"},{"repo":"actions/checkout","sha":"3d3c42e5aac5ba805825da76410c181273ba90b1","version":"v7.0.1"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"820762786026740c76f36085b0efc47a31fe5020","version":"v7.0.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"6aab9e5b5c91c615506061f09bedd81a23babe3c","version":"v0.86.2"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.27.44","digest":"sha256:0d727725c737b58c7bdf51f640cffb928385ec46517e0917c7f1a02f1bada8b4","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.27.44@sha256:0d727725c737b58c7bdf51f640cffb928385ec46517e0917c7f1a02f1bada8b4"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.44","digest":"sha256:b50fbadba138f6e9aba94aca09711335c489bb3b15861220cb66f6092e042dc7","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.44@sha256:b50fbadba138f6e9aba94aca09711335c489bb3b15861220cb66f6092e042dc7"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.27.44","digest":"sha256:83e48bbe12c634be8c228a576832fe45f66c529ac3659db92bddbcf2eeb6d627","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.27.44@sha256:83e48bbe12c634be8c228a576832fe45f66c529ac3659db92bddbcf2eeb6d627"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.4.8","digest":"sha256:38bbea36cdb46a3c9d04d1db05e672966f5239b431a2022eb35881688e5721d8","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.4.8@sha256:38bbea36cdb46a3c9d04d1db05e672966f5239b431a2022eb35881688e5721d8"},{"image":"ghcr.io/github/gh-aw-node","digest":"sha256:33e1ec1d967ac1f28c2cedc24ce103dea3226840626de345d3fe579e96cf5c7d","pinned_image":"ghcr.io/github/gh-aw-node@sha256:33e1ec1d967ac1f28c2cedc24ce103dea3226840626de345d3fe579e96cf5c7d"},{"image":"ghcr.io/github/github-mcp-server:v1.8.0","digest":"sha256:d5a18c04b92714c309eb46a2305087e91a4dbd80420f6e462656699f95093520","pinned_image":"ghcr.io/github/github-mcp-server:v1.8.0@sha256:d5a18c04b92714c309eb46a2305087e91a4dbd80420f6e462656699f95093520"}]}
+# gh-aw-metadata: {"schema_version":"v4","frontmatter_hash":"fa894d7ba0f821ce83faffb1c0576127d12029dbea446902b34edbbab86904a0","body_hash":"2105c836ec996b9dbac8851d52f0fc7ca551badee9375f3301264847e5c75947","compiler_version":"v0.86.2","agent_id":"copilot","agent_model":"claude-sonnet-5","engine_versions":{"copilot":"1.0.79"}}
+# gh-aw-manifest: {"version":1,"secrets":["GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/cache/restore","sha":"55cc8345863c7cc4c66a329aec7e433d2d1c52a9","version":"v6.1.0"},{"repo":"actions/cache/save","sha":"55cc8345863c7cc4c66a329aec7e433d2d1c52a9","version":"v6.1.0"},{"repo":"actions/checkout","sha":"3d3c42e5aac5ba805825da76410c181273ba90b1","version":"v7.0.1"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"820762786026740c76f36085b0efc47a31fe5020","version":"v7.0.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"6aab9e5b5c91c615506061f09bedd81a23babe3c","version":"v0.86.2"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.27.44","digest":"sha256:0d727725c737b58c7bdf51f640cffb928385ec46517e0917c7f1a02f1bada8b4","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.27.44@sha256:0d727725c737b58c7bdf51f640cffb928385ec46517e0917c7f1a02f1bada8b4"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.44","digest":"sha256:b50fbadba138f6e9aba94aca09711335c489bb3b15861220cb66f6092e042dc7","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.27.44@sha256:b50fbadba138f6e9aba94aca09711335c489bb3b15861220cb66f6092e042dc7"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.27.44","digest":"sha256:83e48bbe12c634be8c228a576832fe45f66c529ac3659db92bddbcf2eeb6d627","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.27.44@sha256:83e48bbe12c634be8c228a576832fe45f66c529ac3659db92bddbcf2eeb6d627"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.4.9","digest":"sha256:e5a1569aeaf41820fa7bdee3e94468cae448133cdbf00119ad24f5b74db1ab9f","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.4.9@sha256:e5a1569aeaf41820fa7bdee3e94468cae448133cdbf00119ad24f5b74db1ab9f"},{"image":"ghcr.io/github/gh-aw-node","digest":"sha256:33e1ec1d967ac1f28c2cedc24ce103dea3226840626de345d3fe579e96cf5c7d","pinned_image":"ghcr.io/github/gh-aw-node@sha256:33e1ec1d967ac1f28c2cedc24ce103dea3226840626de345d3fe579e96cf5c7d"},{"image":"ghcr.io/github/github-mcp-server:v1.9.0","digest":"sha256:881b53d6f75f69bdbc1b5b10fc2f1361717c19054143b3a8529fb5c32061a50e","pinned_image":"ghcr.io/github/github-mcp-server:v1.9.0@sha256:881b53d6f75f69bdbc1b5b10fc2f1361717c19054143b3a8529fb5c32061a50e"}]}
 # This file was automatically generated by gh-aw (v0.86.2). DO NOT EDIT. To debug this workflow, load the skill at https://github.com/github/gh-aw/blob/main/debug.md
 #
 #    ___                   _   _
@@ -58,9 +58,9 @@
 #   - ghcr.io/github/gh-aw-firewall/agent:0.27.44@sha256:0d727725c737b58c7bdf51f640cffb928385ec46517e0917c7f1a02f1bada8b4
 #   - ghcr.io/github/gh-aw-firewall/api-proxy:0.27.44@sha256:b50fbadba138f6e9aba94aca09711335c489bb3b15861220cb66f6092e042dc7
 #   - ghcr.io/github/gh-aw-firewall/squid:0.27.44@sha256:83e48bbe12c634be8c228a576832fe45f66c529ac3659db92bddbcf2eeb6d627
-#   - ghcr.io/github/gh-aw-mcpg:v0.4.8@sha256:38bbea36cdb46a3c9d04d1db05e672966f5239b431a2022eb35881688e5721d8
+#   - ghcr.io/github/gh-aw-mcpg:v0.4.9@sha256:e5a1569aeaf41820fa7bdee3e94468cae448133cdbf00119ad24f5b74db1ab9f
 #   - ghcr.io/github/gh-aw-node@sha256:33e1ec1d967ac1f28c2cedc24ce103dea3226840626de345d3fe579e96cf5c7d
-#   - ghcr.io/github/github-mcp-server:v1.8.0@sha256:d5a18c04b92714c309eb46a2305087e91a4dbd80420f6e462656699f95093520
+#   - ghcr.io/github/github-mcp-server:v1.9.0@sha256:881b53d6f75f69bdbc1b5b10fc2f1361717c19054143b3a8529fb5c32061a50e
 
 name: "Docs coherence sweep agent"
 on:
@@ -182,7 +182,7 @@ jobs:
         env:
           GH_AW_SETUP_WORKFLOW_NAME: "Docs coherence sweep agent"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/gh-aw-docs-coherence-sweep.lock.yml@${{ github.ref }}
-          GH_AW_INFO_VERSION: "1.0.78"
+          GH_AW_INFO_VERSION: "1.0.79"
           GH_AW_INFO_AWF_VERSION: "v0.27.44"
           GH_AW_INFO_ENGINE_ID: "copilot"
           GH_AW_SETUP_AW_CONTEXT: ${{ inputs.aw_context }}
@@ -197,8 +197,8 @@ jobs:
           GH_AW_INFO_ENGINE_ID: "copilot"
           GH_AW_INFO_ENGINE_NAME: "GitHub Copilot CLI"
           GH_AW_INFO_MODEL: "claude-sonnet-5"
-          GH_AW_INFO_VERSION: "1.0.78"
-          GH_AW_INFO_AGENT_VERSION: "1.0.78"
+          GH_AW_INFO_VERSION: "1.0.79"
+          GH_AW_INFO_AGENT_VERSION: "1.0.79"
           GH_AW_INFO_CLI_VERSION: "v0.86.2"
           GH_AW_INFO_WORKFLOW_NAME: "Docs coherence sweep agent"
           GH_AW_INFO_EXPERIMENTAL: "false"
@@ -209,6 +209,7 @@ jobs:
           GH_AW_INFO_AWF_VERSION: "v0.27.44"
           GH_AW_INFO_AWMG_VERSION: ""
           GH_AW_INFO_FIREWALL_TYPE: "squid"
+          GH_AW_INFO_AGENT_RUNTIME: ""
           GH_AW_COMPILED_STRICT: "false"
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
@@ -290,7 +291,6 @@ jobs:
           GH_AW_AGENT_FOLDERS: ".agents .github"
           GH_AW_AGENT_FILES: "AGENTS.md"
         run: |
-          # poutine:ignore untrusted_checkout_exec
           bash "${RUNNER_TEMP}/gh-aw/actions/save_base_github_folders.sh"
       - name: Check workflow lock file
         id: check-lock-file
@@ -318,9 +318,12 @@ jobs:
         if: ${{ contains(toJSON(vars), '"GH_AW_RUNTIME_FEATURES":') }}
         run: bash "${RUNNER_TEMP}/gh-aw/actions/log_runtime_features_summary.sh"
       - name: Create prompt with built-in context
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
+          GH_AW_ACTIONS_DIR: ${{ runner.temp }}/gh-aw/actions
+          GH_AW_PROMPT: ${{ runner.temp }}/gh-aw/aw-prompts/prompt.txt
           GH_AW_SAFE_OUTPUTS: ${{ runner.temp }}/gh-aw/safeoutputs/outputs.jsonl
+          GH_AW_PROMPT_CONFIG: "{\"items\":[{\"content_env\":\"GH_AW_PROMPT_CONTENT_0000\"},{\"file\":\"xpia.md\"},{\"file\":\"temp_folder_prompt.md\"},{\"file\":\"markdown.md\"},{\"file\":\"safe_outputs_prompt.md\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0001\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0002\"},{\"file\":\"mcp_cli_tools_prompt.md\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0003\"},{\"file\":\"github_mcp_tools_with_safeoutputs_prompt.md\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0004\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0005\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0006\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0007\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0008\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0009\"}]}"
           GH_AW_EXPR_1A3A194A: ${{ github.event.discussion.number || (fromJSON(github.event.inputs.aw_context || github.event.client_payload.aw_context || '{}').item_type == 'discussion' && fromJSON(github.event.inputs.aw_context || github.event.client_payload.aw_context || '{}').item_number) }}
           GH_AW_EXPR_463A214A: ${{ github.event.pull_request.number || (fromJSON(github.event.inputs.aw_context || github.event.client_payload.aw_context || '{}').item_type == 'pull_request' && fromJSON(github.event.inputs.aw_context || github.event.client_payload.aw_context || '{}').item_number) }}
           GH_AW_EXPR_49B959F1: ${{ inputs.additional-instructions }}
@@ -333,281 +336,26 @@ jobs:
           GH_AW_GITHUB_REPOSITORY: ${{ github.repository }}
           GH_AW_GITHUB_RUN_ID: ${{ github.run_id }}
           GH_AW_GITHUB_WORKSPACE: ${{ github.workspace }}
-        run: |
-          # poutine:ignore untrusted_checkout_exec
-          bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
-          {
-          cat << 'GH_AW_PROMPT_7ca42d78f09b15b0_EOF'
-          <system>
-          GH_AW_PROMPT_7ca42d78f09b15b0_EOF
-          cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
-          cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
-          cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
-          cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_7ca42d78f09b15b0_EOF'
-          <safe-output-tools>
-          Tools: create_issue, missing_tool, missing_data, noop
-          </safe-output-tools>
-          GH_AW_PROMPT_7ca42d78f09b15b0_EOF
-          cat "${RUNNER_TEMP}/gh-aw/prompts/mcp_cli_tools_prompt.md"
-          cat << 'GH_AW_PROMPT_7ca42d78f09b15b0_EOF'
-          <github-context>
-          The following GitHub context information is available for this workflow:
-          {{#if github.actor}}
-          - **actor**: __GH_AW_GITHUB_ACTOR__
-          {{/if}}
-          {{#if github.repository}}
-          - **repository**: __GH_AW_GITHUB_REPOSITORY__
-          {{/if}}
-          {{#if github.workspace}}
-          - **workspace**: __GH_AW_GITHUB_WORKSPACE__
-          {{/if}}
-          {{#if github.event.issue.number || (github.aw.context.item_type == 'issue' && github.aw.context.item_number)}}
-          - **issue-number**: #__GH_AW_EXPR_802A9F6A__
-          {{/if}}
-          {{#if github.event.discussion.number || (github.aw.context.item_type == 'discussion' && github.aw.context.item_number)}}
-          - **discussion-number**: #__GH_AW_EXPR_1A3A194A__
-          {{/if}}
-          {{#if github.event.pull_request.number || (github.aw.context.item_type == 'pull_request' && github.aw.context.item_number)}}
-          - **pull-request-number**: #__GH_AW_EXPR_463A214A__
-          {{/if}}
-          {{#if github.event.comment.id || github.aw.context.comment_id}}
-          - **comment-id**: __GH_AW_EXPR_FF1D34CE__
-          {{/if}}
-          {{#if github.run_id}}
-          - **workflow-run-id**: __GH_AW_GITHUB_RUN_ID__
-          {{/if}}
-          </github-context>
-
-          GH_AW_PROMPT_7ca42d78f09b15b0_EOF
-          cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_7ca42d78f09b15b0_EOF'
-          </system>
-          ## Formatting Guidelines
-
-          - Lead with the most important information — your first sentence should be the key takeaway
-          - Be concise and actionable — no filler or praise
-          - Use `<details>` and `<summary>` tags for long sections to keep responses scannable
-          - Wrap branch names and @-references in backticks to avoid pinging users
-          - Include code snippets with file paths and line numbers when referencing the codebase
-
-          ## Rigor
-
-          **Silence is better than noise. A false positive wastes a human's time and erodes trust in every future report.**
-
-          - If you claim something is missing or broken, show the exact evidence in the code — file path, line number, and what you observed.
-          - If a conclusion depends on assumptions you haven't confirmed, do not assert it. Verify first; if you cannot verify, do not report.
-          - "I don't know" is better than a wrong answer. `noop` is better than a speculative finding.
-          - It's worth the time to verify now versus guessing and forcing someone else to verify later.
-          - Before filing any issue or opening any PR, re-read your own output as a skeptical reviewer. Ask: "Would a senior engineer on this team find this useful, or would they close it immediately?" If the answer is "close," call `noop` instead.
-          - Only report findings you would confidently defend in a code review. If you feel the need to hedge with "might," "could," or "possibly," the finding is not ready to file.
-
-          ## MCP Pagination
-
-          MCP tool responses have a **25,000 token limit**. When responses exceed this limit, the call fails and you must retry with pagination — wasting turns and tokens. Use proactive pagination to stay under the limit.
-
-          ### Recommended `perPage` Values
-
-          - **5-10**: For detailed items (PR diffs, files with patches, issues with comments)
-          - **20-30**: For medium-detail lists (commits, review comments, issue lists)
-          - **50-100**: For simple list operations (branches, labels, tags)
-
-          ### Pagination Pattern
-
-          When you need all results from a paginated API:
-
-          1. Fetch the first page with a conservative `perPage` value
-          2. Process the results before fetching the next page
-          3. Continue fetching pages until you receive fewer results than `perPage` (indicating the last page)
-
-          If you see `MCP tool response exceeds maximum allowed tokens`, retry with a smaller `perPage` value (halve it).
-
-          ## Findings contract
-
-          These rules apply to every finding this sweep emits. Sweep output is consumed by humans and, increasingly, by AI fix-agents that may act on it without a human in the loop. A finding that is uncertain, or that looks authoritative but is wrong, is worse than no finding at all.
-
-          ### Finding-type allowlist
-
-          Emit only the `category` values enumerated in this workflow's "Build the findings list" step. That enumeration is a closed allowlist:
-
-          - Never invent, rename, pluralize, or otherwise vary a category string. If a finding does not map cleanly to an allowlisted category, drop it.
-          - A finding is valid only if applying its `suggested_fix` would change the page's rendered output or its published metadata. Drop no-op findings whose fix a reader would never see — for example, adding a marker the docs toolchain already generates automatically.
-          - If you spot something real that has no allowlisted category, describe it in the issue body's **Notes** section as prose. Do not smuggle it in as a finding under an invented category.
-
-          ### Per-finding confidence
-
-          Add a `confidence` field to every finding, set to exactly one of `high`, `medium`, or `low`. Judge confidence on how safe the finding is to act on *without* human verification — this is a separate axis from `severity`, which measures impact:
-
-          - `high` — the problem and the fix are objective and verifiable from the evidence in front of you: a missing required field, a tool-flagged issue with a single unambiguous correction, a directly quoted contradiction. A fix-agent could apply the `suggested_fix` verbatim without judgment.
-          - `medium` — the finding is well-supported, but the fix involves wording choices, or depends on a repository convention you could not fully verify this run. A human should confirm the fix before it lands.
-          - `low` — the finding is plausible but rests on partial evidence, subjective judgment, or an assumption about intent or convention you could not confirm. If you cannot justify at least `low`, drop the finding rather than filing it.
-
-          When a finding's evidence traces back to text you did not verify — for example, terminology copied from an issue or PR description rather than confirmed against the code or the published docs — cap its confidence at `low` and say so in the `evidence`.
-
-          Include `confidence` in the YAML schema for every finding, alongside `severity`. Keep the existing sort order (by `severity` first); do not reorder by confidence.
-
-          ### Human-review gate
-
-          If the capped findings list contains **any** finding with `confidence: medium` or `confidence: low`:
-
-          1. Add the label `needs-human-review` to your `create_issue` call, in addition to the labels the workflow adds automatically. This marks the issue as not safe to auto-action and keeps it out of the `good-for-ai` delegation track.
-          2. Immediately below the `## Findings (<count>)` heading and before the YAML block, add this callout verbatim:
-
-             > [!WARNING]
-             > This issue contains medium- or low-confidence findings. Review them before acting — auto-applying sweep output without verification risks putting incorrect content into the docs. Findings marked `confidence: high` are safe to delegate to a fix-agent; `medium` and `low` need a human sign-off first.
-
-          If every finding is `confidence: high`, do not add the label or the callout: the issue is safe to delegate as-is.
-
-          # Docs coherence sweep agent
-
-          You are a coherence reviewer for an Elastic documentation repository. Your job is to compare each in-scope page against published Elastic docs that cover overlapping topics, and flag two things that hurt search and AI-assistant quality:
-
-          1. **Duplicate or near-duplicate content** — the same explanation living in multiple places.
-          2. **Contradictions** — different pages giving different answers to the same question.
-
-          The Elastic Docs MCP server is your primary tool. You are not running on the full repo; you're inspecting a deterministic slice each run.
-
-          ## Pre-fetched data
-
-          - `/tmp/gh-aw/sweep-data/in-scope.txt` — file paths to audit.
-          - `/tmp/gh-aw/sweep-data/scope/` — copies mirroring the original paths.
-          - `/tmp/gh-aw/sweep-data/stats.json` — corpus stats.
-
-          If `in_scope_count` is `0`, call `noop` with a path-aware or shard-aware message based on `selection_mode`, then stop.
-
-          ## Step 1: For each in-scope page, find related published docs
-
-          Process pages from `/tmp/gh-aw/sweep-data/scope/` one at a time. For each:
-
-          1. Read the page (title, frontmatter, opening paragraphs, key headings).
-          2. Construct a focused query — the H1 plus the first one or two sentences of substantive content. Avoid using the navigation title alone; it's too short for useful matching.
-          3. Call `elastic-docs.find_related_docs` (or `elastic-docs.search_docs` if the related-docs tool isn't returning useful matches) with that query.
-          4. Take the top `__GH_AW_EXPR_C1523716__` results that are *not the same page* the in-scope file is published as. Skip any result whose URL points back to the page itself (match by URL slug or title).
-          5. For each kept result, fetch the published version with `elastic-docs.get_document_by_url` and compare it to the in-scope file.
-
-          Conserve MCP calls — do not call `find_related_docs` multiple times per page hoping for a different result. One query, top-N, move on.
-
-          ## Step 2: Classify each comparison
-
-          For each (in-scope page, related published page) pair, choose one verdict:
-
-          - **`duplicate-content`** — the two pages say substantially the same thing across most of their content. Use this when the in-scope page could plausibly redirect to or be merged into the related page (or vice versa).
-          - **`near-duplicate`** — there is significant overlap (one or two sections that are essentially the same), but each page also has unique content. Use this when consolidation or cross-linking is the obvious fix, not deletion.
-          - **`contradictory-content`** — the two pages give different answers to the same question (different default values, different supported versions, different recommended steps for the same scenario). This is the highest-priority verdict because it actively misleads readers and AI assistants.
-          - **`coherent`** — the pages are related but distinct, with no overlap or conflict worth filing. Do not emit a finding for these.
-
-          Apply the **Rigor** standards strictly. A finding must include a concrete pointer to the conflict or overlap (specific quoted lines, specific section headings, specific numerical values that disagree). If you can't cite the exact passage, omit the finding.
-
-          ## Step 3: Build the findings list
-
-          For each finding produced in step 2, extract:
-
-          - `file` — the in-scope repo-relative path (strip `/tmp/gh-aw/sweep-data/scope/`).
-          - `line` — line number of the conflicting/overlapping passage in the in-scope file.
-          - `category` — `duplicate-content`, `near-duplicate`, or `contradictory-content`. These three are the complete category allowlist for this sweep (see the **Findings contract**).
-          - `severity` — `high` for `contradictory-content`; `medium` for `duplicate-content`; `low` for `near-duplicate`.
-          - `confidence` — per the **Findings contract**: `high` only for a `contradictory-content` finding that quotes the exact disagreeing values on both pages; `medium` for `duplicate-content`; `low` for `near-duplicate` and for any comparison that rests on a judgment about how much two pages overlap.
-          - `evidence` — quote the disagreeing passage from the in-scope file in 1–2 short sentences, name the related published page by its URL.
-          - `related_url` — the published URL of the other page.
-          - `suggested_fix` — concrete remediation (consolidate, redirect, cross-link, or fix the contradiction). Be specific about which page should be the source of truth.
-
-          ## Step 4: Sort and cap
-
-          Sort findings by `severity` (`high` → `medium` → `low`), then by `file` ascending, then by `line` ascending.
-
-          Cap at `__GH_AW_EXPR_CBA258AA__` findings.
-
-          If empty, call `noop` and adapt the message to the selection mode:
-
-          - Shard mode without `target_path`: `"No coherence findings in this slice (shard <slot>/<n>, <in_scope_count> pages)"`.
-          - Shard mode with `target_path`: `"No coherence findings under /<target_path> in shard <slot>/<n> (<in_scope_count> pages)"`.
-          - Full mode with `target_path`: `"No coherence findings under /<target_path> (<in_scope_count> pages)"`.
-          - Full mode without `target_path`: `"No coherence findings in full sweep <docs_root> (<in_scope_count> pages)"`.
-          - Files mode: `"No coherence findings in the requested file list (<in_scope_count> files)"`.
-
-          **Files mode**: when `selection_mode` is `files`, the caller supplied an explicit file list via `target-files`; audit exactly those files and ignore `target_path`/shard framing. Use an explicit-file-list description in the title (`file list — <count> findings`) and scope-summary (`Explicit file list · <in_scope_count> of <requested_count> requested files in scope.`).
-
-          If the MCP server is unreachable or returns errors for more than half the pages, abort by calling `noop` with `"elastic-docs MCP unavailable; skipping coherence sweep"` rather than emitting unreliable findings.
-
-          ## Output: fix-issue body
-
-          Title body depends on the selection mode:
-
-          - Shard mode without `target_path`: `shard <slot+1>/<n> — <count> findings` (workflow prepends `Docs fix — coherence: `).
-          - Shard mode with `target_path`: `path /<target_path> — shard <slot+1>/<n> — <count> findings`.
-          - Full mode with `target_path`: `path /<target_path> — <count> findings`.
-          - Full mode without `target_path`: `full <docs_root> — <count> findings`.
-
-          ```markdown
-          Generated by `gh-aw-docs-coherence-sweep` for `__GH_AW_EXPR_E6F7E87E__` on <iso_week>.
-
-          Use one of these scope-summary lines:
-
-          - Shard mode without `target_path`: `Shard <slot+1>/<n> · <shard_count> pages in slice · <recent_count> recently-changed · <in_scope_count> total in scope · corpus <total> pages.`
-          - Shard mode with `target_path`: `Path /<target_path> · shard <slot+1>/<n> · <shard_count> pages in slice · <recent_count> recently-changed · <in_scope_count> total in scope · subtree corpus <total> pages.`
-          - Full mode with `target_path`: `Path /<target_path> · <in_scope_count> total in scope · subtree corpus <total> pages.`
-          - Full mode without `target_path`: `Full sweep of <docs_root> · <in_scope_count> total in scope · corpus <total> pages.`
-
-          ## Findings (<count>)
-
-          ```yaml
-          - file: docs/foo.md
-            line: 12
-            category: contradictory-content
-            severity: high
-            confidence: high
-            evidence: "states 'default refresh interval is 1s' but related published page says 30s"
-            related_url: https://www.elastic.co/docs/elasticsearch/reference/refresh-intervals
-            suggested_fix: |
-              treat the related published page as source of truth; update this page or remove the contradicting line and link out
-          - file: docs/bar.md
-            line: 1
-            category: duplicate-content
-            severity: medium
-            confidence: medium
-            evidence: "the entire 'Configure data views' section duplicates the published page nearly verbatim"
-            related_url: https://www.elastic.co/docs/kibana/data-views/configure
-            suggested_fix: |
-              replace the duplicated section with a short summary and a link to the canonical page
-          - file: docs/baz.md
-            line: 47
-            category: near-duplicate
-            severity: low
-            confidence: low
-            evidence: "the 'Performance tuning' subsection overlaps with two paragraphs of the related page; rest of this page is unique"
-            related_url: https://www.elastic.co/docs/elasticsearch/performance/tuning
-            suggested_fix: |
-              cross-link to the related page rather than restating its tuning advice
-          ```
-
-          ## Done when
-          - Duplicate content is consolidated or replaced with a cross-link.
-          - Contradictions are reconciled, with one page as source of truth.
-          - A PR addressing this issue is merged.
-
-          ## Notes
-          - MCP availability: <mention only if calls failed and that affected the run>.
-          - <Optional 1-line about anything intentionally skipped>.
-
-          <!-- gh-aw-docs-coherence-sweep:run=<iso_week>:shard=<slot>/<n> -->
-          ```
-
-          ## What to skip
-
-          - Files outside `/tmp/gh-aw/sweep-data/in-scope.txt`.
-          - Pairs where the related published page IS the in-scope page (e.g., a doc compared against its own published mirror). Detect via URL slug or near-identical title; skip silently.
-          - Differences that aren't contradictions: stylistic phrasing, ordering, or examples that lead to the same conclusion.
-          - `near-duplicate` findings whose `suggested_fix` would be "improve cross-linking" without a concrete target — those belong to a future cross-links sweep, not this one.
-          - Comparisons where the related doc looks like a release-notes / changelog / migration page — overlap with those is expected.
-
-          __GH_AW_EXPR_49B959F1__
-
-          GH_AW_PROMPT_7ca42d78f09b15b0_EOF
-          } > "$GH_AW_PROMPT"
+          GH_AW_PROMPT_CONTENT_0000: "<system>\n"
+          GH_AW_PROMPT_CONTENT_0001: "<safe-output-tools>\nTools: create_issue, missing_tool, missing_data, noop\n"
+          GH_AW_PROMPT_CONTENT_0002: "</safe-output-tools>\n"
+          GH_AW_PROMPT_CONTENT_0003: "<github-context>\nThe following GitHub context information is available for this workflow:\n{{#if github.actor}}\n- **actor**: __GH_AW_GITHUB_ACTOR__\n{{/if}}\n{{#if github.repository}}\n- **repository**: __GH_AW_GITHUB_REPOSITORY__\n{{/if}}\n{{#if github.workspace}}\n- **workspace**: __GH_AW_GITHUB_WORKSPACE__\n{{/if}}\n{{#if github.event.issue.number || (github.aw.context.item_type == 'issue' && github.aw.context.item_number)}}\n- **issue-number**: #__GH_AW_EXPR_802A9F6A__\n{{/if}}\n{{#if github.event.discussion.number || (github.aw.context.item_type == 'discussion' && github.aw.context.item_number)}}\n- **discussion-number**: #__GH_AW_EXPR_1A3A194A__\n{{/if}}\n{{#if github.event.pull_request.number || (github.aw.context.item_type == 'pull_request' && github.aw.context.item_number)}}\n- **pull-request-number**: #__GH_AW_EXPR_463A214A__\n{{/if}}\n{{#if github.event.comment.id || github.aw.context.comment_id}}\n- **comment-id**: __GH_AW_EXPR_FF1D34CE__\n{{/if}}\n{{#if github.run_id}}\n- **workflow-run-id**: __GH_AW_GITHUB_RUN_ID__\n{{/if}}\n</github-context>\n\n"
+          GH_AW_PROMPT_CONTENT_0004: "</system>\n"
+          GH_AW_PROMPT_CONTENT_0005: "## Formatting Guidelines\n\n- Lead with the most important information — your first sentence should be the key takeaway\n- Be concise and actionable — no filler or praise\n- Use `<details>` and `<summary>` tags for long sections to keep responses scannable\n- Wrap branch names and @-references in backticks to avoid pinging users\n- Include code snippets with file paths and line numbers when referencing the codebase\n\n"
+          GH_AW_PROMPT_CONTENT_0006: "## Rigor\n\n**Silence is better than noise. A false positive wastes a human's time and erodes trust in every future report.**\n\n- If you claim something is missing or broken, show the exact evidence in the code — file path, line number, and what you observed.\n- If a conclusion depends on assumptions you haven't confirmed, do not assert it. Verify first; if you cannot verify, do not report.\n- \"I don't know\" is better than a wrong answer. `noop` is better than a speculative finding.\n- It's worth the time to verify now versus guessing and forcing someone else to verify later.\n- Before filing any issue or opening any PR, re-read your own output as a skeptical reviewer. Ask: \"Would a senior engineer on this team find this useful, or would they close it immediately?\" If the answer is \"close,\" call `noop` instead.\n- Only report findings you would confidently defend in a code review. If you feel the need to hedge with \"might,\" \"could,\" or \"possibly,\" the finding is not ready to file.\n\n"
+          GH_AW_PROMPT_CONTENT_0007: "## MCP Pagination\n\nMCP tool responses have a **25,000 token limit**. When responses exceed this limit, the call fails and you must retry with pagination — wasting turns and tokens. Use proactive pagination to stay under the limit.\n\n### Recommended `perPage` Values\n\n- **5-10**: For detailed items (PR diffs, files with patches, issues with comments)\n- **20-30**: For medium-detail lists (commits, review comments, issue lists)\n- **50-100**: For simple list operations (branches, labels, tags)\n\n### Pagination Pattern\n\nWhen you need all results from a paginated API:\n\n1. Fetch the first page with a conservative `perPage` value\n2. Process the results before fetching the next page\n3. Continue fetching pages until you receive fewer results than `perPage` (indicating the last page)\n\nIf you see `MCP tool response exceeds maximum allowed tokens`, retry with a smaller `perPage` value (halve it).\n\n"
+          GH_AW_PROMPT_CONTENT_0008: "## Findings contract\n\nThese rules apply to every finding this sweep emits. Sweep output is consumed by humans and, increasingly, by AI fix-agents that may act on it without a human in the loop. A finding that is uncertain, or that looks authoritative but is wrong, is worse than no finding at all.\n\n### Finding-type allowlist\n\nEmit only the `category` values enumerated in this workflow's \"Build the findings list\" step. That enumeration is a closed allowlist:\n\n- Never invent, rename, pluralize, or otherwise vary a category string. If a finding does not map cleanly to an allowlisted category, drop it.\n- A finding is valid only if applying its `suggested_fix` would change the page's rendered output or its published metadata. Drop no-op findings whose fix a reader would never see — for example, adding a marker the docs toolchain already generates automatically.\n- If you spot something real that has no allowlisted category, describe it in the issue body's **Notes** section as prose. Do not smuggle it in as a finding under an invented category.\n\n### Per-finding confidence\n\nAdd a `confidence` field to every finding, set to exactly one of `high`, `medium`, or `low`. Judge confidence on how safe the finding is to act on *without* human verification — this is a separate axis from `severity`, which measures impact:\n\n- `high` — the problem and the fix are objective and verifiable from the evidence in front of you: a missing required field, a tool-flagged issue with a single unambiguous correction, a directly quoted contradiction. A fix-agent could apply the `suggested_fix` verbatim without judgment.\n- `medium` — the finding is well-supported, but the fix involves wording choices, or depends on a repository convention you could not fully verify this run. A human should confirm the fix before it lands.\n- `low` — the finding is plausible but rests on partial evidence, subjective judgment, or an assumption about intent or convention you could not confirm. If you cannot justify at least `low`, drop the finding rather than filing it.\n\nWhen a finding's evidence traces back to text you did not verify — for example, terminology copied from an issue or PR description rather than confirmed against the code or the published docs — cap its confidence at `low` and say so in the `evidence`.\n\nInclude `confidence` in the YAML schema for every finding, alongside `severity`. Keep the existing sort order (by `severity` first); do not reorder by confidence.\n\n### Human-review gate\n\nIf the capped findings list contains **any** finding with `confidence: medium` or `confidence: low`:\n\n1. Add the label `needs-human-review` to your `create_issue` call, in addition to the labels the workflow adds automatically. This marks the issue as not safe to auto-action and keeps it out of the `good-for-ai` delegation track.\n2. Immediately below the `## Findings (<count>)` heading and before the YAML block, add this callout verbatim:\n\n   > [!WARNING]\n   > This issue contains medium- or low-confidence findings. Review them before acting — auto-applying sweep output without verification risks putting incorrect content into the docs. Findings marked `confidence: high` are safe to delegate to a fix-agent; `medium` and `low` need a human sign-off first.\n\nIf every finding is `confidence: high`, do not add the label or the callout: the issue is safe to delegate as-is.\n\n"
+          GH_AW_PROMPT_CONTENT_0009: "# Docs coherence sweep agent\n\nYou are a coherence reviewer for an Elastic documentation repository. Your job is to compare each in-scope page against published Elastic docs that cover overlapping topics, and flag two things that hurt search and AI-assistant quality:\n\n1. **Duplicate or near-duplicate content** — the same explanation living in multiple places.\n2. **Contradictions** — different pages giving different answers to the same question.\n\nThe Elastic Docs MCP server is your primary tool. You are not running on the full repo; you're inspecting a deterministic slice each run.\n\n## Pre-fetched data\n\n- `/tmp/gh-aw/sweep-data/in-scope.txt` — file paths to audit.\n- `/tmp/gh-aw/sweep-data/scope/` — copies mirroring the original paths.\n- `/tmp/gh-aw/sweep-data/stats.json` — corpus stats.\n\nIf `in_scope_count` is `0`, call `noop` with a path-aware or shard-aware message based on `selection_mode`, then stop.\n\n## Step 1: For each in-scope page, find related published docs\n\nProcess pages from `/tmp/gh-aw/sweep-data/scope/` one at a time. For each:\n\n1. Read the page (title, frontmatter, opening paragraphs, key headings).\n2. Construct a focused query — the H1 plus the first one or two sentences of substantive content. Avoid using the navigation title alone; it's too short for useful matching.\n3. Call `elastic-docs.find_related_docs` (or `elastic-docs.search_docs` if the related-docs tool isn't returning useful matches) with that query.\n4. Take the top `__GH_AW_EXPR_C1523716__` results that are *not the same page* the in-scope file is published as. Skip any result whose URL points back to the page itself (match by URL slug or title).\n5. For each kept result, fetch the published version with `elastic-docs.get_document_by_url` and compare it to the in-scope file.\n\nConserve MCP calls — do not call `find_related_docs` multiple times per page hoping for a different result. One query, top-N, move on.\n\n## Step 2: Classify each comparison\n\nFor each (in-scope page, related published page) pair, choose one verdict:\n\n- **`duplicate-content`** — the two pages say substantially the same thing across most of their content. Use this when the in-scope page could plausibly redirect to or be merged into the related page (or vice versa).\n- **`near-duplicate`** — there is significant overlap (one or two sections that are essentially the same), but each page also has unique content. Use this when consolidation or cross-linking is the obvious fix, not deletion.\n- **`contradictory-content`** — the two pages give different answers to the same question (different default values, different supported versions, different recommended steps for the same scenario). This is the highest-priority verdict because it actively misleads readers and AI assistants.\n- **`coherent`** — the pages are related but distinct, with no overlap or conflict worth filing. Do not emit a finding for these.\n\nApply the **Rigor** standards strictly. A finding must include a concrete pointer to the conflict or overlap (specific quoted lines, specific section headings, specific numerical values that disagree). If you can't cite the exact passage, omit the finding.\n\n## Step 3: Build the findings list\n\nFor each finding produced in step 2, extract:\n\n- `file` — the in-scope repo-relative path (strip `/tmp/gh-aw/sweep-data/scope/`).\n- `line` — line number of the conflicting/overlapping passage in the in-scope file.\n- `category` — `duplicate-content`, `near-duplicate`, or `contradictory-content`. These three are the complete category allowlist for this sweep (see the **Findings contract**).\n- `severity` — `high` for `contradictory-content`; `medium` for `duplicate-content`; `low` for `near-duplicate`.\n- `confidence` — per the **Findings contract**: `high` only for a `contradictory-content` finding that quotes the exact disagreeing values on both pages; `medium` for `duplicate-content`; `low` for `near-duplicate` and for any comparison that rests on a judgment about how much two pages overlap.\n- `evidence` — quote the disagreeing passage from the in-scope file in 1–2 short sentences, name the related published page by its URL.\n- `related_url` — the published URL of the other page.\n- `suggested_fix` — concrete remediation (consolidate, redirect, cross-link, or fix the contradiction). Be specific about which page should be the source of truth.\n\n## Step 4: Sort and cap\n\nSort findings by `severity` (`high` → `medium` → `low`), then by `file` ascending, then by `line` ascending.\n\nCap at `__GH_AW_EXPR_CBA258AA__` findings.\n\nIf empty, call `noop` and adapt the message to the selection mode:\n\n- Shard mode without `target_path`: `\"No coherence findings in this slice (shard <slot>/<n>, <in_scope_count> pages)\"`.\n- Shard mode with `target_path`: `\"No coherence findings under /<target_path> in shard <slot>/<n> (<in_scope_count> pages)\"`.\n- Full mode with `target_path`: `\"No coherence findings under /<target_path> (<in_scope_count> pages)\"`.\n- Full mode without `target_path`: `\"No coherence findings in full sweep <docs_root> (<in_scope_count> pages)\"`.\n- Files mode: `\"No coherence findings in the requested file list (<in_scope_count> files)\"`.\n\n**Files mode**: when `selection_mode` is `files`, the caller supplied an explicit file list via `target-files`; audit exactly those files and ignore `target_path`/shard framing. Use an explicit-file-list description in the title (`file list — <count> findings`) and scope-summary (`Explicit file list · <in_scope_count> of <requested_count> requested files in scope.`).\n\nIf the MCP server is unreachable or returns errors for more than half the pages, abort by calling `noop` with `\"elastic-docs MCP unavailable; skipping coherence sweep\"` rather than emitting unreliable findings.\n\n## Output: fix-issue body\n\nTitle body depends on the selection mode:\n\n- Shard mode without `target_path`: `shard <slot+1>/<n> — <count> findings` (workflow prepends `Docs fix — coherence: `).\n- Shard mode with `target_path`: `path /<target_path> — shard <slot+1>/<n> — <count> findings`.\n- Full mode with `target_path`: `path /<target_path> — <count> findings`.\n- Full mode without `target_path`: `full <docs_root> — <count> findings`.\n\n```markdown\nGenerated by `gh-aw-docs-coherence-sweep` for `__GH_AW_EXPR_E6F7E87E__` on <iso_week>.\n\nUse one of these scope-summary lines:\n\n- Shard mode without `target_path`: `Shard <slot+1>/<n> · <shard_count> pages in slice · <recent_count> recently-changed · <in_scope_count> total in scope · corpus <total> pages.`\n- Shard mode with `target_path`: `Path /<target_path> · shard <slot+1>/<n> · <shard_count> pages in slice · <recent_count> recently-changed · <in_scope_count> total in scope · subtree corpus <total> pages.`\n- Full mode with `target_path`: `Path /<target_path> · <in_scope_count> total in scope · subtree corpus <total> pages.`\n- Full mode without `target_path`: `Full sweep of <docs_root> · <in_scope_count> total in scope · corpus <total> pages.`\n\n## Findings (<count>)\n\n```yaml\n- file: docs/foo.md\n  line: 12\n  category: contradictory-content\n  severity: high\n  confidence: high\n  evidence: \"states 'default refresh interval is 1s' but related published page says 30s\"\n  related_url: https://www.elastic.co/docs/elasticsearch/reference/refresh-intervals\n  suggested_fix: |\n    treat the related published page as source of truth; update this page or remove the contradicting line and link out\n- file: docs/bar.md\n  line: 1\n  category: duplicate-content\n  severity: medium\n  confidence: medium\n  evidence: \"the entire 'Configure data views' section duplicates the published page nearly verbatim\"\n  related_url: https://www.elastic.co/docs/kibana/data-views/configure\n  suggested_fix: |\n    replace the duplicated section with a short summary and a link to the canonical page\n- file: docs/baz.md\n  line: 47\n  category: near-duplicate\n  severity: low\n  confidence: low\n  evidence: \"the 'Performance tuning' subsection overlaps with two paragraphs of the related page; rest of this page is unique\"\n  related_url: https://www.elastic.co/docs/elasticsearch/performance/tuning\n  suggested_fix: |\n    cross-link to the related page rather than restating its tuning advice\n```\n\n## Done when\n- Duplicate content is consolidated or replaced with a cross-link.\n- Contradictions are reconciled, with one page as source of truth.\n- A PR addressing this issue is merged.\n\n## Notes\n- MCP availability: <mention only if calls failed and that affected the run>.\n- <Optional 1-line about anything intentionally skipped>.\n\n<!-- gh-aw-docs-coherence-sweep:run=<iso_week>:shard=<slot>/<n> -->\n```\n\n## What to skip\n\n- Files outside `/tmp/gh-aw/sweep-data/in-scope.txt`.\n- Pairs where the related published page IS the in-scope page (e.g., a doc compared against its own published mirror). Detect via URL slug or near-identical title; skip silently.\n- Differences that aren't contradictions: stylistic phrasing, ordering, or examples that lead to the same conclusion.\n- `near-duplicate` findings whose `suggested_fix` would be \"improve cross-linking\" without a concrete target — those belong to a future cross-links sweep, not this one.\n- Comparisons where the related doc looks like a release-notes / changelog / migration page — overlap with those is expected.\n\n__GH_AW_EXPR_49B959F1__\n\n"
+        with:
+          script: |
+            const { setupGlobals } = require(process.env.GH_AW_ACTIONS_DIR + '/setup_globals.cjs');
+            setupGlobals(core, github, context, exec, io, getOctokit);
+            const { main } = require(process.env.GH_AW_ACTIONS_DIR + '/create_prompt.cjs');
+            await main(core);
       - name: Interpolate variables and render templates
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
+          GH_AW_PROMPT: ${{ runner.temp }}/gh-aw/aw-prompts/prompt.txt
           GH_AW_ENGINE_ID: "copilot"
           GH_AW_EXPR_49B959F1: ${{ inputs.additional-instructions }}
           GH_AW_EXPR_CBA258AA: ${{ inputs.max-per-fix-issue }}
@@ -622,7 +370,7 @@ jobs:
       - name: Substitute placeholders
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
+          GH_AW_PROMPT: ${{ runner.temp }}/gh-aw/aw-prompts/prompt.txt
           GH_AW_EXPR_1A3A194A: ${{ github.event.discussion.number || (fromJSON(github.event.inputs.aw_context || github.event.client_payload.aw_context || '{}').item_type == 'discussion' && fromJSON(github.event.inputs.aw_context || github.event.client_payload.aw_context || '{}').item_number) }}
           GH_AW_EXPR_463A214A: ${{ github.event.pull_request.number || (fromJSON(github.event.inputs.aw_context || github.event.client_payload.aw_context || '{}').item_type == 'pull_request' && fromJSON(github.event.inputs.aw_context || github.event.client_payload.aw_context || '{}').item_number) }}
           GH_AW_EXPR_49B959F1: ${{ inputs.additional-instructions }}
@@ -666,16 +414,18 @@ jobs:
             });
       - name: Validate prompt placeholders
         env:
-          GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
+          GH_AW_PROMPT: ${{ runner.temp }}/gh-aw/aw-prompts/prompt.txt
         run: |
-          # poutine:ignore untrusted_checkout_exec
           bash "${RUNNER_TEMP}/gh-aw/actions/validate_prompt_placeholders.sh"
       - name: Print prompt
         env:
-          GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
+          GH_AW_PROMPT: ${{ runner.temp }}/gh-aw/aw-prompts/prompt.txt
         run: |
-          # poutine:ignore untrusted_checkout_exec
           bash "${RUNNER_TEMP}/gh-aw/actions/print_prompt_summary.sh"
+      - name: Stage prompt files for artifact upload
+        run: |
+          mkdir -p /tmp/gh-aw/aw-prompts
+          cp -a "${RUNNER_TEMP}/gh-aw/aw-prompts/." /tmp/gh-aw/aw-prompts/
       - name: Upload activation artifact
         if: success()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -750,7 +500,7 @@ jobs:
         env:
           GH_AW_SETUP_WORKFLOW_NAME: "Docs coherence sweep agent"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/gh-aw-docs-coherence-sweep.lock.yml@${{ github.ref }}
-          GH_AW_INFO_VERSION: "1.0.78"
+          GH_AW_INFO_VERSION: "1.0.79"
           GH_AW_INFO_AWF_VERSION: "v0.27.44"
           GH_AW_INFO_ENGINE_ID: "copilot"
           GH_AW_SETUP_AW_CONTEXT: ${{ inputs.aw_context }}
@@ -813,6 +563,8 @@ jobs:
             setupGlobals(core, github, context, exec, io, getOctokit);
             const { main } = require('${{ runner.temp }}/gh-aw/actions/checkout_pr_branch.cjs');
             await main();
+      - name: Install ripgrep
+        run: bash "${RUNNER_TEMP}/gh-aw/actions/install_ripgrep.sh"
       - name: Install GitHub Copilot CLI
         run: bash "${RUNNER_TEMP}/gh-aw/actions/install_copilot_cli.sh"
         env:
@@ -846,7 +598,7 @@ jobs:
           GH_AW_SKILL_DIR: ".github/skills"
         run: bash "${RUNNER_TEMP}/gh-aw/actions/restore_inline_skills.sh"
       - name: Download container images
-        run: bash "${RUNNER_TEMP}/gh-aw/actions/download_docker_images.sh" ghcr.io/github/gh-aw-firewall/agent:0.27.44@sha256:0d727725c737b58c7bdf51f640cffb928385ec46517e0917c7f1a02f1bada8b4 ghcr.io/github/gh-aw-firewall/api-proxy:0.27.44@sha256:b50fbadba138f6e9aba94aca09711335c489bb3b15861220cb66f6092e042dc7 ghcr.io/github/gh-aw-firewall/squid:0.27.44@sha256:83e48bbe12c634be8c228a576832fe45f66c529ac3659db92bddbcf2eeb6d627 ghcr.io/github/gh-aw-mcpg:v0.4.8@sha256:38bbea36cdb46a3c9d04d1db05e672966f5239b431a2022eb35881688e5721d8 ghcr.io/github/gh-aw-node@sha256:33e1ec1d967ac1f28c2cedc24ce103dea3226840626de345d3fe579e96cf5c7d ghcr.io/github/github-mcp-server:v1.8.0@sha256:d5a18c04b92714c309eb46a2305087e91a4dbd80420f6e462656699f95093520
+        run: bash "${RUNNER_TEMP}/gh-aw/actions/download_docker_images.sh" ghcr.io/github/gh-aw-firewall/agent:0.27.44@sha256:0d727725c737b58c7bdf51f640cffb928385ec46517e0917c7f1a02f1bada8b4 ghcr.io/github/gh-aw-firewall/api-proxy:0.27.44@sha256:b50fbadba138f6e9aba94aca09711335c489bb3b15861220cb66f6092e042dc7 ghcr.io/github/gh-aw-firewall/squid:0.27.44@sha256:83e48bbe12c634be8c228a576832fe45f66c529ac3659db92bddbcf2eeb6d627 ghcr.io/github/gh-aw-mcpg:v0.4.9@sha256:e5a1569aeaf41820fa7bdee3e94468cae448133cdbf00119ad24f5b74db1ab9f ghcr.io/github/gh-aw-node@sha256:33e1ec1d967ac1f28c2cedc24ce103dea3226840626de345d3fe579e96cf5c7d ghcr.io/github/github-mcp-server:v1.9.0@sha256:881b53d6f75f69bdbc1b5b10fc2f1361717c19054143b3a8529fb5c32061a50e
       - name: Generate Safe Outputs Config
         run: |
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
@@ -1011,17 +763,18 @@ jobs:
           export MCP_GATEWAY_PAYLOAD_DIR="/tmp/gh-aw/mcp-payloads"
           mkdir -p "${MCP_GATEWAY_PAYLOAD_DIR}"
           export MCP_GATEWAY_PAYLOAD_SIZE_THRESHOLD="524288"
+          export MCP_GATEWAY_ALLOWED_MOUNT_ROOTS="${GITHUB_WORKSPACE}:rw,${RUNNER_TEMP}/gh-aw:ro,${RUNNER_TEMP}/gh-aw/safeoutputs:rw,/opt:ro,/tmp:rw,/usr/bin/gh:ro"
           export DEBUG="*"
 
           export GH_AW_ENGINE="copilot"
           MCP_GATEWAY_UID=$(id -u 2>/dev/null || echo '0')
           MCP_GATEWAY_GID=$(id -g 2>/dev/null || echo '0')
           source "${RUNNER_TEMP}/gh-aw/actions/resolve_docker_socket_gid.sh"
-          export MCP_GATEWAY_DOCKER_COMMAND='docker run -i --rm --network bridge -p 127.0.0.1:'"${MCP_GATEWAY_PORT}"':'"${MCP_GATEWAY_PORT}"' --name awmg-mcpg --add-host host.docker.internal:host-gateway --user '"${MCP_GATEWAY_UID}"':'"${MCP_GATEWAY_GID}"' --group-add '"${DOCKER_SOCK_GID}"' -v '"${DOCKER_SOCK_PATH}"':/var/run/docker.sock -e MCP_GATEWAY_PORT -e MCP_GATEWAY_DOMAIN -e MCP_GATEWAY_API_KEY -e MCP_GATEWAY_PAYLOAD_DIR -e MCP_GATEWAY_PAYLOAD_SIZE_THRESHOLD -e DOCKER_HOST=unix:///var/run/docker.sock -e DEBUG -e MCP_GATEWAY_LOG_DIR -e GH_AW_MCP_LOG_DIR -e GH_AW_SAFE_OUTPUTS -e GH_AW_SAFE_OUTPUTS_CONFIG_PATH -e GH_AW_SAFE_OUTPUTS_TOOLS_PATH -e GH_AW_POLICY_ALLOW_CREATE_PULL_REQUEST -e GH_AW_ASSETS_BRANCH -e GH_AW_ASSETS_MAX_SIZE_KB -e GH_AW_ASSETS_ALLOWED_EXTS -e DEFAULT_BRANCH -e GITHUB_MCP_SERVER_TOKEN -e GITHUB_MCP_GUARD_MIN_INTEGRITY -e GITHUB_MCP_GUARD_REPOS -e GH_AW_SINK_VISIBILITY -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA -e GITHUB_WORKSPACE -e GITHUB_TOKEN -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RUN_ATTEMPT -e GITHUB_JOB -e GITHUB_ACTION -e GITHUB_EVENT_NAME -e GITHUB_EVENT_PATH -e GITHUB_ACTOR -e GITHUB_ACTOR_ID -e GITHUB_TRIGGERING_ACTOR -e GITHUB_WORKFLOW -e GITHUB_WORKFLOW_REF -e GITHUB_WORKFLOW_SHA -e GITHUB_REF -e GITHUB_REF_NAME -e GITHUB_REF_TYPE -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e RUNNER_TEMP -v /tmp/gh-aw/mcp-payloads:/tmp/gh-aw/mcp-payloads:rw -v /opt:/opt:ro -v /tmp:/tmp:rw -v '"${GITHUB_WORKSPACE}"':'"${GITHUB_WORKSPACE}"':rw -v '"${RUNNER_TEMP}"'/gh-aw/safeoutputs:'"${RUNNER_TEMP}"'/gh-aw/safeoutputs:rw ghcr.io/github/gh-aw-mcpg:v0.4.8'
+          export MCP_GATEWAY_DOCKER_COMMAND='docker run -i --rm --network bridge -p 127.0.0.1:'"${MCP_GATEWAY_PORT}"':'"${MCP_GATEWAY_PORT}"' --name awmg-mcpg --add-host host.docker.internal:host-gateway --user '"${MCP_GATEWAY_UID}"':'"${MCP_GATEWAY_GID}"' --group-add '"${DOCKER_SOCK_GID}"' -v '"${DOCKER_SOCK_PATH}"':/var/run/docker.sock -e MCP_GATEWAY_PORT -e MCP_GATEWAY_DOMAIN -e MCP_GATEWAY_API_KEY -e MCP_GATEWAY_PAYLOAD_DIR -e MCP_GATEWAY_PAYLOAD_SIZE_THRESHOLD -e DOCKER_HOST=unix:///var/run/docker.sock -e DEBUG -e MCP_GATEWAY_LOG_DIR -e GH_AW_MCP_LOG_DIR -e GH_AW_SAFE_OUTPUTS -e GH_AW_SAFE_OUTPUTS_CONFIG_PATH -e GH_AW_SAFE_OUTPUTS_TOOLS_PATH -e GH_AW_POLICY_ALLOW_CREATE_PULL_REQUEST -e GH_AW_ASSETS_BRANCH -e GH_AW_ASSETS_MAX_SIZE_KB -e GH_AW_ASSETS_ALLOWED_EXTS -e DEFAULT_BRANCH -e GITHUB_MCP_SERVER_TOKEN -e GITHUB_MCP_GUARD_MIN_INTEGRITY -e GITHUB_MCP_GUARD_REPOS -e GH_AW_SINK_VISIBILITY -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA -e GITHUB_WORKSPACE -e GITHUB_TOKEN -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RUN_ATTEMPT -e GITHUB_JOB -e GITHUB_ACTION -e GITHUB_EVENT_NAME -e GITHUB_EVENT_PATH -e GITHUB_ACTOR -e GITHUB_ACTOR_ID -e GITHUB_TRIGGERING_ACTOR -e GITHUB_WORKFLOW -e GITHUB_WORKFLOW_REF -e GITHUB_WORKFLOW_SHA -e GITHUB_REF -e GITHUB_REF_NAME -e GITHUB_REF_TYPE -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e RUNNER_TEMP -e MCP_GATEWAY_ALLOWED_MOUNT_ROOTS -v /tmp/gh-aw/mcp-payloads:/tmp/gh-aw/mcp-payloads:rw -v /opt:/opt:ro -v /tmp:/tmp:rw -v '"${GITHUB_WORKSPACE}"':'"${GITHUB_WORKSPACE}"':rw -v '"${RUNNER_TEMP}"'/gh-aw/safeoutputs:'"${RUNNER_TEMP}"'/gh-aw/safeoutputs:rw ghcr.io/github/gh-aw-mcpg:v0.4.9'
 
           mkdir -p "$HOME/.copilot"
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_f376bf6a6dd701bf_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_b6cb2dcb7c797f62_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "elastic-docs": {
@@ -1041,7 +794,7 @@ jobs:
               },
               "github": {
                 "type": "stdio",
-                "container": "ghcr.io/github/github-mcp-server:v1.8.0",
+                "container": "ghcr.io/github/github-mcp-server:v1.9.0",
                 "env": {
                   "GITHUB_FEATURES": "fields_param",
                   "GITHUB_HOST": "${GITHUB_SERVER_URL}",
@@ -1098,7 +851,7 @@ jobs:
               "startupTimeout": 120
             }
           }
-          GH_AW_MCP_CONFIG_f376bf6a6dd701bf_EOF
+          GH_AW_MCP_CONFIG_b6cb2dcb7c797f62_EOF
       - name: Mount MCP servers as CLIs
         id: mount-mcp-clis
         continue-on-error: true
@@ -1192,8 +945,8 @@ jobs:
             fi
           fi
           # shellcheck disable=SC1003,SC2016,SC2086
-          awf --config "${RUNNER_TEMP}/gh-aw/awf-config.json" --container-workdir "${GITHUB_WORKSPACE}" --mount "${RUNNER_TEMP}/gh-aw:${RUNNER_TEMP}/gh-aw:ro" --mount "${RUNNER_TEMP}/gh-aw:/host${RUNNER_TEMP}/gh-aw:ro" ${GH_AW_TOOL_CACHE_MOUNT:+--mount "$GH_AW_TOOL_CACHE_MOUNT"} ${GH_AW_DOCKER_HOST:+--docker-host "$GH_AW_DOCKER_HOST"} --env-all --exclude-env ACTIONS_ID_TOKEN_REQUEST_TOKEN --exclude-env ACTIONS_ID_TOKEN_REQUEST_URL --exclude-env COPILOT_GITHUB_TOKEN --exclude-env GITHUB_MCP_SERVER_TOKEN --exclude-env MCP_GATEWAY_API_KEY --log-level info --skip-pull \
-            -- /bin/bash -c 'set +o histexpand; export PATH="${RUNNER_TEMP}/gh-aw/mcp-cli/bin:$PATH" && : "${RUNNER_TOOL_CACHE:?RUNNER_TOOL_CACHE must be set}"; GH_AW_TOOL_CACHE="$RUNNER_TOOL_CACHE"; export PATH="$(find "$GH_AW_TOOL_CACHE" -maxdepth 5 -type d -name bin 2>/dev/null | tr '\''\n'\'' '\'':'\'')$PATH"; [ -n "$GOROOT" ] && export PATH="$GOROOT/bin:$PATH" || true; [ -n "$ERLANG_HOME" ] && export PATH="$ERLANG_HOME/bin:$PATH" || true && GH_AW_NODE_EXEC="${GH_AW_NODE_BIN:-}"; if [ -z "$GH_AW_NODE_EXEC" ] || [ ! -x "$GH_AW_NODE_EXEC" ]; then GH_AW_NODE_EXEC="$(command -v node 2>/dev/null || true)"; fi; if [ -z "$GH_AW_NODE_EXEC" ]; then echo "node runtime missing on this runner — check runtimes.node in workflow YAML" >&2; exit 127; fi; GH_AW_NPM_GLOBAL_ROOT="$(npm root -g 2>/dev/null || true)"; if [ -n "$GH_AW_NPM_GLOBAL_ROOT" ]; then export NODE_PATH="${GH_AW_NPM_GLOBAL_ROOT}${NODE_PATH:+:${NODE_PATH}}"; fi; "$GH_AW_NODE_EXEC" ${RUNNER_TEMP}/gh-aw/actions/copilot_harness.cjs ${RUNNER_TEMP}/gh-aw/bin/copilot --add-dir /tmp/gh-aw/ --log-level all --log-dir /tmp/gh-aw/sandbox/agent/logs/ --disable-builtin-mcps --no-ask-user --allow-tool elastic-docs --allow-tool '\''elastic-docs(*)'\'' --allow-tool github --allow-tool safeoutputs --allow-tool '\''shell(cat)'\'' --allow-tool '\''shell(date)'\'' --allow-tool '\''shell(echo)'\'' --allow-tool '\''shell(elastic-docs:*)'\'' --allow-tool '\''shell(find)'\'' --allow-tool '\''shell(git log)'\'' --allow-tool '\''shell(github:*)'\'' --allow-tool '\''shell(grep)'\'' --allow-tool '\''shell(head)'\'' --allow-tool '\''shell(jq)'\'' --allow-tool '\''shell(ls)'\'' --allow-tool '\''shell(printf)'\'' --allow-tool '\''shell(pwd)'\'' --allow-tool '\''shell(safeoutputs:*)'\'' --allow-tool '\''shell(sort)'\'' --allow-tool '\''shell(tail)'\'' --allow-tool '\''shell(uniq)'\'' --allow-tool '\''shell(wc)'\'' --allow-tool '\''shell(yq)'\'' --allow-tool write --allow-all-paths --add-dir "${GITHUB_WORKSPACE}" --prompt-file /tmp/gh-aw/aw-prompts/prompt.txt' 2>&1 | tee -a /tmp/gh-aw/agent-stdio.log
+          awf --config "${RUNNER_TEMP}/gh-aw/awf-config.json" --container-workdir "${GITHUB_WORKSPACE}" --mount "${RUNNER_TEMP}/gh-aw:${RUNNER_TEMP}/gh-aw:ro" --mount "${RUNNER_TEMP}/gh-aw:/host${RUNNER_TEMP}/gh-aw:ro" ${GH_AW_TOOL_CACHE_MOUNT:+--mount "$GH_AW_TOOL_CACHE_MOUNT"} ${GH_AW_DOCKER_HOST:+--docker-host "$GH_AW_DOCKER_HOST"} --env-all --exclude-env ACTIONS_ID_TOKEN_REQUEST_TOKEN --exclude-env ACTIONS_ID_TOKEN_REQUEST_URL --exclude-env COPILOT_GITHUB_TOKEN --exclude-env GITHUB_MCP_SERVER_TOKEN --exclude-env MCP_GATEWAY_API_KEY --mount /tmp/gh-aw:/tmp/gh-aw:rw --log-level info --skip-pull \
+            -- /bin/bash -c 'set +o histexpand; export PATH="${RUNNER_TEMP}/gh-aw/mcp-cli/bin:$PATH" && : "${RUNNER_TOOL_CACHE:?RUNNER_TOOL_CACHE must be set}"; GH_AW_TOOL_CACHE="$RUNNER_TOOL_CACHE"; export PATH="$(find "$GH_AW_TOOL_CACHE" -maxdepth 5 -type d -name bin 2>/dev/null | tr '\''\n'\'' '\'':'\'')$PATH"; [ -n "$GOROOT" ] && export PATH="$GOROOT/bin:$PATH" || true; [ -n "$ERLANG_HOME" ] && export PATH="$ERLANG_HOME/bin:$PATH" || true && GH_AW_NODE_EXEC="${GH_AW_NODE_BIN:-}"; if [ -z "$GH_AW_NODE_EXEC" ] || [ ! -x "$GH_AW_NODE_EXEC" ]; then GH_AW_NODE_EXEC="$(command -v node 2>/dev/null || true)"; fi; if [ -z "$GH_AW_NODE_EXEC" ]; then echo "node runtime missing on this runner — check runtimes.node in workflow YAML" >&2; exit 127; fi; GH_AW_NPM_GLOBAL_ROOT="$(npm root -g 2>/dev/null || true)"; if [ -n "$GH_AW_NPM_GLOBAL_ROOT" ]; then export NODE_PATH="${GH_AW_NPM_GLOBAL_ROOT}${NODE_PATH:+:${NODE_PATH}}"; fi; "$GH_AW_NODE_EXEC" "${RUNNER_TEMP}/gh-aw/actions/copilot_harness.cjs" "${RUNNER_TEMP}/gh-aw/bin/copilot" --add-dir /tmp/gh-aw/ --log-level all --log-dir /tmp/gh-aw/sandbox/agent/logs/ --disable-builtin-mcps --no-ask-user --allow-tool elastic-docs --allow-tool '\''elastic-docs(*)'\'' --allow-tool github --allow-tool safeoutputs --allow-tool '\''shell(cat)'\'' --allow-tool '\''shell(date)'\'' --allow-tool '\''shell(echo)'\'' --allow-tool '\''shell(elastic-docs:*)'\'' --allow-tool '\''shell(find)'\'' --allow-tool '\''shell(git log)'\'' --allow-tool '\''shell(github:*)'\'' --allow-tool '\''shell(grep)'\'' --allow-tool '\''shell(head)'\'' --allow-tool '\''shell(jq)'\'' --allow-tool '\''shell(ls)'\'' --allow-tool '\''shell(printf)'\'' --allow-tool '\''shell(pwd)'\'' --allow-tool '\''shell(safeoutputs:*)'\'' --allow-tool '\''shell(sort)'\'' --allow-tool '\''shell(tail)'\'' --allow-tool '\''shell(uniq)'\'' --allow-tool '\''shell(wc)'\'' --allow-tool '\''shell(yq)'\'' --allow-tool write --allow-all-paths --add-dir "${GITHUB_WORKSPACE}" --prompt-file /tmp/gh-aw/aw-prompts/prompt.txt' 2>&1 | tee -a /tmp/gh-aw/agent-stdio.log
         env:
           AWF_REFLECT_ENABLED: 1
           COPILOT_AGENT_RUNNER_TYPE: STANDALONE
@@ -1404,7 +1157,7 @@ jobs:
         env:
           GH_AW_SETUP_WORKFLOW_NAME: "Docs coherence sweep agent"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/gh-aw-docs-coherence-sweep.lock.yml@${{ github.ref }}
-          GH_AW_INFO_VERSION: "1.0.78"
+          GH_AW_INFO_VERSION: "1.0.79"
           GH_AW_INFO_AWF_VERSION: "v0.27.44"
           GH_AW_INFO_ENGINE_ID: "copilot"
           GH_AW_SETUP_AW_CONTEXT: ${{ inputs.aw_context }}
@@ -1653,7 +1406,7 @@ jobs:
         env:
           GH_AW_SETUP_WORKFLOW_NAME: "Docs coherence sweep agent"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/gh-aw-docs-coherence-sweep.lock.yml@${{ github.ref }}
-          GH_AW_INFO_VERSION: "1.0.78"
+          GH_AW_INFO_VERSION: "1.0.79"
           GH_AW_INFO_AWF_VERSION: "v0.27.44"
           GH_AW_INFO_ENGINE_ID: "copilot"
           GH_AW_SETUP_AW_CONTEXT: ${{ inputs.aw_context }}
@@ -1733,6 +1486,8 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
+      - name: Install ripgrep
+        run: bash "${RUNNER_TEMP}/gh-aw/actions/install_ripgrep.sh"
       - name: Install GitHub Copilot CLI
         run: bash "${RUNNER_TEMP}/gh-aw/actions/install_copilot_cli.sh"
         env:
@@ -1791,8 +1546,8 @@ jobs:
             fi
           fi
           # shellcheck disable=SC1003,SC2016,SC2086
-          awf --config "${RUNNER_TEMP}/gh-aw/awf-config.json" --container-workdir "${GITHUB_WORKSPACE}" --mount "${RUNNER_TEMP}/gh-aw:${RUNNER_TEMP}/gh-aw:ro" --mount "${RUNNER_TEMP}/gh-aw:/host${RUNNER_TEMP}/gh-aw:ro" ${GH_AW_TOOL_CACHE_MOUNT:+--mount "$GH_AW_TOOL_CACHE_MOUNT"} ${GH_AW_DOCKER_HOST:+--docker-host "$GH_AW_DOCKER_HOST"} --env-all --exclude-env ACTIONS_ID_TOKEN_REQUEST_TOKEN --exclude-env ACTIONS_ID_TOKEN_REQUEST_URL --exclude-env COPILOT_GITHUB_TOKEN --log-level info --skip-pull \
-            -- /bin/bash -c 'set +o histexpand; : "${RUNNER_TOOL_CACHE:?RUNNER_TOOL_CACHE must be set}"; GH_AW_TOOL_CACHE="$RUNNER_TOOL_CACHE"; export PATH="$(find "$GH_AW_TOOL_CACHE" -maxdepth 5 -type d -name bin 2>/dev/null | tr '\''\n'\'' '\'':'\'')$PATH"; [ -n "$GOROOT" ] && export PATH="$GOROOT/bin:$PATH" || true; [ -n "$ERLANG_HOME" ] && export PATH="$ERLANG_HOME/bin:$PATH" || true && GH_AW_NODE_EXEC="${GH_AW_NODE_BIN:-}"; if [ -z "$GH_AW_NODE_EXEC" ] || [ ! -x "$GH_AW_NODE_EXEC" ]; then GH_AW_NODE_EXEC="$(command -v node 2>/dev/null || true)"; fi; if [ -z "$GH_AW_NODE_EXEC" ]; then echo "node runtime missing on this runner — check runtimes.node in workflow YAML" >&2; exit 127; fi; GH_AW_NPM_GLOBAL_ROOT="$(npm root -g 2>/dev/null || true)"; if [ -n "$GH_AW_NPM_GLOBAL_ROOT" ]; then export NODE_PATH="${GH_AW_NPM_GLOBAL_ROOT}${NODE_PATH:+:${NODE_PATH}}"; fi; "$GH_AW_NODE_EXEC" ${RUNNER_TEMP}/gh-aw/actions/copilot_harness.cjs ${RUNNER_TEMP}/gh-aw/bin/copilot --add-dir /tmp/gh-aw/ --log-level all --log-dir /tmp/gh-aw/sandbox/agent/logs/ --disable-builtin-mcps --no-ask-user --allow-all-tools --add-dir "${GITHUB_WORKSPACE}" --prompt-file /tmp/gh-aw/aw-prompts/prompt.txt' 2>&1 | tee -a /tmp/gh-aw/threat-detection/detection.log
+          awf --config "${RUNNER_TEMP}/gh-aw/awf-config.json" --container-workdir "${GITHUB_WORKSPACE}" --mount "${RUNNER_TEMP}/gh-aw:${RUNNER_TEMP}/gh-aw:ro" --mount "${RUNNER_TEMP}/gh-aw:/host${RUNNER_TEMP}/gh-aw:ro" ${GH_AW_TOOL_CACHE_MOUNT:+--mount "$GH_AW_TOOL_CACHE_MOUNT"} ${GH_AW_DOCKER_HOST:+--docker-host "$GH_AW_DOCKER_HOST"} --env-all --exclude-env ACTIONS_ID_TOKEN_REQUEST_TOKEN --exclude-env ACTIONS_ID_TOKEN_REQUEST_URL --exclude-env COPILOT_GITHUB_TOKEN --mount /tmp/gh-aw:/tmp/gh-aw:rw --log-level info --skip-pull \
+            -- /bin/bash -c 'set +o histexpand; : "${RUNNER_TOOL_CACHE:?RUNNER_TOOL_CACHE must be set}"; GH_AW_TOOL_CACHE="$RUNNER_TOOL_CACHE"; export PATH="$(find "$GH_AW_TOOL_CACHE" -maxdepth 5 -type d -name bin 2>/dev/null | tr '\''\n'\'' '\'':'\'')$PATH"; [ -n "$GOROOT" ] && export PATH="$GOROOT/bin:$PATH" || true; [ -n "$ERLANG_HOME" ] && export PATH="$ERLANG_HOME/bin:$PATH" || true && GH_AW_NODE_EXEC="${GH_AW_NODE_BIN:-}"; if [ -z "$GH_AW_NODE_EXEC" ] || [ ! -x "$GH_AW_NODE_EXEC" ]; then GH_AW_NODE_EXEC="$(command -v node 2>/dev/null || true)"; fi; if [ -z "$GH_AW_NODE_EXEC" ]; then echo "node runtime missing on this runner — check runtimes.node in workflow YAML" >&2; exit 127; fi; GH_AW_NPM_GLOBAL_ROOT="$(npm root -g 2>/dev/null || true)"; if [ -n "$GH_AW_NPM_GLOBAL_ROOT" ]; then export NODE_PATH="${GH_AW_NPM_GLOBAL_ROOT}${NODE_PATH:+:${NODE_PATH}}"; fi; "$GH_AW_NODE_EXEC" "${RUNNER_TEMP}/gh-aw/actions/copilot_harness.cjs" "${RUNNER_TEMP}/gh-aw/bin/copilot" --add-dir /tmp/gh-aw/ --log-level all --log-dir /tmp/gh-aw/sandbox/agent/logs/ --disable-builtin-mcps --no-ask-user --allow-all-tools --add-dir "${GITHUB_WORKSPACE}" --prompt-file /tmp/gh-aw/aw-prompts/prompt.txt' 2>&1 | tee -a /tmp/gh-aw/threat-detection/detection.log
         env:
           GITHUB_STEP_SUMMARY: /tmp/gh-aw/step-summary.md
           AWF_REFLECT_ENABLED: 1
@@ -1828,6 +1583,16 @@ jobs:
           if [ -s /tmp/gh-aw/step-summary.md ]; then
             cat /tmp/gh-aw/step-summary.md
           fi
+      - name: Render detection log
+        if: always() && steps.detection_guard.outputs.run_detection == 'true'
+        continue-on-error: true
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { setupGlobals } = require('${{ runner.temp }}/gh-aw/actions/setup_globals.cjs');
+            setupGlobals(core, github, context, exec, io, getOctokit);
+            const { main } = require('${{ runner.temp }}/gh-aw/actions/render_detection_log.cjs');
+            await main();
       - name: Parse threat detection token usage for step summary
         id: parse_detection_token_usage
         if: always()
@@ -1901,7 +1666,7 @@ jobs:
         env:
           GH_AW_SETUP_WORKFLOW_NAME: "Docs coherence sweep agent"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/gh-aw-docs-coherence-sweep.lock.yml@${{ github.ref }}
-          GH_AW_INFO_VERSION: "1.0.78"
+          GH_AW_INFO_VERSION: "1.0.79"
           GH_AW_INFO_AWF_VERSION: "v0.27.44"
           GH_AW_INFO_ENGINE_ID: "copilot"
           GH_AW_SETUP_AW_CONTEXT: ${{ inputs.aw_context }}
@@ -1951,8 +1716,13 @@ jobs:
       create_discussion_errors: ${{ steps.process_safe_outputs.outputs.create_discussion_errors }}
       created_issue_number: ${{ steps.process_safe_outputs.outputs.created_issue_number }}
       created_issue_url: ${{ steps.process_safe_outputs.outputs.created_issue_url }}
+      process_safe_outputs_items_applied: ${{ steps.process_safe_outputs.outputs.items_applied }}
+      process_safe_outputs_items_cancelled: ${{ steps.process_safe_outputs.outputs.items_cancelled }}
+      process_safe_outputs_items_deferred: ${{ steps.process_safe_outputs.outputs.items_deferred }}
       process_safe_outputs_items_failed: ${{ steps.process_safe_outputs.outputs.items_failed }}
+      process_safe_outputs_items_skipped: ${{ steps.process_safe_outputs.outputs.items_skipped }}
       process_safe_outputs_items_succeeded: ${{ steps.process_safe_outputs.outputs.items_succeeded }}
+      process_safe_outputs_items_warnings: ${{ steps.process_safe_outputs.outputs.items_warnings }}
       process_safe_outputs_processed_count: ${{ steps.process_safe_outputs.outputs.processed_count }}
       process_safe_outputs_status: ${{ steps.process_safe_outputs.outputs.status }}
       process_safe_outputs_temporary_id_map: ${{ steps.process_safe_outputs.outputs.temporary_id_map }}
@@ -1968,7 +1738,7 @@ jobs:
         env:
           GH_AW_SETUP_WORKFLOW_NAME: "Docs coherence sweep agent"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/gh-aw-docs-coherence-sweep.lock.yml@${{ github.ref }}
-          GH_AW_INFO_VERSION: "1.0.78"
+          GH_AW_INFO_VERSION: "1.0.79"
           GH_AW_INFO_AWF_VERSION: "v0.27.44"
           GH_AW_INFO_ENGINE_ID: "copilot"
           GH_AW_SETUP_AW_CONTEXT: ${{ inputs.aw_context }}
