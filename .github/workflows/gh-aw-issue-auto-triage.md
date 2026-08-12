@@ -135,6 +135,19 @@ Run these two sub-agents in order:
 
 ${{ inputs.additional-instructions }}
 
+Do not perform either sub-agent's task yourself. Delegate each task to the named sub-agent and
+wait for it to finish before starting the next one.
+
+The traffic-light comment has a strict output contract. Before calling `add_comment`, verify that:
+
+- Its first Unicode character is exactly one of `🟢`, `🟠`, or `🔴`.
+- It uses the matching template from the `content-checker` instructions verbatim, replacing only
+  the angle-bracketed placeholder bullets.
+- It does not spell out or substitute a color name such as "green", "yellow", "orange", or "red"
+  for the required emoji.
+
+If any check fails, rewrite the comment before calling `add_comment`.
+
 ## agent: `router`
 ---
 description: >
@@ -227,6 +240,11 @@ Do not flag hedging or broad scope when it communicates uncertainty or an explor
 
 ### 3. Rate the issue and post one comment
 
+The templates below are an exact output contract, not examples. Copy the selected template
+verbatim and replace only its angle-bracketed placeholder bullet. The first character of the
+comment must be the displayed emoji. Never replace an emoji with a color name or add a heading
+before it.
+
 **🟢 Complete** — all required sections present and substantive, no blocking ambiguity:
 
 ```
@@ -256,5 +274,7 @@ The issue has been flagged so the team can follow up once it is updated.
 ```
 
 Post exactly one comment. Do not summarize or restate information already in the issue.
+Before posting, verify that the comment starts with the emoji for the selected rating and matches
+its template. If it does not, correct it before calling `add_comment`.
 
 ## end agent: `content-checker`
