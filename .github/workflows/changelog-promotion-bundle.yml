@@ -88,10 +88,6 @@ on:
         description: 'Buildkite (or other CI) build URL for traceability back to the promotion run'
         type: string
         required: false
-      config:
-        description: 'Path to changelog.yml configuration file'
-        type: string
-        default: 'docs/changelog.yml'
       dry-run:
         description: >
           Resolve the commit range and publish the run report (resolved PR list
@@ -99,16 +95,6 @@ on:
           uploading a bundle.
         type: boolean
         default: false
-      docs-builder-version:
-        description: >
-          docs-builder version to use (e.g. 0.1.100, latest, edge).
-          Non-edge versions are attestation-verified by the setup action.
-        type: string
-        default: 'edge'
-      aws-account-id:
-        description: 'AWS account ID for OIDC. Only override if provisioned for the target account.'
-        type: string
-        default: '197730964718'
     outputs:
       status:
         description: "'dry-run' when no bundle was built, otherwise 'bundled' (the upload job then publishes it)"
@@ -179,6 +165,11 @@ jobs:
             echo "version=${version}"
           } >> "${GITHUB_OUTPUT}"
 
+      # Deliberately not configurable: config path (profile mode auto-discovers
+      # changelog.yml / docs/changelog.yml — the layout is the convention),
+      # docs-builder version (always the composite default; per-caller pins
+      # would drift promotion behavior between products), and the AWS account
+      # (infrastructure, not caller configuration).
       - id: bundle
         name: Build bundle from commit range
         uses: elastic/docs-actions/changelog/bundle-create@v1
@@ -188,8 +179,6 @@ jobs:
           start-git-ref: ${{ inputs.start-git-ref }}
           end-git-ref: ${{ inputs.git-ref }}
           dry-run: ${{ inputs.dry-run }}
-          config: ${{ inputs.config }}
-          docs-builder-version: ${{ inputs.docs-builder-version }}
           github-token: ${{ github.token }}
 
   upload:
@@ -203,6 +192,3 @@ jobs:
       - uses: elastic/docs-actions/changelog/bundle-upload@v1
         with:
           output: ${{ needs.generate.outputs.output }}
-          config: ${{ inputs.config }}
-          docs-builder-version: ${{ inputs.docs-builder-version }}
-          aws-account-id: ${{ inputs.aws-account-id }}
