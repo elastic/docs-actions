@@ -24,8 +24,8 @@ Sum the scores to get the rating:
 - ✅ "Update the installation methods table on the Elastic Agent page to include the new endpoint"
 - ✅ "Add a note about the Kafka change so users can resolve it without filing a support ticket"
 
-**0:** no definition of done — the reader cannot tell what to produce.
-- ❌ "This doc must be improved." / "Please fix this."
+**0:** no definition of done — the reader cannot tell what to produce. Generic verbs ("update", "fix", "review", "improve") without specifying WHAT to change score 0.
+- ❌ "This doc must be improved." / "Please fix this." / "Please review and update the relevant pages." / "Update the docs."
 
 ### Criterion 3 — Context and motivation
 
@@ -50,7 +50,7 @@ Treat "N/A", "TBD", or "todo" as absent. For a type not in this table, score 1 w
 
 **1:** the issue is focused on a single task or a closely related bundle that can be assigned, completed, and closed in one go.
 
-**0:** the issue bundles multiple unrelated bugs or requests, making it impossible to close cleanly or assign to one owner.
+**0:** the issue bundles multiple unrelated bugs or requests, OR refers to an undefined set ("some pages", "various docs", "the relevant pages") with no clear boundary, making it impossible to close cleanly or assign to one owner.
 
 ---
 

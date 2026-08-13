@@ -365,7 +365,7 @@ Score each of the five criteria as **1** (clearly met) or **0** (clearly missing
 
 **Criterion 2 — Clear request with a definition of done**
 - 1: the description states what the finished result looks like so an assignee knows when to close it
-- 0: no definition of done — the reader cannot tell what to produce
+- 0: no definition of done, OR only a generic verb without specifying what to change ("update the docs", "please fix this", "review and update the relevant pages")
 
 **Criterion 3 — Context and motivation**
 - 1: the why or impact is stated, or obvious from linked content (ticket, forum post, user report)
@@ -384,7 +384,7 @@ Treat "N/A", "TBD", or "todo" as absent.
 
 **Criterion 5 — One issue, one testable problem**
 - 1: focused on a single task or closely related bundle that can be assigned and closed in one go
-- 0: bundles multiple unrelated bugs or requests making it impossible to close cleanly
+- 0: bundles multiple unrelated bugs or requests, OR refers to an undefined set ("some pages", "various docs", "the relevant pages") with no clear boundary
 
 Sum the five scores (range 0–5).
 
