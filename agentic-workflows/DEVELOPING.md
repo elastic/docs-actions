@@ -200,11 +200,11 @@ jobs:
   run:
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.comment.body, '/docs-issue-scope')
-    uses: elastic/docs-actions/.github/workflows/gh-aw-docs-issue-scope.lock.yml@v1
+      startsWith(github.event.comment.body, '/scope')
+    uses: elastic/docs-actions/.github/workflows/gh-aw-issue-scope.lock.yml@v1
 ```
 
-Without this, typing `/docs-issue-scope` would also trigger `/docs-triage` (and any other `issue_comment`-triggered workflow).
+Without this, typing `/scope` would also trigger `/triage` (and any other `issue_comment`-triggered workflow). For issue-only workflows, also add `&& github.event.issue.pull_request == null` to the `if` condition to prevent the workflow from running when the comment is on a pull request.
 
 ### CI
 

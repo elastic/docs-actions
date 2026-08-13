@@ -244,7 +244,7 @@ missing, or unclear, copy this template verbatim. Replace the author-login place
 exact issue author login and replace only the angle-bracketed list placeholder:
 
 ```
-🟠 TriageBot Results: Insufficient context
+🟠 TriageBot Results: Additional context might help
 
 @<issue-author-login> Thanks for opening this issue. To help the team address it effectively,
 could you add some more details? For example:
@@ -351,38 +351,56 @@ return `error: missing supplied context` instead of guessing. Do not claim a non
 body is empty or unavailable. If the router returned no type, infer the type from the supplied
 issue content.
 
-### 2. Validate against the quality bar
+### 2. Score against the quality bar
 
-**Required sections by type:**
+Score each of the five criteria as **1** (clearly met) or **0** (clearly missing). No intermediate values.
 
-| Type | Required sections |
-|---|---|
-| `bug` | What's broken / actual behavior · Expected behavior · How to reproduce |
-| `enhancement` | Problem statement (why / who) · Proposed outcome or definition of done |
-| `documentation` | Affected page or specific section · What should change or the desired reader outcome |
-| `question` | The specific question · Enough context to understand what needs clarification |
+**Criterion 1 — Specific, action-oriented title**
+- 1: title names the exact problem or change without needing the body to decode it
+- 0: title is too vague to act on alone ("Update docs", "Fix", "Docs are wrong", "Question")
 
-**Section check** — for each required section, determine whether it is:
-- Present and substantive
-- Present but placeholder ("N/A", "TBD", "todo") — counts as missing
-- Absent
+**Criterion 2 — Clear request with a definition of done**
+- 1: the description states what the finished result looks like so an assignee knows when to close it
+- 0: no definition of done, OR only a generic verb without specifying what to change ("update the docs", "please fix this", "review and update the relevant pages")
 
-**Ambiguity check** — flag only signals that make the issue impossible to act on:
-- Frequency weasel words with no reproduction path: "sometimes", "occasionally", "randomly"
-- Bare assertions with no description: "broken", "not working", "doesn't work"
-- Vague goals as the entire objective: "improve", "fix", "update" with no specifics
+**Criterion 3 — Context and motivation**
+- 1: the why or impact is stated, or obvious from linked content (ticket, forum post, user report)
+- 0: bare request with no indication of why it matters, who is affected, or what triggered it
 
-Do not flag hedging or broad scope when it communicates uncertainty or an exploratory intent.
+**Criterion 4 — Template compliance for the issue type**
+
+| Type | Score 1 — all present and substantive | Score 0 — any absent or placeholder |
+|---|---|---|
+| `bug` | What's broken + expected behavior + how to reproduce | Any of the three is missing |
+| `enhancement` | Problem statement (why / who it helps) + proposed outcome | Either is missing |
+| `documentation` | Affected page or section + what should change | Either is missing |
+| `question` | The specific question + context needed to answer it | Either is missing |
+
+Treat "N/A", "TBD", or "todo" as absent.
+
+**Criterion 5 — One issue, one testable problem**
+- 1: focused on a single task or closely related bundle that can be assigned and closed in one go
+- 0: bundles multiple unrelated bugs or requests, OR refers to an undefined set ("some pages", "various docs", "the relevant pages") with no clear boundary
+
+Sum the five scores (range 0–5).
 
 ### 3. Return the rating
 
-Return only:
+Map the total to a rating:
 
-- `rating: green` with no bullets when all required information is present and substantive.
-- `rating: orange` with one bullet per weak or missing section when the issue is understandable
-  and potentially actionable but details are weak, missing, or unclear.
-- `rating: red` with one specific question per missing requirement when key information is absent
-  and the issue cannot proceed without author input.
+| Score | Rating |
+|-------|--------|
+| 4–5   | green  |
+| 2–3   | orange |
+| 0–1   | red    |
+
+Return:
+
+- `score: <n>` and `rating: green` with no bullets when all required information is present and substantive.
+- `score: <n>` and `rating: orange` with one bullet per criterion scored 0, when the issue is understandable
+  and potentially actionable but something meaningful is missing.
+- `score: <n>` and `rating: red` with one specific question per missing criterion when key information is
+  absent and the issue cannot proceed without author input.
 
 Do not draft the final comment and do not call safe-output tools. The parent agent owns rendering
 and posting the exact traffic-light template.

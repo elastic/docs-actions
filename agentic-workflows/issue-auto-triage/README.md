@@ -90,3 +90,17 @@ routing on green and orange outcomes. It applies only labels that already exist 
 repository.
 
 There is no undo path because an issue-open event has no triggering comment.
+
+## Quality bar
+
+The content checker scores the issue on five criteria from the [good issues guide](https://www.elastic.co/docs/contribute-docs/how-to/good-issues), each worth 1 point:
+
+| # | Criterion | Score 1 | Score 0 |
+|---|-----------|---------|---------|
+| 1 | Specific, action-oriented title | Names the exact problem or change | Too vague to act on without the body |
+| 2 | Clear request with a definition of done | States what "done" looks like | Generic verb with no specific outcome |
+| 3 | Context and motivation | Explains why it matters or who is affected | No indication of impact or trigger |
+| 4 | Template compliance | All required sections present for the issue type | Any required section absent or placeholder |
+| 5 | One issue, one testable problem | Single focused task or closely related bundle | Multiple unrelated requests or undefined scope |
+
+Total score maps to the outcome: **4–5 → green**, **2–3 → orange**, **0–1 → red**.

@@ -33,9 +33,9 @@ AI-powered [GitHub Agent Workflows](https://github.github.com/gh-aw/) for docume
 | Workflow | Description | Trigger | Safe output |
 |----------|-------------|---------|-------------|
 | [docs-review](agentic-workflows/docs-review/) | Review changed markdown files in pull requests (`docs/` by default, or repo-wide with `review-scope`) | `/docs-review`, PR checkbox menu | `create-pull-request-review-comment`, `submit-pull-request-review` |
-| [issue-triage](agentic-workflows/issue-triage/) | Triage and refine an issue: classify, validate, rewrite the description, and apply labels | `/triage`, dispatch | `add-labels`, `add-comment`, `update-issue` |
+| [issue-scope](agentic-workflows/issue-scope/) | Scope docs impact and estimate cost/benefit for an issue in one comment | `/scope`, dispatch | `add-labels`, `add-comment` |
+| [issue-triage](agentic-workflows/issue-triage/) | Route and quality-check an issue on demand: classify, check against the quality bar, and apply labels | `/triage`, dispatch | `add-labels`, `remove-labels`, `react-green`, `add-comment` |
 | [issue-auto-triage](agentic-workflows/issue-auto-triage/) | Route and quality-check a new issue with project-specific instructions, without rewriting it | `issues: opened` | `add-labels`, `remove-labels`, `react-green`, `add-comment` |
-| [issue-size](agentic-workflows/issue-size/) | Estimate the cost and benefit of an issue, with a bill of materials | `/size`, dispatch | `add-labels`, `add-comment` |
 | [docs-quality-sweep](agentic-workflows/docs-quality-sweep/) | Fan out to the docs quality sweeps in parallel | `workflow_dispatch` | Per sweep |
 
 Quick install:
