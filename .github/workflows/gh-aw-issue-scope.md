@@ -234,7 +234,7 @@ Before calling safe-output tools, verify:
   paragraph begins with exactly one mention of the issue author login; `add_comment` is called;
   no `add_labels` call.
 - Never call `add_comment` more than once.
-- Never include `suggest` on any label object.
+- Pass labels as plain strings. Do not include `suggest`, `confidence`, or `rationale` on any label object.
 - Do not include unverified terminology as established fact in any comment.
 
 If any check fails, correct the action before calling safe-output tools.
