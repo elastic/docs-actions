@@ -670,6 +670,7 @@ jobs:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
           DOCS_PATH: ${{ inputs.path }}
+          PATH_PATTERN: ${{ inputs.path-pattern }}
         with:
           # language=js
           script: |
@@ -723,7 +724,10 @@ jobs:
               return;
             }
 
-            const docsRoot = (process.env.DOCS_PATH || 'docs')
+            const rawDocsPath = process.env.DOCS_PATH
+              || (process.env.PATH_PATTERN || '').replace(/\/\*+$/, '')
+              || 'docs';
+            const docsRoot = rawDocsPath
               .replace(/^\.\//, '')
               .replace(/\/+$/, '');
             const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
