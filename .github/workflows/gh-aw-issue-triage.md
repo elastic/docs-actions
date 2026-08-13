@@ -247,7 +247,7 @@ missing, or unclear, copy this template verbatim. Replace the author-login place
 exact issue author login and replace only the angle-bracketed list placeholder:
 
 ```
-🟠 TriageBot Results: Insufficient context
+🟠 TriageBot Results: Additional context might help
 
 @<issue-author-login> Thanks for opening this issue. To help the team address it effectively,
 could you add some more details? For example:
