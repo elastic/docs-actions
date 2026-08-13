@@ -508,3 +508,51 @@ The PR workflow opens a pull request on a branch named `changelog-bundle/<bundle
 > **Note:** Locating the bundle on the CDN requires a resolvable product, so the PR workflow only supports profile (or product-scoped option) mode — the same constraint as CDN entry sourcing above. PR/issue-only filters that resolve no product cannot be fetched from the CDN.
 
 > **Note:** The PR workflow does not upload to S3; it consumes what `changelog-bundle.yml` already uploaded. If you need both S3 upload and a PR, run the primary workflow first, then this one. To compose the steps yourself, use the composite actions (`bundle-fetch` then `bundle-pr`) directly.
+
+## Date-promotion bundling (commit ranges)
+
+Products that publish release notes keyed by **date** rather than a semver tag — serverless (Elasticsearch, Kibana), Cloud ECE, Cloud Hosted — cut their bundle at promotion time from a **git commit range**. The promotion system hands off two commit hashes from a protected branch: the previously published endpoint ref and the newly published one. Nothing else is staged externally: `docs-builder` derives the PR list from the range itself (GitHub compare API + GraphQL `associatedPullRequests`), sources each PR's changelog entry from the entry pool first (falling back to synthesizing an entry from the PR's title, labels, and release-note text), and records the end ref in the bundle as `git_ref` metadata.
+
+Use the reusable [`changelog-promotion-bundle.yml`](../.github/workflows/changelog-promotion-bundle.yml) workflow from a product-owned wrapper. The wrapper is what the product's quality gate or promotion pipeline triggers (via `workflow_dispatch` or `repository_dispatch`), keeping repository permissions, private-source access, and the S3 OIDC trust model inside the product repo:
+
+```yaml
+name: changelog-promotion-bundle
+
+on:
+  workflow_dispatch:
+    inputs:
+      start-git-ref:
+        description: "Previously published endpoint ref"
+        required: true
+      git-ref:
+        description: "Newly published endpoint ref"
+        required: true
+      build-url:
+        required: false
+  repository_dispatch:
+    types: [changelog-promotion-bundle]
+
+permissions: {}
+
+jobs:
+  publish:
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    uses: elastic/docs-actions/.github/workflows/changelog-promotion-bundle.yml@v1
+    with:
+      profile: serverless  # bundle.profiles entry in docs/changelog.yml
+      start-git-ref: ${{ github.event.client_payload.start-git-ref || inputs.start-git-ref }}
+      git-ref: ${{ github.event.client_payload.git-ref || inputs.git-ref }}
+      build-url: ${{ github.event.client_payload.build-url || inputs.build-url }}
+```
+
+Notes:
+
+- **Both refs are always required.** The start ref is never inferred from previous bundles or deployment history; the caller resolves it (for example, elastic/cloud's argocd-driven promotion exposes the promoted commit pair, and serverless quality gates read the previous ref from `serverless-gitops` history).
+- The bundle **version is the UTC date** (`YYYY-MM-DD`) derived at run time — callers cannot pass a semver.
+- The profile in `docs/changelog.yml` contributes output metadata only (`output_products`, `repo`/`owner`, `rules`); it must not set a `products` pattern or `source: github_release`. Without an explicit `output` pattern the bundle is named `{product}-{version}.yaml` by convention.
+- Pass `dry-run: true` to resolve the range and publish the run report — the resolved PR list with each PR's entry source (pool / inferred / missing) plus commits without an associated PR — to the job summary without building or uploading anything. Useful for wiring and for pre-flight checks.
+- The upload goes to the private S3 bucket; the scrubber Lambda mirrors a sanitized copy to the public CDN, same as `changelog-bundle.yml`. The same OIDC prerequisite applies (your repository must have the changelog IAM role provisioned).
+- A `GITHUB_TOKEN` is required at bundle time: the GraphQL API used for commit→PR association does not accept anonymous requests. The workflow passes the ambient `github.token`.
