@@ -206,14 +206,19 @@ invoke the same named sub-agent once more with the exact body included.
 Evaluate both sub-agents' outputs and choose one of three outcomes. Apply decisions with
 safe-output tools:
 
+> **Label format rule**: when calling `add_labels`, always pass label names as plain strings —
+> e.g., `["weeks: 1"]` not `{"name":"weeks: 1","confidence":"MEDIUM"}`. Structured objects with
+> `confidence`, `rationale`, or `suggest` fields route labels through a pending-review queue and
+> they are NOT applied to the issue. Pass plain strings only.
+
 - **🟢 Complete** — scoper returned full scope with at least one actionable target, and sizer
   returned a confident effort estimate:
-  - Call `add_labels` once with the effort bucket and optional `good-for-ai`.
+  - Call `add_labels` once with the effort bucket and optional `good-for-ai` as plain strings.
   - Call `add_comment` once with the 🟢 full template below.
 - **🟠 Partial** — at least one sub-agent returned a limited or low-confidence result, but
   enough usable output exists to be helpful (e.g., scope is limited because no linked PRs were
   provided, or the sizer has low confidence due to a vague issue):
-  - Call `add_labels` only when the sizer returned a confident effort bucket.
+  - Call `add_labels` only when the sizer returned a confident effort bucket (as a plain string).
   - Call `add_comment` once with the 🟠 partial template below, omitting sections that could not
     be assessed and including a "What to add" list.
 - **🔴 Not assessable** — both sub-agents are blocked or returned errors and no useful output
@@ -234,7 +239,7 @@ Before calling safe-output tools, verify:
   paragraph begins with exactly one mention of the issue author login; `add_comment` is called;
   no `add_labels` call.
 - Never call `add_comment` more than once.
-- Pass labels as plain strings. Do not include `suggest`, `confidence`, or `rationale` on any label object.
+- Labels are passed as plain strings (see label format rule above). Never include `suggest`, `confidence`, or `rationale`.
 - Do not include unverified terminology as established fact in any comment.
 
 If any check fails, correct the action before calling safe-output tools.
