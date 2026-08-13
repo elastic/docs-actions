@@ -219,8 +219,9 @@ Before calling safe-output tools, construct and verify the final actions:
   do not call `add_comment`.
 - Orange: the label list must not contain `human-needed`; call `add_comment`; do not call
   `react_green`.
-- Red: the label list must contain only `human-needed`; call `add_comment`; do not call
-  `react_green`.
+- Red: replace the label list with `["human-needed"]` — discard every label the router returned,
+  including type, team, and `cross-team`. The final list must contain exactly one label. Call
+  `add_comment`; do not call `react_green`.
 - Include a team label only when the router selected an existing label with high confidence.
 - Do not include `suggest` on any label object. If an object contains `suggest`, remove that field
   before calling `add_labels`.
