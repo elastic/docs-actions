@@ -7,7 +7,7 @@ AI-powered workflows for Elastic documentation tasks. Each directory contains a 
 | [docs-review](docs-review/) | Review changed markdown files in pull requests (`docs/` by default, or repo-wide with `review-scope`) | `/docs-review`, PR checkbox menu | `create-pull-request-review-comment`, `submit-pull-request-review` |
 | [docs-issue-scope](docs-issue-scope/) | Scope docs work from an issue plus linked PRs or commits | `/docs-issue-scope` | `add-comment`, `update-issue` |
 | [issue-triage](issue-triage/) | Triage and refine an issue: classify, validate, rewrite the description, and apply labels | `/triage`, dispatch | `add-labels`, `add-comment`, `update-issue` |
-| [issue-auto-triage](issue-auto-triage/) | Same triage and refinement logic, run automatically when an issue is opened | `issues: opened` | `add-labels`, `add-comment`, `update-issue` |
+| [issue-auto-triage](issue-auto-triage/) | Route and quality-check a new issue with per-project instructions | `issues: opened` | `add-labels`, `remove-labels`, `react-green`, `add-comment` |
 | [issue-size](issue-size/) | Estimate the cost and benefit of an issue, with a bill of materials | `/size`, dispatch | `add-labels`, `add-comment` |
 | [docs-frontmatter-sweep](docs-frontmatter-sweep/) | Audit frontmatter on a rotating slice, or all markdown files under a selected subtree | `workflow_dispatch` | `create-issue` (label `docs-fix:frontmatter`) |
 | [docs-quality-sweep](docs-quality-sweep/) | Orchestrator that fans out to all quality sweeps in parallel | `workflow_dispatch` | (per sub-workflow) |
