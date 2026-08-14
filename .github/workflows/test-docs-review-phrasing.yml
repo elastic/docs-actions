@@ -1,0 +1,86 @@
+name: test-docs-review-phrasing
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/gh-aw-docs-review.md'
+      - '.github/workflows/gh-aw-docs-review.lock.yml'
+      - '.github/workflows/test-docs-review-phrasing.yml'
+      - 'agentic-workflows/docs-review/README.md'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/gh-aw-docs-review.md'
+      - '.github/workflows/gh-aw-docs-review.lock.yml'
+      - '.github/workflows/test-docs-review-phrasing.yml'
+      - 'agentic-workflows/docs-review/README.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-docs-review-phrasing-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test-phrasing:
+    name: Validate comment phrasing guidance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify comment-phrasing input is declared
+        run: |
+          set -euo pipefail
+          SOURCE=".github/workflows/gh-aw-docs-review.md"
+          if ! grep -q 'comment-phrasing' "$SOURCE"; then
+            echo "FAIL: comment-phrasing input not found in $SOURCE"
+            exit 1
+          fi
+          echo "PASS: comment-phrasing input declared"
+
+      - name: Verify phrasing guidance section is present
+        run: |
+          set -euo pipefail
+          SOURCE=".github/workflows/gh-aw-docs-review.md"
+          if ! grep -q '## Comment phrasing' "$SOURCE"; then
+            echo "FAIL: '## Comment phrasing' section not found in $SOURCE"
+            exit 1
+          fi
+          if ! grep -q 'we recommend' "$SOURCE"; then
+            echo "FAIL: 'we recommend' not found in comment phrasing section of $SOURCE"
+            exit 1
+          fi
+          echo "PASS: phrasing guidance section present"
+
+      - name: Verify agent instructions do not use forbidden phrasing patterns
+        run: |
+          set -euo pipefail
+          SOURCE=".github/workflows/gh-aw-docs-review.md"
+          # Extract only the agent prompt body (lines after the closing ---).
+          # The YAML frontmatter ends at the second --- delimiter.
+          PROMPT=$(awk '/^---$/{found++; if(found==2){body=1; next}} body{print}' "$SOURCE")
+          # Check that the prompt does not instruct the agent to say "you should" to reviewees.
+          # We allow the phrase only inside quoted examples (lines with "Prefer:" or "|" table rows).
+          BAD_LINES=$(echo "$PROMPT" | grep -n 'you should' | grep -iv 'Prefer:\|instead of\|over\|example\|| ' || true)
+          if [ -n "$BAD_LINES" ]; then
+            echo "FAIL: agent prompt instructs 'you should' outside of example context:"
+            echo "$BAD_LINES"
+            exit 1
+          fi
+          echo "PASS: no unguarded 'you should' in agent prompt"
+
+      - name: Verify lock file is in sync with source
+        run: |
+          set -euo pipefail
+          LOCK=".github/workflows/gh-aw-docs-review.lock.yml"
+          if ! grep -q 'comment-phrasing' "$LOCK"; then
+            echo "FAIL: comment-phrasing not found in $LOCK — run 'make compile' to regenerate"
+            exit 1
+          fi
+          echo "PASS: lock file contains comment-phrasing"

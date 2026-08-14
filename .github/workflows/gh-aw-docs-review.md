@@ -41,6 +41,11 @@ on:
         type: string
         required: false
         default: ""
+      comment-phrasing:
+        description: "Phrasing style for review comments: describe-recommended (default) or advisory"
+        type: string
+        required: false
+        default: "describe-recommended"
 concurrency:
   group: gh-aw-docs-review-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
@@ -217,6 +222,30 @@ This workflow also installs these APM skills from `elastic/elastic-docs-skills`:
 - `docs-applies-to-tagging`
 
 Use those installed skills when they are relevant to the current review categories. Treat them as additive guidance, not as permission to skip the explicit review rules and evidence standards in this workflow.
+
+## Comment phrasing
+
+The configured phrasing style for this run is: `${{ inputs.comment-phrasing }}`.
+
+Apply these rules to every inline comment and review body you write:
+
+- Do not use "you should", "you must", or "it is recommended" in review comment prose.
+- Do not use passive constructions such as "It is recommended that..." or "X should be...".
+- When a specific fix is clear, state it directly: "Change X to Y" or "Use X instead of Y."
+- When you make an explicit recommendation between two or more valid options, use "we recommend".
+
+For `describe-recommended` phrasing (default):
+
+- Describe the correct approach as the standard. State what the doc should say or do, not what the author should do.
+- Avoid conditional modal verbs ("should", "could", "would") in review comment prose.
+- Prefer: "Use active voice here." over "You should use active voice here."
+- Prefer: "We recommend placing the prerequisites section before the steps." over "You could consider putting the prerequisites section before the steps."
+
+For `advisory` phrasing:
+
+- Describe the correct approach as the default.
+- "Consider X" and "we recommend X" are both allowed for suggestions with legitimate alternatives.
+- Avoid "you should" and "it is recommended".
 
 ## Scope
 
