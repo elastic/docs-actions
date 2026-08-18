@@ -33,6 +33,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Verify comment-phrasing input is declared
         run: |
@@ -66,8 +68,8 @@ jobs:
           # The YAML frontmatter ends at the second --- delimiter.
           PROMPT=$(awk '/^---$/{found++; if(found==2){body=1; next}} body{print}' "$SOURCE")
           # Check that the prompt does not instruct the agent to say "you should" to reviewees.
-          # We allow the phrase only inside quoted examples (lines with "Prefer:" or "|" table rows).
-          BAD_LINES=$(echo "$PROMPT" | grep -n 'you should' | grep -iv 'Prefer:\|instead of\|over\|example\|| ' || true)
+          # Allow lines where the phrase is in double quotes (prohibition rules) or is an example.
+          BAD_LINES=$(echo "$PROMPT" | grep -n 'you should' | grep -iv '"you should"\|Prefer:\|instead of\|over\|example\|| ' || true)
           if [ -n "$BAD_LINES" ]; then
             echo "FAIL: agent prompt instructs 'you should' outside of example context:"
             echo "$BAD_LINES"
