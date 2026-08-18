@@ -1,0 +1,56 @@
+name: PR Review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+permissions:
+  actions: read
+  contents: read
+  copilot-requests: write
+  issues: read
+  pull-requests: write
+
+jobs:
+  run:
+    if: >-
+      github.event.pull_request.draft == false &&
+      !contains(github.event.pull_request.labels.*.name, 'skip-auto-pr-review')
+    uses: elastic/ai-github-actions/.github/workflows/gh-aw-pr-review.lock.yml@v0
+    with:
+      allowed-bot-users: "github-actions[bot],dependabot[bot]"
+      intensity: aggressive
+      minimum_severity: nitpick
+      additional-instructions: |
+        This is the elastic/docs-actions repo — a collection of reusable GitHub Actions
+        (composite actions) and AI-powered agentic workflows for Elastic documentation teams.
+
+        ## Two-file pattern for agentic workflows (critical)
+        Agentic workflow sources live in `.github/workflows/gh-aw-*.md` (human-editable).
+        Compiled outputs live in `.github/workflows/gh-aw-*.lock.yml` (generated via `make compile`).
+        NEVER suggest editing `.lock.yml` files directly — all edits go in the `.md` source,
+        then `make compile` regenerates the lock file.
+        Flag any PR that modifies a `.lock.yml` without a matching change to its `.md` source.
+
+        ## inlined-imports frontmatter
+        Reusable workflows consumed by other repos MUST have `inlined-imports: true` in their
+        frontmatter. Without it, runtime imports fail silently because callers lack access to
+        source fragments. Flag its absence on any cross-repo reusable workflow.
+
+        ## Permissions are load-bearing
+        All reusable agentic workflows need `copilot-requests: write`. Caller jobs need that
+        plus `discussions: write`. Missing permissions cause GitHub to reject the workflow at
+        runtime — do not suggest removing them as "cleanup."
+
+        ## Auth token
+        `COPILOT_GITHUB_TOKEN` is the standard auth mechanism across this repo.
+        Do not suggest swapping it for `GITHUB_TOKEN` or personal access tokens.
+
+        ## Changelog pipeline
+        The changelog actions form a multi-stage pipeline:
+        bundle-create → bundle-fetch → bundle-pr → bundle-upload → submit → upload → validate.
+        Changes to one stage may break downstream stages — flag cross-stage impact.
+        `changelog/submit` and `changelog/upload` push to production published release notes.
+
+        ## Trigger conditions
+        `if:` conditions on slash commands are intentional guards, not redundant filters.
+        Do not suggest removing them.
