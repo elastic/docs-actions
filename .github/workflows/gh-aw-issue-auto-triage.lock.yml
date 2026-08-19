@@ -952,6 +952,12 @@ jobs:
         id: pre_agent_audit
         continue-on-error: true
         run: bash "${RUNNER_TEMP}/gh-aw/actions/audit_pre_agent_workspace.sh"
+      - name: Debug key shape (temporary)
+        env:
+          K: ${{ secrets.CODEX_API_KEY || secrets.OPENAI_API_KEY }}
+        run: |
+          echo "key_len=${#K}"
+          echo "key_dots=$(printf %s "$K" | tr -cd '.' | wc -c)"
       - name: Execute Codex CLI
         id: agentic_execution
         timeout-minutes: 15
