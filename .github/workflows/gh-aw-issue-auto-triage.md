@@ -44,6 +44,7 @@ concurrency:
 permissions:
   actions: read
   contents: read
+  copilot-requests: write
   issues: read
   pull-requests: read
 
@@ -81,6 +82,9 @@ steps:
 
 safe-outputs:
   threat-detection:
+    engine:
+      id: copilot
+      model: gpt-5-mini
     prompt: |
       IMPORTANT context for this workflow: the prompt includes gh-aw
       framework scaffolding wrapped in <system> and <safe-outputs> tags.
