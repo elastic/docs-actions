@@ -99,8 +99,7 @@ jobs:
           && github.event.pull_request.head.repo.full_name != github.repository
           && needs.check.outputs.any_modified == 'true'
         run: |
-          echo "::warning::Preview deployments are only available for PRs from the same repository, not from forks." \
-            "You can either change the event to pull_request_target or push the branch to the upstream repository instead."
+          echo "::warning::Preview deployments and Elastic Internal Docs cross-links are not available for PRs from forks. Fork pull_request jobs cannot clone elastic/codex-link-index or deploy previews. Push the branch to the upstream repository instead."
       - name: Skip build
         if: needs.check.outputs.any_modified == 'false'
         run: |
