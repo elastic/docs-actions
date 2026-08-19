@@ -266,9 +266,12 @@ jobs:
             const toMarkdownLink = (file) => {
               const path = file
                 .replace(rootPattern, '')
-                .replace(/\/index.md$/, '')
+                .replace(/(?:^|\/)index\.md$/, '')
                 .replace(/\.md$/, '');
-              return `[${escapeMarkdown(file)}](https://codex.elastic.dev${process.env.PATH_PREFIX}/${path})`;
+              const href = path
+                ? `https://codex.elastic.dev${process.env.PATH_PREFIX}/${path}`
+                : `https://codex.elastic.dev${process.env.PATH_PREFIX}`;
+              return `[${escapeMarkdown(file)}](${href})`;
             }
 
             const links = changedMdFiles.map(toMarkdownLink)
