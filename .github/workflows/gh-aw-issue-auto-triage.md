@@ -12,7 +12,7 @@ imports:
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/quality-bar.md
-model: openai/gpt-4o-mini
+model: openai/gpt-5-mini
 engine:
   id: codex
   env:
