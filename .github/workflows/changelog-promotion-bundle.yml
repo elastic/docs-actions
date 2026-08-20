@@ -8,7 +8,7 @@
 # promotion hands off: the previously published endpoint ref (start-git-ref)
 # and the currently published one (git-ref). docs-builder derives the PR list
 # from that range itself (GitHub compare API + GraphQL associatedPullRequests),
-# sources each PR's changelog entry pool-first with PR-metadata fallback,
+# sources each PR's changelog entry from the public CDN,
 # builds a date-versioned bundle recording git-ref as its git_ref metadata,
 # and uploads it to the private S3 bucket (the scrubber Lambda mirrors a
 # sanitized copy to the public CDN).
@@ -42,6 +42,7 @@
 #         # optional, when the product gate has them:
 #         target-env: ${{ github.event.client_payload.target-env || inputs.target-env }}
 #         deployment-slices: ${{ github.event.client_payload.deployment-slices || inputs.deployment-slices }}
+#         infer: ${{ github.event.client_payload.infer || inputs.infer }}  # optional; enable PR-metadata synthesis
 
 name: Changelog promotion bundle
 
@@ -93,6 +94,13 @@ on:
           Resolve the commit range and publish the run report (resolved PR list
           with per-PR entry source) to the job summary without building or
           uploading a bundle.
+        type: boolean
+        default: false
+      infer:
+        description: >
+          Enable synthesis of changelog entries from PR metadata (title, body,
+          labels) when no files match. Default is false; PRs without
+          a changelog YAML are warned and omitted.
         type: boolean
         default: false
     outputs:
@@ -179,6 +187,7 @@ jobs:
           start-git-ref: ${{ inputs.start-git-ref }}
           end-git-ref: ${{ inputs.git-ref }}
           dry-run: ${{ inputs.dry-run }}
+          infer: ${{ inputs.infer }}
           github-token: ${{ github.token }}
 
   upload:

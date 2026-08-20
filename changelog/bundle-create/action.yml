@@ -74,6 +74,13 @@ inputs:
       Only valid together with start-git-ref/end-git-ref. The report is appended
       to the job summary.
     default: 'false'
+  infer:
+    description: >
+      Enable synthesis of changelog entries from PR metadata when no files
+      match (GitHub PR title, body release notes, pivot labels). Only valid
+      with start-git-ref/end-git-ref. Default is false; PRs without a
+      changelog YAML are warned and omitted.
+    default: 'false'
   docs-builder-version:
     description: >
       docs-builder version to use (e.g. 0.1.100, latest, edge).
@@ -119,6 +126,7 @@ runs:
         START_GIT_REF: ${{ inputs.start-git-ref }}
         END_GIT_REF: ${{ inputs.end-git-ref }}
         DRY_RUN: ${{ inputs.dry-run }}
+        INFER: ${{ inputs.infer }}
       run: |
         if [[ "$MODE" != "bundle" && "$MODE" != "gh-release" ]]; then
           echo "::error::mode must be 'bundle' or 'gh-release', got: ${MODE}"
@@ -143,9 +151,17 @@ runs:
             echo "::error::start-git-ref/end-git-ref are mutually exclusive with release-version, report, and prs"
             exit 1
           fi
-        elif [ "$DRY_RUN" = "true" ]; then
-          echo "::error::dry-run is only supported together with start-git-ref/end-git-ref"
-          exit 1
+        else
+          if [ "$INFER" = "true" ]; then
+            echo "::error::infer is only supported together with start-git-ref/end-git-ref"
+            exit 1
+          fi
+        fi
+        if [ "$DRY_RUN" = "true" ]; then
+          if [ -z "$START_GIT_REF" ] || [ -z "$END_GIT_REF" ]; then
+            echo "::error::dry-run is only supported together with start-git-ref/end-git-ref"
+            exit 1
+          fi
         fi
 
         source "${GITHUB_ACTION_PATH}/../../scripts/validate-inputs.sh"
@@ -196,6 +212,7 @@ runs:
         OWNER: ${{ inputs.owner }}
         START_GIT_REF: ${{ inputs.start-git-ref }}
         END_GIT_REF: ${{ inputs.end-git-ref }}
+        INFER: ${{ inputs.infer }}
       run: |
         ARGS=()
         ARGS+=(changelog bundle --plan)
@@ -204,6 +221,7 @@ runs:
           [ -n "$VERSION" ] && ARGS+=("$VERSION")
           [ -n "$REPORT" ] && ARGS+=("$REPORT")
           [ -n "$START_GIT_REF" ] && ARGS+=(--start-git-ref "$START_GIT_REF" --end-git-ref "$END_GIT_REF")
+          [ "$INFER" = "true" ] && ARGS+=(--infer)
         else
           ARGS+=(--config "$CONFIG" --resolve)
           [ -n "$RELEASE_VERSION" ] && ARGS+=(--release-version "$RELEASE_VERSION")
@@ -266,6 +284,7 @@ runs:
         START_GIT_REF: ${{ inputs.start-git-ref }}
         END_GIT_REF: ${{ inputs.end-git-ref }}
         DRY_RUN: ${{ inputs.dry-run }}
+        INFER: ${{ inputs.infer }}
       run: |
         DOCKER_ARGS=(--rm -v "${PWD}:/github/workspace" -w /github/workspace)
 
@@ -291,6 +310,7 @@ runs:
           [ -n "$REPORT" ] && BUNDLE_ARGS+=("$(resolve_report "$REPORT")")
           [ -n "$START_GIT_REF" ] && BUNDLE_ARGS+=(--start-git-ref "$START_GIT_REF" --end-git-ref "$END_GIT_REF")
           [ "$DRY_RUN" = "true" ] && BUNDLE_ARGS+=(--dry-run)
+          [ "$INFER" = "true" ] && BUNDLE_ARGS+=(--infer)
         else
           BUNDLE_ARGS+=(--config "$CONFIG" --resolve)
           [ -n "$RELEASE_VERSION" ] && BUNDLE_ARGS+=(--release-version "$RELEASE_VERSION")
