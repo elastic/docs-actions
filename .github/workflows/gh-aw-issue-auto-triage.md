@@ -12,12 +12,14 @@ imports:
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/quality-bar.md
-model: haiku
+model: google/gemma-4-26b-a4b-it
 engine:
-  id: claude
+  id: copilot
   env:
-    ANTHROPIC_BASE_URL: https://ke4jawr4344mwdive254dtcp6a0woaza.lambda-url.eu-west-1.on.aws/api
-    ANTHROPIC_DEFAULT_HAIKU_MODEL: anthropic/claude-haiku-4.5
+    COPILOT_PROVIDER_BASE_URL: https://ke4jawr4344mwdive254dtcp6a0woaza.lambda-url.eu-west-1.on.aws/api/v1
+    COPILOT_PROVIDER_API_KEY: ${{ secrets.COPILOT_PROVIDER_API_KEY }}
+    COPILOT_PROVIDER_TYPE: openai
+    COPILOT_PROVIDER_WIRE_API: completions
 
 on:
   workflow_call:
