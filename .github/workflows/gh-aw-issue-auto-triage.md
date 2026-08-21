@@ -17,7 +17,7 @@ engine:
   id: claude
   env:
     ANTHROPIC_BASE_URL: https://ke4jawr4344mwdive254dtcp6a0woaza.lambda-url.eu-west-1.on.aws/api
-    ANTHROPIC_DEFAULT_HAIKU_MODEL: anthropic/claude-haiku-4.5
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: anthropic/claude-3-haiku
 
 on:
   workflow_call:
