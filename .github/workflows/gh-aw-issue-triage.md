@@ -10,10 +10,9 @@ imports:
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/quality-bar.md
-model: openai/gpt-5-mini
+model: anthropic/claude-haiku-4.5
 engine:
   id: codex
-  args: ["-c", "model_reasoning_effort=medium"]
   env:
     OPENAI_BASE_URL: https://ke4jawr4344mwdive254dtcp6a0woaza.lambda-url.eu-west-1.on.aws/api/v1
 
