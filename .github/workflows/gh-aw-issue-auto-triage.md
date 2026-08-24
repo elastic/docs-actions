@@ -16,7 +16,11 @@ model: haiku
 engine:
   id: claude
   env:
-    ANTHROPIC_BASE_URL: https://ke4jawr4344mwdive254dtcp6a0woaza.lambda-url.eu-west-1.on.aws/api
+    ANTHROPIC_BASE_URL: https://openrouter.ai/api
+    ANTHROPIC_CUSTOM_HEADERS: |-
+      HTTP-Referer: https://github.com/${{ github.repository }}
+      X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
+      X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
     ANTHROPIC_DEFAULT_HAIKU_MODEL: anthropic/claude-haiku-4.5
 
 on:
@@ -61,7 +65,7 @@ network:
   allowed:
     - defaults
     - github
-    - "ke4jawr4344mwdive254dtcp6a0woaza.lambda-url.eu-west-1.on.aws"
+    - "openrouter.ai"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
     - "figma.com"
