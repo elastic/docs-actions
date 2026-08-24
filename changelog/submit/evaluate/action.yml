@@ -206,11 +206,11 @@ runs:
         CHANGELOG_REPO: ${{ github.event.repository.name }}
         CHANGELOG_PRODUCTS: ${{ steps.evaluate.outputs.products }}
       run: |
-        mkdir -p .artifacts/changelog-staging
+        mkdir -p changelog-ci/changelog-staging
         docs-builder changelog add \
           --concise \
           --config "$CONFIG_FILE" \
-          --output .artifacts/changelog-staging
+          --output changelog-ci/changelog-staging
 
     - name: Prepare artifact
       if: steps.pr-data.outputs.proceed == 'true'
@@ -238,8 +238,8 @@ runs:
         # Build the args list explicitly and only append boolean flags when the
         # value is the string "true".
         ARGS=(
-          --staging-dir .artifacts/changelog-staging
-          --output-dir .artifacts/changelog-artifact
+          --staging-dir changelog-ci/changelog-staging
+          --output-dir changelog-ci/changelog-artifact
           --evaluate-status "$STATUS"
           --generate-outcome "$GENERATE_OUTCOME"
           --pr-number "$PR_NUMBER"
@@ -271,7 +271,6 @@ runs:
       uses: actions/upload-artifact@v7
       with:
         name: changelog-staging
-        path: .artifacts/changelog-artifact
+        path: changelog-ci/changelog-artifact
         retention-days: 1
         if-no-files-found: error
-        include-hidden-files: true
