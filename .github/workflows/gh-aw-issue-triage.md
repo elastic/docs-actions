@@ -14,7 +14,7 @@ model: haiku
 engine:
   id: claude
   env:
-    ANTHROPIC_BASE_URL: https://ke4jawr4344mwdive254dtcp6a0woaza.lambda-url.eu-west-1.on.aws/api
+    ANTHROPIC_BASE_URL: https://d1bkaokkb4f799.cloudfront.net/api
     ANTHROPIC_DEFAULT_HAIKU_MODEL: anthropic/claude-haiku-4.5
 
 on:
@@ -62,7 +62,7 @@ network:
   allowed:
     - defaults
     - github
-    - "ke4jawr4344mwdive254dtcp6a0woaza.lambda-url.eu-west-1.on.aws"
+    - "d1bkaokkb4f799.cloudfront.net"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
     - "figma.com"
