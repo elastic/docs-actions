@@ -404,6 +404,7 @@ jobs:
       HEAD_SHA: ${{ needs.preflight.outputs.head-sha }}
       HEAD_BRANCH: ${{ needs.preflight.outputs.head-branch }}
       HEAD_REPO: ${{ needs.preflight.outputs.head-repo }}
+      BASE_REF: ${{ needs.preflight.outputs.base-ref }}
     steps:
       - name: Reject fork checkout
         if: >
@@ -421,6 +422,10 @@ jobs:
           ref: ${{ needs.preflight.outputs.head-sha }}
           persist-credentials: false
           allow-unsafe-pr-checkout: true
+
+      - name: Fetch PR base for git diff
+        if: needs.preflight.outputs.event == 'pull_request'
+        run: git fetch --no-tags --depth=1 origin "${{ needs.preflight.outputs.base-ref }}"
 
       - name: Validate checkout SHA
         # language=bash
@@ -497,6 +502,8 @@ jobs:
             -e GITHUB_REPOSITORY="${HEAD_REPO}" \
             -e GITHUB_REF_NAME="${HEAD_BRANCH}" \
             -e GITHUB_REF="refs/heads/${HEAD_BRANCH}" \
+            -e GITHUB_BASE_REF="${BASE_REF}" \
+            -e DOCS_DIFF_BASE="origin/${BASE_REF}" \
             -e INPUT_PREFIX="${PATH_PREFIX}" \
             -e INPUT_STRICT="${STRICT_FLAG}" \
             "${IMAGE_DIGEST}" || EXIT_CODE=$?
@@ -523,6 +530,19 @@ jobs:
           compression-level: 1
           retention-days: 1
           if-no-files-found: error
+
+      - name: Upload changed pages artifact
+        id: upload-changed-pages
+        if: >
+          steps.docs-build.outcome == 'success'
+          && steps.docs-build.outputs.skip != 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: changed-pages
+          path: .artifacts/docs/html/changed-pages.json
+          compression-level: 1
+          retention-days: 1
+          if-no-files-found: warn
 
       - name: Upload docs artifact
         id: upload-docs
@@ -663,44 +683,31 @@ jobs:
       id-token: none
       pull-requests: write
     steps:
+      - name: Download changed pages artifact
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: changed-pages
+          path: changed-pages
       - name: Comment on PR
         continue-on-error: true
         uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
-          DOCS_PATH: ${{ inputs.path }}
-          PATH_PATTERN: ${{ inputs.path-pattern }}
         with:
           # language=js
           script: |
-            const title = '## 🔍 Preview links for changed docs'
+            const fs = require('fs');
+            const path = require('path');
+
+            const title = '## 🔍 Preview links for changed docs';
+            const previewHost = 'https://docs-v3-preview.elastic.dev';
+            const previewUrl = `${previewHost}${process.env.PATH_PREFIX}`;
             const { owner, repo } = context.repo;
             const prNumber = parseInt(process.env.PR_NUMBER);
 
-            const files = await github.paginate(github.rest.pulls.listFiles, {
-              owner, repo, pull_number: prNumber
-            });
-
-            const changedMdFiles = files
-              .map(f => f.filename)
-              .filter(i => i.endsWith('.md'))
-              .filter(i => !i.includes('/_snippets/'));
-
-            if (changedMdFiles.length === 0) {
-              const hasSnippetOrCsv = files
-                .map(f => f.filename)
-                .some(f => f.includes('/_snippets/') || f.endsWith('.csv'));
-              if (!hasSnippetOrCsv) return;
-
-              const previewUrl = `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}`;
-              const body = [
-                title,
-                '',
-                'This PR only changes snippets or data files. No direct page links are available.',
-                `[Browse the full preview](${previewUrl})`,
-              ].join('\n');
-
+            const upsertComment = async (body) => {
               const { data: comments } = await github.rest.issues.listComments({
                 owner, repo, issue_number: prNumber
               });
@@ -721,34 +728,41 @@ jobs:
                   body,
                 });
               }
+            };
+
+            const jsonPath = path.join(process.env.GITHUB_WORKSPACE, 'changed-pages', 'changed-pages.json');
+            if (!fs.existsSync(jsonPath)) {
+              await upsertComment([
+                title,
+                '',
+                `[Browse the full preview](${previewUrl})`,
+              ].join('\n'));
               return;
             }
 
-            const rawDocsPath = process.env.DOCS_PATH
-              || (process.env.PATH_PATTERN || '').replace(/\/\*+$/, '')
-              || 'docs';
-            const docsRoot = rawDocsPath
-              .replace(/^\.\//, '')
-              .replace(/\/+$/, '');
-            const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
-
-            const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
-            const toMarkdownLink = (file) => {
-              const path = file
-                .replace(rootPattern, '')
-                .replace(/\/index\.md$/, '')
-                .replace(/\.md$/, '');
-              return `[${escapeMarkdown(file)}](https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path})`;
+            const changedPages = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+            const pages = changedPages.pages || [];
+            if (changedPages.config_changed || pages.length === 0) {
+              await upsertComment([
+                title,
+                '',
+                changedPages.config_changed
+                  ? 'This PR changes navigation or configuration. Browse the full preview for accurate links.'
+                  : 'This PR only changes snippets or data files. No direct page links are available.',
+                `[Browse the full preview](${previewUrl})`,
+              ].join('\n'));
+              return;
             }
 
-            const links = changedMdFiles.map(toMarkdownLink)
+            const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
+            const links = pages.map(page =>
+              `[${escapeMarkdown(page.source_path)}](${previewHost}${page.url})`
+            );
 
             const body = [
               title,
               ...links.slice(0, 10).map(i => `- ${i}`),
-            ]
-
+            ];
             if (links.length > 10) {
               body.push('<details>');
               body.push('<summary> More links … </summary>');
@@ -759,32 +773,11 @@ jobs:
               body.push('');
               body.push('</details>');
             }
-
             if (links.length > 100) {
               body.push('');
               body.push(`<sub> In total, ${links.length} files changed. </sub>`);
             }
-
-            const { data: comments } = await github.rest.issues.listComments({
-              owner, repo, issue_number: prNumber
-            });
-            const existing = comments.find(c =>
-              c.user.type === 'Bot' &&
-              c.body.startsWith(title)
-            );
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner, repo,
-                comment_id: existing.id,
-                body: body.join('\n'),
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner, repo,
-                issue_number: prNumber,
-                body: body.join('\n'),
-              });
-            }
+            await upsertComment(body.join('\n'));
 
       - name: Comment on docs changes about versioning requirements
         if: inputs.enable-cumulative-comment == true

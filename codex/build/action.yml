@@ -111,3 +111,12 @@ runs:
         compression-level: 1
         retention-days: 1
         if-no-files-found: error
+
+    - name: Upload changed pages
+      uses: actions/upload-artifact@v7
+      with:
+        name: changed-pages
+        path: .artifacts/docs/html/changed-pages.json
+        compression-level: 1
+        retention-days: 1
+        if-no-files-found: warn

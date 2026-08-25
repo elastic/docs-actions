@@ -51,7 +51,6 @@ jobs:
     runs-on: ubuntu-slim
     outputs:
       any_modified: ${{ steps.check-files.outputs.any_modified }}
-      all_changed_files: ${{ steps.check-files.outputs.all_changed_files }}
     steps:
       - name: Checkout
         # Checkout is needed to get changed files when the event is not a pull request
@@ -77,6 +76,8 @@ jobs:
       contents: read
       id-token: write
     runs-on: ${{ needs.check.outputs.any_modified == 'true' && 'ubuntu-latest' || 'ubuntu-slim' }}
+    env:
+      DOCS_DIFF_BASE: ${{ github.event.pull_request.base.sha }}
     steps:
       - name: Checkout code
         if: needs.check.outputs.any_modified == 'true'
@@ -86,6 +87,11 @@ jobs:
         uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - name: Fetch PR base for git diff
+        if: >
+          needs.check.outputs.any_modified == 'true'
+          && startsWith(github.event_name, 'pull_request')
+        run: git fetch --no-tags --depth=1 origin "${{ github.event.pull_request.base.sha }}"
       - uses: elastic/docs-actions/codex/build@v1
         if: needs.check.outputs.any_modified == 'true'
         id: codex-build
@@ -208,39 +214,30 @@ jobs:
     permissions:
       pull-requests: write
     steps:
+      - name: Download changed pages artifact
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: changed-pages
+          path: changed-pages
       - name: Comment preview links on PR
         continue-on-error: true
         uses: actions/github-script@v9
         env:
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
-          ALL_CHANGED_FILES: ${{ needs.check.outputs.all_changed_files }}
-          DOCS_PATH: ${{ inputs.path }}
         with:
           # language=js
           script: |
-            const title = '## 🔍 Preview links for changed Codex pages'
+            const fs = require('fs');
+            const path = require('path');
+
+            const title = '## 🔍 Preview links for changed Codex pages';
+            const previewHost = 'https://codex.elastic.dev';
+            const previewUrl = `${previewHost}${process.env.PATH_PREFIX}`;
             const { owner, repo } = context.repo;
             const prNumber = context.payload.pull_request.number;
 
-            const files = (process.env.ALL_CHANGED_FILES || '').split(' ').filter(Boolean);
-
-            const changedMdFiles = files
-              .filter(i => i.endsWith('.md'))
-              .filter(i => !i.includes('/_snippets/'));
-
-            if (changedMdFiles.length === 0) {
-              const hasSnippetOrCsv = files
-                .some(f => f.includes('/_snippets/') || f.endsWith('.csv'));
-              if (!hasSnippetOrCsv) return;
-
-              const previewUrl = `https://codex.elastic.dev${process.env.PATH_PREFIX}`;
-              const body = [
-                title,
-                '',
-                'This PR only changes snippets or data files. No direct page links are available.',
-                `[Browse the full preview](${previewUrl})`,
-              ].join('\n');
-
+            const upsertComment = async (body) => {
               const { data: comments } = await github.rest.issues.listComments({
                 owner, repo, issue_number: prNumber
               });
@@ -249,35 +246,53 @@ jobs:
                 c.body.startsWith(title)
               );
               if (existing) {
-                await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+                await github.rest.issues.updateComment({
+                  owner, repo,
+                  comment_id: existing.id,
+                  body,
+                });
               } else {
-                await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
+                await github.rest.issues.createComment({
+                  owner, repo,
+                  issue_number: prNumber,
+                  body,
+                });
               }
+            };
+
+            const jsonPath = path.join(process.env.GITHUB_WORKSPACE, 'changed-pages', 'changed-pages.json');
+            if (!fs.existsSync(jsonPath)) {
+              await upsertComment([
+                title,
+                '',
+                `[Browse the full preview](${previewUrl})`,
+              ].join('\n'));
               return;
             }
 
-            const docsRoot = (process.env.DOCS_PATH || 'docs')
-              .replace(/^\.\//, '')
-              .replace(/\/+$/, '');
-            const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
-
-            const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
-            const toMarkdownLink = (file) => {
-              const path = file
-                .replace(rootPattern, '')
-                .replace(/\/index.md$/, '')
-                .replace(/\.md$/, '');
-              return `[${escapeMarkdown(file)}](https://codex.elastic.dev${process.env.PATH_PREFIX}/${path})`;
+            const changedPages = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+            const pages = changedPages.pages || [];
+            if (changedPages.config_changed || pages.length === 0) {
+              await upsertComment([
+                title,
+                '',
+                changedPages.config_changed
+                  ? 'This PR changes navigation or configuration. Browse the full preview for accurate links.'
+                  : 'This PR only changes snippets or data files. No direct page links are available.',
+                `[Browse the full preview](${previewUrl})`,
+              ].join('\n'));
+              return;
             }
 
-            const links = changedMdFiles.map(toMarkdownLink)
+            const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
+            const links = pages.map(page =>
+              `[${escapeMarkdown(page.source_path)}](${previewHost}${page.url})`
+            );
 
             const body = [
               title,
               ...links.slice(0, 10).map(i => `- ${i}`),
-            ]
-
+            ];
             if (links.length > 10) {
               body.push('<details>');
               body.push('<summary> More links … </summary>');
@@ -288,32 +303,11 @@ jobs:
               body.push('');
               body.push('</details>');
             }
-
             if (links.length > 100) {
               body.push('');
               body.push(`<sub> In total, ${links.length} files changed. </sub>`);
             }
-
-            const { data: comments } = await github.rest.issues.listComments({
-              owner, repo, issue_number: prNumber
-            });
-            const existing = comments.find(c =>
-              c.user.type === 'Bot' &&
-              c.body.startsWith(title)
-            );
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner, repo,
-                comment_id: existing.id,
-                body: body.join('\n'),
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner, repo,
-                issue_number: prNumber,
-                body: body.join('\n'),
-              });
-            }
+            await upsertComment(body.join('\n'));
 
   update-link-index:
     needs:
