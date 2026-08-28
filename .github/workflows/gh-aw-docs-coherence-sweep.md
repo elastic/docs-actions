@@ -11,11 +11,10 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
+  - gh-aw-fragments/findings-contract.md
+model: claude-sonnet-5
 engine:
   id: copilot
-  concurrency:
-    group: "gh-aw-copilot-docs-coherence-sweep-${{ github.run_id }}"
-    cancel-in-progress: false
 on:
   bots: ["github-actions[bot]"]
   workflow_call:
@@ -32,6 +31,11 @@ on:
         default: "docs/"
       target-path:
         description: "Optional docs-root-relative directory to sweep recursively. Accepts a leading slash."
+        type: string
+        required: false
+        default: ""
+      target-files:
+        description: "Optional newline- or comma-separated list of docs-root-relative file paths to sweep. When set, overrides target-path and scope-mode: the sweep processes exactly these files."
         type: string
         required: false
         default: ""
@@ -65,16 +69,13 @@ on:
         type: string
         required: false
         default: ""
-    secrets:
-      COPILOT_GITHUB_TOKEN:
-        required: false
 concurrency:
   group: gh-aw-docs-coherence-sweep-${{ github.run_id }}
   cancel-in-progress: false
 permissions:
-  copilot-requests: write
   contents: read
   issues: read
+  copilot-requests: write
 strict: false
 tools:
   github:
@@ -98,6 +99,9 @@ network:
     - defaults
     - github
     - "www.elastic.co"
+    - "ela.st"
+    - "docs.bump.sh"
+    - "search.elastic.co"
 safe-outputs:
   noop:
   create-issue:
@@ -109,7 +113,7 @@ safe-outputs:
 timeout-minutes: 45
 steps:
   - name: Checkout source docs repo
-    uses: actions/checkout@v6
+    uses: actions/checkout@v7.0.1
     with:
       repository: ${{ inputs.source-repo || github.repository }}
       fetch-depth: 30
@@ -118,6 +122,7 @@ steps:
     env:
       DOCS_ROOT: ${{ inputs.docs-root }}
       TARGET_PATH: ${{ inputs.target-path }}
+      TARGET_FILES: ${{ inputs.target-files }}
       SCOPE_MODE: ${{ inputs.scope-mode }}
       TARGET_BATCH: ${{ inputs.target-batch-size }}
     run: |
@@ -138,6 +143,69 @@ steps:
           exit 1
           ;;
       esac
+
+      # target-files overrides target-path and scope-mode: audit exactly the
+      # listed files (newline- or comma-separated, docs-root-relative).
+      if [ -n "$TARGET_FILES" ]; then
+        SELECTION_MODE="files"
+        : > /tmp/gh-aw/sweep-data/all.txt
+        : > /tmp/gh-aw/sweep-data/shard.txt
+        : > /tmp/gh-aw/sweep-data/recent.txt
+        : > /tmp/gh-aw/sweep-data/in-scope.txt
+
+        REQUESTED_COUNT=0
+        printf '%s' "$TARGET_FILES" | tr ',' '\n' > /tmp/gh-aw/sweep-data/target-files.raw
+        while IFS= read -r raw || [ -n "$raw" ]; do
+          entry=$(printf '%s' "$raw" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+          [ -z "$entry" ] && continue
+          REQUESTED_COUNT=$(( REQUESTED_COUNT + 1 ))
+          entry=${entry#/}
+          if [ "$DOCS_ROOT_CLEAN" = "." ] || [ -z "$DOCS_ROOT_CLEAN" ]; then
+            resolved="$entry"
+          else
+            case "$entry" in
+              "$DOCS_ROOT_CLEAN"/*) resolved="$entry" ;;
+              *) resolved="$DOCS_ROOT_CLEAN/$entry" ;;
+            esac
+          fi
+          if [ -f "$resolved" ]; then
+            echo "$resolved" >> /tmp/gh-aw/sweep-data/all.txt
+          else
+            echo "target-files: '$resolved' not found; skipping"
+          fi
+        done < /tmp/gh-aw/sweep-data/target-files.raw
+
+        sort -u /tmp/gh-aw/sweep-data/all.txt > /tmp/gh-aw/sweep-data/in-scope.txt
+        cp /tmp/gh-aw/sweep-data/in-scope.txt /tmp/gh-aw/sweep-data/all.txt
+
+        while IFS= read -r f; do
+          [ -z "$f" ] && continue
+          [ ! -f "$f" ] && continue
+          mkdir -p "/tmp/gh-aw/sweep-data/scope/$(dirname "$f")"
+          cp "$f" "/tmp/gh-aw/sweep-data/scope/$f"
+        done < /tmp/gh-aw/sweep-data/in-scope.txt
+
+        IN_SCOPE_COUNT=$(wc -l < /tmp/gh-aw/sweep-data/in-scope.txt | tr -d ' ')
+      cat > /tmp/gh-aw/sweep-data/stats.json <<EOF
+      {
+        "total": $IN_SCOPE_COUNT,
+        "shard_n": 1,
+        "shard_slot": 0,
+        "shard_count": $IN_SCOPE_COUNT,
+        "recent_count": 0,
+        "in_scope_count": $IN_SCOPE_COUNT,
+        "requested_count": $REQUESTED_COUNT,
+        "iso_week": "$(date +%G-W%V)",
+        "docs_root": "$DOCS_ROOT",
+        "scope_mode": "files",
+        "selection_mode": "files",
+        "target_path": "$TARGET_PATH_CLEAN",
+        "scope_root": "$DOCS_ROOT_CLEAN"
+      }
+      EOF
+        echo "Sweep targets (file list): requested=$REQUESTED_COUNT in_scope=$IN_SCOPE_COUNT"
+        exit 0
+      fi
 
       if [ -n "$TARGET_PATH_CLEAN" ]; then
         if [ "$DOCS_ROOT_CLEAN" = "." ] || [ -z "$DOCS_ROOT_CLEAN" ]; then
@@ -302,8 +370,9 @@ For each finding produced in step 2, extract:
 
 - `file` — the in-scope repo-relative path (strip `/tmp/gh-aw/sweep-data/scope/`).
 - `line` — line number of the conflicting/overlapping passage in the in-scope file.
-- `category` — `duplicate-content`, `near-duplicate`, or `contradictory-content`.
+- `category` — `duplicate-content`, `near-duplicate`, or `contradictory-content`. These three are the complete category allowlist for this sweep (see the **Findings contract**).
 - `severity` — `high` for `contradictory-content`; `medium` for `duplicate-content`; `low` for `near-duplicate`.
+- `confidence` — per the **Findings contract**: `high` only for a `contradictory-content` finding that quotes the exact disagreeing values on both pages; `medium` for `duplicate-content`; `low` for `near-duplicate` and for any comparison that rests on a judgment about how much two pages overlap.
 - `evidence` — quote the disagreeing passage from the in-scope file in 1–2 short sentences, name the related published page by its URL.
 - `related_url` — the published URL of the other page.
 - `suggested_fix` — concrete remediation (consolidate, redirect, cross-link, or fix the contradiction). Be specific about which page should be the source of truth.
@@ -320,6 +389,9 @@ If empty, call `noop` and adapt the message to the selection mode:
 - Shard mode with `target_path`: `"No coherence findings under /<target_path> in shard <slot>/<n> (<in_scope_count> pages)"`.
 - Full mode with `target_path`: `"No coherence findings under /<target_path> (<in_scope_count> pages)"`.
 - Full mode without `target_path`: `"No coherence findings in full sweep <docs_root> (<in_scope_count> pages)"`.
+- Files mode: `"No coherence findings in the requested file list (<in_scope_count> files)"`.
+
+**Files mode**: when `selection_mode` is `files`, the caller supplied an explicit file list via `target-files`; audit exactly those files and ignore `target_path`/shard framing. Use an explicit-file-list description in the title (`file list — <count> findings`) and scope-summary (`Explicit file list · <in_scope_count> of <requested_count> requested files in scope.`).
 
 If the MCP server is unreachable or returns errors for more than half the pages, abort by calling `noop` with `"elastic-docs MCP unavailable; skipping coherence sweep"` rather than emitting unreliable findings.
 
@@ -349,6 +421,7 @@ Use one of these scope-summary lines:
   line: 12
   category: contradictory-content
   severity: high
+  confidence: high
   evidence: "states 'default refresh interval is 1s' but related published page says 30s"
   related_url: https://www.elastic.co/docs/elasticsearch/reference/refresh-intervals
   suggested_fix: |
@@ -357,6 +430,7 @@ Use one of these scope-summary lines:
   line: 1
   category: duplicate-content
   severity: medium
+  confidence: medium
   evidence: "the entire 'Configure data views' section duplicates the published page nearly verbatim"
   related_url: https://www.elastic.co/docs/kibana/data-views/configure
   suggested_fix: |
@@ -365,6 +439,7 @@ Use one of these scope-summary lines:
   line: 47
   category: near-duplicate
   severity: low
+  confidence: low
   evidence: "the 'Performance tuning' subsection overlaps with two paragraphs of the related page; rest of this page is unique"
   related_url: https://www.elastic.co/docs/elasticsearch/performance/tuning
   suggested_fix: |

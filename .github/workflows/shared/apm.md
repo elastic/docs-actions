@@ -49,7 +49,7 @@ jobs:
           printf '::notice::APM packages: %s\n' "$(printf '%s' "$packages_json" | jq -r 'join(", ")')"
       - name: Pack APM packages
         id: pack
-        uses: microsoft/apm-action@v1.7.2
+        uses: microsoft/apm-action@v1.10.0
         env:
           GITHUB_TOKEN: ${{ secrets.GH_AW_PLUGINS_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         with:
@@ -61,7 +61,7 @@ jobs:
           working-directory: /tmp/gh-aw/apm-workspace
       - name: Upload APM bundle artifact
         if: success()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: ${{ needs.activation.outputs.artifact_prefix }}apm
           path: ${{ steps.pack.outputs.bundle-path }}
@@ -79,7 +79,7 @@ steps:
       [ ${#list[@]} -gt 0 ] || { echo '::error::no apm bundles found'; exit 1; }
       printf '%s\n' "${list[@]}" > /tmp/gh-aw/apm-bundle-list.txt
   - name: Restore APM packages
-    uses: microsoft/apm-action@v1.7.2
+    uses: microsoft/apm-action@v1.10.0
     with:
       bundles-file: /tmp/gh-aw/apm-bundle-list.txt
 source: microsoft/apm/.github/workflows/shared/apm.md

@@ -11,11 +11,10 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
+  - gh-aw-fragments/findings-contract.md
+model: claude-sonnet-5
 engine:
   id: copilot
-  concurrency:
-    group: "gh-aw-copilot-docs-staleness-sweep-${{ github.run_id }}"
-    cancel-in-progress: false
 on:
   bots: ["github-actions[bot]"]
   workflow_call:
@@ -32,6 +31,11 @@ on:
         default: "docs/"
       target-path:
         description: "Optional docs-root-relative directory to sweep recursively. Accepts a leading slash."
+        type: string
+        required: false
+        default: ""
+      target-files:
+        description: "Optional newline- or comma-separated list of docs-root-relative file paths to sweep. When set, overrides target-path and scope-mode: the sweep processes exactly these files."
         type: string
         required: false
         default: ""
@@ -75,16 +79,13 @@ on:
         type: string
         required: false
         default: ""
-    secrets:
-      COPILOT_GITHUB_TOKEN:
-        required: false
 concurrency:
   group: gh-aw-docs-staleness-sweep-${{ github.run_id }}
   cancel-in-progress: false
 permissions:
-  copilot-requests: write
   contents: read
   issues: read
+  copilot-requests: write
 strict: false
 tools:
   github:
@@ -109,6 +110,9 @@ network:
     - defaults
     - github
     - "www.elastic.co"
+    - "ela.st"
+    - "docs.bump.sh"
+    - "search.elastic.co"
 safe-outputs:
   noop:
   create-issue:
@@ -120,7 +124,7 @@ safe-outputs:
 timeout-minutes: 30
 steps:
   - name: Checkout source docs repo
-    uses: actions/checkout@v6
+    uses: actions/checkout@v7.0.1
     with:
       repository: ${{ inputs.source-repo || github.repository }}
       fetch-depth: 0
@@ -129,6 +133,7 @@ steps:
     env:
       DOCS_ROOT: ${{ inputs.docs-root }}
       TARGET_PATH: ${{ inputs.target-path }}
+      TARGET_FILES: ${{ inputs.target-files }}
       SCOPE_MODE: ${{ inputs.scope-mode }}
       TARGET_BATCH: ${{ inputs.target-batch-size }}
     run: |
@@ -149,6 +154,69 @@ steps:
           exit 1
           ;;
       esac
+
+      # target-files overrides target-path and scope-mode: audit exactly the
+      # listed files (newline- or comma-separated, docs-root-relative).
+      if [ -n "$TARGET_FILES" ]; then
+        SELECTION_MODE="files"
+        : > /tmp/gh-aw/sweep-data/all.txt
+        : > /tmp/gh-aw/sweep-data/shard.txt
+        : > /tmp/gh-aw/sweep-data/recent.txt
+        : > /tmp/gh-aw/sweep-data/in-scope.txt
+
+        REQUESTED_COUNT=0
+        printf '%s' "$TARGET_FILES" | tr ',' '\n' > /tmp/gh-aw/sweep-data/target-files.raw
+        while IFS= read -r raw || [ -n "$raw" ]; do
+          entry=$(printf '%s' "$raw" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+          [ -z "$entry" ] && continue
+          REQUESTED_COUNT=$(( REQUESTED_COUNT + 1 ))
+          entry=${entry#/}
+          if [ "$DOCS_ROOT_CLEAN" = "." ] || [ -z "$DOCS_ROOT_CLEAN" ]; then
+            resolved="$entry"
+          else
+            case "$entry" in
+              "$DOCS_ROOT_CLEAN"/*) resolved="$entry" ;;
+              *) resolved="$DOCS_ROOT_CLEAN/$entry" ;;
+            esac
+          fi
+          if [ -f "$resolved" ]; then
+            echo "$resolved" >> /tmp/gh-aw/sweep-data/all.txt
+          else
+            echo "target-files: '$resolved' not found; skipping"
+          fi
+        done < /tmp/gh-aw/sweep-data/target-files.raw
+
+        sort -u /tmp/gh-aw/sweep-data/all.txt > /tmp/gh-aw/sweep-data/in-scope.txt
+        cp /tmp/gh-aw/sweep-data/in-scope.txt /tmp/gh-aw/sweep-data/all.txt
+
+        while IFS= read -r f; do
+          [ -z "$f" ] && continue
+          [ ! -f "$f" ] && continue
+          mkdir -p "/tmp/gh-aw/sweep-data/scope/$(dirname "$f")"
+          cp "$f" "/tmp/gh-aw/sweep-data/scope/$f"
+        done < /tmp/gh-aw/sweep-data/in-scope.txt
+
+        IN_SCOPE_COUNT=$(wc -l < /tmp/gh-aw/sweep-data/in-scope.txt | tr -d ' ')
+      cat > /tmp/gh-aw/sweep-data/stats.json <<EOF
+      {
+        "total": $IN_SCOPE_COUNT,
+        "shard_n": 1,
+        "shard_slot": 0,
+        "shard_count": $IN_SCOPE_COUNT,
+        "recent_count": 0,
+        "in_scope_count": $IN_SCOPE_COUNT,
+        "requested_count": $REQUESTED_COUNT,
+        "iso_week": "$(date +%G-W%V)",
+        "docs_root": "$DOCS_ROOT",
+        "scope_mode": "files",
+        "selection_mode": "files",
+        "target_path": "$TARGET_PATH_CLEAN",
+        "scope_root": "$DOCS_ROOT_CLEAN"
+      }
+      EOF
+        echo "Sweep targets (file list): requested=$REQUESTED_COUNT in_scope=$IN_SCOPE_COUNT"
+        exit 0
+      fi
 
       if [ -n "$TARGET_PATH_CLEAN" ]; then
         if [ "$DOCS_ROOT_CLEAN" = "." ] || [ -z "$DOCS_ROOT_CLEAN" ]; then
@@ -447,7 +515,7 @@ From `lychee.json`:
 
 - **`broken-external-link`** — every entry in `fail_map`. `file` is the source markdown; `line` is the line number from lychee (if present); `evidence` is the URL plus the failure reason.
 
-Group all of these into the findings list directly; no LLM judgment needed. Apply the Rigor standards — drop anything where the evidence isn't concrete (a missing `line`, an ambiguous file path, etc.) rather than guessing.
+Group all of these into the findings list directly; no LLM judgment needed. Apply the Rigor standards — drop anything where the evidence isn't concrete (a missing `line`, an ambiguous file path, etc.) rather than guessing. These three categories are deterministic — set `confidence: high` on every one (see the **Findings contract**).
 
 ## Step 2: Add version-mention findings via MCP
 
@@ -461,7 +529,7 @@ Flag a finding only when:
 - The version mentioned is below the published "supported" range (i.e., end-of-life), AND
 - The page is not itself a release-notes / changelog / upgrade-from-old-version page (those legitimately reference EOL versions).
 
-Category: `unsupported-version-mention`. `evidence` cites the version token and the support-matrix source.
+Category: `unsupported-version-mention`. `evidence` cites the version token and the support-matrix source. Set `confidence: medium` when the support-matrix evidence is unambiguous, `low` when the page context leaves doubt (per the **Findings contract**); this is the only non-deterministic category this sweep emits. The complete category allowlist is `stale-content`, `stale-screenshot`, `broken-external-link`, and `unsupported-version-mention` — never emit any other category string.
 
 Do not invent versions or speculate about the support matrix when the MCP server doesn't return a clean answer. Skip the finding instead.
 
@@ -481,6 +549,9 @@ If the combined output is empty, call `noop` and adapt the message to the select
 - Shard mode with `target_path`: `"No staleness findings under /<target_path> in shard <slot>/<n> (<in_scope_count> pages)"`.
 - Full mode with `target_path`: `"No staleness findings under /<target_path> (<in_scope_count> pages)"`.
 - Full mode without `target_path`: `"No staleness findings in full sweep <docs_root> (<in_scope_count> pages)"`.
+- Files mode: `"No staleness findings in the requested file list (<in_scope_count> files)"`.
+
+**Files mode**: when `selection_mode` is `files`, the caller supplied an explicit file list via `target-files`; audit exactly those files and ignore `target_path`/shard framing. Use an explicit-file-list description in the title (`file list — <count> findings`) and scope-summary (`Explicit file list · <in_scope_count> of <requested_count> requested files in scope.`).
 
 ## Output: fix-issue body
 
@@ -509,6 +580,7 @@ Thresholds: stale_content_months=<n>, stale_image_min_gap_months=<n>.
   line: 1
   category: stale-content
   severity: medium
+  confidence: high
   evidence: "last commit 2023-01-15 (38 months ago); threshold is 24 months"
   suggested_fix: |
     review and refresh; either update content or move to archive
@@ -516,6 +588,7 @@ Thresholds: stale_content_months=<n>, stale_image_min_gap_months=<n>.
   line: 17
   category: stale-screenshot
   severity: low
+  confidence: high
   evidence: "image images/bar-ui.png last modified 12 months before page; gap exceeds 6-month threshold"
   suggested_fix: |
     re-capture screenshot reflecting the current UI
@@ -523,6 +596,7 @@ Thresholds: stale_content_months=<n>, stale_image_min_gap_months=<n>.
   line: 42
   category: broken-external-link
   severity: high
+  confidence: high
   evidence: "https://example.com/old-spec returned 404 (lychee)"
   suggested_fix: |
     replace link or cite a current source
@@ -530,6 +604,7 @@ Thresholds: stale_content_months=<n>, stale_image_min_gap_months=<n>.
   line: 9
   category: unsupported-version-mention
   severity: medium
+  confidence: medium
   evidence: "references Elastic Stack 7.17 — past EOL per support matrix at https://www.elastic.co/support/eol"
   suggested_fix: |
     update to a currently-supported version or move guidance to upgrade docs

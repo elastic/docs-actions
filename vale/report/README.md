@@ -6,10 +6,9 @@ Post Vale results as PR comment (Step 2: Reporting)
 
 ## Inputs
 <!--inputs-->
-| Name                 | Description                                                               | Required | Default               |
-|----------------------|---------------------------------------------------------------------------|----------|-----------------------|
-| `github_token`       | GitHub token for posting PR comments                                      | `false`  | `${{ github.token }}` |
-| `download_artifacts` | Whether to download Vale results from artifacts from the linting workflow | `false`  | `true`                |
+| Name           | Description                          | Required | Default               |
+|----------------|--------------------------------------|----------|-----------------------|
+| `github_token` | GitHub token for posting PR comments | `false`  | `${{ github.token }}` |
 <!--/inputs-->
 
 ## Outputs

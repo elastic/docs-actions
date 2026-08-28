@@ -1,0 +1,194 @@
+# Shared date-promotion release-notes bundle workflow (RFC S1).
+#
+# Covers any product that publishes release notes keyed by date rather than a
+# semver tag: serverless, Cloud ECE, Cloud Hosted, and similar cadences.
+#
+# Product quality-gate / promotion pipelines dispatch a product-owned GitHub
+# workflow, which calls this reusable workflow with the two commit hashes the
+# promotion hands off: the previously published endpoint ref (start-git-ref)
+# and the currently published one (git-ref). docs-builder derives the PR list
+# from that range itself (GitHub compare API + GraphQL associatedPullRequests),
+# sources each PR's changelog entry pool-first with PR-metadata fallback,
+# builds a date-versioned bundle recording git-ref as its git_ref metadata,
+# and uploads it to the private S3 bucket (the scrubber Lambda mirrors a
+# sanitized copy to the public CDN).
+#
+# Both refs are always required — the start ref is never inferred from
+# previous bundles or deployment history.
+#
+# Caller shape (product repo). For elastic/cloud's argocd-driven promotion the
+# pipeline exposes the promoted commit pair and dispatches the wrapper (via
+# workflow_dispatch or repository_dispatch); serverless quality gates pass
+# SERVICE_VERSION and the previous published ref the same way:
+#
+#   on:
+#     workflow_dispatch:
+#       inputs: { profile, start-git-ref, git-ref, ... }
+#     repository_dispatch:
+#       types: [changelog-promotion-bundle]
+#
+#   jobs:
+#     publish:
+#       permissions:
+#         contents: read
+#         packages: read
+#         id-token: write
+#       uses: elastic/docs-actions/.github/workflows/changelog-promotion-bundle.yml@v1
+#       with:
+#         profile: serverless   # bundle.profiles entry in docs/changelog.yml
+#         start-git-ref: ${{ github.event.client_payload.start-git-ref || inputs.start-git-ref }}
+#         git-ref: ${{ github.event.client_payload.git-ref || inputs.git-ref }}
+#         build-url: ${{ github.event.client_payload.build-url || inputs.build-url }}
+#         # optional, when the product gate has them:
+#         target-env: ${{ github.event.client_payload.target-env || inputs.target-env }}
+#         deployment-slices: ${{ github.event.client_payload.deployment-slices || inputs.deployment-slices }}
+
+name: Changelog promotion bundle
+
+on:
+  workflow_call:
+    inputs:
+      profile:
+        description: >
+          Bundle profile name from bundle.profiles in changelog.yml.
+          Selects product mapping and inclusion rules for the date-promotion cut.
+          The profile must not set a products pattern or source: github_release;
+          the PR list comes from the commit range.
+        type: string
+        required: true
+      git-ref:
+        description: >
+          Published endpoint git ref from the quality gate / promotion
+          (e.g. SERVICE_VERSION). End of the commit range; recorded as the
+          bundle git_ref metadata.
+        type: string
+        required: true
+      start-git-ref:
+        description: >
+          Previous published endpoint git ref. Start (exclusive) of the commit
+          range. Required — the caller resolves it (e.g. from its promotion
+          system or serverless-gitops history); it is never inferred here.
+        type: string
+        required: true
+      target-env:
+        description: >
+          Optional target environment from the quality gate (ENVIRONMENT),
+          e.g. production-noncanary. Used when the product gate has env semantics
+          (serverless); omit for products that do not. Logged for traceability.
+        type: string
+        required: false
+      deployment-slices:
+        description: >
+          Optional comma-delimited deployment slices from the quality gate
+          (DEPLOYMENT_SLICES). Used when the product gate has slice semantics
+          (serverless); omit for products that do not. Logged for traceability.
+        type: string
+        required: false
+      build-url:
+        description: 'Buildkite (or other CI) build URL for traceability back to the promotion run'
+        type: string
+        required: false
+      dry-run:
+        description: >
+          Resolve the commit range and publish the run report (resolved PR list
+          with per-PR entry source) to the job summary without building or
+          uploading a bundle.
+        type: boolean
+        default: false
+    outputs:
+      status:
+        description: "'dry-run' when no bundle was built, otherwise 'bundled' (the upload job then publishes it)"
+        value: ${{ jobs.generate.outputs.status }}
+      version:
+        description: 'UTC date (YYYY-MM-DD) derived at run time for the date-promotion bundle'
+        value: ${{ jobs.generate.outputs.version }}
+      git-ref:
+        description: 'Echo of the published endpoint ref input'
+        value: ${{ inputs.git-ref }}
+      start-git-ref:
+        description: 'Echo of the previous endpoint ref input'
+        value: ${{ inputs.start-git-ref }}
+      output:
+        description: 'Repo-relative path of the generated bundle file (in dry-run: the planned path, no file is written)'
+        value: ${{ jobs.generate.outputs.output }}
+
+permissions: {}
+
+concurrency:
+  group: changelog-promotion-bundle-${{ inputs.profile }}-${{ inputs.git-ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      status: ${{ steps.resolve.outputs.status }}
+      version: ${{ steps.resolve.outputs.version }}
+      output: ${{ steps.bundle.outputs.output }}
+    steps:
+      - id: resolve
+        name: Derive version and log promotion context
+        env:
+          PROFILE: ${{ inputs.profile }}
+          GIT_REF: ${{ inputs.git-ref }}
+          START_GIT_REF: ${{ inputs.start-git-ref }}
+          TARGET_ENV: ${{ inputs.target-env }}
+          DEPLOYMENT_SLICES: ${{ inputs.deployment-slices }}
+          BUILD_URL: ${{ inputs.build-url }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          set -euo pipefail
+
+          # Date-promotion cuts are always date-versioned; derive here so callers
+          # cannot pass a mismatched stack-style semver.
+          version="$(date -u +%Y-%m-%d)"
+
+          echo "profile=${PROFILE}"
+          echo "version=${version}"
+          echo "git-ref=${GIT_REF}"
+          echo "start-git-ref=${START_GIT_REF}"
+          echo "target-env=${TARGET_ENV:-}"
+          echo "deployment-slices=${DEPLOYMENT_SLICES:-}"
+          echo "build-url=${BUILD_URL:-}"
+
+          status="bundled"
+          if [ "$DRY_RUN" = "true" ]; then
+            status="dry-run"
+            echo "::notice::dry-run: resolving the commit range and reporting only; no bundle is built or uploaded"
+          fi
+
+          {
+            echo "status=${status}"
+            echo "version=${version}"
+          } >> "${GITHUB_OUTPUT}"
+
+      # Deliberately not configurable: config path (profile mode auto-discovers
+      # changelog.yml / docs/changelog.yml — the layout is the convention),
+      # docs-builder version (always the composite default; per-caller pins
+      # would drift promotion behavior between products), and the AWS account
+      # (infrastructure, not caller configuration).
+      - id: bundle
+        name: Build bundle from commit range
+        uses: elastic/docs-actions/changelog/bundle-create@v1
+        with:
+          profile: ${{ inputs.profile }}
+          version: ${{ steps.resolve.outputs.version }}
+          start-git-ref: ${{ inputs.start-git-ref }}
+          end-git-ref: ${{ inputs.git-ref }}
+          dry-run: ${{ inputs.dry-run }}
+          github-token: ${{ github.token }}
+
+  upload:
+    if: ${{ !inputs.dry-run }}
+    needs: generate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: elastic/docs-actions/changelog/bundle-upload@v1
+        with:
+          output: ${{ needs.generate.outputs.output }}

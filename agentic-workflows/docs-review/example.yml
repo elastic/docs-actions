@@ -5,10 +5,10 @@ on:
 
 permissions:
   actions: read
-  copilot-requests: write
   contents: read
   discussions: write
   pull-requests: write
+  copilot-requests: write
 
 jobs:
   run:

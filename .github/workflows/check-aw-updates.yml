@@ -10,7 +10,7 @@ jobs:
     name: Recompile lock files and open PR if changed
     runs-on: ubuntu-latest
     env:
-      GH_AW_VERSION: v0.80.8
+      GH_AW_VERSION: v0.86.2
     permissions:
       id-token: write
       contents: read
@@ -26,10 +26,6 @@ jobs:
           token: ${{ steps.create-token.outputs.token }}
           persist-credentials: false
 
-      - name: Save current lock file checksums
-        run: |
-          sha256sum .github/workflows/*.lock.yml > /tmp/lock-checksums-before.txt 2>/dev/null || true
-
       - name: Install gh-aw and compile
         run: |
           gh extension install github/gh-aw --pin "$GH_AW_VERSION"
@@ -37,18 +33,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check for changes
-        id: changes
-        run: |
-          sha256sum .github/workflows/*.lock.yml > /tmp/lock-checksums-after.txt 2>/dev/null || true
-          if diff -q /tmp/lock-checksums-before.txt /tmp/lock-checksums-after.txt > /dev/null 2>&1; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Create pull request
-        if: steps.changes.outputs.changed == 'true'
+        # create-pull-request no-ops when the working tree has no changes
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ steps.create-token.outputs.token }}

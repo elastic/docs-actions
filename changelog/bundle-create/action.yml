@@ -3,7 +3,8 @@ description: >
   Checks out the repository, runs docs-builder changelog bundle in Docker
   to generate a fully-resolved bundle file, and uploads the result as an
   artifact. Supports option-based filtering (release-version, report, prs),
-  profile-based bundling, and gh-release mode (creates changelogs from a
+  profile-based bundling, commit-range bundling (start-git-ref/end-git-ref,
+  with dry-run reporting), and gh-release mode (creates changelogs from a
   GitHub release). Uses --network none where possible.
 
 inputs:
@@ -55,6 +56,24 @@ inputs:
     description: >
       GitHub repository owner. Falls back to bundle.owner in changelog.yml,
       then to elastic.
+  start-git-ref:
+    description: >
+      Start ref (exclusive) of a git commit range to bundle — the previously
+      published endpoint ref. Must be provided together with end-git-ref and a
+      profile; mutually exclusive with release-version, report, and prs. The PR
+      list is derived from the range itself (GitHub compare API + GraphQL
+      associatedPullRequests) and requires a GitHub token.
+  end-git-ref:
+    description: >
+      End ref (inclusive) of the git commit range — the currently published
+      endpoint ref. Recorded in the bundle output as the git_ref metadata field.
+  dry-run:
+    description: >
+      Resolve the commit range and print the run report (resolved PR list with
+      per-PR entry source) without writing a bundle or uploading an artifact.
+      Only valid together with start-git-ref/end-git-ref. The report is appended
+      to the job summary.
+    default: 'false'
   docs-builder-version:
     description: >
       docs-builder version to use (e.g. 0.1.100, latest, edge).
@@ -97,6 +116,9 @@ runs:
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
         ARTIFACT_NAME: ${{ inputs.artifact-name }}
+        START_GIT_REF: ${{ inputs.start-git-ref }}
+        END_GIT_REF: ${{ inputs.end-git-ref }}
+        DRY_RUN: ${{ inputs.dry-run }}
       run: |
         if [[ "$MODE" != "bundle" && "$MODE" != "gh-release" ]]; then
           echo "::error::mode must be 'bundle' or 'gh-release', got: ${MODE}"
@@ -108,27 +130,25 @@ runs:
           exit 1
         fi
 
-        validate_path() {
-          local value="$1" name="$2"
-          [ -z "$value" ] && return
-          if [[ "$value" == /* ]]; then
-            echo "::error::${name} must be a relative path: ${value}"; exit 1
+        if [ -n "$START_GIT_REF" ] || [ -n "$END_GIT_REF" ]; then
+          if [ -z "$START_GIT_REF" ] || [ -z "$END_GIT_REF" ]; then
+            echo "::error::start-git-ref and end-git-ref must be provided together; the start ref is never inferred"
+            exit 1
           fi
-          if [[ "$value" == *..* ]]; then
-            echo "::error::${name} must not contain '..': ${value}"; exit 1
+          if [[ "$MODE" != "bundle" || -z "$PROFILE" ]]; then
+            echo "::error::start-git-ref/end-git-ref require bundle mode with a profile"
+            exit 1
           fi
-          if [[ "$value" == *$'\n'* || "$value" == *$'\r'* ]]; then
-            echo "::error::${name} must not contain newlines"; exit 1
+          if [ -n "$RELEASE_VERSION" ] || [ -n "$REPORT" ] || [ -n "$PRS" ]; then
+            echo "::error::start-git-ref/end-git-ref are mutually exclusive with release-version, report, and prs"
+            exit 1
           fi
-        }
+        elif [ "$DRY_RUN" = "true" ]; then
+          echo "::error::dry-run is only supported together with start-git-ref/end-git-ref"
+          exit 1
+        fi
 
-        validate_identifier() {
-          local value="$1" name="$2" pattern="$3"
-          [ -z "$value" ] && return
-          if [[ ! "$value" =~ $pattern ]]; then
-            echo "::error::${name} contains disallowed characters: ${value}"; exit 1
-          fi
-        }
+        source "${GITHUB_ACTION_PATH}/../../scripts/validate-inputs.sh"
 
         validate_path "$CONFIG" "config"
         validate_path "$OUTPUT" "output"
@@ -146,6 +166,9 @@ runs:
         validate_identifier "$REPO" "repo" '^[a-zA-Z0-9._-]+$'
         validate_identifier "$OWNER" "owner" '^[a-zA-Z0-9._-]+$'
         validate_identifier "$ARTIFACT_NAME" "artifact-name" '^[a-zA-Z0-9._-]+$'
+        # Refs must not start with '-' so they can never be read as CLI flags.
+        validate_identifier "$START_GIT_REF" "start-git-ref" '^[a-zA-Z0-9][a-zA-Z0-9._/+-]*$'
+        validate_identifier "$END_GIT_REF" "end-git-ref" '^[a-zA-Z0-9][a-zA-Z0-9._/+-]*$'
 
         if [ -n "$REPORT" ] && [[ "$REPORT" == http://* ]]; then
           echo "::error::Report URL must use HTTPS: ${REPORT}"; exit 1
@@ -171,6 +194,8 @@ runs:
         OUTPUT: ${{ inputs.output }}
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
+        START_GIT_REF: ${{ inputs.start-git-ref }}
+        END_GIT_REF: ${{ inputs.end-git-ref }}
       run: |
         ARGS=()
         ARGS+=(changelog bundle --plan)
@@ -178,6 +203,7 @@ runs:
           ARGS+=("$PROFILE")
           [ -n "$VERSION" ] && ARGS+=("$VERSION")
           [ -n "$REPORT" ] && ARGS+=("$REPORT")
+          [ -n "$START_GIT_REF" ] && ARGS+=(--start-git-ref "$START_GIT_REF" --end-git-ref "$END_GIT_REF")
         else
           ARGS+=(--config "$CONFIG" --resolve)
           [ -n "$RELEASE_VERSION" ] && ARGS+=(--release-version "$RELEASE_VERSION")
@@ -237,6 +263,9 @@ runs:
         OUTPUT: ${{ inputs.output }}
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
+        START_GIT_REF: ${{ inputs.start-git-ref }}
+        END_GIT_REF: ${{ inputs.end-git-ref }}
+        DRY_RUN: ${{ inputs.dry-run }}
       run: |
         DOCKER_ARGS=(--rm -v "${PWD}:/github/workspace" -w /github/workspace)
 
@@ -260,6 +289,8 @@ runs:
           BUNDLE_ARGS+=("$PROFILE")
           [ -n "$VERSION" ] && BUNDLE_ARGS+=("$VERSION")
           [ -n "$REPORT" ] && BUNDLE_ARGS+=("$(resolve_report "$REPORT")")
+          [ -n "$START_GIT_REF" ] && BUNDLE_ARGS+=(--start-git-ref "$START_GIT_REF" --end-git-ref "$END_GIT_REF")
+          [ "$DRY_RUN" = "true" ] && BUNDLE_ARGS+=(--dry-run)
         else
           BUNDLE_ARGS+=(--config "$CONFIG" --resolve)
           [ -n "$RELEASE_VERSION" ] && BUNDLE_ARGS+=(--release-version "$RELEASE_VERSION")
@@ -270,7 +301,15 @@ runs:
           [ -n "$OWNER" ] && BUNDLE_ARGS+=(--owner "$OWNER")
         fi
 
-        docker run "${DOCKER_ARGS[@]}" "$IMAGE_DIGEST" "${BUNDLE_ARGS[@]}"
+        if [ "$DRY_RUN" = "true" ]; then
+          # Surface the commit-range run report (resolved PR list with per-PR source) in the
+          # job summary — it is the dry run's product.
+          docker run "${DOCKER_ARGS[@]}" "$IMAGE_DIGEST" "${BUNDLE_ARGS[@]}" | tee .bundle-dry-run.log
+          awk '/^### Changelog bundle for/,0' .bundle-dry-run.log >> "$GITHUB_STEP_SUMMARY"
+          rm -f .bundle-dry-run.log
+        else
+          docker run "${DOCKER_ARGS[@]}" "$IMAGE_DIGEST" "${BUNDLE_ARGS[@]}"
+        fi
 
     - name: Generate changelogs from GitHub release
       if: inputs.mode == 'gh-release'
@@ -329,6 +368,7 @@ runs:
         echo "::notice title=Bundle output::${BUNDLE_FILE}"
 
     - name: Upload bundle artifact
+      if: inputs.dry-run != 'true'
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}

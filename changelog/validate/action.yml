@@ -34,6 +34,11 @@ runs:
         version: edge
         github-token: ${{ inputs.github-token }}
 
+    - name: Stage PR body
+      id: stage-body
+      shell: bash
+      run: node "${{ github.action_path }}/scripts/stage-pr-body.js"
+
     - name: Evaluate PR
       id: evaluate
       shell: bash
@@ -44,7 +49,7 @@ runs:
         REPO_NAME: ${{ github.event.repository.name }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         PR_TITLE: ${{ github.event.pull_request.title }}
-        PR_BODY: ${{ github.event.pull_request.body }}
+        PR_BODY_FILE: ${{ steps.stage-body.outputs.path }}
         PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         HEAD_REF: ${{ github.event.pull_request.head.ref }}
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -83,23 +88,31 @@ runs:
           $PREFIX_FLAG
 
     - name: Gate
+      if: always()
       shell: bash
       env:
         STATUS: ${{ steps.evaluate.outputs.status }}
+        EVALUATE_OUTCOME: ${{ steps.evaluate.outcome }}
       run: |
+        # When docs-builder already exited non-zero for this status, the error
+        # diagnostic was already emitted natively. Run with if:always() so that
+        # ::notice:: is surfaced even when evaluate-pr fails for other reasons.
         case "$STATUS" in
           proceed|skipped|manually-edited)
             echo "::notice::Changelog validation: $STATUS"
             ;;
           no-label)
+            [[ "$EVALUATE_OUTCOME" == "failure" ]] && exit 0
             echo "::error::No matching changelog type label found on this PR. Add a label from your changelog.yml pivot.types, or a skip label."
             exit 1
             ;;
           no-title)
+            [[ "$EVALUATE_OUTCOME" == "failure" ]] && exit 0
             echo "::error::PR has no title. Cannot generate a changelog entry."
             exit 1
             ;;
           *)
+            [[ "$EVALUATE_OUTCOME" == "failure" ]] && exit 0
             echo "::error::Changelog validation failed: $STATUS"
             exit 1
             ;;

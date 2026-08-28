@@ -62,7 +62,7 @@ Use `AskUserQuestion` to collect:
 ### Step 3: Generate the workflow source
 
 Read an existing workflow for reference:
-- `.github/workflows/gh-aw-docs-issue-scope.md` — on-demand check pattern
+- `.github/workflows/gh-aw-issue-scope.md` — on-demand check pattern with sub-agents
 - `.github/workflows/gh-aw-issue-triage.md` — triage pattern with pre-steps
 - `.github/workflows/gh-aw-docs-style-sweep.md` — deterministic pre-step pattern
 - `.github/workflows/gh-aw-docs-coherence-sweep.md` — Elastic docs MCP pattern
