@@ -42,6 +42,11 @@ on:
         type: string
         default: ''
         required: false
+      path:
+        description: 'Root directory of the documentation source (e.g. docs or generated/docs). Used to strip the correct prefix from preview comment links. Defaults to docs.'
+        type: string
+        default: ''
+        required: false
       use-release-branches:
         description: >
           When true, update-link-index runs for semver release branches (e.g. 9.4) as well as the default branch.
@@ -84,7 +89,7 @@ jobs:
         id: context
         uses: actions/github-script@v9
         env:
-          PATH_PATTERN: ${{ inputs.path-pattern }}
+          PATH_PATTERN: ${{ inputs.path-pattern || (inputs.path && format('{0}/**', inputs.path)) || 'docs/**' }}
           IGNORE_PATTERNS: |
             ${{ inputs.path-pattern-ignore }}
             .github/**
@@ -397,11 +402,12 @@ jobs:
           exit 1
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ needs.preflight.outputs.head-repo }}
           ref: ${{ needs.preflight.outputs.head-sha }}
           persist-credentials: false
+          allow-unsafe-pr-checkout: true
 
       - name: Validate checkout SHA
         # language=bash
@@ -436,6 +442,22 @@ jobs:
           echo "PATH_PREFIX=${path_prefix}" >> "$GITHUB_ENV"
           echo "result=${path_prefix}" >> "$GITHUB_OUTPUT"
 
+      # Resolve the mutable :edge tag once so every later use in this job is
+      # tied to the same immutable image digest.
+      - name: Pull and pin docs-builder image
+        id: docker-image
+        # language=bash
+        run: |
+          IMAGE="ghcr.io/elastic/docs-builder:edge"
+          docker pull "$IMAGE"
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE")
+          if [[ -z "$DIGEST" ]]; then
+            echo "::error::Failed to resolve RepoDigest for ${IMAGE}"
+            exit 1
+          fi
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "::notice title=docs-builder image digest::${DIGEST}"
+
       # Run docs-builder in Docker isolation. Only explicitly listed env vars are
       # passed to the container — ACTIONS_RUNTIME_TOKEN, ACTIONS_CACHE_URL, and
       # OIDC env vars are excluded to prevent cache poisoning and credential
@@ -464,7 +486,7 @@ jobs:
             -e GITHUB_REF="refs/heads/${HEAD_BRANCH}" \
             -e INPUT_PREFIX="${PATH_PREFIX}" \
             -e INPUT_STRICT="${STRICT_FLAG}" \
-            ghcr.io/elastic/docs-builder:edge || EXIT_CODE=$?
+            "${IMAGE_DIGEST}" || EXIT_CODE=$?
 
           if [ -s "$CONTAINER_OUTPUT" ]; then
             cat "$CONTAINER_OUTPUT" >> "$GITHUB_OUTPUT"
@@ -472,6 +494,7 @@ jobs:
 
           exit $EXIT_CODE
         env:
+          IMAGE_DIGEST: ${{ steps.docker-image.outputs.digest }}
           STRICT_FLAG: ${{ fromJSON(inputs.strict != '' && inputs.strict || 'true') }}
 
       - name: Upload links artifact
@@ -633,6 +656,8 @@ jobs:
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
+          DOCS_PATH: ${{ inputs.path }}
+          PATH_PATTERN: ${{ inputs.path-pattern }}
         with:
           # language=js
           script: |
@@ -649,15 +674,62 @@ jobs:
               .filter(i => i.endsWith('.md'))
               .filter(i => !i.includes('/_snippets/'));
 
-            if (changedMdFiles.length === 0) return;
+            if (changedMdFiles.length === 0) {
+              const hasSnippetOrCsv = files
+                .map(f => f.filename)
+                .some(f => f.includes('/_snippets/') || f.endsWith('.csv'));
+              if (!hasSnippetOrCsv) return;
+
+              const previewUrl = `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}`;
+              const body = [
+                title,
+                '',
+                'This PR only changes snippets or data files. No direct page links are available.',
+                `[Browse the full preview](${previewUrl})`,
+              ].join('\n');
+
+              const { data: comments } = await github.rest.issues.listComments({
+                owner, repo, issue_number: prNumber
+              });
+              const existing = comments.find(c =>
+                c.user.type === 'Bot' &&
+                c.body.startsWith(title)
+              );
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner, repo,
+                  comment_id: existing.id,
+                  body,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner, repo,
+                  issue_number: prNumber,
+                  body,
+                });
+              }
+              return;
+            }
+
+            const rawDocsPath = process.env.DOCS_PATH
+              || (process.env.PATH_PATTERN || '').replace(/\/\*+$/, '')
+              || 'docs';
+            const docsRoot = rawDocsPath
+              .replace(/^\.\//, '')
+              .replace(/\/+$/, '');
+            const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
 
             const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
             const toMarkdownLink = (file) => {
               const path = file
-                .replace(/^docs\//, '')
-                .replace(/\/index.md$/, '')
+                .replace(rootPattern, '')
+                .replace(/(?:^|\/)index\.md$/, '')
                 .replace(/\.md$/, '');
-              return `[${escapeMarkdown(file)}](https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path})`;
+              const href = path
+                ? `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path}`
+                : `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}`;
+              return `[${escapeMarkdown(file)}](${href})`;
             }
 
             const links = changedMdFiles.map(toMarkdownLink)

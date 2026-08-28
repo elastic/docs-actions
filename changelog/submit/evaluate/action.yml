@@ -94,11 +94,17 @@ runs:
       # refs/pull/<N>/head inside the *upstream* repo, so checking out that
       # ref via the upstream gives us the exact PR head SHA without ever
       # touching the fork. Works for both public and private forks.
+      #
+      # allow-unsafe-pr-checkout opts out of checkout@v6's blanket fork-PR
+      # refusal on workflow_run events: this step only runs when the PR author
+      # passed the org-membership gate ('trusted'), and the "Verify checkout
+      # SHA" step below aborts on any SHA mismatch.
       if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted == 'true' && steps.pr-data.outputs.is-fork == 'true'
       uses: actions/checkout@v6
       with:
         ref: refs/pull/${{ steps.pr.outputs.number }}/head
         persist-credentials: false
+        allow-unsafe-pr-checkout: true
 
     - name: Checkout base repo (untrusted)
       if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted != 'true'
@@ -164,7 +170,7 @@ runs:
         REPO_NAME: ${{ github.event.repository.name }}
         PR_NUMBER: ${{ steps.pr.outputs.number }}
         PR_TITLE: ${{ steps.pr-data.outputs.title }}
-        PR_BODY: ${{ steps.pr-data.outputs.body }}
+        PR_BODY_FILE: ${{ steps.pr-data.outputs.body-file }}
         PR_LABELS: ${{ steps.pr-data.outputs.labels }}
         HEAD_REF: ${{ steps.pr-data.outputs.head-ref }}
         HEAD_SHA: ${{ steps.pr-data.outputs.head-sha }}

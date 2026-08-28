@@ -1,11 +1,13 @@
 # Changelog bundle create
 
-Checks out the repository, runs docs-builder in Docker to generate a fully-resolved bundle file, and uploads the result as an artifact. Supports option-based filtering (release-version, report, prs), profile-based bundling, and gh-release mode (creates changelogs from a GitHub release). Uses `--network none` where possible.
+Checks out the repository, runs docs-builder in Docker to generate a fully-resolved bundle file, and uploads the result as an artifact. Supports option-based filtering (release-version, report, prs), profile-based bundling, commit-range bundling (start-git-ref/end-git-ref), and gh-release mode (creates changelogs from a GitHub release). Uses `--network none` where possible.
 
 ## Modes
 
 - **`bundle`** (default) — runs `docs-builder changelog bundle` with profile or option-based filtering.
 - **`gh-release`** — runs `docs-builder changelog gh-release` to create changelogs directly from a GitHub release's notes. Requires `repo` and optionally `version` (defaults to `latest`).
+
+In `bundle` mode with a profile, `start-git-ref`/`end-git-ref` switch the filter source to a **git commit range**: docs-builder derives the PR list from the range itself (GitHub compare API + GraphQL `associatedPullRequests`), sources each PR's entry pool-first with PR-metadata fallback, and records `end-git-ref` as the bundle's `git_ref` metadata. Both refs are always required together and are mutually exclusive with `release-version`, `report`, and `prs`. With `dry-run: true`, the resolved PR list and per-PR entry source are appended to the job summary and no bundle or artifact is produced.
 
 ## Entry sourcing
 
@@ -27,6 +29,9 @@ CDN sourcing requires a resolvable product. When none can be resolved (e.g. an o
 | `output`               | Output file path, relative to repo root                                                             | `false`  |                       |
 | `repo`                 | GitHub repository name. Required for gh-release mode                                                | `false`  |                       |
 | `owner`                | GitHub repository owner                                                                             | `false`  |                       |
+| `start-git-ref`        | Start ref (exclusive) of a commit range — the previously published endpoint ref                     | `false`  |                       |
+| `end-git-ref`          | End ref (inclusive) of the commit range — recorded as the bundle `git_ref` metadata                 | `false`  |                       |
+| `dry-run`              | Resolve the range and report only; no bundle or artifact (commit-range mode only)                   | `false`  | `false`               |
 | `strip-title-prefix`   | Remove `[Prefix]:` from PR titles (gh-release mode only)                                           | `false`  | `false`               |
 | `docs-builder-version` | docs-builder version (e.g. 0.1.100, latest, edge)                                                  | `false`  | `edge`                |
 | `artifact-name`        | Name for the uploaded artifact                                                                      | `false`  | `changelog-bundle`    |

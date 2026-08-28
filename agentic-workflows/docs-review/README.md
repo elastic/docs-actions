@@ -1,6 +1,6 @@
 # Docs review
 
-Reviews changed markdown files in pull requests by using Copilot with self-contained Elastic docs review rules. By default, the workflow reviews files under `docs/`, and repositories such as `docs-content` can set `review-scope: repo-wide-markdown` to review changed markdown across the repository. It publishes a pull request review with a concise summary plus inline comments for actionable findings.
+Reviews changed markdown files in pull requests using self-contained Elastic docs review rules. By default, the workflow reviews files under `docs/`, and repositories such as `docs-content` can set `review-scope: repo-wide-markdown` to review changed markdown across the repository. It publishes a pull request review with a concise summary plus inline comments for actionable findings.
 
 ## Triggers
 
@@ -26,6 +26,7 @@ Add `permissions.copilot-requests: write` to the caller workflow before running 
 | `additional-instructions` | string | No | `""` | Repo-specific instructions appended to the review prompt |
 | `review-scope` | string | No | `"docs-subtree"` | Markdown review scope: `docs-subtree` or `repo-wide-markdown` |
 | `setup-commands` | string | No | `""` | Shell commands to run before the agent starts |
+| `comment-phrasing` | string | No | `"describe-recommended"` | Phrasing style for review comments: `describe-recommended` or `advisory` |
 
 ## Safe outputs
 
@@ -52,6 +53,24 @@ Supported review scopes:
 It ignores markdown outside the configured review scope, non-markdown files, and unrelated pre-existing issues in untouched files.
 
 If the pull request is linked to a parent issue, the review also checks whether the PR appears to satisfy that issue's documentation ask and reports the result in the summary review.
+
+## Comment phrasing
+
+The `comment-phrasing` input controls how the action phrases its review comments. Both styles follow the Elastic [word choice](https://www.elastic.co/docs/contribute-docs/style-guide/word-choice) guidance and avoid "you should" and "it is recommended".
+
+| Value | Behavior |
+|-------|----------|
+| `describe-recommended` (default) | Describes the correct approach directly. Reserves "we recommend" for cases with multiple valid options. Avoids conditional modal verbs ("should", "could", "would") in comment prose. |
+| `advisory` | Describes the correct approach as the default. Allows "consider X" and "we recommend X" for suggestions with legitimate alternatives. |
+
+**Preferred phrasing (both styles)**:
+
+| Instead of | Use |
+|------------|-----|
+| "You should use active voice here." | "Use active voice here." |
+| "It is recommended that you add a prerequisites section." | "We recommend adding a prerequisites section." |
+| "You could consider rephrasing this." | "Rephrase this as: ..." or "We recommend rephrasing this as: ..." |
+| "You should avoid using `blacklist`." | "Replace `blacklist` with `blocklist`." |
 
 ## Autonomous checks
 
@@ -85,7 +104,6 @@ on:
 
 permissions:
   actions: read
-  copilot-requests: write
   contents: read
   discussions: write
   pull-requests: write

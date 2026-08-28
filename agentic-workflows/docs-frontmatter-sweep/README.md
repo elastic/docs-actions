@@ -16,7 +16,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-frontmatter-sweep.yml
 ```
 
-Add `permissions.copilot-requests: write` to the caller workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
+Add `copilot-requests: write` to the caller job `permissions:` block — no secret passthrough needed.
 
 Issues are filed in the **calling repo** (where the workflow runs). Install this in the repo where you want fix-issues to land — typically `elastic/docs-content-internal` if the docs being scanned are in `elastic/docs-content`. The example template ships with `source-repo: elastic/docs-content`.
 
@@ -27,6 +27,7 @@ Issues are filed in the **calling repo** (where the workflow runs). Install this
 | `source-repo` | string | No | `""` (calling repo) | Repository to scan, as `owner/repo`. Set this when the workflow runs in a triage repo (e.g., `docs-content-internal`) but should audit a separate docs repo (e.g., `docs-content`). The example template defaults to `elastic/docs-content`. |
 | `docs-root` | string | No | `docs/` | Root directory to sweep within the source repo. Set to `.` for repos where docs live at the repo root. |
 | `target-path` | string | No | `""` | Optional `docs-root`-relative directory to sweep recursively. Accepts a leading slash, such as `/solutions/observability`. |
+| `target-files` | string | No | `""` | Newline- or comma-separated list of `docs-root`-relative file paths to sweep. When set, overrides `target-path` and `scope-mode` — the sweep processes exactly these files. |
 | `scope-mode` | string | No | `auto` | Scope behavior for the matched markdown files. `auto` preserves the existing behavior, `full` scans all matched files, and `shard` shards within the matched set. |
 | `target-batch-size` | string | No | `100` | Approximate pages per slice; controls shard count `N = ceil(total/batch-size)`. |
 | `max-per-fix-issue` | string | No | `20` | Cap on findings per fix-issue. Overflow surfaces in the next sweep. |
@@ -39,6 +40,8 @@ Issues are filed in the **calling repo** (where the workflow runs). Install this
 |--------|-----|--------|-------------|
 | `noop` | — | — | No high-confidence findings in this slice. |
 | `create-issue` | 1 | `docs-quality-sweep`, `docs-fix:frontmatter` | Fix-issue with structured YAML findings. |
+
+When any finding in the issue is `medium`- or `low`-confidence, the sweep also adds a `needs-human-review` label and a review-before-acting callout above the findings. Issues where every finding is `high`-confidence carry no such label and are safe to delegate to a fix-agent.
 
 ## How it works
 
@@ -66,10 +69,13 @@ The issue body contains a fenced YAML block with one entry per finding:
   line: 1
   category: missing-description
   severity: high
+  confidence: high
   evidence: "frontmatter has no `description` field"
   suggested_fix: |
     description: "How to configure X for Y use cases."
 ```
+
+Each finding carries a `confidence` field (`high`/`medium`/`low`) that signals how safe it is to act on without human verification — a separate axis from `severity`.
 
 Categories: `missing-description`, `weak-description`, `description-too-long`, `missing-products`, `missing-navigation-title`.
 

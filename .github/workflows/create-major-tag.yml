@@ -39,3 +39,17 @@ jobs:
           git tag "v${MAJOR_VERSION}"
           git push -f origin "refs/tags/v${MAJOR_VERSION}"
           git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
+
+  notify-failure:
+    needs: [create-major-tag]
+    if: always() && needs.create-major-tag.result == 'failure'
+    runs-on: ubuntu-slim
+    permissions:
+      id-token: write
+    steps:
+      - uses: elastic/docs-actions/slack/notify-status@v1
+        with:
+          channel: docs-alerts
+          status: failure
+          mention: S028C66K5EX
+          description: Failed to create or update the floating major tag after release publish.

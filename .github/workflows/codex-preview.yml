@@ -14,9 +14,19 @@ on:
         default: "latest"
         type: string
       path-pattern:
-        description: The path pattern to check for changes
+        description: Path pattern for change detection. Empty derives from path (or ** if path is also empty).
         required: false
-        default: '**'
+        default: ''
+        type: string
+      path:
+        description: Root directory of the documentation source. Defaults to the docs-builder default.
+        required: false
+        default: ''
+        type: string
+      build-env:
+        description: Environment variables for the docs-builder process, one KEY=VALUE per line.
+        required: false
+        default: ''
         type: string
       path-pattern-ignore:
         description: The path pattern to ignore changes
@@ -41,6 +51,7 @@ jobs:
     runs-on: ubuntu-slim
     outputs:
       any_modified: ${{ steps.check-files.outputs.any_modified }}
+      all_changed_files: ${{ steps.check-files.outputs.all_changed_files }}
     steps:
       - name: Checkout
         # Checkout is needed to get changed files when the event is not a pull request
@@ -53,7 +64,7 @@ jobs:
         id: check-files
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
-          files: ${{ inputs.path-pattern }}
+          files: ${{ inputs.path-pattern || (inputs.path && format('{0}/**', inputs.path)) || '**' }}
           files_ignore: |
             ${{ inputs.path-pattern-ignore }}
             .github/**
@@ -80,6 +91,8 @@ jobs:
         id: codex-build
         with:
           docs-builder-version: ${{ inputs.docs-builder-version }}
+          path: ${{ inputs.path }}
+          build-env: ${{ inputs.build-env }}
       - name: Warn about fork PR
         if: >
           startsWith(github.event_name, 'pull_request')
@@ -184,6 +197,126 @@ jobs:
               environment_url: `https://codex.elastic.dev${process.env.PATH_PREFIX}`,
               log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             })
+
+  comment:
+    if: needs.deploy.result == 'success'
+    needs:
+      - check
+      - build
+      - deploy
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Comment preview links on PR
+        continue-on-error: true
+        uses: actions/github-script@v9
+        env:
+          PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
+          ALL_CHANGED_FILES: ${{ needs.check.outputs.all_changed_files }}
+          DOCS_PATH: ${{ inputs.path }}
+        with:
+          # language=js
+          script: |
+            const title = '## 🔍 Preview links for changed Codex pages'
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+
+            const files = (process.env.ALL_CHANGED_FILES || '').split(' ').filter(Boolean);
+
+            const changedMdFiles = files
+              .filter(i => i.endsWith('.md'))
+              .filter(i => !i.includes('/_snippets/'));
+
+            if (changedMdFiles.length === 0) {
+              const hasSnippetOrCsv = files
+                .some(f => f.includes('/_snippets/') || f.endsWith('.csv'));
+              if (!hasSnippetOrCsv) return;
+
+              const previewUrl = `https://codex.elastic.dev${process.env.PATH_PREFIX}`;
+              const body = [
+                title,
+                '',
+                'This PR only changes snippets or data files. No direct page links are available.',
+                `[Browse the full preview](${previewUrl})`,
+              ].join('\n');
+
+              const { data: comments } = await github.rest.issues.listComments({
+                owner, repo, issue_number: prNumber
+              });
+              const existing = comments.find(c =>
+                c.user.type === 'Bot' &&
+                c.body.startsWith(title)
+              );
+              if (existing) {
+                await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+              } else {
+                await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
+              }
+              return;
+            }
+
+            const docsRoot = (process.env.DOCS_PATH || 'docs')
+              .replace(/^\.\//, '')
+              .replace(/\/+$/, '');
+            const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
+
+            const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
+            const toMarkdownLink = (file) => {
+              const path = file
+                .replace(rootPattern, '')
+                .replace(/(?:^|\/)index\.md$/, '')
+                .replace(/\.md$/, '');
+              const href = path
+                ? `https://codex.elastic.dev${process.env.PATH_PREFIX}/${path}`
+                : `https://codex.elastic.dev${process.env.PATH_PREFIX}`;
+              return `[${escapeMarkdown(file)}](${href})`;
+            }
+
+            const links = changedMdFiles.map(toMarkdownLink)
+
+            const body = [
+              title,
+              ...links.slice(0, 10).map(i => `- ${i}`),
+            ]
+
+            if (links.length > 10) {
+              body.push('<details>');
+              body.push('<summary> More links … </summary>');
+              body.push('');
+              for (const link of links.slice(10, 100)) {
+                body.push(`- ${link}`);
+              }
+              body.push('');
+              body.push('</details>');
+            }
+
+            if (links.length > 100) {
+              body.push('');
+              body.push(`<sub> In total, ${links.length} files changed. </sub>`);
+            }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number: prNumber
+            });
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.startsWith(title)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo,
+                comment_id: existing.id,
+                body: body.join('\n'),
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo,
+                issue_number: prNumber,
+                body: body.join('\n'),
+              });
+            }
 
   update-link-index:
     needs:

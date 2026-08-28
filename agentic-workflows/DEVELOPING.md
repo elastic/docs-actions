@@ -33,6 +33,7 @@ agentic-workflows/
 │   └── README.md
 ├── issue-auto-triage/
 │   ├── example.yml
+│   ├── project-instructions.example.md
 │   └── README.md
 ├── issue-size/
 │   ├── example.yml
@@ -95,6 +96,35 @@ The repo pins the `gh-aw` compiler version in `Makefile` so local compilation an
 4. Run `make compile`
 5. Commit source files + generated `.lock.yml`
 
+### Engine and authentication
+
+All workflows use the `copilot` engine with GitHub's built-in Copilot token — no external API key or secret required. Add `permissions.copilot-requests: write` to the reusable-workflow source:
+
+```yaml
+model: claude-sonnet-5   # or gpt-5-mini for lightweight triage/size workflows
+engine:
+  id: copilot
+
+permissions:
+  contents: read
+  issues: read
+  copilot-requests: write
+```
+
+Consumer repos calling these reusable workflows also need `copilot-requests: write` in their caller job `permissions:` block — no `secrets:` passthrough is needed:
+
+```yaml
+jobs:
+  run:
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+      pull-requests: write
+      copilot-requests: write
+    uses: elastic/docs-actions/.github/workflows/gh-aw-<name>.lock.yml@v1
+```
+
 ### workflow_call Convention
 
 All workflows include a `workflow_call` trigger with standard inputs:
@@ -113,12 +143,12 @@ on:
         type: string
         required: false
         default: ""
-    secrets:
-      COPILOT_GITHUB_TOKEN:
-        required: false
 ```
 
-For Copilot-based reusable workflows, prefer the built-in GitHub token path. Add `permissions.copilot-requests: write` in the workflow frontmatter, and document the same requirement in caller templates instead of hard-requiring `COPILOT_GITHUB_TOKEN`.
+Workflows can add inputs for their own context model. For example, issue auto-triage adds
+`project-instructions-path`, which defaults to `.github/triage-instructions.md` in the consumer
+repository. Its precedence is the immutable workflow contract, then the caller's inline
+`additional-instructions`, then the project instructions file.
 
 ### Shared fragments
 
@@ -128,6 +158,7 @@ For Copilot-based reusable workflows, prefer the built-in GitHub token path. Add
 | `gh-aw-fragments/rigor.md` | Accuracy & evidence standards |
 | `gh-aw-fragments/mcp-pagination.md` | MCP token limit guidance and pagination patterns |
 | `gh-aw-fragments/safe-output-add-comment.md` | Limitations for `add-comment` |
+| `gh-aw-fragments/ste-100.md` | Simplified Technical English (STE-100) writing standard |
 
 ### Self-contained prompts
 
@@ -169,11 +200,11 @@ jobs:
   run:
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.comment.body, '/docs-issue-scope')
-    uses: elastic/docs-actions/.github/workflows/gh-aw-docs-issue-scope.lock.yml@v1
+      startsWith(github.event.comment.body, '/scope')
+    uses: elastic/docs-actions/.github/workflows/gh-aw-issue-scope.lock.yml@v1
 ```
 
-Without this, typing `/docs-issue-scope` would also trigger `/docs-triage` (and any other `issue_comment`-triggered workflow).
+Without this, typing `/scope` would also trigger `/triage` (and any other `issue_comment`-triggered workflow). For issue-only workflows, also add `&& github.event.issue.pull_request == null` to the `if` condition to prevent the workflow from running when the comment is on a pull request.
 
 ### CI
 

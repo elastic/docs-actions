@@ -8,15 +8,14 @@
 Vale Reporter - Parse Vale JSON output and generate GitHub-friendly reports.
 
 This script filters Vale issues to only modified lines, generates GitHub Actions
-annotations for inline diff display, and creates a markdown report for PR comments.
+annotations for inline diff display, and emits a structured JSON report.
+Markdown rendering (PR comment and step summary) lives in report/render_report.py.
 It also outputs structured telemetry logs for analytics via GitHub observability.
 """
 
 import json
-import re
 import sys
 import os
-import hashlib
 from datetime import datetime, timezone
 from typing import Dict, List, Tuple
 
@@ -29,35 +28,8 @@ def sanitize_annotation(value: str) -> str:
     return value
 
 
-def sanitize_text(text: str) -> str:
-    """Strip HTML tags, markdown links, bare URLs, and injection characters."""
-    text = re.sub(r'<[^>]+>', '', text)
-    text = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', text)
-    text = re.sub(r'https?://\S+', '', text)
-    text = re.sub(r'[<>\[\]()!]', '', text)
-    text = text.replace('|', '\\|')
-    return text.strip()
-
-
-def sanitize_path(path: str) -> str:
-    """Sanitize a file path value - similar to sanitize_text but preserves path chars."""
-    path = re.sub(r'<[^>]+>', '', path)
-    path = re.sub(r'[<>\[\]()!]', '', path)
-    path = path.replace('|', '\\|')
-    return path.strip()
-
-
 # Telemetry prefix for plain-text logs
 TELEMETRY_PREFIX = "VALE_TELEMETRY"
-
-# Footer message to append to all reports
-REPORT_FOOTER = """
----
-
-The Vale linter checks documentation changes against the [Elastic Docs style guide](https://www.elastic.co/docs/contribute-docs/style-guide). To use Vale locally or report issues, refer to [Elastic style guide for Vale](https://www.elastic.co/docs/contribute-docs/vale-linter).
-"""
-
-RULE_SOURCE_BASE_URL = "https://github.com/elastic/vale-rules/blob/main/styles/Elastic"
 
 
 def load_vale_output(file_path: str) -> Dict:
@@ -225,114 +197,6 @@ def generate_github_annotations(filtered_issues: Dict[str, List[Dict]]) -> None:
             print(f"::{annotation_level} file={safe_file},line={issue.get('line', 0)}::{safe_rule}: {safe_message}")
 
 
-def generate_diff_hash(file_path: str) -> str:
-    """
-    Generate a GitHub-style diff hash for file anchors.
-    GitHub generates diff anchor IDs by hashing the file path.
-    The exact algorithm appears to be SHA256 of the normalized file path.
-    """
-    # Normalize the path (remove leading ./ if present)
-    normalized_path = file_path.lstrip('./')
-    # GitHub's diff hash is SHA256 of the file path
-    return hashlib.sha256(normalized_path.encode('utf-8')).hexdigest()
-
-
-def format_line_link(
-    file_path: str,
-    line_num: int,
-    github_repo: str,
-    pr_number: str
-) -> str:
-    """Create a clickable link to the specific line in the PR diff."""
-    if github_repo and pr_number:
-        diff_hash = generate_diff_hash(file_path)
-        url = f"https://github.com/{github_repo}/pull/{pr_number}/files#diff-{diff_hash}R{line_num}"
-        return f"[{line_num}]({url})"
-    return str(line_num)
-
-
-def format_rule_link(rule: str) -> str:
-    """Create a link to the Elastic Vale rule source when the rule ID is known-safe."""
-    if not re.match(r'^Elastic\.[A-Za-z0-9_.]+$', rule):
-        return sanitize_text(rule)
-    rule_name = rule.removeprefix('Elastic.')
-    return f"[{rule}]({RULE_SOURCE_BASE_URL}/{rule_name}.yml)"
-
-
-def generate_markdown_report(
-    filtered_issues: Dict[str, List[Dict]],
-    github_repo: str,
-    pr_number: str,
-    output_file: str
-) -> Tuple[int, int, int]:
-    """Generate markdown report with clickable line links."""
-    error_count = len(filtered_issues['error'])
-    warning_count = len(filtered_issues['warning'])
-    suggestion_count = len(filtered_issues['suggestion'])
-    total_count = error_count + warning_count + suggestion_count
-
-    if total_count == 0:
-        report = "## ✅ Elastic Docs Style Checker (Vale)\n\n**No issues found on modified lines!**\n"
-        report += REPORT_FOOTER
-        with open(output_file, 'w', encoding='utf-8') as f:
-            f.write(report)
-        return 0, 0, 0
-
-    # Build summary
-    summary_parts = []
-    if error_count > 0:
-        summary_parts.append(f"{error_count} error{'s' if error_count != 1 else ''}")
-    if warning_count > 0:
-        summary_parts.append(f"{warning_count} warning{'s' if warning_count != 1 else ''}")
-    if suggestion_count > 0:
-        summary_parts.append(f"{suggestion_count} suggestion{'s' if suggestion_count != 1 else ''}")
-
-    summary = ", ".join(summary_parts)
-
-    report = f"## Elastic Docs Style Checker (Vale)\n\n**Summary:** {summary} found\n\n"
-
-    # Add sections for each severity
-    if error_count > 0:
-        report += f"<details>\n<summary>❌ Errors ({error_count}): Must fix before merge.</summary>\n\n"
-        report += "| File | Line | Rule | Message |\n"
-        report += "|------|------|------|----------|\n"
-        for issue in filtered_issues['error']:
-            line_link = format_line_link(issue['file'], issue['line'], github_repo, pr_number)
-            report += f"| {sanitize_path(issue['file'])} | {line_link} | {format_rule_link(issue['rule'])} | {sanitize_text(issue['message'])} |\n"
-        report += "\n</details>\n\n"
-
-    if warning_count > 0:
-        report += f"<details>\n<summary>⚠️ Warnings ({warning_count}): Fix when the suggestion improves clarity or correctness.</summary>\n\n"
-        report += "| File | Line | Rule | Message |\n"
-        report += "|------|------|------|----------|\n"
-        for issue in filtered_issues['warning']:
-            line_link = format_line_link(issue['file'], issue['line'], github_repo, pr_number)
-            report += f"| {sanitize_path(issue['file'])} | {line_link} | {format_rule_link(issue['rule'])} | {sanitize_text(issue['message'])} |\n"
-        report += "\n</details>\n\n"
-
-    if suggestion_count > 0:
-        report += f"<details>\n<summary>💡 Suggestions ({suggestion_count}): Optional style improvements. Apply when helpful.</summary>\n\n"
-        report += "| File | Line | Rule | Message |\n"
-        report += "|------|------|------|----------|\n"
-        for issue in filtered_issues['suggestion']:
-            line_link = format_line_link(issue['file'], issue['line'], github_repo, pr_number)
-            report += f"| {sanitize_path(issue['file'])} | {line_link} | {format_rule_link(issue['rule'])} | {sanitize_text(issue['message'])} |\n"
-        report += "\n</details>\n\n"
-
-    # Add footer
-    report += REPORT_FOOTER
-
-    # Write report
-    try:
-        with open(output_file, 'w', encoding='utf-8') as f:
-            f.write(report)
-    except IOError as e:
-        print(f"::error::Failed to write report: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    return error_count, warning_count, suggestion_count
-
-
 def generate_json_report(
     filtered_issues: Dict[str, List[Dict]],
     output_file: str
@@ -476,9 +340,6 @@ def main():
         print("No Vale issues found or empty output")
         # Create empty report
         try:
-            with open('vale_report.md', 'w', encoding='utf-8') as f:
-                f.write("## ✅ Elastic Docs Style Checker (Vale)\n\n**No issues found on modified lines!**\n")
-                f.write(REPORT_FOOTER)
             with open('issue_counts.txt', 'w', encoding='utf-8') as f:
                 f.write("errors=0\nwarnings=0\nsuggestions=0\n")
             with open('vale_results.json', 'w', encoding='utf-8') as f:
@@ -502,13 +363,9 @@ def main():
     # Generate GitHub Actions annotations
     generate_github_annotations(filtered_issues)
 
-    # Generate markdown report
-    error_count, warning_count, suggestion_count = generate_markdown_report(
-        filtered_issues,
-        github_repo,
-        pr_number,
-        'vale_report.md'
-    )
+    error_count = len(filtered_issues['error'])
+    warning_count = len(filtered_issues['warning'])
+    suggestion_count = len(filtered_issues['suggestion'])
 
     # Generate structured JSON report for secure artifact transport
     generate_json_report(filtered_issues, 'vale_results.json')

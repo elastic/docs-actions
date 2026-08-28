@@ -2,7 +2,13 @@
 
 A `workflow_dispatch`-triggered orchestrator that fans out to all seven docs quality sweep workflows in parallel jobs. Use this in your docs repo as the single entry point: one click runs frontmatter, applies_to, openings, style, typos, staleness, and coherence in one go (or any subset).
 
-Each sweep is independent: a failure in one job doesn't kill the others, and each opens its own labeled fix-issue. There is no aggregated dashboard or quality score — those are deferred to a later iteration.
+Each sweep is independent: a failure in one job doesn't kill the others, and each opens its own labeled fix-issue.
+
+## Where to find results
+
+After the orchestrator dispatches the selected sweeps, its Actions summary lists a link to each child workflow run. Open a child run to review its logs and outcome.
+
+The orchestrator does not wait for child runs or aggregate their findings. When a sweep finds actionable results, it opens its own labeled fix-issue in the calling repository. A sweep that finds nothing actionable reports `noop` in its child run.
 
 ## Where to install
 
@@ -24,7 +30,7 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-quality-sweep.yml
 ```
 
-Add `permissions.copilot-requests: write` to the calling workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
+Add `copilot-requests: write` to the caller job `permissions:` block — no secret passthrough needed.
 
 Run via the Actions UI or:
 
@@ -47,6 +53,7 @@ gh workflow run docs-quality-sweep.yml \
 | `source-repo` | `elastic/docs-content` | Repository to scan, as `owner/repo`. Set to empty to scan the calling repo. |
 | `docs-root` | `.` | Root directory inside the source repo. `.` works for repos where docs live at the root (e.g., `elastic/docs-content`). Set to `docs/` for repos with a `docs/` subtree. |
 | `target-path` | `""` | Optional `docs-root`-relative directory to sweep recursively. Accepts a leading slash, such as `/solutions/observability`. |
+| `target-files` | `""` | Newline- or comma-separated list of `docs-root`-relative file paths. When set, overrides `target-path` and `scope-mode` — each sweep processes exactly these files. Ideal for post-merge "check only what changed" runs. |
 | `scope-mode` | `auto` | Scope behavior for the matched markdown files. `auto` preserves the existing behavior, `full` scans all matched files, and `shard` shards within the matched set. |
 | `target-batch-size` | `100` | Approximate pages per rotating slice when `scope-mode` resolves to `shard`. |
 | `max-per-fix-issue` | `20` | Cap on findings per fix-issue — overflow surfaces in the next sweep. |
@@ -69,6 +76,23 @@ Each sweep opens its own labeled fix-issue **in the calling repo** (or calls `no
 | coherence | `docs-fix:coherence` |
 
 All issues also carry the parent label `docs-quality-sweep`. Sweep issues stay open until maintainers close them or a fixing PR resolves them.
+
+## Confidence and the human-review gate
+
+Every finding a sweep emits carries a `confidence` field — `high`, `medium`, or `low` — that signals how safe it is to act on *without* human verification. This is a separate axis from `severity`, which measures impact:
+
+- `high` — objective and verifiable from the evidence; a fix-agent can apply the suggested fix without judgment.
+- `medium` — well-supported, but the fix involves wording or convention choices a human should confirm.
+- `low` — plausible but resting on partial evidence or unverified assumptions.
+
+When a fix-issue contains **any** medium- or low-confidence finding, the sweep adds a `needs-human-review` label and a review-before-acting callout above the findings.
+
+**Intended agent workflow:**
+
+- A fix-issue **without** `needs-human-review` (every finding is high-confidence) is safe to delegate to a fix-agent — this is the `good-for-ai` track.
+- A fix-issue **with** `needs-human-review` needs a human sign-off before any automated action. The `/size` workflow will not put the `good-for-ai` label on an issue that carries `needs-human-review`, so it stays off the auto-delegation track.
+
+This gate exists because sweep output is increasingly read by AI agents that act on it directly. Signaling confidence and gating low-confidence findings keeps incorrect content from being auto-applied to the docs.
 
 ## Skill mapping
 
@@ -106,6 +130,20 @@ gh workflow run docs-quality-sweep.yml \
   -f scope-mode=shard \
   -f target-batch-size=100
 ```
+
+## Running against a specific file list
+
+Pass `target-files` to sweep only the files you name — it overrides `target-path` and `scope-mode`. This is the precise, low-cost option for "check only the files I just changed" (e.g. a post-merge trigger that already knows the changed paths):
+
+```bash
+gh workflow run docs-quality-sweep.yml \
+  -f sweeps=frontmatter,style,typos \
+  -f source-repo=elastic/docs-content \
+  -f docs-root=. \
+  -f target-files="solutions/observability/apm/index.md, solutions/observability/logs/index.md"
+```
+
+Newline-separated also works. Cost scales with the number of files you pass, not with the size of any directory.
 
 ## Adding a schedule
 
