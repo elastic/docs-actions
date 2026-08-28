@@ -26,16 +26,18 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-source-sync.yml
 ```
 
-Edit the `sync` job's `with:` block to set your own `source-repos`, `target-repo`, `docs-root`, and `repo-path-mapping`.
+Edit the `sync` job's `with:` block to set your own `source-repos`, `docs-root`, and `repo-path-mapping`. Leave `target-repo` empty so the PR opens in the calling repository.
 
 ### Token
 
-This workflow takes a token as a `secrets.source_sync_token` input instead of using the ambient `GITHUB_TOKEN`, because it usually needs read access to repositories other than the one it runs in. The example fetches an ephemeral token via [`elastic/ci-gh-actions/fetch-github-token`](https://github.com/elastic/ci-gh-actions/tree/main/fetch-github-token):
+The handbook PR is opened with the caller `GITHUB_TOKEN`. Set `contents: write` and `pull-requests: write` on the caller, as shown in `example.yml`. The `target-repo` must be the calling repository.
+
+The workflow also takes a `secrets.source_sync_token` input to read source repositories other than the caller. The example fetches an ephemeral token via [`elastic/ci-gh-actions/fetch-github-token`](https://github.com/elastic/ci-gh-actions/tree/main/fetch-github-token):
 
 - Add `permissions.id-token: write` on the token-fetch job, as shown in `example.yml`.
-- Set up a TokenPolicy (in `elastic/catalog-info`) that grants the ephemeral token read access to every `source-repos` entry and contents + pull-requests write access to `target-repo`.
+- Set up a TokenPolicy (in `elastic/catalog-info`) that grants the ephemeral token **read** access to every `source-repos` entry (`contents`, `pull_requests`, and `issues`). The token does not need write access, and it does not need access to the calling repository.
 
-A classic PAT with equivalent scopes also works if your organization does not use `fetch-github-token`.
+A classic PAT with equivalent **read** scopes also works if your organization does not use `fetch-github-token`.
 
 ## Inputs
 
@@ -76,7 +78,7 @@ The agent writes new and changed prose in [Simplified Technical English](../../.
 
 ## Example: weekly docs-eng-team sync
 
-`example.yml` configures this workflow to run every Monday, pulling changes from `elastic/docs-builder`, `elastic/docs-infra`, `elastic/docs-internal-workflows`, and `elastic/docs-actions` into the private `elastic/docs-eng-team` handbook under `docs/`. Copy it as-is, or change the `with:` block to point at different repositories.
+`example.yml` configures this workflow to run every Monday, and on manual `workflow_dispatch`, pulling changes from `elastic/docs-builder`, `elastic/docs-infra`, `elastic/docs-internal-workflows`, `elastic/docs-actions`, `elastic/codex-environments`, and `elastic/codex-link-index` into the calling repository's handbook under `docs/`. Copy it into `elastic/docs-eng-team`, or change the `with:` block to point at different repositories.
 
 The mapping in the example follows the handbook's own layout:
 
@@ -86,3 +88,5 @@ The mapping in the example follows the handbook's own layout:
 | `elastic/docs-infra` | `infrastructure/`, `operations/` |
 | `elastic/docs-internal-workflows` | `content-pipeline/`, `release-notes/` |
 | `elastic/docs-actions` | `github-actions/` |
+| `elastic/codex-environments` | `getting-started/`, `infrastructure/` |
+| `elastic/codex-link-index` | `build-system/` |
