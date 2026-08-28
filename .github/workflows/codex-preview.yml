@@ -120,7 +120,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create Deployment
-        if: contains(fromJSON('["pull_request", "pull_request_target", "workflow_dispatch"]'), github.event_name)
         uses: actions/github-script@v9
         id: deployment
         with:
