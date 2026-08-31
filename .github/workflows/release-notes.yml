@@ -33,7 +33,9 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: elastic/docs-actions/docs-builder/setup@v1
         with:
@@ -43,29 +45,39 @@ jobs:
       - name: Validate labels
         run: |
           docs-builder changelog validate-labels \
-            --config "${{ inputs.config }}" \
-            --pr-labels "${{ join(github.event.pull_request.labels.*.name, ',') }}"
+            --config "$CONFIG" \
+            --pr-labels "$PR_LABELS"
+        env:
+          CONFIG: ${{ inputs.config }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
 
       # Changelog-file gate — only runs when the input is enabled
       - name: Evaluate PR
         if: inputs.require-changelog-file
         run: |
           docs-builder changelog evaluate-pr \
-            --config "${{ inputs.config }}" \
-            --owner "${{ github.repository_owner }}" \
-            --repo "${{ github.event.repository.name }}" \
-            --pr-number "${{ github.event.pull_request.number }}" \
+            --config "$CONFIG" \
+            --owner "$REPO_OWNER" \
+            --repo "$REPO_NAME" \
+            --pr-number "$PR_NUMBER" \
             --pr-title "$PR_TITLE" \
-            --pr-labels "${{ join(github.event.pull_request.labels.*.name, ',') }}" \
+            --pr-labels "$PR_LABELS" \
             --head-ref "$HEAD_REF" \
-            --head-sha "${{ github.event.pull_request.head.sha }}" \
-            --event-action "${{ github.event.action }}" \
+            --head-sha "$HEAD_SHA" \
+            --event-action "$EVENT_ACTION" \
             --strip-title-prefix \
             --require-changelog-file
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
+          CONFIG: ${{ inputs.config }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
           HEAD_REF: ${{ github.head_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_ACTION: ${{ github.event.action }}
 
   sync:
     if: github.event_name == 'push'
@@ -74,7 +86,9 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: elastic/docs-actions/docs-builder/setup@v1
         with:
@@ -97,7 +111,9 @@ jobs:
       id-token: write
       packages: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: elastic/docs-actions/docs-builder/setup@v1
         with:
@@ -107,11 +123,14 @@ jobs:
         id: plan
         run: |
           docs-builder changelog bundle --plan \
-            --config "${{ inputs.config }}" \
-            --release-version "${{ github.event.release.tag_name }}"
+            --config "$CONFIG" \
+            --release-version "$RELEASE_VERSION"
+        env:
+          CONFIG: ${{ inputs.config }}
+          RELEASE_VERSION: ${{ github.event.release.tag_name }}
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: us-east-1
