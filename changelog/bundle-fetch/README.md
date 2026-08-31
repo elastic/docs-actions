@@ -13,7 +13,7 @@ Fetching from the CDN requires a resolvable product to scope the URL (`{base}/bu
 so use a profile with `products`/`output_products`. PR/issue-only option-mode bundles cannot be located
 on the CDN — use the [`changelog-bundle`](../README.md) workflow for those.
 
-> **Note:** Bundles are keyed by product, so a shared product (e.g. `cloud-serverless`) is published by more than one repository under the same `bundle/{product}/` prefix. To avoid collisions, bundles should use a repo-qualified filename such as `{repo}-{dateOrVersion}.yaml` (e.g. `my-repo-2026-03.yaml`); fetch the specific file that matches the bundle you want.
+> **Note:** Bundles are keyed by product, so a shared product (e.g. `cloud-serverless`) is published by more than one repository under the same `bundle/{product}/` prefix. Profile mode writes `{repo}-{product}-{version}.yaml`; pass `repo:` (or set `bundle.repo`) so `--plan` resolves the same `cdn_url` the upload used. The CDN `:cdn:` listing includes every object under `bundle/{product}/`.
 
 ## Inputs
 <!--inputs-->

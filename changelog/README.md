@@ -337,7 +337,6 @@ bundle:
   profiles:
     my-release:
       products: "my-product {version} {lifecycle}"
-      output: "{version}.yaml"
 ```
 
 **`.github/workflows/changelog-bundle.yml`**
@@ -363,7 +362,7 @@ jobs:
       version: ${{ github.event.release.tag_name }}
 ```
 
-The `output` input is not needed — the action resolves the output path from `bundle.output_directory` and the profile's `output` pattern via the `--plan` step.
+The `output` input is not needed — the `--plan` step resolves the path as `{bundle.output_directory}/{repo}-{product}-{version}.yaml`. Repo comes from `bundle.repo`, the `repo` workflow input (`--repo`), or git remote `origin`. If none of those resolve, docs-builder warns and uses the legacy `{product}-{version}.yaml` name (cross-repo overwrite is still possible).
 
 #### GitHub release mode (`mode: gh-release`)
 
@@ -469,7 +468,7 @@ If your changelog configuration is not at `docs/changelog.yml`, pass the path ex
 
 The primary workflow (`changelog-bundle.yml`) uploads the bundle to the `elastic-docs-v3-changelog-bundles` S3 bucket under `bundle/{product}/{filename}`. The bundle is available to downstream rendering workflows immediately after upload.
 
-> **Note:** Bundles are keyed by product, so a shared product (e.g. `cloud-serverless`) bundled by more than one repository shares the `bundle/{product}/` prefix. To avoid one repo's bundle overwriting another's, give each bundle a repo-qualified filename such as `{repo}-{dateOrVersion}.yaml` (e.g. `my-repo-2026-03.yaml`).
+> **Note:** Bundles are keyed by product, so a shared product (e.g. `cloud-serverless`) bundled by more than one repository shares the `bundle/{product}/` prefix. Profile mode writes `{repo}-{product}-{version}.yaml` (for example `kibana-cloud-serverless-2026-08-27.yaml`) so those objects do not overwrite each other. Set `bundle.repo` (or pass `repo:`) so the prefix is stable; the CDN `:cdn:` listing includes every object under `bundle/{product}/`.
 
 ### Bundle PR workflow (opt-in)
 
@@ -552,7 +551,7 @@ Notes:
 
 - **Both refs are always required.** The start ref is never inferred from previous bundles or deployment history; the caller resolves it (for example, elastic/cloud's argocd-driven promotion exposes the promoted commit pair, and serverless quality gates read the previous ref from `serverless-gitops` history).
 - The bundle **version is the UTC date** (`YYYY-MM-DD`) derived at run time — callers cannot pass a semver.
-- The profile in `docs/changelog.yml` contributes output metadata only (`output_products`, `repo`/`owner`, `rules`); it must not set a `products` pattern or `source: github_release`. Without an explicit `output` pattern the bundle is named `{product}-{version}.yaml` by convention.
+- The profile in `docs/changelog.yml` contributes output metadata only (`output_products`, `repo`/`owner`, `rules`); it must not set a `products` pattern or `source: github_release`. Profile mode names the bundle `{repo}-{product}-{version}.yaml` (repo from `bundle.repo`, `--repo`, or git `origin`).
 - Pass `dry-run: true` to resolve the range and publish the run report — the resolved PR list with each PR's entry source (pool / inferred / missing) plus commits without an associated PR — to the job summary without building or uploading anything. Useful for wiring and for pre-flight checks.
 - The upload goes to the private S3 bucket; the scrubber Lambda mirrors a sanitized copy to the public CDN, same as `changelog-bundle.yml`. The same OIDC prerequisite applies (your repository must have the changelog IAM role provisioned).
 - A `GITHUB_TOKEN` is required at bundle time: the GraphQL API used for commit→PR association does not accept anonymous requests. The workflow passes the ambient `github.token`.
