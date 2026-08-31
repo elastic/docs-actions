@@ -45,8 +45,8 @@ on:
       output:
         description: >
           Output file path for the bundle (e.g. docs/releases/v9.2.0.yaml).
-          Optional. When not provided, the path is determined by the config
-          (bundle.output_directory) and discovered automatically after generation.
+          Optional. When omitted, --plan uses the profile's output_directory
+          if set, otherwise bundle.output_directory.
         type: string
       repo:
         description: 'GitHub repository name; falls back to bundle.repo in changelog.yml'

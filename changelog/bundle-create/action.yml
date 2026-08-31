@@ -47,7 +47,8 @@ inputs:
     description: >
       Output file path for the bundle, relative to the repo root.
       Optional in both modes. When omitted in profile mode, docs-builder
-      writes `{repo}-{product}-{version}.yaml` under bundle.output_directory.
+      writes `{repo}-{product}-{version}.yaml` under the profile's
+      output_directory if set, otherwise bundle.output_directory.
   repo:
     description: >
       GitHub repository name. Used in the profile-mode bundle filename

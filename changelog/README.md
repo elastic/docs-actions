@@ -362,7 +362,16 @@ jobs:
       version: ${{ github.event.release.tag_name }}
 ```
 
-The `output` input is not needed — the `--plan` step resolves the path as `{bundle.output_directory}/{repo}-{product}-{version}.yaml`. Repo comes from `bundle.repo`, the `repo` workflow input (`--repo`), or git remote `origin`. If none of those resolve, docs-builder warns and uses the legacy `{product}-{version}.yaml` name (cross-repo overwrite is still possible).
+The `output` input is not needed — `--plan` writes `{repo}-{product}-{version}.yaml` under the profile's `output_directory` if set, otherwise `bundle.output_directory`. Repo comes from `bundle.repo`, the `repo` workflow input (`--repo`), or git remote `origin`. If none of those resolve, docs-builder warns and uses the legacy `{product}-{version}.yaml` name (cross-repo overwrite is still possible).
+
+To keep bundles in their separate folders, set `output_directory` on each profile. It replaces the global directory for that profile only; the conventional filename is unchanged:
+
+```yaml
+    serverless-release:
+      output_products: "cloud-serverless {version} {lifecycle}"
+      output_directory: docs/releases/cloud-serverless
+      # → docs/releases/cloud-serverless/my-repo-cloud-serverless-2026-08-27.yaml
+```
 
 #### GitHub release mode (`mode: gh-release`)
 
@@ -551,7 +560,7 @@ Notes:
 
 - **Both refs are always required.** The start ref is never inferred from previous bundles or deployment history; the caller resolves it (for example, elastic/cloud's argocd-driven promotion exposes the promoted commit pair, and serverless quality gates read the previous ref from `serverless-gitops` history).
 - The bundle **version is the UTC date** (`YYYY-MM-DD`) derived at run time — callers cannot pass a semver.
-- The profile in `docs/changelog.yml` contributes output metadata only (`output_products`, `repo`/`owner`, `rules`); it must not set a `products` pattern or `source: github_release`. Profile mode names the bundle `{repo}-{product}-{version}.yaml` (repo from `bundle.repo`, `--repo`, or git `origin`).
+- The profile in `docs/changelog.yml` contributes output metadata only (`output_products`, `repo`/`owner`, `rules`); it must not set a `products` pattern or `source: github_release`. Profile mode names the bundle `{repo}-{product}-{version}.yaml` (repo from `bundle.repo`, `--repo`, or git `origin`) under the profile's `output_directory` if set, otherwise `bundle.output_directory`.
 - Pass `dry-run: true` to resolve the range and publish the run report — the resolved PR list with each PR's entry source (pool / inferred / missing) plus commits without an associated PR — to the job summary without building or uploading anything. Useful for wiring and for pre-flight checks.
 - The upload goes to the private S3 bucket; the scrubber Lambda mirrors a sanitized copy to the public CDN, same as `changelog-bundle.yml`. The same OIDC prerequisite applies (your repository must have the changelog IAM role provisioned).
 - A `GITHUB_TOKEN` is required at bundle time: the GraphQL API used for commit→PR association does not accept anonymous requests. The workflow passes the ambient `github.token`.
