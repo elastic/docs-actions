@@ -28,6 +28,17 @@ inputs:
   aws-account-id:
     description: 'The AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account.'
     default: '197730964718'
+  aws-role-arn:
+    description: >
+      Optional explicit IAM role ARN to assume for S3 access. When set, the
+      role is assumed directly via aws-actions/configure-aws-credentials and
+      the aws/auth repo-derived role derivation is skipped. Use this when the
+      caller's repo identity should not drive role selection — for example, a
+      docs-owned promotion workflow in a private repo that holds a single
+      dedicated role scoped to the bundle/* S3 prefix. Must be empty or a
+      valid ARN (arn:aws:iam::…:role/…).
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -78,7 +89,27 @@ runs:
         version: ${{ inputs.docs-builder-version }}
         github-token: ${{ inputs.github-token }}
 
-    - name: Authenticate with AWS
+    - name: Validate aws-role-arn format (if provided)
+      shell: bash
+      env:
+        AWS_ROLE_ARN: ${{ inputs.aws-role-arn }}
+      run: |
+        if [[ -n "${AWS_ROLE_ARN}" ]]; then
+          if [[ ! "${AWS_ROLE_ARN}" =~ ^arn:aws:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$ ]]; then
+            echo "::error::aws-role-arn does not match expected ARN format: ${AWS_ROLE_ARN}"
+            exit 1
+          fi
+        fi
+
+    - name: Authenticate with AWS (explicit role)
+      if: ${{ inputs.aws-role-arn != '' }}
+      uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
+      with:
+        aws-region: us-east-1
+        role-to-assume: ${{ inputs.aws-role-arn }}
+
+    - name: Authenticate with AWS (repo-derived role)
+      if: ${{ inputs.aws-role-arn == '' }}
       uses: elastic/docs-actions/aws/auth@v1
       with:
         aws_account_id: ${{ inputs.aws-account-id }}
