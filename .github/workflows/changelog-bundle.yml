@@ -3,14 +3,6 @@ name: Changelog bundle
 on:
   workflow_call:
     inputs:
-      mode:
-        description: >
-          Operation mode: 'bundle' (default) runs changelog bundle,
-          'gh-release' runs changelog gh-release to create changelogs
-          from a GitHub release. In gh-release mode, repo and version
-          are required.
-        type: string
-        default: 'bundle'
       config:
         description: 'Path to changelog.yml configuration file'
         type: string
@@ -87,7 +79,6 @@ jobs:
       - id: bundle
         uses: elastic/docs-actions/changelog/bundle-create@v1
         with:
-          mode: ${{ inputs.mode }}
           config: ${{ inputs.config }}
           profile: ${{ inputs.profile }}
           version: ${{ inputs.version }}

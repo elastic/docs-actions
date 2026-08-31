@@ -8,13 +8,6 @@ description: >
   GitHub release). Uses --network none where possible.
 
 inputs:
-  mode:
-    description: >
-      Operation mode: 'bundle' (default) runs changelog bundle,
-      'gh-release' runs changelog gh-release to create changelogs
-      from a GitHub release. In gh-release mode, repo and version
-      are required; most other inputs are ignored.
-    default: 'bundle'
   config:
     description: 'Path to changelog.yml configuration file'
     default: 'docs/changelog.yml'
@@ -46,16 +39,9 @@ inputs:
   output:
     description: >
       Output file path for the bundle, relative to the repo root.
-      Optional in both modes. When not provided, docs-builder writes
-      to the path determined by the config (bundle.output_directory)
-      and the plan resolves the generated file path automatically.
-      Mutually exclusive with output-path.
-  output-path:
-    description: >
-      Alias for output. Pre-resolved output file path for the bundle
-      (e.g. from a prior plan step's output_path output), relative to
-      the repo root. When provided, overrides output.
-      Mutually exclusive with output.
+      Optional. When not provided, docs-builder writes to the path
+      determined by the config (bundle.output_directory) and the plan
+      resolves the generated file path automatically.
   repo:
     description: >
       GitHub repository name. Falls back to bundle.repo in changelog.yml.
@@ -99,7 +85,7 @@ inputs:
 outputs:
   output:
     description: 'Resolved output file path for the bundle'
-    value: ${{ inputs.output-path || steps.plan.outputs.output_path || steps.gh-release-output.outputs.output_path }}
+    value: ${{ steps.plan.outputs.output_path }}
 
 runs:
   using: composite
@@ -112,12 +98,11 @@ runs:
     - name: Validate inputs
       shell: bash
       env:
-        MODE: ${{ inputs.mode }}
         CONFIG: ${{ inputs.config }}
         PROFILE: ${{ inputs.profile }}
         VERSION: ${{ inputs.version }}
         RELEASE_VERSION: ${{ inputs.release-version }}
-        OUTPUT: ${{ inputs.output-path || inputs.output }}
+        OUTPUT: ${{ inputs.output }}
         REPORT: ${{ inputs.report }}
         PRS: ${{ inputs.prs }}
         REPO: ${{ inputs.repo }}
@@ -127,16 +112,6 @@ runs:
         END_GIT_REF: ${{ inputs.end-git-ref }}
         DRY_RUN: ${{ inputs.dry-run }}
       run: |
-        if [[ "$MODE" != "bundle" && "$MODE" != "gh-release" ]]; then
-          echo "::error::mode must be 'bundle' or 'gh-release', got: ${MODE}"
-          exit 1
-        fi
-
-        if [[ "$MODE" == "gh-release" && -z "$REPO" ]]; then
-          echo "::error::repo is required in gh-release mode"
-          exit 1
-        fi
-
         if [ -n "$START_GIT_REF" ] || [ -n "$END_GIT_REF" ]; then
           if [ -z "$START_GIT_REF" ] || [ -z "$END_GIT_REF" ]; then
             echo "::error::start-git-ref and end-git-ref must be provided together; the start ref is never inferred"
@@ -188,7 +163,6 @@ runs:
         github-token: ${{ inputs.github-token }}
 
     - name: Resolve bundle plan
-      if: inputs.mode == 'bundle' && inputs.output-path == ''
       id: plan
       shell: bash
       env:
@@ -212,7 +186,7 @@ runs:
           [ -n "$REPORT" ] && ARGS+=("$REPORT")
           [ -n "$START_GIT_REF" ] && ARGS+=(--start-git-ref "$START_GIT_REF" --end-git-ref "$END_GIT_REF")
         else
-          ARGS+=(--config "$CONFIG" --resolve)
+          ARGS+=(--config "$CONFIG")
           [ -n "$RELEASE_VERSION" ] && ARGS+=(--release-version "$RELEASE_VERSION")
           [ -n "$REPORT" ] && ARGS+=(--report "$REPORT")
           [ -n "$PRS" ] && ARGS+=(--prs "$PRS")
@@ -224,19 +198,17 @@ runs:
         docs-builder "${ARGS[@]}"
 
     - name: Verify plan output
-      if: inputs.mode == 'bundle'
       shell: bash
       env:
-        # Prefer output-path (pre-resolved by caller) over the plan step output
-        OUTPUT_PATH: ${{ inputs.output-path || steps.plan.outputs.output_path }}
+        OUTPUT_PATH: ${{ steps.plan.outputs.output_path }}
       run: |
         if [ -z "$OUTPUT_PATH" ]; then
-          echo "::error::Plan did not resolve an output path. Set 'output' or 'output-path' input or configure bundle.output_directory in changelog.yml."
+          echo "::error::Plan did not resolve an output path. Configure bundle.output_directory in changelog.yml."
           exit 1
         fi
 
     - name: Download report
-      if: inputs.mode == 'bundle' && inputs.report != '' && startsWith(inputs.report, 'https://')
+      if: steps.plan.outputs.mode == 'bundle' && inputs.report != '' && startsWith(inputs.report, 'https://')
       shell: bash
       env:
         REPORT: ${{ inputs.report }}
@@ -255,7 +227,7 @@ runs:
         echo "::notice title=Docker image digest::${DIGEST}"
 
     - name: Generate changelog bundle
-      if: inputs.mode == 'bundle'
+      if: steps.plan.outputs.mode == 'bundle'
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
@@ -268,7 +240,7 @@ runs:
         RELEASE_VERSION: ${{ inputs.release-version }}
         REPORT: ${{ inputs.report }}
         PRS: ${{ inputs.prs }}
-        OUTPUT: ${{ inputs.output-path || inputs.output }}
+        OUTPUT: ${{ inputs.output }}
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
         START_GIT_REF: ${{ inputs.start-git-ref }}
@@ -320,14 +292,14 @@ runs:
         fi
 
     - name: Generate changelogs from GitHub release
-      if: inputs.mode == 'gh-release'
+      if: steps.plan.outputs.mode == 'gh-release'
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         IMAGE_DIGEST: ${{ steps.docker-image.outputs.digest }}
         CONFIG: ${{ inputs.config }}
         VERSION: ${{ inputs.version }}
-        OUTPUT: ${{ inputs.output-path || inputs.output }}
+        OUTPUT: ${{ inputs.output }}
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
         STRIP_TITLE_PREFIX: ${{ inputs.strip-title-prefix }}
@@ -349,37 +321,11 @@ runs:
 
         docker run "${DOCKER_ARGS[@]}" "$IMAGE_DIGEST" "${GH_RELEASE_ARGS[@]}"
 
-    - name: Discover gh-release output
-      if: inputs.mode == 'gh-release'
-      id: gh-release-output
-      shell: bash
-      env:
-        OUTPUT: ${{ inputs.output }}
-        CONFIG: ${{ inputs.config }}
-      run: |
-        SEARCH_DIR="${OUTPUT:-docs/releases}"
-        if [ -f "$SEARCH_DIR" ]; then
-          SEARCH_DIR="$(dirname "$SEARCH_DIR")"
-        fi
-
-        BUNDLE_DIR="${SEARCH_DIR}/bundles"
-        if [ ! -d "$BUNDLE_DIR" ]; then
-          BUNDLE_DIR="$SEARCH_DIR"
-        fi
-
-        BUNDLE_FILE=$(find "$BUNDLE_DIR" -maxdepth 1 -name '*.yaml' -o -name '*.yml' | head -1)
-        if [ -z "$BUNDLE_FILE" ]; then
-          echo "::error::No bundle file found in ${BUNDLE_DIR}"
-          exit 1
-        fi
-        echo "output_path=${BUNDLE_FILE}" >> "$GITHUB_OUTPUT"
-        echo "::notice title=Bundle output::${BUNDLE_FILE}"
-
     - name: Upload bundle artifact
       if: inputs.dry-run != 'true'
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}
-        path: ${{ inputs.output-path || steps.plan.outputs.output_path || steps.gh-release-output.outputs.output_path }}
+        path: ${{ steps.plan.outputs.output_path }}
         if-no-files-found: error
         retention-days: 1
