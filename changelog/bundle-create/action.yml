@@ -49,6 +49,13 @@ inputs:
       Optional in both modes. When not provided, docs-builder writes
       to the path determined by the config (bundle.output_directory)
       and the plan resolves the generated file path automatically.
+      Mutually exclusive with output-path.
+  output-path:
+    description: >
+      Alias for output. Pre-resolved output file path for the bundle
+      (e.g. from a prior plan step's output_path output), relative to
+      the repo root. When provided, overrides output.
+      Mutually exclusive with output.
   repo:
     description: >
       GitHub repository name. Falls back to bundle.repo in changelog.yml.
@@ -92,7 +99,7 @@ inputs:
 outputs:
   output:
     description: 'Resolved output file path for the bundle'
-    value: ${{ steps.plan.outputs.output_path || steps.gh-release-output.outputs.output_path }}
+    value: ${{ inputs.output-path || steps.plan.outputs.output_path || steps.gh-release-output.outputs.output_path }}
 
 runs:
   using: composite
@@ -110,7 +117,7 @@ runs:
         PROFILE: ${{ inputs.profile }}
         VERSION: ${{ inputs.version }}
         RELEASE_VERSION: ${{ inputs.release-version }}
-        OUTPUT: ${{ inputs.output }}
+        OUTPUT: ${{ inputs.output-path || inputs.output }}
         REPORT: ${{ inputs.report }}
         PRS: ${{ inputs.prs }}
         REPO: ${{ inputs.repo }}
@@ -181,7 +188,7 @@ runs:
         github-token: ${{ inputs.github-token }}
 
     - name: Resolve bundle plan
-      if: inputs.mode == 'bundle'
+      if: inputs.mode == 'bundle' && inputs.output-path == ''
       id: plan
       shell: bash
       env:
@@ -220,10 +227,11 @@ runs:
       if: inputs.mode == 'bundle'
       shell: bash
       env:
-        OUTPUT_PATH: ${{ steps.plan.outputs.output_path }}
+        # Prefer output-path (pre-resolved by caller) over the plan step output
+        OUTPUT_PATH: ${{ inputs.output-path || steps.plan.outputs.output_path }}
       run: |
         if [ -z "$OUTPUT_PATH" ]; then
-          echo "::error::Plan did not resolve an output path. Set 'output' input or configure bundle.output_directory in changelog.yml."
+          echo "::error::Plan did not resolve an output path. Set 'output' or 'output-path' input or configure bundle.output_directory in changelog.yml."
           exit 1
         fi
 
@@ -260,7 +268,7 @@ runs:
         RELEASE_VERSION: ${{ inputs.release-version }}
         REPORT: ${{ inputs.report }}
         PRS: ${{ inputs.prs }}
-        OUTPUT: ${{ inputs.output }}
+        OUTPUT: ${{ inputs.output-path || inputs.output }}
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
         START_GIT_REF: ${{ inputs.start-git-ref }}
@@ -319,7 +327,7 @@ runs:
         IMAGE_DIGEST: ${{ steps.docker-image.outputs.digest }}
         CONFIG: ${{ inputs.config }}
         VERSION: ${{ inputs.version }}
-        OUTPUT: ${{ inputs.output }}
+        OUTPUT: ${{ inputs.output-path || inputs.output }}
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
         STRIP_TITLE_PREFIX: ${{ inputs.strip-title-prefix }}
@@ -372,6 +380,6 @@ runs:
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}
-        path: ${{ steps.plan.outputs.output_path || steps.gh-release-output.outputs.output_path }}
+        path: ${{ inputs.output-path || steps.plan.outputs.output_path || steps.gh-release-output.outputs.output_path }}
         if-no-files-found: error
         retention-days: 1

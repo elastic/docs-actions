@@ -1,0 +1,129 @@
+name: Release notes
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        description: 'Path to changelog.yml configuration file'
+        type: string
+        default: docs/changelog.yml
+      bundle-on-release:
+        description: 'Run the bundle job when a GitHub release is published'
+        type: boolean
+        default: false
+      require-changelog-file:
+        description: 'Require a changelog file to be present in the PR (evaluate-pr gate)'
+        type: boolean
+        default: false
+    secrets:
+      GITHUB_TOKEN:
+        required: false
+
+permissions: {}
+
+concurrency:
+  group: release-notes-${{ github.event.pull_request.number || github.ref }}-${{ github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: elastic/docs-actions/docs-builder/setup@v1
+        with:
+          version: edge
+
+      # Label-only gate — no GitHub API call needed
+      - name: Validate labels
+        run: |
+          docs-builder changelog validate-labels \
+            --config "${{ inputs.config }}" \
+            --pr-labels "${{ join(github.event.pull_request.labels.*.name, ',') }}"
+
+      # Changelog-file gate — only runs when the input is enabled
+      - name: Evaluate PR
+        if: inputs.require-changelog-file
+        run: |
+          docs-builder changelog evaluate-pr \
+            --config "${{ inputs.config }}" \
+            --owner "${{ github.repository_owner }}" \
+            --repo "${{ github.event.repository.name }}" \
+            --pr-number "${{ github.event.pull_request.number }}" \
+            --pr-title "${{ github.event.pull_request.title }}" \
+            --pr-labels "${{ join(github.event.pull_request.labels.*.name, ',') }}" \
+            --head-ref "${{ github.head_ref }}" \
+            --head-sha "${{ github.event.pull_request.head.sha }}" \
+            --event-action "${{ github.event.action }}" \
+            --strip-title-prefix \
+            --require-changelog-file
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
+
+  sync:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: elastic/docs-actions/docs-builder/setup@v1
+        with:
+          version: edge
+
+      - name: Upload changelogs and amends
+        uses: elastic/docs-actions/changelog/upload@v1
+        with:
+          config: ${{ inputs.config }}
+          artifact-type: changelog,amend
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          branch: ${{ github.ref_name }}
+
+  bundle:
+    if: github.event_name == 'release' && inputs.bundle-on-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: elastic/docs-actions/docs-builder/setup@v1
+        with:
+          version: edge
+
+      - name: Plan bundle
+        id: plan
+        run: |
+          docs-builder changelog bundle --plan \
+            --config "${{ inputs.config }}" \
+            --release-version "${{ github.event.release.tag_name }}"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Create bundle
+        uses: elastic/docs-actions/changelog/bundle-create@v1
+        with:
+          config: ${{ inputs.config }}
+          version: ${{ github.event.release.tag_name }}
+          mode: ${{ steps.plan.outputs.mode }}
+          output-path: ${{ steps.plan.outputs.output_path }}
+
+      - name: Upload bundle
+        uses: elastic/docs-actions/changelog/bundle-upload@v1
+        with:
+          config: ${{ inputs.config }}
+          bundle-path: ${{ steps.plan.outputs.output_path }}

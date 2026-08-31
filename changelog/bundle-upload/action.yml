@@ -9,8 +9,13 @@ inputs:
     description: >
       Output file path for the bundle, relative to the repo root
       (e.g. docs/releases/v9.2.0.yaml). Must match the path used
-      by the bundle-create action.
-    required: true
+      by the bundle-create action. Mutually exclusive with bundle-path.
+  bundle-path:
+    description: >
+      Alias for output. Output file path for the bundle, relative to the
+      repo root (e.g. docs/releases/v9.2.0.yaml). Prefer this input when
+      the path comes from the plan step's output_path output.
+      Mutually exclusive with output.
   config:
     description: 'Path to changelog.yml configuration file (repo-relative, no ".." or absolute paths)'
     default: 'docs/changelog.yml'
@@ -35,17 +40,21 @@ runs:
     - name: Validate inputs
       shell: bash
       env:
-        OUTPUT: ${{ inputs.output }}
+        OUTPUT: ${{ inputs.bundle-path || inputs.output }}
         CONFIG: ${{ inputs.config }}
         ARTIFACT_NAME: ${{ inputs.artifact-name }}
       run: |
         source "${GITHUB_ACTION_PATH}/../../scripts/validate-inputs.sh"
 
+        if [[ -z "$OUTPUT" ]]; then
+          echo "::error::One of 'output' or 'bundle-path' must be provided"
+          exit 1
+        fi
         if [[ "$OUTPUT" != *.yml && "$OUTPUT" != *.yaml ]]; then
           echo "::error::Output path must end in .yml or .yaml: ${OUTPUT}"
           exit 1
         fi
-        validate_path "$OUTPUT" "output"
+        validate_path "$OUTPUT" "output/bundle-path"
         validate_path "$CONFIG" "config"
 
         if [[ ! "$ARTIFACT_NAME" =~ ^[a-zA-Z0-9._-]+$ ]]; then
@@ -67,7 +76,7 @@ runs:
     - name: Place bundle in output path
       shell: bash
       env:
-        OUTPUT: ${{ inputs.output }}
+        OUTPUT: ${{ inputs.bundle-path || inputs.output }}
       run: |
         mkdir -p "$(dirname "$OUTPUT")"
         cp ".bundle-artifact/$(basename "$OUTPUT")" "$OUTPUT"
@@ -88,7 +97,7 @@ runs:
       shell: bash
       env:
         CONFIG: ${{ inputs.config }}
-        OUTPUT: ${{ inputs.output }}
+        OUTPUT: ${{ inputs.bundle-path || inputs.output }}
       run: |
         docs-builder changelog upload \
           --artifact-type bundle \
