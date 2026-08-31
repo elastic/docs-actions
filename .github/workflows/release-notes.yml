@@ -95,8 +95,6 @@ jobs:
         with:
           config: ${{ inputs.config }}
           artifact-type: changelog,amend
-          owner: ${{ github.repository_owner }}
-          repo: ${{ github.event.repository.name }}
           branch: ${{ github.ref_name }}
 
   bundle:
