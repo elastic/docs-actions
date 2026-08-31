@@ -80,9 +80,6 @@ jobs:
     steps:
       - name: Checkout code
         if: needs.check.outputs.any_modified == 'true'
-        # We would need to checkout the PR branch if the event to support pull_request_target.
-        # Skip this for now because it's not clear if we need to or should support it.
-        # However, the rest of the workflow is designed to support pull_request_target.
         uses: actions/checkout@v6
         with:
           persist-credentials: false
@@ -120,7 +117,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create Deployment
-        if: contains(fromJSON('["pull_request", "pull_request_target", "workflow_dispatch"]'), github.event_name)
         uses: actions/github-script@v9
         id: deployment
         with:
@@ -266,9 +262,12 @@ jobs:
             const toMarkdownLink = (file) => {
               const path = file
                 .replace(rootPattern, '')
-                .replace(/\/index.md$/, '')
+                .replace(/(?:^|\/)index\.md$/, '')
                 .replace(/\.md$/, '');
-              return `[${escapeMarkdown(file)}](https://codex.elastic.dev${process.env.PATH_PREFIX}/${path})`;
+              const href = path
+                ? `https://codex.elastic.dev${process.env.PATH_PREFIX}/${path}`
+                : `https://codex.elastic.dev${process.env.PATH_PREFIX}`;
+              return `[${escapeMarkdown(file)}](${href})`;
             }
 
             const links = changedMdFiles.map(toMarkdownLink)

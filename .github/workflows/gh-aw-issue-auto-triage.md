@@ -12,9 +12,16 @@ imports:
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/quality-bar.md
-model: gpt-5-mini
+model: haiku
 engine:
-  id: copilot
+  id: claude
+  env:
+    ANTHROPIC_BASE_URL: https://openrouter.ai/api
+    ANTHROPIC_CUSTOM_HEADERS: |-
+      HTTP-Referer: https://github.com/${{ github.repository }}
+      X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
+      X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: anthropic/claude-haiku-4.5
 
 on:
   workflow_call:
@@ -42,9 +49,9 @@ concurrency:
 permissions:
   actions: read
   contents: read
+  copilot-requests: write
   issues: read
   pull-requests: read
-  copilot-requests: write
 
 strict: false
 
@@ -52,12 +59,13 @@ tools:
   github:
     min-integrity: none
     toolsets: [issues, repos]
-  bash: ["date"]
+  bash: true
 
 network:
   allowed:
     - defaults
     - github
+    - "openrouter.ai"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
     - "figma.com"
@@ -79,6 +87,9 @@ steps:
 
 safe-outputs:
   threat-detection:
+    engine:
+      id: copilot
+      model: gpt-5-mini
     prompt: |
       IMPORTANT context for this workflow: the prompt includes gh-aw
       framework scaffolding wrapped in <system> and <safe-outputs> tags.

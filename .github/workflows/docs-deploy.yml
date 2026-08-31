@@ -118,27 +118,22 @@ jobs:
             const ignoreLines = (process.env.IGNORE_PATTERNS || '')
               .split('\n').map(s => s.trim()).filter(Boolean);
 
-            const matchesPattern = (filename) => {
-              if (pathPattern === '**' || pathPattern === '') return true;
-              if (pathPattern.endsWith('/**')) {
-                return filename.startsWith(pathPattern.slice(0, -3) + '/');
+            // No checkout in this workflow_run phase, so patterns are matched
+            // against API filenames: dir/** (subtree), dir/* (direct children), exact.
+            const matchesGlob = (f, pattern) => {
+              if (pattern.endsWith('/**')) return f.startsWith(pattern.slice(0, -3) + '/');
+              if (pattern.endsWith('/*')) {
+                const dir = pattern.slice(0, -2);
+                return f.startsWith(dir + '/') && !f.slice(dir.length + 1).includes('/');
               }
-              return true;
+              return f === pattern;
             };
 
-            const isIgnored = (filename) => {
-              for (const pattern of ignoreLines) {
-                if (pattern.endsWith('/**')) {
-                  if (filename.startsWith(pattern.slice(0, -3) + '/')) return true;
-                } else if (pattern.endsWith('/*')) {
-                  const dir = pattern.slice(0, -2);
-                  if (filename.startsWith(dir + '/') && !filename.slice(dir.length + 1).includes('/')) return true;
-                } else if (filename === pattern) {
-                  return true;
-                }
-              }
-              return false;
-            };
+            // Fails open: any pattern shape other than dir/** matches everything.
+            const matchesPattern = (filename) =>
+              !pathPattern.endsWith('/**') || matchesGlob(filename, pathPattern);
+
+            const isIgnored = (filename) => ignoreLines.some(p => matchesGlob(filename, p));
 
             if (event === 'push') {
               core.setOutput('base-ref', headBranch);
@@ -238,14 +233,6 @@ jobs:
               const valeIncludes = valePathLines.filter(p => !p.startsWith('!'));
               const valeExcludes = valePathLines.filter(p => p.startsWith('!')).map(p => p.slice(1));
               const matchesVale = (filename) => {
-                const matchesGlob = (f, pattern) => {
-                  if (pattern.endsWith('/**')) return f.startsWith(pattern.slice(0, -3) + '/');
-                  if (pattern.endsWith('/*')) {
-                    const dir = pattern.slice(0, -2);
-                    return f.startsWith(dir + '/') && !f.slice(dir.length + 1).includes('/');
-                  }
-                  return f === pattern;
-                };
                 const included = valeIncludes.length === 0 || valeIncludes.some(p => matchesGlob(filename, p));
                 const excluded = valeExcludes.some(p => matchesGlob(filename, p));
                 return included && !excluded;
@@ -737,9 +724,12 @@ jobs:
             const toMarkdownLink = (file) => {
               const path = file
                 .replace(rootPattern, '')
-                .replace(/\/index\.md$/, '')
+                .replace(/(?:^|\/)index\.md$/, '')
                 .replace(/\.md$/, '');
-              return `[${escapeMarkdown(file)}](https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path})`;
+              const href = path
+                ? `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path}`
+                : `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}`;
+              return `[${escapeMarkdown(file)}](${href})`;
             }
 
             const links = changedMdFiles.map(toMarkdownLink)
