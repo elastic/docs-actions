@@ -81,6 +81,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -95,8 +96,6 @@ jobs:
         with:
           config: ${{ inputs.config }}
           artifact-type: changelog,amend
-          owner: ${{ github.repository_owner }}
-          repo: ${{ github.event.repository.name }}
           branch: ${{ github.ref_name }}
 
   bundle:
