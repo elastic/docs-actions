@@ -15,6 +15,11 @@ inputs:
   config:
     description: 'Path to changelog.yml configuration file (repo-relative, no ".." or absolute paths)'
     default: 'docs/changelog.yml'
+  artifact-type:
+    description: >
+      Comma-separated artifact types to upload (e.g. changelog, amend, or changelog,amend).
+      Defaults to 'changelog'. Pass 'changelog,amend' to also upload amend entries.
+    default: 'changelog'
   branch:
     description: 'Branch the changelog entries are published under (changelog/{org}/{repo}/{branch}/...). Defaults to the pushed branch.'
     default: '${{ github.ref_name }}'
@@ -144,12 +149,13 @@ runs:
       shell: bash
       env:
         CONFIG: ${{ inputs.config }}
+        ARTIFACT_TYPE: ${{ inputs.artifact-type }}
         REPO_NAME: ${{ github.event.repository.name }}
         OWNER: ${{ github.repository_owner }}
         BRANCH: ${{ inputs.branch }}
       run: |
         docs-builder changelog upload \
-          --artifact-type changelog \
+          --artifact-type "$ARTIFACT_TYPE" \
           --target s3 \
           --s3-bucket-name elastic-docs-v3-changelog-bundles-private \
           --config "$CONFIG" \

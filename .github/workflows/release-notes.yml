@@ -1,0 +1,139 @@
+name: Release notes
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        description: 'Path to changelog.yml configuration file'
+        type: string
+        default: docs/changelog.yml
+      bundle-on-release:
+        description: 'Run the bundle job when a GitHub release is published'
+        type: boolean
+        default: false
+      require-changelog-file:
+        description: 'Require a changelog file to be present in the PR (evaluate-pr gate)'
+        type: boolean
+        default: false
+    secrets:
+      GITHUB_TOKEN:
+        required: false
+
+permissions: {}
+
+concurrency:
+  group: release-notes-${{ github.event.pull_request.number || github.ref }}-${{ github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: elastic/docs-actions/docs-builder/setup@v1
+        with:
+          version: edge
+
+      # Label-only gate — no GitHub API call needed
+      - name: Validate labels
+        run: |
+          docs-builder changelog validate-labels \
+            --config "$CONFIG" \
+            --pr-labels "$PR_LABELS"
+        env:
+          CONFIG: ${{ inputs.config }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+
+      # Changelog-file gate — only runs when the input is enabled
+      - name: Evaluate PR
+        if: inputs.require-changelog-file
+        run: |
+          docs-builder changelog evaluate-pr \
+            --config "$CONFIG" \
+            --owner "$REPO_OWNER" \
+            --repo "$REPO_NAME" \
+            --pr-number "$PR_NUMBER" \
+            --pr-title "$PR_TITLE" \
+            --pr-labels "$PR_LABELS" \
+            --head-ref "$HEAD_REF" \
+            --head-sha "$HEAD_SHA" \
+            --event-action "$EVENT_ACTION" \
+            --strip-title-prefix \
+            --require-changelog-file
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
+          CONFIG: ${{ inputs.config }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_ACTION: ${{ github.event.action }}
+
+  sync:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: elastic/docs-actions/docs-builder/setup@v1
+        with:
+          version: edge
+
+      - name: Upload changelogs and amends
+        uses: elastic/docs-actions/changelog/upload@v1
+        with:
+          config: ${{ inputs.config }}
+          artifact-type: changelog,amend
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          branch: ${{ github.ref_name }}
+
+  bundle:
+    if: github.event_name == 'release' && inputs.bundle-on-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: elastic/docs-actions/docs-builder/setup@v1
+        with:
+          version: edge
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Create bundle
+        id: create
+        uses: elastic/docs-actions/changelog/bundle-create@v1
+        with:
+          config: ${{ inputs.config }}
+          version: ${{ github.event.release.tag_name }}
+
+      - name: Upload bundle
+        uses: elastic/docs-actions/changelog/bundle-upload@v1
+        with:
+          config: ${{ inputs.config }}
+          bundle-path: ${{ steps.create.outputs.output }}
