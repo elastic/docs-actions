@@ -55,15 +55,17 @@ jobs:
             --owner "${{ github.repository_owner }}" \
             --repo "${{ github.event.repository.name }}" \
             --pr-number "${{ github.event.pull_request.number }}" \
-            --pr-title "${{ github.event.pull_request.title }}" \
+            --pr-title "$PR_TITLE" \
             --pr-labels "${{ join(github.event.pull_request.labels.*.name, ',') }}" \
-            --head-ref "${{ github.head_ref }}" \
+            --head-ref "$HEAD_REF" \
             --head-sha "${{ github.event.pull_request.head.sha }}" \
             --event-action "${{ github.event.action }}" \
             --strip-title-prefix \
             --require-changelog-file
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          HEAD_REF: ${{ github.head_ref }}
 
   sync:
     if: github.event_name == 'push'
