@@ -14,9 +14,20 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Check for Vale results artifact
+      id: check-artifact
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+        LINT_RUN_ID: ${{ github.event.workflow_run.id }}
+      run: |
+        count=$(gh api \
+          "repos/${{ github.repository }}/actions/runs/${LINT_RUN_ID}/artifacts" \
+          --jq '[.artifacts[] | select(.name == "vale-results")] | length')
+        echo "exists=$([ "$count" -gt 0 ] && echo 'true' || echo 'false')" >> "$GITHUB_OUTPUT"
+
     - name: Download Vale results
-      id: download
-      continue-on-error: true
+      if: steps.check-artifact.outputs.exists == 'true'
       uses: actions/download-artifact@v8
       with:
         name: vale-results
@@ -25,7 +36,7 @@ runs:
         path: .vale-artifacts
 
     - name: Check for unexpected files in artifact
-      if: steps.download.outcome == 'success'
+      if: steps.check-artifact.outputs.exists == 'true'
       shell: bash
       working-directory: .vale-artifacts
       run: |
@@ -47,7 +58,7 @@ runs:
 
     - name: Detect result format
       id: check-results
-      if: steps.download.outcome == 'success'
+      if: steps.check-artifact.outputs.exists == 'true'
       shell: bash
       run: |
         if [ -f .vale-artifacts/vale_results.json ]; then
@@ -63,7 +74,7 @@ runs:
 
     - name: Get PR number
       id: pr-number
-      if: steps.download.outcome == 'success'
+      if: steps.check-artifact.outputs.exists == 'true'
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github_token }}
