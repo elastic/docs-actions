@@ -1,0 +1,50 @@
+name: Changelog comment
+description: >
+  Downloads the changelog-decision artifact from the triggering workflow run
+  and posts or updates the sticky changelog PR comment. Safe to call even
+  when no artifact was uploaded — the command succeeds with no action taken.
+
+inputs:
+  github-token:
+    description: 'GitHub token with pull-requests: write'
+    default: '${{ github.token }}'
+
+runs:
+  using: composite
+  steps:
+    - name: Check for decision artifact
+      id: check-artifact
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        RUN_ID: ${{ github.event.workflow_run.id }}
+      run: |
+        count=$(gh api \
+          "repos/${{ github.repository }}/actions/runs/${RUN_ID}/artifacts" \
+          --jq '[.artifacts[] | select(.name == "changelog-decision")] | length')
+        echo "exists=$([ "$count" -gt 0 ] && echo 'true' || echo 'false')" >> "$GITHUB_OUTPUT"
+
+    - name: Download decision artifact
+      if: steps.check-artifact.outputs.exists == 'true'
+      uses: actions/download-artifact@v8
+      with:
+        name: changelog-decision
+        github-token: ${{ inputs.github-token }}
+        run-id: ${{ github.event.workflow_run.id }}
+        path: /tmp/changelog-decision
+
+    - name: Setup docs-builder
+      if: steps.check-artifact.outputs.exists == 'true'
+      uses: elastic/docs-actions/docs-builder/setup@v1
+      with:
+        version: edge
+        github-token: ${{ inputs.github-token }}
+
+    - name: Post or update changelog comment
+      if: steps.check-artifact.outputs.exists == 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        docs-builder changelog github-comment \
+          --metadata /tmp/changelog-decision/metadata.json
