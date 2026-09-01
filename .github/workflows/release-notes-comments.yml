@@ -1,0 +1,27 @@
+name: Changelog PR comments
+
+on:
+  workflow_call:
+
+permissions: {}
+
+# The PR number is stable; do not cancel — two upstream workflows can complete
+# close together and cancelling mid-upsert risks leaving the wrong body.
+concurrency:
+  group: changelog-comments-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  comment:
+    if: >
+      github.event.workflow_run.event == 'pull_request'
+      && github.event.workflow_run.conclusion != 'cancelled'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+      pull-requests: write
+    steps:
+      - name: Post changelog comment
+        uses: elastic/docs-actions/changelog/comment@v1
+        with:
+          github-token: ${{ github.token }}
