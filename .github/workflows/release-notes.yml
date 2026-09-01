@@ -40,12 +40,32 @@ jobs:
       # Label-only gate — no GitHub API call needed
       - name: Validate labels
         run: |
+          IS_FORK="${{ github.event.pull_request.head.repo.full_name != github.repository }}"
+          FORK_FLAG=""
+          if [ "$IS_FORK" = "true" ]; then FORK_FLAG="--is-fork"; fi
+          CAN_COMMIT_FLAG="--can-commit"
+          if [ "$IS_FORK" = "true" ] && [ "${{ github.event.pull_request.maintainer_can_modify }}" != "true" ]; then
+            CAN_COMMIT_FLAG=""
+          fi
+          MAINTAINER_FLAG=""
+          if [ "${{ github.event.pull_request.maintainer_can_modify }}" = "true" ]; then
+            MAINTAINER_FLAG="--maintainer-can-modify"
+          fi
           docs-builder changelog validate-labels \
             --config "$CONFIG" \
-            --pr-labels "$PR_LABELS"
+            --pr-labels "$PR_LABELS" \
+            --pr-number "$PR_NUMBER" \
+            --head-ref "$HEAD_REF" \
+            --head-sha "$HEAD_SHA" \
+            --head-repo "$HEAD_REPO" \
+            $FORK_FLAG $CAN_COMMIT_FLAG $MAINTAINER_FLAG
         env:
           CONFIG: ${{ inputs.config }}
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
 
       # Changelog-file gate — only runs when the input is enabled
       - name: Evaluate PR
@@ -74,6 +94,15 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           EVENT_ACTION: ${{ github.event.action }}
+
+      - name: Upload decision artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: changelog-decision
+          path: .artifacts/changelog-decision
+          retention-days: 1
+          if-no-files-found: ignore
 
   sync:
     if: github.event_name == 'push'
