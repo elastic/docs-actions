@@ -89,18 +89,6 @@ runs:
         version: ${{ inputs.docs-builder-version }}
         github-token: ${{ inputs.github-token }}
 
-    - name: Validate aws-role-arn format (if provided)
-      shell: bash
-      env:
-        AWS_ROLE_ARN: ${{ inputs.aws-role-arn }}
-      run: |
-        if [[ -n "${AWS_ROLE_ARN}" ]]; then
-          if [[ ! "${AWS_ROLE_ARN}" =~ ^arn:aws:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$ ]]; then
-            echo "::error::aws-role-arn does not match expected ARN format: ${AWS_ROLE_ARN}"
-            exit 1
-          fi
-        fi
-
     - name: Authenticate with AWS (explicit role)
       if: ${{ inputs.aws-role-arn != '' }}
       uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
