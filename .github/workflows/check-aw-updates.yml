@@ -9,8 +9,6 @@ jobs:
   check-updates:
     name: Recompile lock files and open PR if changed
     runs-on: ubuntu-latest
-    env:
-      GH_AW_VERSION: v0.86.2
     permissions:
       id-token: write
       contents: read
@@ -26,12 +24,17 @@ jobs:
           token: ${{ steps.create-token.outputs.token }}
           persist-credentials: false
 
+      - name: Read gh-aw version
+        id: gh-aw-version
+        run: echo "version=$(< .gh-aw-version)" >> "$GITHUB_OUTPUT"
+
       - name: Install gh-aw and compile
         run: |
           gh extension install github/gh-aw --pin "$GH_AW_VERSION"
           gh aw compile
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_AW_VERSION: ${{ steps.gh-aw-version.outputs.version }}
 
       - name: Create pull request
         # create-pull-request no-ops when the working tree has no changes
@@ -45,7 +48,7 @@ jobs:
           branch: automated/gh-aw-update
           title: Update gh-aw lock files
           body: |
-            Automated weekly check detected updated gh-aw lock files after recompilation with `${{ env.GH_AW_VERSION }}`.
+            Automated weekly check detected updated gh-aw lock files after recompilation with `${{ steps.gh-aw-version.outputs.version }}`.
 
             Review the lock file diffs to verify the changes are expected.
           labels: automation

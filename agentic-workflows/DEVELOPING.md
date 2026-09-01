@@ -86,7 +86,7 @@ make setup    # installs the pinned gh-aw extension version
 3. Verify 0 errors, 0 warnings
 4. Commit both the source `.md` and the generated `.lock.yml`
 
-The repo pins the `gh-aw` compiler version in `Makefile` so local compilation and CI use the same release.
+The repo pins the `gh-aw` compiler version in `.gh-aw-version` so local compilation and CI use the same release.
 
 ### Adding a new workflow
 

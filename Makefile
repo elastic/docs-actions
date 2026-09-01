@@ -1,6 +1,6 @@
 .PHONY: help setup compile lint
 
-GH_AW_VERSION ?= v0.86.2
+GH_AW_VERSION ?= $(shell cat .gh-aw-version)
 
 help:
 	@echo "docs-actions — Elastic documentation GitHub Actions and agentic workflows"
