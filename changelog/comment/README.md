@@ -6,9 +6,9 @@ Downloads the changelog-decision artifact from the triggering workflow run and p
 
 ## Inputs
 <!--inputs-->
-| Name           | Description                                   | Required | Default               |
-|----------------|-----------------------------------------------|----------|-----------------------|
-| `github-token` | GitHub token with pull-requests: write        | `false`  | `${{ github.token }}` |
+| Name           | Description                            | Required | Default               |
+|----------------|----------------------------------------|----------|-----------------------|
+| `github-token` | GitHub token with pull-requests: write | `false`  | `${{ github.token }}` |
 <!--/inputs-->
 
 ## Usage
