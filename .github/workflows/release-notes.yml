@@ -70,7 +70,7 @@ jobs:
       # Entry-file gate — validates any changelog/*.yml files the PR added or modified
       - name: Validate changelog entry files
         run: |
-          docs-builder changelog validate-entries \
+          docs-builder changelog validate \
             --config "$CONFIG" \
             --owner "$REPO_OWNER" \
             --repo "$REPO_NAME" \
