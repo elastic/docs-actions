@@ -308,6 +308,13 @@ runs:
 
         GH_RELEASE_ARGS=(changelog gh-release)
 
+        # Fall back to GITHUB_REPOSITORY when the repo input is not supplied.
+        # GITHUB_REPOSITORY is 'owner/repo' and is set by the runner in every Actions context.
+        if [ -z "$REPO" ] && [ -n "${GITHUB_REPOSITORY:-}" ]; then
+          REPO="${GITHUB_REPOSITORY##*/}"
+          [ -z "$OWNER" ] && OWNER="${GITHUB_REPOSITORY%%/*}"
+        fi
+
         REPO_ARG="$REPO"
         if [ -n "$OWNER" ]; then
           REPO_ARG="${OWNER}/${REPO}"
