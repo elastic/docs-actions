@@ -70,11 +70,10 @@ jobs:
       # Entry-file gate — validates any changelog/*.yml files the PR added or modified
       - name: Validate changelog entry files
         run: |
-          docs-builder changelog validate \
+          docs-builder changelog validate "$PR_NUMBER" \
             --config "$CONFIG" \
             --owner "$REPO_OWNER" \
             --repo "$REPO_NAME" \
-            --pr-number "$PR_NUMBER" \
             --pr-labels "$PR_LABELS"
         env:
           GITHUB_TOKEN: ${{ github.token }}
