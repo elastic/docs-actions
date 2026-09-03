@@ -1,0 +1,37 @@
+# Centralized Redocly ruleset for Elastic OpenAPI specs.
+# Consumers do not author rules; changes land here via PR (elastic/docs-eng-team#639).
+#
+# Enable core rules explicitly so CLI upgrades cannot add checks without a
+# corresponding ruleset change.
+#
+# Two tiers:
+#   - error: parses, $refs resolve, and conforms to the OAS schema for its version.
+#   - warn: authoring conventions. Existing specs pass these by default; set the
+#     action's `fail-on-warn` input to `true` to enforce them.
+rules:
+  struct: error
+  no-unresolved-refs: error
+
+  operation-operationId: warn
+  no-empty-servers: warn
+  operation-description: warn
+  operation-tag-defined: warn
+
+  rule/info-description:
+    subject:
+      type: Info
+      property: description
+    assertions:
+      defined: true
+    message: Info object should contain a description.
+    severity: warn
+
+  rule/operation-tags:
+    subject:
+      type: Operation
+      property: tags
+    assertions:
+      defined: true
+      minLength: 1
+    message: Operation object should contain at least one tag.
+    severity: warn

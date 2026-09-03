@@ -1,5 +1,5 @@
 name: 'Elastic OpenAPI Linter'
-description: 'Lint an OpenAPI 2.0 (Swagger), 3.0, or 3.1 spec against the centralized Elastic ruleset (Spectral)'
+description: 'Lint an OpenAPI 2.0 (Swagger), 3.0, or 3.1 spec against the centralized Elastic ruleset (Redocly)'
 author: 'Elastic'
 
 branding:
@@ -23,7 +23,7 @@ outputs:
     description: 'Number of warning-level results'
     value: ${{ steps.lint.outputs.warning-count }}
   results-file:
-    description: 'Path to the machine-readable JSON results file'
+    description: 'Path to the Redocly JSON results file'
     value: ${{ steps.lint.outputs.results-file }}
 
 runs:
@@ -53,13 +53,13 @@ runs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '20.19.0'
 
-    - name: Install Spectral CLI
+    - name: Install Redocly CLI
       shell: bash
       run: npm ci --prefix "${{ github.action_path }}"
 
-    - name: Run Spectral
+    - name: Run Redocly
       id: lint
       shell: bash
       env:
@@ -68,37 +68,56 @@ runs:
       run: |
         set -euo pipefail
 
-        FAIL_SEV=error
-
-        if [ "${FAIL_ON_WARN}" == "true" ]; then
-          FAIL_SEV=warn
-        fi
-
-        RESULTS="${RUNNER_TEMP}/spectral-results.json"
+        RESULTS="${RUNNER_TEMP}/redocly-results.json"
+        STDERR="${RUNNER_TEMP}/redocly-stderr.log"
+        HAS_JSON=true
         EXIT=0
 
-        "${{ github.action_path }}/node_modules/.bin/spectral" lint \
-          --ruleset "${{ github.action_path }}/ruleset.yaml" \
-          -f github-actions -f json --output.json "${RESULTS}" \
-          --fail-severity="${FAIL_SEV}" \
-          "${SPEC_PATH}" || EXIT=$?
+        "${{ github.action_path }}/node_modules/.bin/redocly" lint \
+          --config="${{ github.action_path }}/redocly.yaml" \
+          --lint-config=error \
+          --format=json \
+          --max-problems=10000 \
+          "${SPEC_PATH}" > "${RESULTS}" 2> "${STDERR}" || EXIT=$?
 
-        # Diagnostic codes that always fail the check regardless of fail-on-warn:
-        # they mean the document isn't lintable at all, not that a rule was
-        # violated, so they can't be tiered via ruleset.yaml like normal rules.
-        # unrecognized-format is emitted by Spectral itself at warn severity.
-        ALWAYS_ERROR_CODES='["unrecognized-format"]'
+        # Redocly doesn't produce JSON when it cannot parse or recognize the
+        # document. Normalize that case to the ordinary results schema.
+        if [ ! -s "${RESULTS}" ] || ! jq -e '.totals and .problems' "${RESULTS}" > /dev/null 2>&1; then
+          HAS_JSON=false
+          while IFS= read -r line; do
+            echo "${line}"
+          done < "${STDERR}"
+          jq -n --arg ref "${SPEC_PATH}" '{
+            totals: {errors: 1, warnings: 0, ignored: 0},
+            problems: [{
+              ruleId: "redocly-processing-error",
+              severity: "error",
+              message: "Redocly could not process this API description. See the step log for details.",
+              location: [{source: {ref: $ref}, pointer: "#/"}],
+              suggest: []
+            }]
+          }' > "${RESULTS}"
+          echo "::error file=${SPEC_PATH}::Redocly could not process this API description. See the step log for details."
+          EXIT=1
+        fi
 
-        read -r ERROR_COUNT WARNING_COUNT HAS_ALWAYS_ERROR < <(jq -r --argjson codes "${ALWAYS_ERROR_CODES}" '
-          [
-            ([.[] | select(.severity == 0)] | length),
-            ([.[] | select(.severity == 1)] | length),
-            (any(.[]; .code as $c | $codes | index($c) != null))
-          ] | @tsv
-        ' "${RESULTS}")
+        ERROR_COUNT="$(jq -r '.totals.errors' "${RESULTS}")"
+        WARNING_COUNT="$(jq -r '.totals.warnings' "${RESULTS}")"
 
-        if [ "${HAS_ALWAYS_ERROR}" == "true" ]; then
-          echo "::error file=${SPEC_PATH}::Document failed a structural check (not a recognized OpenAPI 2.0/3.0/3.1 spec)"
+        # JSON is needed for outputs and the summary. Run the GitHub formatter
+        # separately because Redocly accepts only one output format per run.
+        if [ "${HAS_JSON}" == "true" ]; then
+          "${{ github.action_path }}/node_modules/.bin/redocly" lint \
+            --config="${{ github.action_path }}/redocly.yaml" \
+            --lint-config=error \
+            --format=github-actions \
+            --max-problems=10000 \
+            "${SPEC_PATH}" || true
+        fi
+
+        if [ "${ERROR_COUNT}" -gt 0 ]; then
+          EXIT=1
+        elif [ "${FAIL_ON_WARN}" == "true" ] && [ "${WARNING_COUNT}" -gt 0 ]; then
           EXIT=1
         fi
 
@@ -126,9 +145,14 @@ runs:
             echo "**Errors:** ${ERROR_COUNT} · **Warnings:** ${WARNING_COUNT}"
             echo ""
             if [ "$((ERROR_COUNT + WARNING_COUNT))" -gt 0 ]; then
-              echo "| Severity | Rule | Line | Message |"
+              echo "| Severity | Rule | Location | Message |"
               echo "|---|---|---|---|"
-              jq -r '.[] | "| " + (if .severity == 0 then "error" else "warning" end) + " | " + .code + " | " + (.range.start.line + 1 | tostring) + " | " + (.message | gsub("\\|"; "\\|")) + " |"' "${RESULTS_FILE}"
+              jq -r '.problems[] |
+                "| " + .severity +
+                " | " + (.ruleId // "redocly") +
+                " | `" + (.location[0].pointer // "#/") + "`" +
+                " | " + (.message | gsub("[\\r\\n]+"; " ") | gsub("\\|"; "\\|")) + " |"
+              ' "${RESULTS_FILE}"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
         fi
