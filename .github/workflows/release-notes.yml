@@ -164,6 +164,8 @@ jobs:
         with:
           config: ${{ inputs.config }}
           version: ${{ github.event.release.tag_name }}
+          repo: ${{ github.event.repository.name }}
+          owner: ${{ github.repository_owner }}
 
       - name: Upload bundle
         uses: elastic/docs-actions/changelog/bundle-upload@v1
