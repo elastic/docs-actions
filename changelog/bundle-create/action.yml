@@ -18,9 +18,10 @@ inputs:
       all paths and filters come from the config.
   version:
     description: >
-      Version string for profile mode (e.g. 9.2.0, 2026-03).
-      Used for {version} substitution in profile patterns.
-      Only valid with profile.
+      Version string for profile mode (e.g. 9.2.0, 2026-03) or, when no
+      profile is set, a GitHub release tag treated as release-version
+      (e.g. v9.2.0). In profile mode used for {version} substitution;
+      in option mode equivalent to release-version.
   release-version:
     description: >
       GitHub release tag used as the PR filter source (e.g. v9.2.0).
@@ -178,6 +179,11 @@ runs:
         START_GIT_REF: ${{ inputs.start-git-ref }}
         END_GIT_REF: ${{ inputs.end-git-ref }}
       run: |
+        # version without a profile is equivalent to release-version (convenient for release workflows).
+        if [ -z "$PROFILE" ] && [ -n "$VERSION" ] && [ -z "$RELEASE_VERSION" ]; then
+          RELEASE_VERSION="$VERSION"
+        fi
+
         ARGS=()
         ARGS+=(changelog bundle --plan)
         if [ -n "$PROFILE" ]; then
