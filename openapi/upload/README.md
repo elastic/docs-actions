@@ -13,6 +13,8 @@ Uploads an already-linted, already-bundled OpenAPI spec to S3 via OIDC. Does not
 | `s3-bucket`      | Target S3 bucket. Only override if a different bucket has been provisioned.                                                                                                                                                                          | `false`  | `elastic-docs-openapi-specs` |
 | `s3-prefix`      | Key prefix under the bucket. Defaults to "<org>/<repo>", which is also the prefix the OIDC role is scoped to write — only override within that same repo prefix, or the upload will be denied.<br>                                                 | `false`  | `${{ github.repository }}`   |
 | `version`        | Version segment of the key. Defaults to the triggering branch name. Override for repos whose branch names do not match the RFC convention (e.g. elastic/cloud, whose default branch is "master" and whose release branches are named "ECE-4.1").<br> | `false`  | `${{ github.ref_name }}`     |
+| `branch`         | Git branch that triggered the upload. Stored as S3 object metadata, not used in the object key. Defaults to the triggering branch name.<br>                                                                                                          | `false`  | `${{ github.ref_name }}`     |
+| `commit`         | Full git commit SHA that produced the uploaded spec.                                                                                                                                                                                                 | `false`  | `${{ github.sha }}`          |
 | `aws-region`     | The AWS region to use                                                                                                                                                                                                                                | `false`  | `us-east-1`                  |
 | `aws-account-id` | The AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account.                                                                                                                                          | `false`  | `197730964718`               |
 <!--/inputs-->
@@ -52,7 +54,8 @@ jobs:
       - uses: elastic/docs-actions/openapi/upload@v1
         with:
           spec-path: openapi.yaml
-          # uploads to elastic/<repo>/<branch>/openapi.yaml
+          # uploads to s3://elastic-docs-openapi-specs/<org>/<repo>/<version>/openapi.yaml
+          # metadata: x-amz-meta-commit, x-amz-meta-repository, x-amz-meta-branch
 ```
 
 **Multiple specs** (e.g. Kibana's stateful and serverless specs): add a separate publish job per spec, setting `spec-name` per job:
@@ -65,11 +68,14 @@ jobs:
           # uploads to elastic/kibana/<branch>/kibana.yaml
 ```
 
-**Non-standard branch names**: repos like `elastic/cloud` (default branch `master`, release branches named `ECE-4.1`) must set `version` explicitly:
+**Non-standard branch names**: repos like `elastic/cloud` (default branch `master`, release branches named `ECE-4.1`) must set `version` explicitly. `branch` defaults to `github.ref_name` and is stored as object metadata, so it records the real git ref even when `version` differs:
 
 ```yaml
       - uses: elastic/docs-actions/openapi/upload@v1
         with:
           spec-path: openapi.yaml
-          version: ${{ github.ref_name == 'master' && 'main' || github.ref_name }}
+          version: ${{ github.ref_name == 'master' && 'main' || startsWith(github.ref_name, 'ECE-') && replace(github.ref_name, 'ECE-', '') || github.ref_name }}
+          # branch defaults to github.ref_name — metadata records ECE-4.1, key uses 4.1
 ```
+
+Each uploaded object sets S3 user metadata: `x-amz-meta-commit`, `x-amz-meta-repository` (same value as `s3-prefix`), and `x-amz-meta-branch` (same value as `branch`). Read these with `HeadObject` without parsing the object key.
