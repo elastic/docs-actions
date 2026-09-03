@@ -116,6 +116,10 @@ jobs:
           fetch-depth: 2
           persist-credentials: false
 
+      - name: Neutralize orphan gitlinks
+        if: contains(fromJSON('["push", "merge_group", "workflow_dispatch"]'), github.event_name)
+        uses: elastic/docs-actions/git/neutralize-orphan-gitlinks@main
+
       - name: Get changed files
         if: contains(fromJSON('["push", "merge_group", "pull_request"]'), github.event_name)
         id: check-files
@@ -257,6 +261,12 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
           persist-credentials: false
 
+      - name: Neutralize orphan gitlinks
+        if: >
+          env.MATCH == 'true'
+          && needs.check.outputs.effective_any_modified != 'false'
+        uses: elastic/docs-actions/git/neutralize-orphan-gitlinks@main
+
       - name: Generate env.PATH_PREFIX
         id: generate-path-prefix
         if: >
@@ -353,6 +363,8 @@ jobs:
           fetch-tags: false
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
           persist-credentials: false
+      - name: Neutralize orphan gitlinks
+        uses: elastic/docs-actions/git/neutralize-orphan-gitlinks@main
       - name: Run Vale Linter
         id: lint
         uses: elastic/docs-actions/vale/lint@v1
