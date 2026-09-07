@@ -12,7 +12,7 @@ on:
 permissions:
   id-token: write
   actions: read
-  contents: read
+  contents: write
   discussions: write
   issues: write
   pull-requests: write
@@ -37,13 +37,14 @@ jobs:
     uses: elastic/docs-actions/.github/workflows/gh-aw-docs-source-sync.lock.yml@v1
     with:
       lookback-window: ${{ inputs.lookback-window || '7 days ago' }}
-      source-repos: elastic/docs-builder,elastic/docs-infra,elastic/docs-internal-workflows,elastic/docs-actions
-      target-repo: elastic/docs-eng-team
+      source-repos: elastic/docs-builder,elastic/docs-infra,elastic/docs-internal-workflows,elastic/docs-actions,elastic/codex-environments,elastic/codex-link-index
       docs-root: docs/
       repo-path-mapping: |
         elastic/docs-builder -> build-system/, getting-started/ (local setup and CLI)
         elastic/docs-infra -> infrastructure/, operations/ (hosting, environments, monitoring, runbooks)
         elastic/docs-internal-workflows -> content-pipeline/, release-notes/ (pipeline and authoring)
         elastic/docs-actions -> github-actions/ (reusable workflows the content repos call)
+        elastic/codex-environments -> getting-started/, infrastructure/ (internal docs platform setup and hosting)
+        elastic/codex-link-index -> build-system/ (link index registry)
     secrets:
       source_sync_token: ${{ needs.fetch-token.outputs.token }}
