@@ -12,12 +12,21 @@ constrained by safe outputs.
 For the same logic running automatically when an issue is opened, see
 [issue-auto-triage](../issue-auto-triage/).
 
+## Model
+
+The workflow uses a fast, low-cost model (Haiku via OpenRouter). This keeps per-issue cost low
+while handling the classification and quality-check tasks. Factor the model tier into cost
+estimates before enabling at scale.
+
 ## Triggers
 
 | Event | Description |
 |-------|-------------|
 | `/triage` | Slash command on an issue comment. |
 | `workflow_dispatch` | Manual trigger. |
+
+The caller workflow uses `workflow_call` to invoke this reusable workflow. The triggers above
+refer to the conditions the caller evaluates before dispatching.
 
 ## Install
 
@@ -77,8 +86,16 @@ The precedence model is:
 | `add-comment` | 1 | Post the matching orange or red summary and mention the issue author. |
 
 Allowed classification labels are `triaged`, `human-needed`, `bug`, `enhancement`, `question`,
-and `documentation`. The workflow also allows the configured `Team:*` labels and `cross-team` for
-routing. It applies only labels that already exist in the target repository.
+and `documentation`. The workflow also allows `cross-team` and the following routing labels:
+`Team:Admin`, `Team:Developer`, `Team:DocsEng`, `Team:Experience`, `Team:Ingest`, `Team:SKI`,
+`Team:Projects`. It applies only labels that already exist in the target repository. Labels
+outside this allowlist are silently dropped even if they exist in the repo.
+
+## Status comments
+
+The workflow posts brief status comments at run start, on success, and on failure. These are
+separate from the triage outcome comment and are used for observability. They do not affect
+labels or reactions.
 
 ## How it works
 
