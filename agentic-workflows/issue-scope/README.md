@@ -6,6 +6,12 @@ corpus; a `sizer` sub-agent estimates effort, ownership, audience, and a bill of
 The workflow posts one combined comment and applies effort labels. The issue body is never
 rewritten.
 
+## Model
+
+The workflow uses `claude-sonnet-5` via GitHub Copilot. The scoper makes active use of the
+Elastic docs MCP server to search the published docs corpus, so expect higher per-issue cost
+than a classification-only workflow.
+
 ## Triggers
 
 | Event | Description |
@@ -14,6 +20,9 @@ rewritten.
 | `workflow_dispatch` | Manual trigger. |
 
 The workflow runs on issues only. Commenting `/scope` on a pull request does not trigger it.
+
+The caller workflow uses `workflow_call` to invoke this reusable workflow. The triggers above
+refer to the conditions the caller evaluates before dispatching.
 
 ## Install
 
@@ -44,6 +53,16 @@ needed.
 Effort labels for `add-labels`: `hours`, `weeks: <1`, `weeks: 1`, `weeks: 2`, and `weeks: 4+`,
 plus `good-for-ai`. The workflow only applies labels that already exist in the target
 repository.
+
+## How it works
+
+1. Reads the issue title, body, comments, and any linked engineering PRs or commits.
+2. The `scoper` sub-agent identifies affected documentation pages. It actively queries the
+   **Elastic docs MCP server** (`SemanticSearch`, `FindRelatedDocs`, `GetDocumentByUrl`) to find
+   affected pages that may not be linked in the issue, and imports APM skills
+   (`content-type-checker`, `applies-to-tagging`) to assess content type and tagging impact.
+3. The `sizer` sub-agent estimates effort, ownership, audience, and produces a bill of materials.
+4. The workflow posts one combined comment and applies effort labels.
 
 ## Outcomes
 
