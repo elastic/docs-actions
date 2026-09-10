@@ -96,6 +96,8 @@ safe-outputs:
     - "*.slack.com"
   add-labels:
     target: "${{ github.event.issue.number }}"
+    blocked:
+      - "needs-team"
     max: 6
   remove-labels:
     target: "${{ github.event.issue.number }}"
@@ -246,16 +248,19 @@ If the type is unclear, skip the type label — do not guess.
 
 ### 4. Judge routability
 
-Set `routable: no` when the issue does not carry enough information to route it — you could not
-determine a type, or you determined a type but the issue gives no indication of which area or
-team it belongs to and names no specific page, feature, or product surface. A title and body
-that could describe almost any issue in the repository is not routable.
+Default to `routable: yes`. Set `routable: no` only when **both** of these hold:
 
-Set `routable: yes` in every other case, including when you found a type but no team, as long as
-the issue names something concrete enough for a human to pick up.
+1. You could not determine a type in step 2, and
+2. The issue names no specific page, feature, product, or surface — the title and body could
+   describe almost any issue in the repository.
+
+Missing a team label is **not** a reason to return `routable: no`. Many repositories map only a
+few teams, so most issues legitimately have no team. A poorly written issue that still names a
+concrete subject is routable.
 
 Judge only whether the issue can be *routed*. Do not assess whether it is well written, complete,
-or ready to work on — that assessment belongs to the scope workflow, not here.
+or ready to work on — that assessment belongs to the scope workflow, not here. When in doubt,
+return `routable: yes`.
 
 ### 5. Return the decision
 
