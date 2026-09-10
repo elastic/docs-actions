@@ -40,12 +40,15 @@ inputs:
   output:
     description: >
       Output file path for the bundle, relative to the repo root.
-      Optional. When not provided, docs-builder writes to the path
+      Optional in both modes. When omitted in profile mode, docs-builder
+      writes `{repo}-{product}-{version}.yaml` to the path
       determined by the config (bundle.output_directory) and the plan
       resolves the generated file path automatically.
   repo:
     description: >
-      GitHub repository name. Falls back to bundle.repo in changelog.yml.
+      GitHub repository name. Used in the profile-mode bundle filename
+      (`{repo}-{product}-{version}.yaml`). Falls back to bundle.repo in
+      changelog.yml, then git remote origin.
   owner:
     description: >
       GitHub repository owner. Falls back to bundle.owner in changelog.yml,
@@ -197,9 +200,11 @@ runs:
           [ -n "$REPORT" ] && ARGS+=(--report "$REPORT")
           [ -n "$PRS" ] && ARGS+=(--prs "$PRS")
           [ -n "$OUTPUT" ] && ARGS+=(--output "$OUTPUT")
-          [ -n "$REPO" ] && ARGS+=(--repo "$REPO")
-          [ -n "$OWNER" ] && ARGS+=(--owner "$OWNER")
         fi
+        # Forward in profile mode too: docs-builder uses --repo for the
+        # {repo}-{product}-{version}.yaml filename when bundle.repo is unset.
+        [ -n "$REPO" ] && ARGS+=(--repo "$REPO")
+        [ -n "$OWNER" ] && ARGS+=(--owner "$OWNER")
 
         docs-builder "${ARGS[@]}"
 
@@ -283,9 +288,9 @@ runs:
           [ -n "$REPORT" ] && BUNDLE_ARGS+=(--report "$(resolve_report "$REPORT")")
           [ -n "$PRS" ] && BUNDLE_ARGS+=(--prs "$PRS")
           [ -n "$OUTPUT" ] && BUNDLE_ARGS+=(--output "$OUTPUT")
-          [ -n "$REPO" ] && BUNDLE_ARGS+=(--repo "$REPO")
-          [ -n "$OWNER" ] && BUNDLE_ARGS+=(--owner "$OWNER")
         fi
+        [ -n "$REPO" ] && BUNDLE_ARGS+=(--repo "$REPO")
+        [ -n "$OWNER" ] && BUNDLE_ARGS+=(--owner "$OWNER")
 
         if [ "$DRY_RUN" = "true" ]; then
           # Surface the commit-range run report (resolved PR list with per-PR source) in the

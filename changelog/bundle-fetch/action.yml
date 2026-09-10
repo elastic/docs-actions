@@ -34,10 +34,13 @@ inputs:
   output:
     description: >
       Output file path for the bundle, relative to the repo root. Optional;
-      when omitted the path is resolved from the config (bundle.output_directory)
-      by the plan.
+      when omitted in profile mode, the plan resolves
+      `{repo}-{product}-{version}.yaml` under bundle.output_directory.
   repo:
-    description: 'GitHub repository name. Falls back to bundle.repo in changelog.yml.'
+    description: >
+      GitHub repository name. Used in the profile-mode bundle filename
+      and CDN URL. Falls back to bundle.repo in changelog.yml, then git
+      remote origin.
   owner:
     description: 'GitHub repository owner. Falls back to bundle.owner in changelog.yml, then elastic.'
   docs-builder-version:
@@ -145,9 +148,12 @@ runs:
           [ -n "$REPORT" ] && ARGS+=(--report "$REPORT")
           [ -n "$PRS" ] && ARGS+=(--prs "$PRS")
           [ -n "$OUTPUT" ] && ARGS+=(--output "$OUTPUT")
-          [ -n "$REPO" ] && ARGS+=(--repo "$REPO")
-          [ -n "$OWNER" ] && ARGS+=(--owner "$OWNER")
         fi
+        # Forward in profile mode too: docs-builder uses --repo for the
+        # {repo}-{product}-{version}.yaml filename (and thus cdn_url) when
+        # bundle.repo is unset.
+        [ -n "$REPO" ] && ARGS+=(--repo "$REPO")
+        [ -n "$OWNER" ] && ARGS+=(--owner "$OWNER")
 
         docs-builder "${ARGS[@]}"
 
