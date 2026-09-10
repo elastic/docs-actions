@@ -1,24 +1,31 @@
 # Issue auto-triage
 
-Automatically triages a newly opened issue with two focused agents. The router selects existing
-type and team labels, then the content checker rates the issue green, orange, or red. The parent
-workflow applies the labels, reacts with 👍 when a green issue passes triage, or posts one summary
-comment that mentions the author for orange and red issues. It never rewrites the issue body, and
-it skips issues opened by bots.
+Labels a newly opened issue with the right type and team labels. A single `router` sub-agent
+classifies the issue and selects type and team labels. The parent applies labels and reacts with
+👍. No comment is ever posted and the issue body is never rewritten.
 
 The workflow treats public issue content as untrusted input. GitHub reads use
 `min-integrity: none` so community-authored issues can be analyzed, while all writes remain
-constrained by safe outputs.
+constrained by safe outputs. Issues opened by bots are skipped automatically.
 
-## Trigger
+For quality assessment and scope estimation, see [issue-scope](../docs-issue-scope/).
+For the same routing logic triggered manually, see [issue-triage](../issue-triage/).
+
+## Model
+
+The workflow uses a fast, low-cost model (Haiku via OpenRouter). This keeps per-issue cost low.
+Factor the model tier into cost estimates before enabling at scale.
+
+## Triggers
 
 | Event | Description |
-|---|---|
-| `issues: opened` | The caller invokes the reusable workflow when an issue is opened. |
+|-------|-------------|
+| `issues: opened` | Fires automatically when an issue is opened in the consumer repository. |
+
+The caller workflow uses `workflow_call` to invoke this reusable workflow on the `issues: opened`
+event.
 
 ## Install
-
-Install the caller workflow and copy the project instructions template:
 
 ```bash
 mkdir -p .github/workflows
@@ -37,70 +44,47 @@ passthrough.
 ## Project instructions
 
 By default, the workflow reads `.github/triage-instructions.md` from the consumer repository's
-default branch. Use it for persistent project-specific guidance such as:
+default branch. Both issue-auto-triage and issue-triage read the same file, so a single
+instructions file covers both workflows.
+
+Use it for persistent project-specific guidance such as:
 
 - Team, area, and ownership mappings
 - Existing label selection and repository terminology
 - Relevant CODEOWNERS paths
-- Project-specific evidence and issue-quality expectations
-
-The Copilot engine already loads conventional repository guidance such as `AGENTS.md` and
-`.github/copilot-instructions.md`. The triage instructions file complements that general guidance;
-it does not need to duplicate it. For example, in `elastic/docs-content`, keep the shared writing
-and contribution rules in `AGENTS.md`, move the team map out of the caller workflow into the
-triage instructions file, and summarize only the issue-quality checks relevant to triage.
 
 Set `project-instructions-path` to another repository-relative path, or to an empty string to
-disable the file. The existing `additional-instructions` input remains fully supported, so
-current callers do not need to migrate immediately. When the project file is absent, the inline
-instructions continue to provide all repository-specific context. When both are present, the
-inline instructions can refine or override the file within the customizable topics above.
-
-The precedence model is:
-
-1. The immutable workflow contract
-2. Inline `additional-instructions` from the caller
-3. The project instructions file
-
-Project instructions cannot override the security policy, safe-output limits, read-only GitHub
-access, outcome templates, no-body-edit rule, green reaction-only behavior, one-comment limit, or
-the rule that `human-needed` is the only label applied to red issues. Inline instructions cannot
-override these rules either.
+disable the file.
 
 ## Inputs
 
 | Input | Type | Required | Default | Description |
-|---|---|---|---|---|
+|-------|------|----------|---------|-------------|
 | `project-instructions-path` | string | No | `.github/triage-instructions.md` | Repository-relative project instructions path; an empty string disables it. |
 | `additional-instructions` | string | No | `""` | Inline guidance applied after the project instructions file. |
+| `additional-allowed-labels` | string | No | `""` | Comma-separated list of extra labels the router may apply (e.g. `priority:high,area:APM,size:S`). Use this to declare board metadata labels without a PR to docs-actions. |
 | `setup-commands` | string | No | `""` | Shell commands to run before the agent starts. |
 
 ## Safe outputs
 
 | Output | Max | Description |
-|---|---|---|
-| `add-labels` | 6 | Green/orange: apply `triaged` and confident routing labels. Red: apply only `human-needed`. |
-| `remove-labels` | 1 | Remove `needs-team` when a team label is applied to a green or orange issue. |
-| `react-green` | 1 | Add 👍 to a green issue without posting a comment. |
-| `add-comment` | 1 | Post the matching orange or red summary and mention the issue author. |
+|--------|-----|-------------|
+| `add-labels` | 6 | Apply `triaged` plus confident type and team routing labels. |
+| `remove-labels` | 1 | Remove `needs-team` when a team label is applied. |
+| `react-green` | 1 | Add 👍 after labeling. |
 
-Allowed classification labels are `triaged`, `human-needed`, `bug`, `enhancement`, `question`,
-and `documentation`. The workflow also allows the configured `Team:*` labels and `cross-team` for
-routing on green and orange outcomes. It applies only labels that already exist in the target
-repository.
+Allowed classification labels are `triaged`, `bug`, `enhancement`, `question`, and
+`documentation`. The workflow also allows `cross-team` and the following routing labels:
+`Team:Admin`, `Team:Developer`, `Team:DocsEng`, `Team:Experience`, `Team:Ingest`, `Team:SKI`,
+`Team:Projects`. Additional labels passed via `additional-allowed-labels` extend this list at
+runtime. The workflow applies only labels that already exist in the target repository. Labels
+outside the allowlist are silently dropped even if they exist in the repo.
 
-There is no undo path because an issue-open event has no triggering comment.
+## How it works
 
-## Quality bar
-
-The content checker scores the issue on five criteria from the [good issues guide](https://www.elastic.co/docs/contribute-docs/how-to/good-issues), each worth 1 point:
-
-| # | Criterion | Score 1 | Score 0 |
-|---|-----------|---------|---------|
-| 1 | Specific, action-oriented title | Names the exact problem or change | Too vague to act on without the body |
-| 2 | Clear request with a definition of done | States what "done" looks like | Generic verb with no specific outcome |
-| 3 | Context and motivation | Explains why it matters or who is affected | No indication of impact or trigger |
-| 4 | Template compliance | All required sections present for the issue type | Any required section absent or placeholder |
-| 5 | One issue, one testable problem | Single focused task or closely related bundle | Multiple unrelated requests or undefined scope |
-
-Total score maps to the outcome: **4–5 → green**, **2–3 → orange**, **0–1 → red**.
+1. Reads the issue title, body, author login, comments, `CODEOWNERS`, and the repository's
+   existing labels. Issues opened by a bot (actor name ends in `[bot]`) are skipped immediately.
+2. The `router` sub-agent classifies the issue and returns a label decision. It does not call any
+   safe-output tools.
+3. The parent applies all writes: `add_labels`, `remove_labels` (when applicable), and
+   `react_green`.
