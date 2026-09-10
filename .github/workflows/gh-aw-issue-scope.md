@@ -130,6 +130,7 @@ safe-outputs:
       - "weeks: 2"
       - "weeks: 4+"
       - "good-for-ai"
+      - "human-needed"
     max: 2
   add-comment:
     target: "${{ github.event.issue.number }}"
@@ -214,7 +215,8 @@ tools:
 
 - **🔴 Quality gate** — the quality-checker returned red (score 0–1): the issue lacks
   information needed to produce a useful scope.
-  - Do not call `add_labels`.
+  - Call `add_labels` once with `human-needed` as a plain string. Do not add an effort label —
+    the sizer did not run, so no effort estimate exists.
   - Call `add_comment` once with the 🔴 quality gate template below.
   - Do not run the scoper or sizer.
 
@@ -247,9 +249,12 @@ Before calling safe-output tools, verify:
 - 🟠: the comment's first line is exactly `🟠 ScopeBot Results: Additional context might help`;
   the second paragraph begins with exactly one mention of the issue author login; `add_comment`
   is called; effort label added only when confidently determined.
-- 🔴: the comment's first line is exactly `🔴 ScopeBot Results: Not assessable`; the second
-  paragraph begins with exactly one mention of the issue author login; `add_comment` is called;
-  no `add_labels` call.
+- 🔴 Quality gate: the comment's first line is exactly `🔴 ScopeBot: Issue not ready to scope`;
+  `add_labels` is called with exactly `["human-needed"]`; no effort label is included; the
+  comment does not mention the issue author.
+- 🔴 Not assessable: the comment's first line is exactly `🔴 ScopeBot Results: Not assessable`;
+  the second paragraph begins with exactly one mention of the issue author login; `add_comment`
+  is called; no `add_labels` call.
 - Never call `add_comment` more than once.
 - Labels are passed as plain strings (see label format rule above). Never include `suggest`, `confidence`, or `rationale`.
 - Do not include unverified terminology as established fact in any comment.
