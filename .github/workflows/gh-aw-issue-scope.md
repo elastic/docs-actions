@@ -67,6 +67,7 @@ tools:
     min-integrity: none
     lockdown: false
     toolsets: [issues, repos]
+  bash: false
   web-fetch:
 
 mcp-servers:
