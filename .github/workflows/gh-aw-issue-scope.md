@@ -11,7 +11,7 @@ inlined-imports: true
 imports:
   - uses: shared/apm.md
     with:
-      target: all
+      target: codex
       packages:
         - elastic/elastic-docs-skills/skills/authoring/content-type-checker
         - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
