@@ -72,10 +72,10 @@ mcp-servers:
     type: http
     url: "https://www.elastic.co/docs/_mcp/"
     allowed:
-      - "SemanticSearch"
-      - "GetDocumentByUrl"
-      - "FindRelatedDocs"
-      - "FindInconsistencies"
+      - "search_docs"
+      - "get_document_by_url"
+      - "find_related_docs"
+      - "find_docs_inconsistencies"
 
 network:
   allowed:

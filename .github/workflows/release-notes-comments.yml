@@ -1,0 +1,19 @@
+name: Changelog PR comments
+
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+      pull-requests: write
+      actions: read
+    steps:
+      - name: Post changelog comment
+        uses: elastic/docs-actions/changelog/comment@v1
+        with:
+          github-token: ${{ github.token }}
