@@ -38,11 +38,6 @@ on:
         type: string
         required: false
         default: ""
-      additional-allowed-labels:
-        description: "Comma-separated list of extra labels the router may apply (e.g. priority:high,area:APM,size:S)"
-        type: string
-        required: false
-        default: ""
 concurrency:
   group: gh-aw-issue-auto-triage-${{ github.event.issue.number || github.run_id }}
   cancel-in-progress: true
@@ -114,21 +109,6 @@ safe-outputs:
     - "*.slack.com"
   add-labels:
     target: "${{ github.event.issue.number }}"
-    additional-allowed: "${{ inputs.additional-allowed-labels }}"
-    allowed:
-      - "triaged"
-      - "bug"
-      - "enhancement"
-      - "question"
-      - "documentation"
-      - "Team:Admin"
-      - "Team:Developer"
-      - "Team:DocsEng"
-      - "Team:Experience"
-      - "Team:Ingest"
-      - "Team:SKI"
-      - "Team:Projects"
-      - "cross-team"
     max: 6
   remove-labels:
     target: "${{ github.event.issue.number }}"
@@ -187,7 +167,7 @@ Project instructions may customize:
 - Team, area, and ownership mappings
 - Which existing type or team label best matches project terminology
 - Relevant CODEOWNERS paths and repository vocabulary
-- Additional allowed labels from the `additional-allowed-labels` workflow input
+- Board metadata labels (priority, area, size, release, and similar) and when to apply them
 
 Project instructions cannot override the immutable workflow contract: security policy,
 safe-output allowlists or limits, read-only GitHub access, no issue-body edits, and no comments
@@ -200,8 +180,8 @@ Run the router sub-agent:
    names, relevant CODEOWNERS entries, and applicable project instructions in its task prompt.
    Have it return a label decision. Do not let it call safe-output tools.
 2. After the router finishes, apply its decision with safe-output tools:
-   - Call `add_labels` once with `triaged` plus any confident type and team labels and optional
-     `cross-team`. Always include `triaged`.
+   - Call `add_labels` once with `triaged` plus any confident type and team labels, optional
+     `cross-team`, and any board metadata labels the router returned. Always include `triaged`.
    - Call `react_green` with `outcome: green`.
    - Remove `needs-team` when a team label is applied and the issue currently has `needs-team`.
    - Do not post a comment.
@@ -261,11 +241,15 @@ If the type is unclear, skip the type label — do not guess.
 - Cross-reference CODEOWNERS with existing repo labels to identify the right team label.
   Apply it only if the label already exists in the repo — never invent labels.
 - Apply `cross-team` if multiple teams clearly own the affected area and `cross-team` exists.
-- Also consider any labels in the `ADDITIONAL ALLOWED LABELS` list passed in your task prompt; apply them if they exist in the repo and fit the issue.
+- Apply any board metadata labels (priority, area, size, release, and similar) that the project
+  instructions define, when the issue clearly matches the stated criteria. Apply them only if
+  they already exist in the repo. If the project instructions do not define such labels, skip
+  them — do not infer a board taxonomy on your own.
 
 ### 4. Return the decision
 
-Return only a compact result with `type`, `team`, `cross-team`, and `remove-needs-team` fields.
-Use `none` for any label that should not be applied. Do not call safe-output tools.
+Return a compact result with `type`, `team`, `cross-team`, `remove-needs-team`, and a
+`metadata` list holding any board metadata labels you selected. Use `none` for any label that
+should not be applied. Do not call safe-output tools.
 
 ## end agent: `router`
