@@ -96,6 +96,7 @@ safe-outputs:
     - "*.slack.com"
   add-labels:
     target: "${{ github.event.issue.number }}"
+    create-if-missing: false
     blocked:
       - "needs-team"
     max: 6
