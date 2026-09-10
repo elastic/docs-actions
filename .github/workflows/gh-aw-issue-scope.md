@@ -108,7 +108,7 @@ safe-outputs:
   threat-detection:
     engine:
       id: copilot
-      model: claude-sonnet-5
+      model: sonnet
     prompt: |
       IMPORTANT context for this workflow: the prompt includes gh-aw
       framework scaffolding wrapped in <system> and <safe-outputs> tags.
