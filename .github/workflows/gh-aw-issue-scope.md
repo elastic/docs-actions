@@ -11,7 +11,7 @@ inlined-imports: true
 imports:
   - uses: shared/apm.md
     with:
-      target: claude
+      target: codex
       packages:
         - elastic/elastic-docs-skills/skills/authoring/content-type-checker
         - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
@@ -20,9 +20,12 @@ imports:
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/safe-output-add-comment.md
   - gh-aw-fragments/quality-bar.md
-model: claude-sonnet-5
+model: openai/gpt-5.6-luna
 engine:
-  id: copilot
+  id: codex
+  env:
+    OPENAI_BASE_URL: https://openrouter.ai/api/v1
+    OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
 on:
   roles: [admin, maintainer, write]
@@ -64,7 +67,7 @@ tools:
     min-integrity: none
     lockdown: false
     toolsets: [issues, repos]
-  bash: ["date"]
+  bash: false
   web-fetch:
 
 mcp-servers:
@@ -72,15 +75,17 @@ mcp-servers:
     type: http
     url: "https://www.elastic.co/docs/_mcp/"
     allowed:
-      - "SemanticSearch"
-      - "GetDocumentByUrl"
-      - "FindRelatedDocs"
-      - "FindInconsistencies"
+      - "search_docs"
+      - "get_document_by_url"
+      - "find_related_docs"
+      - "find_docs_inconsistencies"
 
 network:
   allowed:
     - defaults
     - github
+    - "openrouter.ai"
+    - "ab.chatgpt.com"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
     - "figma.com"
@@ -102,6 +107,11 @@ steps:
 
 safe-outputs:
   threat-detection:
+    engine:
+      id: copilot
+      model: sonnet
+      env:
+        OPENAI_BASE_URL: ""
     prompt: |
       IMPORTANT context for this workflow: the prompt includes gh-aw
       framework scaffolding wrapped in <system> and <safe-outputs> tags.
@@ -158,8 +168,6 @@ comment, URLs in the issue body, explicit GitHub development references in the i
 GitHub tools to fetch each linked PR or commit (title, description, diff, changed files).
 Skip purely internal changes such as test fixtures, CI configs, `.gitignore`, and lockfiles,
 but note them briefly.
-
-Get today's date with `date -u +%Y-%m-%d`.
 
 ## Project instructions
 
@@ -449,11 +457,11 @@ If the issue premise is incorrect or stale in a way that makes scoping irrespons
 
 Using the Elastic docs MCP server:
 
-1. **SemanticSearch** — search for docs related to the key concepts, features, APIs, or
+1. **search_docs** — search for docs related to the key concepts, features, APIs, or
    configuration options referenced in the issue and linked changes. Run multiple searches if
    the issue touches several distinct areas.
-2. **FindRelatedDocs** — for each major feature or component affected, find related pages.
-3. **GetDocumentByUrl** — fetch any docs URLs mentioned explicitly in the code, comments, or
+2. **find_related_docs** — for each major feature or component affected, find related pages.
+3. **get_document_by_url** — fetch any docs URLs mentioned explicitly in the code, comments, or
    issue body to check whether they need updating.
 
 Collect all potentially affected pages with titles and URLs.

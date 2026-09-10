@@ -1,16 +1,18 @@
 # Issue scope
 
 Scopes documentation impact and estimates cost/benefit for an issue in a single comment. A
-`scoper` sub-agent identifies affected docs pages against linked code and the Elastic docs
-corpus; a `sizer` sub-agent estimates effort, ownership, audience, and a bill of materials.
-The workflow posts one combined comment and applies effort labels. The issue body is never
-rewritten.
+`quality-checker` sub-agent first decides whether the issue carries enough information to scope
+at all; a `scoper` sub-agent identifies affected docs pages against linked code and the Elastic
+docs corpus; a `sizer` sub-agent estimates effort, ownership, audience, and a bill of materials.
+The workflow posts one combined comment and applies labels. The issue body is never rewritten.
 
 ## Model
 
-The workflow uses `claude-sonnet-5` via GitHub Copilot. The scoper makes active use of the
-Elastic docs MCP server to search the published docs corpus, so expect higher per-issue cost
-than a classification-only workflow.
+The agent runs `openai/gpt-5.6-luna` through OpenRouter on the codex engine, authenticated with
+the `OPENROUTER_API_KEY` secret. Threat detection runs separately on GitHub Copilot with the
+`sonnet` model alias. The scoper makes active use of the Elastic docs MCP server to search the
+published docs corpus, so expect higher per-issue cost than a classification-only workflow —
+roughly 16–25 AIC for a full assessment and under 10 AIC when the quality gate stops early.
 
 ## Triggers
 
@@ -32,8 +34,9 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-scope.yml
 ```
 
-Add `copilot-requests: write` to the caller job `permissions:` block — no secret passthrough
-needed.
+The caller job needs `copilot-requests: write` in its `permissions:` block (threat detection
+runs on Copilot) and must make `OPENROUTER_API_KEY` available to the workflow — `secrets: inherit`
+is the simplest way, as in the example below.
 
 ## Inputs
 
@@ -47,27 +50,31 @@ needed.
 
 | Output | Max | Description |
 |--------|-----|-------------|
-| `add-labels` | 2 | Apply one effort bucket label and, when all work is AI-suitable and effort is small, `good-for-ai`. |
+| `add-labels` | 2 | Apply one effort bucket label and, when all work is AI-suitable and effort is small, `good-for-ai`; or `human-needed` alone when the quality gate stops the run. |
 | `add-comment` | 1 | Post the combined scope and cost/benefit comment. Previous ScopeBot comments are hidden automatically. |
 
-Effort labels for `add-labels`: `hours`, `weeks: <1`, `weeks: 1`, `weeks: 2`, and `weeks: 4+`,
-plus `good-for-ai`. The workflow only applies labels that already exist in the target
-repository.
+Allowed labels for `add-labels`: `hours`, `weeks: <1`, `weeks: 1`, `weeks: 2`, `weeks: 4+`,
+`good-for-ai`, and `human-needed`. The workflow only applies labels that already exist in the
+target repository.
 
 ## How it works
 
 1. Reads the issue title, body, comments, and any linked engineering PRs or commits.
-2. The `scoper` sub-agent identifies affected documentation pages. It actively queries the
-   **Elastic docs MCP server** (`SemanticSearch`, `FindRelatedDocs`, `GetDocumentByUrl`) to find
-   affected pages that may not be linked in the issue, and imports APM skills
-   (`content-type-checker`, `applies-to-tagging`) to assess content type and tagging impact.
-3. The `sizer` sub-agent estimates effort, ownership, audience, and produces a bill of materials.
-4. The workflow posts one combined comment and applies effort labels.
+2. The `quality-checker` sub-agent scores the issue against the five-criterion quality bar. A
+   red score (0–1) stops the run: the workflow applies `human-needed`, posts a team-facing list
+   of what to add before rerunning `/scope`, and skips the scoper and sizer.
+3. The `scoper` sub-agent identifies affected documentation pages. It actively queries the
+   **Elastic docs MCP server** (`search_docs`, `find_related_docs`, `get_document_by_url`,
+   `find_docs_inconsistencies`) to find affected pages that may not be linked in the issue.
+   APM installs the `content-type-checker` and `applies-to-tagging` skills for the codex target.
+4. The `sizer` sub-agent estimates effort, ownership, audience, and produces a bill of materials.
+5. The workflow posts one combined comment and applies labels.
 
 ## Outcomes
 
 | Outcome | Label | Comment |
 |---------|-------|---------|
+| 🔴 Issue not ready to scope (quality gate) | `human-needed` | Team-facing list of gaps to resolve before rerunning; scoper and sizer never run |
 | 🟢 Full assessment | Effort + optional `good-for-ai` | Full scope table and cost/benefit |
 | 🟠 Additional context might help | Effort label when confident | Usable sections + what to add before rerunning |
 | 🔴 Not assessable | None | Short ask for missing context |
