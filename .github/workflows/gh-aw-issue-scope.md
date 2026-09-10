@@ -11,7 +11,7 @@ inlined-imports: true
 imports:
   - uses: shared/apm.md
     with:
-      target: claude
+      target: all
       packages:
         - elastic/elastic-docs-skills/skills/authoring/content-type-checker
         - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
@@ -20,9 +20,12 @@ imports:
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/safe-output-add-comment.md
   - gh-aw-fragments/quality-bar.md
-model: claude-sonnet-5
+model: openai/gpt-5.6-luna
 engine:
-  id: copilot
+  id: codex
+  env:
+    OPENAI_BASE_URL: https://openrouter.ai/api/v1
+    OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
 on:
   roles: [admin, maintainer, write]
@@ -64,7 +67,6 @@ tools:
     min-integrity: none
     lockdown: false
     toolsets: [issues, repos]
-  bash: ["date"]
   web-fetch:
 
 mcp-servers:
@@ -81,6 +83,7 @@ network:
   allowed:
     - defaults
     - github
+    - "openrouter.ai"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
     - "figma.com"
@@ -102,6 +105,7 @@ steps:
 
 safe-outputs:
   threat-detection:
+    engine: copilot
     prompt: |
       IMPORTANT context for this workflow: the prompt includes gh-aw
       framework scaffolding wrapped in <system> and <safe-outputs> tags.
@@ -158,8 +162,6 @@ comment, URLs in the issue body, explicit GitHub development references in the i
 GitHub tools to fetch each linked PR or commit (title, description, diff, changed files).
 Skip purely internal changes such as test fixtures, CI configs, `.gitignore`, and lockfiles,
 but note them briefly.
-
-Get today's date with `date -u +%Y-%m-%d`.
 
 ## Project instructions
 
