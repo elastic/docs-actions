@@ -110,6 +110,8 @@ safe-outputs:
     engine:
       id: copilot
       model: sonnet
+      env:
+        OPENAI_BASE_URL: ""
     prompt: |
       IMPORTANT context for this workflow: the prompt includes gh-aw
       framework scaffolding wrapped in <system> and <safe-outputs> tags.
