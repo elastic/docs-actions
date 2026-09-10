@@ -75,10 +75,10 @@ mcp-servers:
     type: http
     url: "https://www.elastic.co/docs/_mcp/"
     allowed:
-      - "SemanticSearch"
-      - "GetDocumentByUrl"
-      - "FindRelatedDocs"
-      - "FindInconsistencies"
+      - "search_docs"
+      - "get_document_by_url"
+      - "find_related_docs"
+      - "find_docs_inconsistencies"
 
 network:
   allowed:
@@ -449,11 +449,11 @@ If the issue premise is incorrect or stale in a way that makes scoping irrespons
 
 Using the Elastic docs MCP server:
 
-1. **SemanticSearch** — search for docs related to the key concepts, features, APIs, or
+1. **search_docs** — search for docs related to the key concepts, features, APIs, or
    configuration options referenced in the issue and linked changes. Run multiple searches if
    the issue touches several distinct areas.
-2. **FindRelatedDocs** — for each major feature or component affected, find related pages.
-3. **GetDocumentByUrl** — fetch any docs URLs mentioned explicitly in the code, comments, or
+2. **find_related_docs** — for each major feature or component affected, find related pages.
+3. **get_document_by_url** — fetch any docs URLs mentioned explicitly in the code, comments, or
    issue body to check whether they need updating.
 
 Collect all potentially affected pages with titles and URLs.
