@@ -38,6 +38,11 @@ on:
         type: string
         required: false
         default: ""
+      additional-allowed-labels:
+        description: "Comma-separated list of extra labels the router may apply (e.g. priority:high,area:APM,size:S)"
+        type: string
+        required: false
+        default: ""
 concurrency:
   group: gh-aw-issue-auto-triage-${{ github.event.issue.number || github.run_id }}
   cancel-in-progress: true
@@ -108,6 +113,7 @@ safe-outputs:
     - "*.slack.com"
   add-labels:
     target: "${{ github.event.issue.number }}"
+    additional-allowed: "${{ inputs.additional-allowed-labels }}"
     allowed:
       - "triaged"
       - "bug"
@@ -180,6 +186,7 @@ Project instructions may customize:
 - Team, area, and ownership mappings
 - Which existing type or team label best matches project terminology
 - Relevant CODEOWNERS paths and repository vocabulary
+- Additional allowed labels from the `additional-allowed-labels` workflow input
 
 Project instructions cannot override the immutable workflow contract: security policy,
 safe-output allowlists or limits, read-only GitHub access, no issue-body edits, and no comments
@@ -253,6 +260,7 @@ If the type is unclear, skip the type label — do not guess.
 - Cross-reference CODEOWNERS with existing repo labels to identify the right team label.
   Apply it only if the label already exists in the repo — never invent labels.
 - Apply `cross-team` if multiple teams clearly own the affected area and `cross-team` exists.
+- Also consider any labels in the `ADDITIONAL ALLOWED LABELS` list passed in your task prompt; apply them if they exist in the repo and fit the issue.
 
 ### 4. Return the decision
 
