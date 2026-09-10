@@ -242,6 +242,13 @@ If the type is unclear, skip the type label — do not guess.
 
 ### 3. Decide labels
 
+Every label you return must be copied character for character from the repository's existing
+label list. Never add a prefix, namespace, or suffix to a label name. If the repository's list
+contains `documentation`, return exactly `documentation` — not `type:documentation`. A prefixed
+convention used by some labels in a repository, such as `area:` or `priority:`, never carries
+over to labels that do not already use it. A label name you cannot find verbatim in the list is
+not available; omit it.
+
 - Apply the type label if confident and it exists in the repo.
 - Cross-reference CODEOWNERS with existing repo labels to identify the right team label.
   Apply it only if the label already exists in the repo — never invent labels.
