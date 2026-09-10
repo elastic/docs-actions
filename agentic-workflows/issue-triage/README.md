@@ -1,16 +1,21 @@
 # Issue triage
 
-Triages an issue using two focused sub-agents. The router classifies the issue and selects type
-and team labels. The content checker rates the quality green, orange, or red. The parent workflow
-applies all writes: labels and — for orange and red — a summary comment that mentions the author.
-Green issues get a 👍 reaction. The issue body is never rewritten.
+Labels an issue with the right type and team labels. A single agent fetches the repository's
+existing labels, selects the ones that fit, applies them, and reacts with 👍. No comment
+is ever posted and the issue body is never rewritten.
 
 The workflow treats public issue content as untrusted input. GitHub reads use
 `min-integrity: none` so community-authored issues can be analyzed, while all writes remain
 constrained by safe outputs.
 
-For the same logic running automatically when an issue is opened, see
+For quality assessment and scope estimation, see [issue-scope](../docs-issue-scope/).
+For the same routing logic running automatically when an issue is opened, see
 [issue-auto-triage](../issue-auto-triage/).
+
+## Model
+
+The workflow uses a fast, low-cost model (Haiku via OpenRouter). This keeps per-issue cost low.
+Factor the model tier into cost estimates before enabling at scale.
 
 ## Triggers
 
@@ -18,6 +23,9 @@ For the same logic running automatically when an issue is opened, see
 |-------|-------------|
 | `/triage` | Slash command on an issue comment. |
 | `workflow_dispatch` | Manual trigger. |
+
+The caller workflow uses `workflow_call` to invoke this reusable workflow. The triggers above
+refer to the conditions the caller evaluates before dispatching.
 
 ## Install
 
@@ -46,7 +54,6 @@ Use it for persistent project-specific guidance such as:
 - Team, area, and ownership mappings
 - Existing label selection and repository terminology
 - Relevant CODEOWNERS paths
-- Project-specific evidence and issue-quality expectations
 
 Set `project-instructions-path` to another repository-relative path, or to an empty string to
 disable the file. The existing `additional-instructions` input remains fully supported. When both
@@ -71,45 +78,39 @@ The precedence model is:
 
 | Output | Max | Description |
 |--------|-----|-------------|
-| `add-labels` | 6 | Green/orange: apply `triaged` and confident routing labels. Red: apply only `human-needed`. |
-| `remove-labels` | 1 | Remove `needs-team` when a team label is applied to a green or orange issue. |
-| `react-green` | 1 | Add 👍 to a green issue without posting a comment. |
-| `add-comment` | 1 | Post the matching orange or red summary and mention the issue author. |
+| `add-labels` | 6 | Routable: `triaged` plus selected labels. Not routable: `human-needed` only. |
+| `remove-labels` | 1 | Remove `needs-team` when a team label is applied. |
+| `react-green` | 1 | Add 👍 to a routable issue after labeling. |
 
-Allowed classification labels are `triaged`, `human-needed`, `bug`, `enhancement`, `question`,
-and `documentation`. The workflow also allows the configured `Team:*` labels and `cross-team` for
-routing. It applies only labels that already exist in the target repository.
+Labels are selected from the target repository's existing label list, which the agent fetches at
+the start of every run. Any label already present in the repository is eligible; there is no
+fixed allowlist to extend, so board metadata such as `priority:*`, `area:*`, or `release:*` works
+as soon as the repository defines it and the instructions say when to apply it. Two guardrails
+hold regardless of instructions: `create-if-missing: false` refuses any label name that does not
+already exist, and `needs-team` is blocked from being added because it is a remove-only label.
+
+## Status comments
+
+The workflow posts brief status comments at run start, on success, and on failure. These are
+separate from any triage outcome and are used for observability.
 
 ## How it works
 
-1. Reads the issue title, body, author login, comments, `CODEOWNERS`, and the repository's
-   existing labels.
-2. The `router` sub-agent classifies the issue and returns a label decision. It does not call any
-   safe-output tools.
-3. The `content-checker` sub-agent validates the body and comments against the quality bar and
-   returns a green, orange, or red rating with actionable bullets. It does not call any
-   safe-output tools.
-4. The parent applies all writes: `add_labels`, `remove_labels` (when applicable), and either
-   `react_green` (green) or `add_comment` (orange or red).
+A single agent performs the whole run; there are no sub-agents.
 
-## Quality bar
-
-The content checker scores the issue on five criteria from the [good issues guide](https://www.elastic.co/docs/contribute-docs/how-to/good-issues), each worth 1 point:
-
-| # | Criterion | Score 1 | Score 0 |
-|---|-----------|---------|---------|
-| 1 | Specific, action-oriented title | Names the exact problem or change | Too vague to act on without the body |
-| 2 | Clear request with a definition of done | States what "done" looks like | Generic verb with no specific outcome |
-| 3 | Context and motivation | Explains why it matters or who is affected | No indication of impact or trigger |
-| 4 | Template compliance | All required sections present for the issue type | Any required section absent or placeholder |
-| 5 | One issue, one testable problem | Single focused task or closely related bundle | Multiple unrelated requests or undefined scope |
-
-Total score maps to the outcome: **4–5 → green**, **2–3 → orange**, **0–1 → red**.
-
-## Outcome behavior
-
-| Outcome | Feedback | Labels |
-|---|---|---|
-| Green | Add a 👍 reaction; do not post a comment | `triaged` plus confident type/team routing labels |
-| Orange | Post one 🟠 summary mentioning the issue author | `triaged` plus confident type/team routing labels |
-| Red | Post one 🔴 summary mentioning the issue author | Only `human-needed` |
+1. **Fetch the menu.** Lists every label in the repository and treats that list as the only
+   source of labels it may apply. Also reads the issue title, body, author login, comments, and
+   `CODEOWNERS`.
+2. **Read the instructions.** Applies the project instructions file and any inline
+   `additional-instructions`. These explain *when* a label from the menu applies; they never add
+   to the menu.
+3. **Select from the menu.** Picks at most one type label, a team label from `CODEOWNERS` when
+   confident, `cross-team` when several teams own the area, and any board metadata labels the
+   instructions define. Every pick is copied verbatim from the fetched list.
+4. **Judge routability.** An issue is not routable only when no type could be selected *and* it
+   names no specific page, feature, or surface. A missing team label never makes an issue
+   not routable.
+5. **Apply the outcome.** Routable: `triaged` plus the selected labels, then a 👍 reaction, and
+   `needs-team` removed if a team label was applied. Not routable: `human-needed` only, with
+   `triaged` withheld so the issue stays visible in `-label:triaged` searches. No comment in
+   either case.

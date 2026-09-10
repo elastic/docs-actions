@@ -1,24 +1,30 @@
 # Issue auto-triage
 
-Automatically triages a newly opened issue with two focused agents. The router selects existing
-type and team labels, then the content checker rates the issue green, orange, or red. The parent
-workflow applies the labels, reacts with 👍 when a green issue passes triage, or posts one summary
-comment that mentions the author for orange and red issues. It never rewrites the issue body, and
-it skips issues opened by bots.
+Labels a newly opened issue with the right type and team labels. A single agent fetches the
+repository's existing labels, selects the ones that fit, applies them, and reacts with 👍. No comment is ever posted and the issue body is never rewritten.
 
 The workflow treats public issue content as untrusted input. GitHub reads use
 `min-integrity: none` so community-authored issues can be analyzed, while all writes remain
-constrained by safe outputs.
+constrained by safe outputs. Issues opened by bots are skipped automatically.
 
-## Trigger
+For quality assessment and scope estimation, see [issue-scope](../docs-issue-scope/).
+For the same routing logic triggered manually, see [issue-triage](../issue-triage/).
+
+## Model
+
+The workflow uses a fast, low-cost model (Haiku via OpenRouter). This keeps per-issue cost low.
+Factor the model tier into cost estimates before enabling at scale.
+
+## Triggers
 
 | Event | Description |
-|---|---|
-| `issues: opened` | The caller invokes the reusable workflow when an issue is opened. |
+|-------|-------------|
+| `issues: opened` | Fires automatically when an issue is opened in the consumer repository. |
+
+The caller workflow uses `workflow_call` to invoke this reusable workflow on the `issues: opened`
+event.
 
 ## Install
-
-Install the caller workflow and copy the project instructions template:
 
 ```bash
 mkdir -p .github/workflows
@@ -37,40 +43,22 @@ passthrough.
 ## Project instructions
 
 By default, the workflow reads `.github/triage-instructions.md` from the consumer repository's
-default branch. Use it for persistent project-specific guidance such as:
+default branch. Both issue-auto-triage and issue-triage read the same file, so a single
+instructions file covers both workflows.
+
+Use it for persistent project-specific guidance such as:
 
 - Team, area, and ownership mappings
 - Existing label selection and repository terminology
 - Relevant CODEOWNERS paths
-- Project-specific evidence and issue-quality expectations
-
-The Copilot engine already loads conventional repository guidance such as `AGENTS.md` and
-`.github/copilot-instructions.md`. The triage instructions file complements that general guidance;
-it does not need to duplicate it. For example, in `elastic/docs-content`, keep the shared writing
-and contribution rules in `AGENTS.md`, move the team map out of the caller workflow into the
-triage instructions file, and summarize only the issue-quality checks relevant to triage.
 
 Set `project-instructions-path` to another repository-relative path, or to an empty string to
-disable the file. The existing `additional-instructions` input remains fully supported, so
-current callers do not need to migrate immediately. When the project file is absent, the inline
-instructions continue to provide all repository-specific context. When both are present, the
-inline instructions can refine or override the file within the customizable topics above.
-
-The precedence model is:
-
-1. The immutable workflow contract
-2. Inline `additional-instructions` from the caller
-3. The project instructions file
-
-Project instructions cannot override the security policy, safe-output limits, read-only GitHub
-access, outcome templates, no-body-edit rule, green reaction-only behavior, one-comment limit, or
-the rule that `human-needed` is the only label applied to red issues. Inline instructions cannot
-override these rules either.
+disable the file.
 
 ## Inputs
 
 | Input | Type | Required | Default | Description |
-|---|---|---|---|---|
+|-------|------|----------|---------|-------------|
 | `project-instructions-path` | string | No | `.github/triage-instructions.md` | Repository-relative project instructions path; an empty string disables it. |
 | `additional-instructions` | string | No | `""` | Inline guidance applied after the project instructions file. |
 | `setup-commands` | string | No | `""` | Shell commands to run before the agent starts. |
@@ -78,29 +66,36 @@ override these rules either.
 ## Safe outputs
 
 | Output | Max | Description |
-|---|---|---|
-| `add-labels` | 6 | Green/orange: apply `triaged` and confident routing labels. Red: apply only `human-needed`. |
-| `remove-labels` | 1 | Remove `needs-team` when a team label is applied to a green or orange issue. |
-| `react-green` | 1 | Add 👍 to a green issue without posting a comment. |
-| `add-comment` | 1 | Post the matching orange or red summary and mention the issue author. |
+|--------|-----|-------------|
+| `add-labels` | 6 | Routable: `triaged` plus selected labels. Not routable: `human-needed` only. |
+| `remove-labels` | 1 | Remove `needs-team` when a team label is applied. |
+| `react-green` | 1 | Add 👍 to a routable issue after labeling. |
 
-Allowed classification labels are `triaged`, `human-needed`, `bug`, `enhancement`, `question`,
-and `documentation`. The workflow also allows the configured `Team:*` labels and `cross-team` for
-routing on green and orange outcomes. It applies only labels that already exist in the target
-repository.
+Labels are selected from the target repository's existing label list, which the agent fetches at
+the start of every run. Any label already present in the repository is eligible; there is no
+fixed allowlist to extend, so board metadata such as `priority:*`, `area:*`, or `release:*` works
+as soon as the repository defines it and the instructions say when to apply it. Two guardrails
+hold regardless of instructions: `create-if-missing: false` refuses any label name that does not
+already exist, and `needs-team` is blocked from being added because it is a remove-only label.
 
-There is no undo path because an issue-open event has no triggering comment.
+## How it works
 
-## Quality bar
+A single agent performs the whole run; there are no sub-agents.
 
-The content checker scores the issue on five criteria from the [good issues guide](https://www.elastic.co/docs/contribute-docs/how-to/good-issues), each worth 1 point:
-
-| # | Criterion | Score 1 | Score 0 |
-|---|-----------|---------|---------|
-| 1 | Specific, action-oriented title | Names the exact problem or change | Too vague to act on without the body |
-| 2 | Clear request with a definition of done | States what "done" looks like | Generic verb with no specific outcome |
-| 3 | Context and motivation | Explains why it matters or who is affected | No indication of impact or trigger |
-| 4 | Template compliance | All required sections present for the issue type | Any required section absent or placeholder |
-| 5 | One issue, one testable problem | Single focused task or closely related bundle | Multiple unrelated requests or undefined scope |
-
-Total score maps to the outcome: **4–5 → green**, **2–3 → orange**, **0–1 → red**.
+1. **Fetch the menu.** Lists every label in the repository and treats that list as the only
+   source of labels it may apply. Also reads the issue title, body, author login, comments, and
+   `CODEOWNERS`. Issues opened by a bot (actor name ends in `[bot]`) are skipped
+   immediately.
+2. **Read the instructions.** Applies the project instructions file and any inline
+   `additional-instructions`. These explain *when* a label from the menu applies; they never add
+   to the menu.
+3. **Select from the menu.** Picks at most one type label, a team label from `CODEOWNERS` when
+   confident, `cross-team` when several teams own the area, and any board metadata labels the
+   instructions define. Every pick is copied verbatim from the fetched list.
+4. **Judge routability.** An issue is not routable only when no type could be selected *and* it
+   names no specific page, feature, or surface. A missing team label never makes an issue
+   not routable.
+5. **Apply the outcome.** Routable: `triaged` plus the selected labels, then a 👍 reaction, and
+   `needs-team` removed if a team label was applied. Not routable: `human-needed` only, with
+   `triaged` withheld so the issue stays visible in `-label:triaged` searches. No comment in
+   either case.
