@@ -1,22 +1,21 @@
 # Issue triage
 
-Triages an issue using two focused sub-agents. The router classifies the issue and selects type
-and team labels. The content checker rates the quality green, orange, or red. The parent workflow
-applies all writes: labels and — for orange and red — a summary comment that mentions the author.
-Green issues get a 👍 reaction. The issue body is never rewritten.
+Labels an issue with the right type and team labels. A single `router` sub-agent classifies the
+issue and selects type and team labels. The parent applies labels and reacts with 👍. No comment
+is ever posted and the issue body is never rewritten.
 
 The workflow treats public issue content as untrusted input. GitHub reads use
 `min-integrity: none` so community-authored issues can be analyzed, while all writes remain
 constrained by safe outputs.
 
-For the same logic running automatically when an issue is opened, see
+For quality assessment and scope estimation, see [issue-scope](../docs-issue-scope/).
+For the same routing logic running automatically when an issue is opened, see
 [issue-auto-triage](../issue-auto-triage/).
 
 ## Model
 
-The workflow uses a fast, low-cost model (Haiku via OpenRouter). This keeps per-issue cost low
-while handling the classification and quality-check tasks. Factor the model tier into cost
-estimates before enabling at scale.
+The workflow uses a fast, low-cost model (Haiku via OpenRouter). This keeps per-issue cost low.
+Factor the model tier into cost estimates before enabling at scale.
 
 ## Triggers
 
@@ -55,7 +54,6 @@ Use it for persistent project-specific guidance such as:
 - Team, area, and ownership mappings
 - Existing label selection and repository terminology
 - Relevant CODEOWNERS paths
-- Project-specific evidence and issue-quality expectations
 
 Set `project-instructions-path` to another repository-relative path, or to an empty string to
 disable the file. The existing `additional-instructions` input remains fully supported. When both
@@ -74,28 +72,28 @@ The precedence model is:
 |-------|------|----------|---------|-------------|
 | `project-instructions-path` | string | No | `.github/triage-instructions.md` | Repository-relative project instructions path; an empty string disables it. |
 | `additional-instructions` | string | No | `""` | Inline guidance applied after the project instructions file. |
+| `additional-allowed-labels` | string | No | `""` | Comma-separated list of extra labels the router may apply (e.g. `priority:high,area:APM,size:S`). Use this to declare board metadata labels without a PR to docs-actions. |
 | `setup-commands` | string | No | `""` | Shell commands to run before the agent starts. |
 
 ## Safe outputs
 
 | Output | Max | Description |
 |--------|-----|-------------|
-| `add-labels` | 6 | Green/orange: apply `triaged` and confident routing labels. Red: apply only `human-needed`. |
-| `remove-labels` | 1 | Remove `needs-team` when a team label is applied to a green or orange issue. |
-| `react-green` | 1 | Add 👍 to a green issue without posting a comment. |
-| `add-comment` | 1 | Post the matching orange or red summary and mention the issue author. |
+| `add-labels` | 6 | Apply `triaged` plus confident type and team routing labels. |
+| `remove-labels` | 1 | Remove `needs-team` when a team label is applied. |
+| `react-green` | 1 | Add 👍 after labeling. |
 
-Allowed classification labels are `triaged`, `human-needed`, `bug`, `enhancement`, `question`,
-and `documentation`. The workflow also allows `cross-team` and the following routing labels:
+Allowed classification labels are `triaged`, `bug`, `enhancement`, `question`, and
+`documentation`. The workflow also allows `cross-team` and the following routing labels:
 `Team:Admin`, `Team:Developer`, `Team:DocsEng`, `Team:Experience`, `Team:Ingest`, `Team:SKI`,
-`Team:Projects`. It applies only labels that already exist in the target repository. Labels
-outside this allowlist are silently dropped even if they exist in the repo.
+`Team:Projects`. Additional labels passed via `additional-allowed-labels` extend this list at
+runtime. The workflow applies only labels that already exist in the target repository. Labels
+outside the allowlist are silently dropped even if they exist in the repo.
 
 ## Status comments
 
 The workflow posts brief status comments at run start, on success, and on failure. These are
-separate from the triage outcome comment and are used for observability. They do not affect
-labels or reactions.
+separate from any triage outcome and are used for observability.
 
 ## How it works
 
@@ -103,30 +101,5 @@ labels or reactions.
    existing labels.
 2. The `router` sub-agent classifies the issue and returns a label decision. It does not call any
    safe-output tools.
-3. The `content-checker` sub-agent validates the body and comments against the quality bar and
-   returns a green, orange, or red rating with actionable bullets. It does not call any
-   safe-output tools.
-4. The parent applies all writes: `add_labels`, `remove_labels` (when applicable), and either
-   `react_green` (green) or `add_comment` (orange or red).
-
-## Quality bar
-
-The content checker scores the issue on five criteria from the [good issues guide](https://www.elastic.co/docs/contribute-docs/how-to/good-issues), each worth 1 point:
-
-| # | Criterion | Score 1 | Score 0 |
-|---|-----------|---------|---------|
-| 1 | Specific, action-oriented title | Names the exact problem or change | Too vague to act on without the body |
-| 2 | Clear request with a definition of done | States what "done" looks like | Generic verb with no specific outcome |
-| 3 | Context and motivation | Explains why it matters or who is affected | No indication of impact or trigger |
-| 4 | Template compliance | All required sections present for the issue type | Any required section absent or placeholder |
-| 5 | One issue, one testable problem | Single focused task or closely related bundle | Multiple unrelated requests or undefined scope |
-
-Total score maps to the outcome: **4–5 → green**, **2–3 → orange**, **0–1 → red**.
-
-## Outcome behavior
-
-| Outcome | Feedback | Labels |
-|---|---|---|
-| Green | Add a 👍 reaction; do not post a comment | `triaged` plus confident type/team routing labels |
-| Orange | Post one 🟠 summary mentioning the issue author | `triaged` plus confident type/team routing labels |
-| Red | Post one 🔴 summary mentioning the issue author | Only `human-needed` |
+3. The parent applies all writes: `add_labels`, `remove_labels` (when applicable), and
+   `react_green`.
