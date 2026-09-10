@@ -155,9 +155,14 @@ The engine's conventional repository instructions, such as `AGENTS.md` and Copil
 instructions, remain in effect. Do not duplicate them into the project instructions file. Use the
 file below as the triage-specific overlay.
 
-If `${{ inputs.project-instructions-path }}` is not empty, use the GitHub repository read tools
-to read that path from the consumer repository at ref
-`${{ github.event.repository.default_branch }}`. If the file does not exist, continue without it.
+The project instructions path is `${{ inputs.project-instructions-path }}`.
+
+- If that path is empty, do not read any instructions file — not even one at the default
+  location — because the caller disabled it deliberately. Use only the inline instructions below.
+- If it is not empty, use the GitHub repository read tools to read that path from the consumer
+  repository at ref `${{ github.event.repository.default_branch }}`. If the file does not exist,
+  continue without it.
+
 Then apply the inline instructions below, if any:
 
 ${{ inputs.additional-instructions }}
