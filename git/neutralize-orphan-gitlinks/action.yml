@@ -1,0 +1,40 @@
+name: git/neutralize-orphan-gitlinks
+
+description: >
+  Remove gitlinks (mode 160000 entries) from the runner's working index when
+  their paths have no entry in .gitmodules. actions/checkout's post-job step
+  runs `git submodule foreach --recursive` unconditionally to clean local
+  config; an orphan gitlink causes that command to abort with exit 128 and
+  marks the job red even when the build itself succeeded. Run this composite
+  immediately after actions/checkout. The change only affects the runner's
+  index — it does not push anything.
+
+runs:
+  using: composite
+  steps:
+    - name: Neutralize orphan gitlinks
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        gitlinks=$(git ls-files --stage | awk '$1 == "160000" { print $4 }')
+        if [ -z "$gitlinks" ]; then
+          exit 0
+        fi
+
+        registered=$(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{ print $2 }' || true)
+
+        orphans=""
+        for path in $gitlinks; do
+          if printf '%s\n' "$registered" | grep -qFx "$path"; then
+            continue
+          fi
+          orphans="${orphans}${orphans:+ }${path}"
+        done
+
+        if [ -n "$orphans" ]; then
+          echo "::warning::Orphan gitlinks detected (no .gitmodules entry): ${orphans}. Removing from runner index so actions/checkout post-cleanup does not fail. Fix the source repository by removing the stray submodule pointer (for example: 'git rm --cached <path>')."
+          for path in $orphans; do
+            git rm --cached -q -- "$path"
+          done
+        fi
