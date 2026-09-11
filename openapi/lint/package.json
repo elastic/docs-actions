@@ -3,6 +3,6 @@
   "private": true,
   "description": "Pinned Spectral toolchain for the Elastic OpenAPI Linter action",
   "dependencies": {
-    "@stoplight/spectral-cli": "6.16.1"
+    "@stoplight/spectral-cli": "6.16.3"
   }
 }
