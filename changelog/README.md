@@ -362,7 +362,7 @@ jobs:
       version: ${{ github.event.release.tag_name }}
 ```
 
-The `output` input is not needed — the `--plan` step resolves the path as `{bundle.output_directory}/{repo}-{product}-{version}.yaml`.
+The `output` input is not needed — `--plan` writes `{repo}-{product}-{version}.yaml` under the profile's `output_directory` if set, otherwise `bundle.output_directory`.
 Repo comes from `bundle.repo`, the `repo` workflow input (`--repo`), or git remote `origin`.
 If none of those resolve, docs-builder warns and uses the legacy `{product}-{version}.yaml` name (cross-repo overwrite is still possible).
 
@@ -371,9 +371,9 @@ It replaces the global directory for that profile only; the conventional filenam
 
 ```yaml
     serverless-release:
-      output_products: "cloud-serverless {version} {lifecycle}"
+      output_products: "cloud-serverless {version}"
       output_directory: docs/releases/cloud-serverless
-      # → docs/releases/cloud-serverless/my-repo-cloud-serverless-2026-08-27.yaml
+      # → docs/releases/cloud-serverless/my-repo-cloud-serverless-{version}.yaml
 ```
 
 #### GitHub release mode (`mode: gh-release`)
