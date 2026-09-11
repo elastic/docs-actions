@@ -24,6 +24,11 @@ repos:
       - id: actionlint
         exclude: '(\.lock\.yml$|^\.github/workflows/agentics-maintenance\.yml$)'
 
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.29.0
+    hooks:
+      - id: zizmor
+
   - repo: local
     hooks:
       - id: compile-workflows
