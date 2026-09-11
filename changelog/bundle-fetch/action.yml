@@ -35,7 +35,8 @@ inputs:
     description: >
       Output file path for the bundle, relative to the repo root. Optional;
       when omitted in profile mode, the plan resolves
-      `{repo}-{product}-{version}.yaml` under bundle.output_directory.
+      `{repo}-{product}-{version}.yaml` under the profile's output_directory
+      if set, otherwise bundle.output_directory.
   repo:
     description: >
       GitHub repository name. Used in the profile-mode bundle filename

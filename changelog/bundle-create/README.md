@@ -26,7 +26,7 @@ CDN sourcing requires a resolvable product. When none can be resolved (e.g. an o
 | `release-version`      | GitHub release tag for PR filtering (bundle mode, option-based only)                                | `false`  |                       |
 | `report`               | Buildkite promotion report URL or local file path                                                   | `false`  |                       |
 | `prs`                  | Comma-separated PR URLs/numbers, or path to a newline-delimited file                                | `false`  |                       |
-| `output`               | Output file path, relative to repo root                                                             | `false`  |                       |
+| `output`               | Output file path, relative to repo root. When omitted in profile mode, `{repo}-{product}-{version}.yaml` under the profile's `output_directory` if set, otherwise `bundle.output_directory` | `false`  |                       |
 | `repo`                 | GitHub repository name. Required for gh-release mode                                                | `false`  |                       |
 | `owner`                | GitHub repository owner                                                                             | `false`  |                       |
 | `start-git-ref`        | Start ref (exclusive) of a commit range — the previously published endpoint ref                     | `false`  |                       |
