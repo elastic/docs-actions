@@ -138,6 +138,13 @@ steps:
 
       printf '%s' "$SOURCE_REPOS" | tr ',' '\n' > /tmp/gh-aw/docs-source-sync/repos.raw
 
+      unexpected() {
+        echo "Unexpected $1 response for $repo" >&2
+        printf '%s' "$2" | head -c 500 >&2
+        echo >&2
+        exit 1
+      }
+
       TOTAL_CHANGES=0
 
       while IFS= read -r raw || [ -n "$raw" ]; do
@@ -147,11 +154,15 @@ steps:
         slug=$(printf '%s' "$repo" | tr '/' '-')
         digest="/tmp/gh-aw/docs-source-sync/${slug}.md"
 
-        PRS_JSON=$(gh api search/issues --method GET -f "q=repo:$repo is:pr is:merged merged:>=$SINCE_DATE" -f per_page=50 2>/dev/null || echo '{"items":[]}')
+        echo "Digesting $repo since $SINCE_DATE"
+
+        PRS_JSON=$(gh api search/issues --method GET -f "q=repo:$repo is:pr is:merged merged:>=$SINCE_DATE" -f per_page=50)
+        printf '%s' "$PRS_JSON" | jq -e '.items | type == "array"' >/dev/null || unexpected search/issues "$PRS_JSON"
         PR_COUNT=$(printf '%s' "$PRS_JSON" | jq '.items | length')
 
-        COMMITS_JSON=$(gh api "repos/$repo/commits?since=$SINCE_ISO&per_page=100" 2>/dev/null || echo '[]')
-        COMMIT_COUNT=$(printf '%s' "$COMMITS_JSON" | jq 'length' 2>/dev/null || echo 0)
+        COMMITS_JSON=$(gh api "repos/$repo/commits?since=$SINCE_ISO&per_page=100")
+        printf '%s' "$COMMITS_JSON" | jq -e 'type == "array"' >/dev/null || unexpected commits "$COMMITS_JSON"
+        COMMIT_COUNT=$(printf '%s' "$COMMITS_JSON" | jq 'length')
 
         {
           echo "# $repo — changes since $SINCE_DATE"
