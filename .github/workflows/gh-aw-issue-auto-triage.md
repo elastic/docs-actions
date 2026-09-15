@@ -200,7 +200,10 @@ If the type is unclear, or the matching label is not in the menu, skip it — do
 
 **Team.** Cross-reference `.github/CODEOWNERS` and the instructions with the menu to find the
 owning team's label. Select it only when you are confident and it is in the menu. If ownership is
-unclear, skip it.
+unclear, skip it. When the instructions define a team mapping, that mapping is exhaustive: never
+select a team label the mapping does not name, even when the label is in the menu and CODEOWNERS
+appears to point at it. If CODEOWNERS names a team that the mapping does not map to a label,
+select no team label.
 
 **Cross-team.** Select `cross-team` only if it is in the menu and multiple teams clearly own the
 affected area.

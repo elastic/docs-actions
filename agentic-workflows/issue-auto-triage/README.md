@@ -91,7 +91,9 @@ A single agent performs the whole run; there are no sub-agents.
    to the menu.
 3. **Select from the menu.** Picks at most one type label, a team label from `CODEOWNERS` when
    confident, `cross-team` when several teams own the area, and any board metadata labels the
-   instructions define. Every pick is copied verbatim from the fetched list.
+   instructions define. When the instructions define a team mapping, that mapping is exhaustive:
+   a team label absent from it is never selected, even if it is in the menu. Every pick is copied
+   verbatim from the fetched list.
 4. **Judge routability.** An issue is not routable only when no type could be selected *and* it
    names no specific page, feature, or surface. A missing team label never makes an issue
    not routable.
