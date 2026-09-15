@@ -83,7 +83,7 @@ steps:
       GH_TOKEN: ${{ github.token }}
     run: |
       mkdir -p /tmp/gh-aw/agent
-      gh label list --repo "$GITHUB_REPOSITORY" --limit 500 --json name --jq '.[].name' > /tmp/gh-aw/agent/label-menu.txt
+      gh api --paginate "repos/${GITHUB_REPOSITORY}/labels?per_page=100" --jq '.[].name' > /tmp/gh-aw/agent/label-menu.txt
       echo "Resolved $(wc -l < /tmp/gh-aw/agent/label-menu.txt) labels into /tmp/gh-aw/agent/label-menu.txt"
   - name: Repo-specific setup
     env:
