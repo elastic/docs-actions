@@ -147,29 +147,39 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
       packages: read
       pull-requests: read
+    outputs:
+      bundle-path: ${{ steps.create.outputs.bundle-path }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: elastic/docs-actions/docs-builder/setup@v1
-        with:
-          version: edge
-
       - name: Create bundle
         id: create
-        uses: elastic/docs-actions/changelog/bundle-create@v1
+        uses: elastic/docs-actions/changelog/bundle-create-version@v1
         with:
           config: ${{ inputs.config }}
           version: ${{ github.event.release.tag_name }}
           repo: ${{ github.event.repository.name }}
           owner: ${{ github.repository_owner }}
 
-      - name: Upload bundle
-        uses: elastic/docs-actions/changelog/bundle-upload@v1
+  bundle-publish:
+    if: github.event_name == 'release' && inputs.bundle-on-release
+    needs: bundle
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Publish bundle to S3
+        uses: elastic/docs-actions/changelog/bundle-publish@v1
         with:
           config: ${{ inputs.config }}
-          bundle-path: ${{ steps.create.outputs.output }}
+          bundle-path: ${{ needs.bundle.outputs.bundle-path }}

@@ -568,3 +568,30 @@ Notes:
 - Pass `dry-run: true` to resolve the range and publish the run report — the resolved PR list with each PR's entry source (pool / inferred / missing) plus commits without an associated PR — to the job summary without building or uploading anything. Useful for wiring and for pre-flight checks.
 - The upload goes to the private S3 bucket; the scrubber Lambda mirrors a sanitized copy to the public CDN, same as `changelog-bundle.yml`. The same OIDC prerequisite applies (your repository must have the changelog IAM role provisioned).
 - A `GITHUB_TOKEN` is required at bundle time: the GraphQL API used for commit→PR association does not accept anonymous requests. The workflow passes the ambient `github.token`.
+
+## Composite actions: create and publish
+
+The reusable workflows above call composite actions internally. You can call these directly when you need finer control over permissions, job naming, or when you are composing your own release pipeline.
+
+### `changelog/bundle-create-version`
+
+Creates a changelog bundle from a GitHub release (`docs-builder changelog gh-release`).
+Runs the native binary — no Docker, no plan step — and emits `bundle-path` as a step output.
+Use this when you know the release tag and want privilege separation between generate and publish.
+
+See [`bundle-create-version/README.md`](bundle-create-version/README.md) for inputs, outputs, and an example two-job workflow.
+
+### `changelog/bundle-publish`
+
+Downloads the bundle artifact produced by `bundle-create-version` (or `bundle-create-git-range`)
+and uploads it to the private S3 bucket via OIDC. Holds `id-token: write` so the generate job
+does not need it.
+
+See [`bundle-publish/README.md`](bundle-publish/README.md) for inputs and caller requirements.
+
+### Frozen actions: `bundle-create` and `bundle-upload`
+
+`changelog/bundle-create` and `changelog/bundle-upload` are frozen — no new features are added.
+They remain in use by the `changelog-bundle.yml` reusable workflow and by
+`elastic/docs-internal-workflows`. New release-driven consumers should use
+`bundle-create-version` + `bundle-publish` instead.
