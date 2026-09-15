@@ -1,0 +1,128 @@
+name: Changelog bundle create (version / gh-release mode)
+description: >
+  Checks out the repository, runs docs-builder changelog gh-release natively
+  to generate a bundle file from a GitHub release, and uploads the result as
+  an artifact. No Docker, no plan step. Reads the output path from the
+  bundle_path step output emitted by docs-builder itself. Use this action for
+  release-driven changelog bundling; for profile + commit-range bundling see
+  changelog/bundle-create-git-range.
+
+inputs:
+  config:
+    description: 'Path to changelog.yml configuration file'
+    default: 'docs/changelog.yml'
+  version:
+    description: >
+      GitHub release tag (e.g. v9.2.0) or "latest". Required when the
+      caller knows the exact release; omit to default to "latest".
+    default: 'latest'
+  repo:
+    description: >
+      GitHub repository name (without owner). Falls back to bundle.repo in
+      changelog.yml, then GITHUB_REPOSITORY, then git remote origin.
+  owner:
+    description: >
+      GitHub repository owner. Falls back to bundle.owner in changelog.yml,
+      then GITHUB_REPOSITORY, then "elastic".
+  strip-title-prefix:
+    description: 'Remove [Prefix]: from PR titles'
+    default: 'false'
+  docs-builder-version:
+    description: >
+      docs-builder version to use (e.g. 0.1.100, latest, edge).
+      Non-edge versions are attestation-verified by the setup action.
+    default: 'edge'
+  artifact-name:
+    description: 'Name for the uploaded artifact (must match bundle-publish artifact-name)'
+    default: 'changelog-bundle'
+  github-token:
+    description: 'GitHub token (required to fetch the release and its commit range)'
+    default: '${{ github.token }}'
+
+outputs:
+  bundle-path:
+    description: 'Resolved output file path for the bundle (.yml)'
+    value: ${{ steps.generate.outputs.bundle_path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+
+    - name: Validate inputs
+      shell: bash
+      env:
+        CONFIG: ${{ inputs.config }}
+        VERSION: ${{ inputs.version }}
+        REPO: ${{ inputs.repo }}
+        OWNER: ${{ inputs.owner }}
+        ARTIFACT_NAME: ${{ inputs.artifact-name }}
+      run: |
+        source "${GITHUB_ACTION_PATH}/../../scripts/validate-inputs.sh"
+
+        validate_path "$CONFIG" "config"
+        validate_identifier "$VERSION" "version" '^[a-zA-Z0-9._+-]+$'
+        validate_identifier "$REPO" "repo" '^[a-zA-Z0-9._-]+$'
+        validate_identifier "$OWNER" "owner" '^[a-zA-Z0-9._-]+$'
+        validate_identifier "$ARTIFACT_NAME" "artifact-name" '^[a-zA-Z0-9._-]+$'
+
+    - name: Setup docs-builder
+      uses: elastic/docs-actions/docs-builder/setup@v1
+      with:
+        version: ${{ inputs.docs-builder-version }}
+        github-token: ${{ inputs.github-token }}
+
+    - name: Generate changelogs from GitHub release
+      id: generate
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        CONFIG: ${{ inputs.config }}
+        VERSION: ${{ inputs.version }}
+        REPO: ${{ inputs.repo }}
+        OWNER: ${{ inputs.owner }}
+        STRIP_TITLE_PREFIX: ${{ inputs.strip-title-prefix }}
+      run: |
+        ARGS=(changelog gh-release)
+
+        # Fall back to GITHUB_REPOSITORY when the repo input is not supplied.
+        # GITHUB_REPOSITORY is 'owner/repo' and is set by the runner in every Actions context.
+        if [ -z "$REPO" ] && [ -n "${GITHUB_REPOSITORY:-}" ]; then
+          REPO="${GITHUB_REPOSITORY##*/}"
+          [ -z "$OWNER" ] && OWNER="${GITHUB_REPOSITORY%%/*}"
+        fi
+
+        REPO_ARG="$REPO"
+        [ -n "$OWNER" ] && REPO_ARG="${OWNER}/${REPO}"
+        ARGS+=("$REPO_ARG")
+
+        [ -n "$VERSION" ] && ARGS+=("$VERSION") || ARGS+=(latest)
+        [ -n "$CONFIG" ] && ARGS+=(--config "$CONFIG")
+        [ "$STRIP_TITLE_PREFIX" = "true" ] && ARGS+=(--strip-title-prefix)
+
+        docs-builder "${ARGS[@]}"
+
+    - name: Verify bundle path
+      shell: bash
+      env:
+        BUNDLE_PATH: ${{ steps.generate.outputs.bundle_path }}
+      run: |
+        if [ -z "$BUNDLE_PATH" ]; then
+          echo "::error::docs-builder did not emit bundle_path. Ensure docs-builder version supports bundle_path output (edge ≥ the PR that added it)."
+          exit 1
+        fi
+        if [ ! -f "$BUNDLE_PATH" ]; then
+          echo "::error::bundle_path was emitted but the file does not exist: ${BUNDLE_PATH}"
+          exit 1
+        fi
+
+    - name: Upload bundle artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ steps.generate.outputs.bundle_path }}
+        if-no-files-found: error
+        retention-days: 1
