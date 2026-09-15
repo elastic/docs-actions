@@ -12,7 +12,8 @@ The agent runs `openai/gpt-5.6-luna` through OpenRouter on the codex engine, aut
 the `OPENROUTER_API_KEY` secret. Threat detection runs separately on GitHub Copilot with the
 `sonnet` model alias. The agent must query the Elastic docs MCP server before reading any
 repository file, so expect higher per-issue cost than a classification-only workflow — roughly
-10–15 AIC for a full assessment and under 10 AIC when the quality gate stops early.
+7–10 AIC for a full assessment, about 7 for a partial one, and under 4 when the quality gate stops
+early (sandbox battery, 2026-09-15).
 
 ## Triggers
 
