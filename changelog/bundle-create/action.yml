@@ -85,7 +85,7 @@ inputs:
 outputs:
   output:
     description: 'Resolved output file path for the bundle'
-    value: ${{ steps.gh-release-output.outputs.bundle_path || steps.plan.outputs.output_path }}
+    value: ${{ steps.plan.outputs.output_path }}
 
 runs:
   using: composite
@@ -328,43 +328,11 @@ runs:
 
         docker run "${DOCKER_ARGS[@]}" "$IMAGE_DIGEST" "${GH_RELEASE_ARGS[@]}"
 
-    - name: Resolve gh-release bundle output
-      # When no explicit --output is given, the plan only knows the output_directory, not
-      # the specific file. After changelog gh-release runs, locate the created bundle file
-      # (written to {output_directory}/bundles/{version}-{product}-bundle.yml) so the artifact
-      # upload and the action output both point at a single .yml file.
-      if: steps.plan.outputs.mode == 'gh-release' && inputs.dry-run != 'true' && inputs.output == ''
-      id: gh-release-output
-      shell: bash
-      env:
-        OUTPUT_DIR: ${{ steps.plan.outputs.output_path }}
-        VERSION: ${{ inputs.version }}
-      run: |
-        BUNDLES_DIR="${OUTPUT_DIR}/bundles"
-        if [ ! -d "$BUNDLES_DIR" ]; then
-          echo "::error::Expected bundles directory not found: ${BUNDLES_DIR}"
-          exit 1
-        fi
-        # Prefer the file whose name starts with the release version.
-        BUNDLE_FILE=""
-        if [ -n "$VERSION" ]; then
-          BUNDLE_FILE=$(find "$BUNDLES_DIR" \( -name "${VERSION}-*-bundle.yml" -o -name "${VERSION}-*-bundle.yaml" \) 2>/dev/null | head -1)
-        fi
-        # Fall back to the most recently created file in the bundles directory.
-        if [ -z "$BUNDLE_FILE" ]; then
-          BUNDLE_FILE=$(ls -t "$BUNDLES_DIR"/*.yml "$BUNDLES_DIR"/*.yaml 2>/dev/null | head -1)
-        fi
-        if [ -z "$BUNDLE_FILE" ]; then
-          echo "::error::No bundle file found in ${BUNDLES_DIR} after changelog gh-release"
-          exit 1
-        fi
-        echo "bundle_path=${BUNDLE_FILE}" >> "$GITHUB_OUTPUT"
-
     - name: Upload bundle artifact
       if: inputs.dry-run != 'true'
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}
-        path: ${{ steps.gh-release-output.outputs.bundle_path || steps.plan.outputs.output_path }}
+        path: ${{ steps.plan.outputs.output_path }}
         if-no-files-found: error
         retention-days: 1
