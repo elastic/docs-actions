@@ -82,10 +82,11 @@ The precedence model is:
 | `remove-labels` | 1 | Remove `needs-team` when a team label is applied. |
 | `react-green` | 1 | Add 👍 to a routable issue after labeling. |
 
-Labels are selected from the target repository's existing label list, which the agent fetches at
-the start of every run. Any label already present in the repository is eligible; there is no
+Labels are selected from the target repository's existing label list, which the workflow resolves
+before the agent starts and hands over as a file. Any label already present in the repository is eligible; there is no
 fixed allowlist to extend, so board metadata such as `priority:*`, `area:*`, or `release:*` works
-as soon as the repository defines it and the instructions say when to apply it. Two guardrails
+as soon as the repository defines it and the instructions say when to apply it. The one exception is team labels: when the instructions define a team mapping, team labels
+outside that mapping are never selected, even if they exist in the repository. Two guardrails
 hold regardless of instructions: `create-if-missing: false` refuses any label name that does not
 already exist, and `needs-team` is blocked from being added because it is a remove-only label.
 
@@ -98,15 +99,17 @@ separate from any triage outcome and are used for observability.
 
 A single agent performs the whole run; there are no sub-agents.
 
-1. **Fetch the menu.** Lists every label in the repository and treats that list as the only
-   source of labels it may apply. Also reads the issue title, body, author login, comments, and
+1. **Read the menu.** Reads the label list the workflow resolved before it started and treats
+   that list as the only source of labels it may apply. Also reads the issue title, body, author login, comments, and
    `CODEOWNERS`.
 2. **Read the instructions.** Applies the project instructions file and any inline
    `additional-instructions`. These explain *when* a label from the menu applies; they never add
    to the menu.
 3. **Select from the menu.** Picks at most one type label, a team label from `CODEOWNERS` when
    confident, `cross-team` when several teams own the area, and any board metadata labels the
-   instructions define. Every pick is copied verbatim from the fetched list.
+   instructions define. When the instructions define a team mapping, that mapping is exhaustive:
+   a team label absent from it is never selected, even if it is in the menu. Every pick is copied
+   verbatim from the fetched list.
 4. **Judge routability.** An issue is not routable only when no type could be selected *and* it
    names no specific page, feature, or surface. A missing team label never makes an issue
    not routable.
