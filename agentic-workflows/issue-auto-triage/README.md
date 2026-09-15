@@ -71,8 +71,8 @@ disable the file.
 | `remove-labels` | 1 | Remove `needs-team` when a team label is applied. |
 | `react-green` | 1 | Add 👍 to a routable issue after labeling. |
 
-Labels are selected from the target repository's existing label list, which the agent fetches at
-the start of every run. Any label already present in the repository is eligible; there is no
+Labels are selected from the target repository's existing label list, which the workflow resolves
+before the agent starts and hands over as a file. Any label already present in the repository is eligible; there is no
 fixed allowlist to extend, so board metadata such as `priority:*`, `area:*`, or `release:*` works
 as soon as the repository defines it and the instructions say when to apply it. Two guardrails
 hold regardless of instructions: `create-if-missing: false` refuses any label name that does not
@@ -82,8 +82,8 @@ already exist, and `needs-team` is blocked from being added because it is a remo
 
 A single agent performs the whole run; there are no sub-agents.
 
-1. **Fetch the menu.** Lists every label in the repository and treats that list as the only
-   source of labels it may apply. Also reads the issue title, body, author login, comments, and
+1. **Read the menu.** Reads the label list the workflow resolved before it started and treats
+   that list as the only source of labels it may apply. Also reads the issue title, body, author login, comments, and
    `CODEOWNERS`. Issues opened by a bot (actor name ends in `[bot]`) are skipped
    immediately.
 2. **Read the instructions.** Applies the project instructions file and any inline

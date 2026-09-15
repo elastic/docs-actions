@@ -75,6 +75,13 @@ network:
     - "search.elastic.co"
 
 steps:
+  - name: Resolve label menu
+    env:
+      GH_TOKEN: ${{ github.token }}
+    run: |
+      mkdir -p /tmp/gh-aw/agent
+      gh label list --repo "$GITHUB_REPOSITORY" --limit 500 --json name --jq '.[].name' > /tmp/gh-aw/agent/label-menu.txt
+      echo "Resolved $(wc -l < /tmp/gh-aw/agent/label-menu.txt) labels into /tmp/gh-aw/agent/label-menu.txt"
   - name: Repo-specific setup
     env:
       SETUP_COMMANDS: ${{ inputs.setup-commands }}
@@ -133,11 +140,14 @@ yet — gather context from the body alone.
 If the issue was opened by a bot (the actor name ends in `[bot]`), emit a `noop` immediately
 and do not triage.
 
-## Step 1 — Fetch the label menu
+## Step 1 — Read the label menu
 
-Before anything else, use the GitHub read tools to list every label that exists in
-`${{ github.repository }}` and record the exact names. That list is the **menu**: for the rest of
-this run it is the only source of labels you may apply. Also fetch the issue's exact title, body,
+Before anything else, read `/tmp/gh-aw/agent/label-menu.txt`. The workflow wrote the repository's complete
+label list there before you started, one exact label name per line. That list is the **menu**: for
+the rest of this run it is the only source of labels you may apply. Do not rebuild the menu any
+other way — not from labels seen on other issues, not from the safe-outputs configuration, and not
+from memory. Only if the file is missing or empty, list every label in `${{ github.repository }}`
+with the GitHub read tools instead. Also fetch the issue's exact title, body,
 author login, current labels, and comments, and read `.github/CODEOWNERS`. When reading repository
 files, use ref `${{ github.event.repository.default_branch }}`; do not use the literal ref `HEAD`.
 Keep the exact issue title and body; do not replace them with a summary.
