@@ -32,6 +32,7 @@ jobs:
     outputs:
       should-submit: ${{ steps.evaluate.outputs.should-submit }}
       is-org-member: ${{ steps.check-org-membership.outputs.is-member }}
+      pr-number: ${{ steps.pr-author.outputs.pr-number }}
     steps:
       - name: Resolve PR author
         id: pr-author
@@ -64,6 +65,7 @@ jobs:
               owner, repo, pull_number: prNumber
             });
             core.setOutput('login', pr.user.login);
+            core.setOutput('pr-number', String(prNumber));
 
       - name: Fetch ephemeral GitHub token
         if: github.event.workflow_run.head_repository.full_name != github.repository
@@ -130,3 +132,106 @@ jobs:
         uses: elastic/docs-actions/changelog/submit/apply@v1
         with:
           config: ${{ inputs.config }}
+
+  fork-guidance:
+    needs: preflight
+    if: >
+      needs.preflight.outputs.should-submit == 'false'
+      && github.event.workflow_run.head_repository.full_name != github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post fork contributor guidance
+        uses: actions/github-script@v9
+        env:
+          PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
+          CONFIG: ${{ inputs.config }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const prNumber = parseInt(process.env.PR_NUMBER, 10);
+            if (!prNumber) {
+              core.warning('Could not resolve PR number — skipping fork guidance comment');
+              return;
+            }
+
+            const config = process.env.CONFIG || 'docs/changelog.yml';
+            const repoName = process.env.REPO_NAME;
+            const changelogDir = config.includes('/') ? config.replace(/\/[^/]+$/, '') : '.';
+            const entryPath = `${changelogDir}/${prNumber}.yaml`;
+
+            const bashScript = [
+              `mkdir -p ${changelogDir}`,
+              `cat > "${entryPath}" << 'YAML'`,
+              `pr: ${prNumber}`,
+              `type: enhancement  # feature | enhancement | bug-fix | breaking-change`,
+              `title: Describe your change clearly`,
+              `products:`,
+              `  - product: ${repoName}`,
+              `YAML`,
+              `git add "${entryPath}"`,
+              `git commit -m "Add changelog entry for PR #${prNumber}"`,
+              `git push`,
+            ].join('\n');
+
+            const docsBuilderSnippet = [
+              `CHANGELOG_PR_NUMBER=${prNumber} \\`,
+              `CHANGELOG_TITLE="Describe your change clearly" \\`,
+              `CHANGELOG_TYPE="enhancement" \\`,
+              `CHANGELOG_OWNER=${context.repo.owner} \\`,
+              `CHANGELOG_REPO=${repoName} \\`,
+              `  docs-builder changelog add \\`,
+              `    --concise \\`,
+              `    --config ${config} \\`,
+              `    --output ${changelogDir}`,
+              `git add "${entryPath}"`,
+              `git commit -m "Add changelog entry for PR #${prNumber}"`,
+              `git push`,
+            ].join('\n');
+
+            const marker = '<!-- changelog-fork-guidance -->';
+            const body = [
+              marker,
+              '## Changelog entry required',
+              '',
+              `This repository requires a changelog entry for every labeled PR. As an external contributor your entry cannot be auto-committed — please add \`${entryPath}\` to your branch.`,
+              '',
+              '### Option 1 — create the file manually (no tooling required)',
+              '',
+              '```bash',
+              bashScript,
+              '```',
+              '',
+              '### Option 2 — generate with `docs-builder`',
+              '',
+              '```bash',
+              docsBuilderSnippet,
+              '```',
+              '',
+              `Adjust \`type\` and \`title\` to match your change, then push. The changelog validation will re-run automatically.`,
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const existing = comments.find(c => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
