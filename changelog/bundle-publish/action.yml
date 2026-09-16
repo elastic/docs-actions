@@ -1,0 +1,100 @@
+name: Changelog bundle publish
+description: >
+  Downloads a changelog bundle artifact and uploads it to the private S3
+  bucket. A scrubber Lambda mirrors sanitized copies to the public CDN bucket.
+  Uses OIDC for AWS authentication and docs-builder's incremental upload.
+  Works with any create action that produces a single .yml bundle artifact
+  (bundle-create-version, bundle-create-git-range, or the legacy bundle-create).
+
+inputs:
+  bundle-path:
+    description: >
+      Path to the bundle .yml file, relative to the repo root. Must end in
+      .yml or .yaml. Typically needs.<job>.outputs.bundle-path from
+      bundle-create-version or bundle-create-git-range.
+    required: true
+  config:
+    description: 'Path to changelog.yml configuration file'
+    default: 'docs/changelog.yml'
+  artifact-name:
+    description: 'Name of the artifact uploaded by the create action'
+    default: 'changelog-bundle'
+  docs-builder-version:
+    description: >
+      docs-builder version to use (e.g. 0.1.100, latest, edge).
+      Non-edge versions are attestation-verified by the setup action.
+    default: 'edge'
+  github-token:
+    description: 'GitHub token (used by docs-builder setup). Use the default GITHUB_TOKEN.'
+    default: '${{ github.token }}'
+  aws-account-id:
+    description: 'The AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account.'
+    default: '197730964718'
+
+runs:
+  using: composite
+  steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        BUNDLE_PATH: ${{ inputs.bundle-path }}
+        CONFIG: ${{ inputs.config }}
+        ARTIFACT_NAME: ${{ inputs.artifact-name }}
+      run: |
+        source "${GITHUB_ACTION_PATH}/../../scripts/validate-inputs.sh"
+
+        if [ -z "$BUNDLE_PATH" ]; then
+          echo "::error::bundle-path is required"
+          exit 1
+        fi
+        if [[ "$BUNDLE_PATH" != *.yml && "$BUNDLE_PATH" != *.yaml ]]; then
+          echo "::error::bundle-path must end in .yml or .yaml: ${BUNDLE_PATH}"
+          exit 1
+        fi
+        validate_path "$BUNDLE_PATH" "bundle-path"
+        validate_path "$CONFIG" "config"
+        validate_identifier "$ARTIFACT_NAME" "artifact-name" '^[a-zA-Z0-9._-]+$'
+
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+
+    - name: Download bundle artifact
+      uses: actions/download-artifact@v8
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: .bundle-artifact
+
+    - name: Place bundle in output path
+      shell: bash
+      env:
+        BUNDLE_PATH: ${{ inputs.bundle-path }}
+      run: |
+        mkdir -p "$(dirname "$BUNDLE_PATH")"
+        cp ".bundle-artifact/$(basename "$BUNDLE_PATH")" "$BUNDLE_PATH"
+
+    - name: Setup docs-builder
+      uses: elastic/docs-actions/docs-builder/setup@v1
+      with:
+        version: ${{ inputs.docs-builder-version }}
+        github-token: ${{ inputs.github-token }}
+
+    - name: Authenticate with AWS
+      uses: elastic/docs-actions/aws/auth@v1
+      with:
+        aws_account_id: ${{ inputs.aws-account-id }}
+        aws_role_name_prefix: elastic-docs-v3-changelog-
+
+    - name: Upload bundle to S3
+      shell: bash
+      env:
+        CONFIG: ${{ inputs.config }}
+        BUNDLE_PATH: ${{ inputs.bundle-path }}
+      run: |
+        docs-builder changelog upload \
+          --artifact-type bundle \
+          --target s3 \
+          --s3-bucket-name elastic-docs-v3-changelog-bundles-private \
+          --config "$CONFIG" \
+          --directory "$(dirname "$BUNDLE_PATH")"
