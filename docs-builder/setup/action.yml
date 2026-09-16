@@ -21,6 +21,11 @@ runs:
         INSTALL_DIR="${HOME}/.docs-builder/bin"
         mkdir -p "${INSTALL_DIR}"
 
+        if [[ ! "${DOCS_BUILDER_VERSION}" =~ ^[a-zA-Z0-9._+-]+$ ]]; then
+          echo "::error::version contains disallowed characters: ${DOCS_BUILDER_VERSION}"
+          exit 1
+        fi
+
         if [[ "${DOCS_BUILDER_VERSION}" == "edge" ]]; then
             EDGE_IMAGE="ghcr.io/elastic/docs-builder:edge"
             docker pull "${EDGE_IMAGE}"
