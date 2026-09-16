@@ -10,7 +10,7 @@ inputs:
   bundle-path:
     description: >
       Path to the bundle .yml file, relative to the repo root. Must end in
-      .yml or .yaml. Typically ${{ needs.<job>.outputs.bundle-path }} from
+      .yml or .yaml. Typically needs.<job>.outputs.bundle-path from
       bundle-create-version or bundle-create-git-range.
     required: true
   config:
