@@ -13,6 +13,7 @@ Uploads changelog entries to the private S3 bucket (elastic-docs-v3-changelog-bu
 | `branch`         | Branch the changelog entries are published under (changelog/{org}/{repo}/{branch}/...). Defaults to the pushed branch.                                                  | `false`  | `${{ github.ref_name }}` |
 | `github-token`   | GitHub token (used by docs-builder setup and the GitHub API lookups). Use the default GITHUB_TOKEN; do not substitute a broader PAT.                                    | `false`  | `${{ github.token }}`    |
 | `aws-account-id` | The AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account.                                                             | `false`  | `197730964718`           |
+| `overwrite`      | Pass `--overwrite` so changed objects replace the remote copy. Default true.                                                                                            | `false`  | `true`                   |
 <!--/inputs-->
 
 ## Outputs

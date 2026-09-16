@@ -25,6 +25,13 @@ inputs:
   aws-account-id:
     description: 'The AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account.'
     default: '197730964718'
+  overwrite:
+    description: >
+      Pass --overwrite to docs-builder changelog upload so git remains source of truth
+      when replacing changed objects. Default true. Set false to omit the flag (today
+      that still replaces; a later docs-builder release will refuse replacements unless
+      this stays true).
+    default: 'true'
 
 runs:
   using: composite
@@ -92,7 +99,12 @@ runs:
         REPO_NAME: ${{ github.event.repository.name }}
         OWNER: ${{ github.repository_owner }}
         BRANCH: ${{ inputs.branch }}
+        OVERWRITE: ${{ inputs.overwrite }}
       run: |
+        overwrite_flag=()
+        if [[ "$OVERWRITE" == "true" ]]; then
+          overwrite_flag=(--overwrite)
+        fi
         docs-builder changelog upload \
           --artifact-type "$ARTIFACT_TYPE" \
           --target s3 \
@@ -100,4 +112,5 @@ runs:
           --config "$CONFIG" \
           --repo "$REPO_NAME" \
           --owner "$OWNER" \
-          --branch "$BRANCH"
+          --branch "$BRANCH" \
+          "${overwrite_flag[@]}"

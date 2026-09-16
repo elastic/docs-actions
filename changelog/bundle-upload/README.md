@@ -16,6 +16,7 @@ Your repository must be listed in the `elastic-docs-v3-changelog-bundles` infras
 | `docs-builder-version` | docs-builder version (e.g. 0.1.100, latest, edge)                                                    | `false`  | `edge`                |
 | `github-token`         | GitHub token (used by docs-builder setup). Use the default GITHUB_TOKEN; do not substitute a broader PAT | `false`  | `${{ github.token }}` |
 | `aws-account-id`       | AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account | `false`  | `197730964718`        |
+| `overwrite`            | Pass `--overwrite` so restaging a version can replace the remote bundle. Default true                 | `false`  | `true`                |
 
 ## Usage
 

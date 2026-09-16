@@ -33,6 +33,13 @@ inputs:
   aws-account-id:
     description: 'The AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account.'
     default: '197730964718'
+  overwrite:
+    description: >
+      Pass --overwrite to docs-builder changelog upload so restaging a bundle version
+      can replace the remote object. Default true. Set false to omit the flag (today
+      that still replaces; a later docs-builder release will refuse replacements unless
+      this stays true).
+    default: 'true'
 
 runs:
   using: composite
@@ -98,10 +105,16 @@ runs:
       env:
         CONFIG: ${{ inputs.config }}
         OUTPUT: ${{ inputs.bundle-path || inputs.output }}
+        OVERWRITE: ${{ inputs.overwrite }}
       run: |
+        overwrite_flag=()
+        if [[ "$OVERWRITE" == "true" ]]; then
+          overwrite_flag=(--overwrite)
+        fi
         docs-builder changelog upload \
           --artifact-type bundle \
           --target s3 \
           --s3-bucket-name elastic-docs-v3-changelog-bundles-private \
           --config "$CONFIG" \
-          --directory "$(dirname "$OUTPUT")"
+          --directory "$(dirname "$OUTPUT")" \
+          "${overwrite_flag[@]}"

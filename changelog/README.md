@@ -239,7 +239,7 @@ On each push to `main` or `master`, the upload workflow:
 2. Sets up `docs-builder`
 3. Looks up the merged PRs for the pushed commit; for each merged **fork** PR, runs `docs-builder changelog add --prs <N> --use-pr-number --concise --config <config>` to regenerate the entry from the live PR record (title, labels) and writes it into the bundle directory
 4. Authenticates with AWS via OIDC
-5. Runs `docs-builder changelog upload`, which reads your `changelog.yml`, discovers YAML files in the configured directory (committed entries plus any regenerated fork-PR entries), and incrementally uploads them to the **private** S3 bucket — only files whose content has changed are transferred
+5. Runs `docs-builder changelog upload` with `--overwrite` (git is source of truth for changed objects), which reads your `changelog.yml`, discovers YAML files in the configured directory (committed entries plus any regenerated fork-PR entries), and incrementally uploads them to the **private** S3 bucket — only files whose content has changed are transferred
 6. An SQS-triggered Lambda scrubs private repository references and writes sanitized copies to the **public** bucket behind CloudFront
 
 If the directory has no files and no fork PRs are associated, the command exits silently without error.
