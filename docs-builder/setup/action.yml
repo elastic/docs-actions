@@ -21,7 +21,7 @@ runs:
         INSTALL_DIR="${HOME}/.docs-builder/bin"
         mkdir -p "${INSTALL_DIR}"
 
-        if [[ ! "${DOCS_BUILDER_VERSION}" =~ ^[a-zA-Z0-9._+-]+$ ]]; then
+        if [[ -n "${DOCS_BUILDER_VERSION}" && ! "${DOCS_BUILDER_VERSION}" =~ ^[a-zA-Z0-9._+-]+$ ]]; then
           echo "::error::version contains disallowed characters: ${DOCS_BUILDER_VERSION}"
           exit 1
         fi
