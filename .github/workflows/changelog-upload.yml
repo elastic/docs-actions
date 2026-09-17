@@ -7,6 +7,14 @@ on:
         description: 'Path to changelog.yml configuration file'
         type: string
         default: 'docs/changelog.yml'
+      overwrite:
+        description: >
+          Pass --overwrite to docs-builder changelog upload so changed objects replace
+          the remote copy. Default true so existing callers keep replacing. Set false
+          to omit the flag; docs-builder then refuses replacements when the remote
+          object differs.
+        type: boolean
+        default: true
 
 permissions: {}
 
@@ -26,3 +34,4 @@ jobs:
         uses: elastic/docs-actions/changelog/upload@v1
         with:
           config: ${{ inputs.config }}
+          overwrite: ${{ inputs.overwrite }}

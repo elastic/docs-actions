@@ -95,6 +95,14 @@ on:
           uploading a bundle.
         type: boolean
         default: false
+      overwrite:
+        description: >
+          Pass --overwrite to docs-builder changelog upload so restaging a date-promotion
+          bundle can replace the remote object. Default true so existing callers keep
+          replacing. Set false to omit the flag; docs-builder then refuses replacements
+          when the remote object differs.
+        type: boolean
+        default: true
     outputs:
       status:
         description: "'dry-run' when no bundle was built, otherwise 'bundled' (the upload job then publishes it)"
@@ -192,3 +200,4 @@ jobs:
       - uses: elastic/docs-actions/changelog/bundle-upload@v1
         with:
           output: ${{ needs.generate.outputs.output }}
+          overwrite: ${{ inputs.overwrite }}

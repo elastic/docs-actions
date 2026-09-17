@@ -6,14 +6,14 @@ Uploads changelog entries to the private S3 bucket (elastic-docs-v3-changelog-bu
 
 ## Inputs
 <!--inputs-->
-| Name             | Description                                                                                                                                                             | Required | Default                  |
-|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|--------------------------|
-| `config`         | Path to changelog.yml configuration file (repo-relative, no ".." or absolute paths)                                                                                     | `false`  | `docs/changelog.yml`     |
-| `artifact-type`  | Comma-separated artifact types to upload (e.g. changelog, amend, or changelog,amend). Defaults to 'changelog'. Pass 'changelog,amend' to also upload amend entries.<br> | `false`  | `changelog`              |
-| `branch`         | Branch the changelog entries are published under (changelog/{org}/{repo}/{branch}/...). Defaults to the pushed branch.                                                  | `false`  | `${{ github.ref_name }}` |
-| `github-token`   | GitHub token (used by docs-builder setup and the GitHub API lookups). Use the default GITHUB_TOKEN; do not substitute a broader PAT.                                    | `false`  | `${{ github.token }}`    |
-| `aws-account-id` | The AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account.                                                             | `false`  | `197730964718`           |
-| `overwrite`      | Pass `--overwrite` so changed objects replace the remote copy. Default true.                                                                                            | `false`  | `true`                   |
+| Name             | Description                                                                                                                                                                                                                           | Required | Default                  |
+|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|--------------------------|
+| `config`         | Path to changelog.yml configuration file (repo-relative, no ".." or absolute paths)                                                                                                                                                   | `false`  | `docs/changelog.yml`     |
+| `artifact-type`  | Comma-separated artifact types to upload (e.g. changelog, amend, or changelog,amend). Defaults to 'changelog'. Pass 'changelog,amend' to also upload amend entries.<br>                                                               | `false`  | `changelog`              |
+| `branch`         | Branch the changelog entries are published under (changelog/{org}/{repo}/{branch}/...). Defaults to the pushed branch.                                                                                                                | `false`  | `${{ github.ref_name }}` |
+| `github-token`   | GitHub token (used by docs-builder setup and the GitHub API lookups). Use the default GITHUB_TOKEN; do not substitute a broader PAT.                                                                                                  | `false`  | `${{ github.token }}`    |
+| `aws-account-id` | The AWS account ID. Only override if OIDC trust and IAM roles have been provisioned for the target account.                                                                                                                           | `false`  | `197730964718`           |
+| `overwrite`      | Pass --overwrite to docs-builder changelog upload so git remains source of truth when replacing changed objects. Default true. Set false to omit the flag; docs-builder then refuses replacements when the remote object differs.<br> | `false`  | `true`                   |
 <!--/inputs-->
 
 ## Outputs

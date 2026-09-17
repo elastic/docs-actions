@@ -227,6 +227,18 @@ jobs:
       config: path/to/changelog.yml
 ```
 
+By default the workflow passes `--overwrite`, so git remains the source of truth for changed objects. To leave a different remote object in place and fail the job instead, pass `overwrite: false`:
+
+```yaml
+jobs:
+  upload:
+    uses: elastic/docs-actions/.github/workflows/changelog-upload.yml@v1
+    with:
+      overwrite: false
+```
+
+The `changelog/upload` and `changelog/bundle-upload` composite actions accept the same `overwrite` input. The `release-notes.yml`, `changelog-bundle.yml`, and `changelog-promotion-bundle.yml` reusable workflows also forward it.
+
 ### 2. Enable OIDC access
 
 The upload workflow authenticates to AWS via GitHub Actions OIDC. Your repository must be listed in the changelog bundles infrastructure to have an IAM role provisioned. Contact the docs-engineering team to add your repository.
@@ -239,7 +251,7 @@ On each push to `main` or `master`, the upload workflow:
 2. Sets up `docs-builder`
 3. Looks up the merged PRs for the pushed commit; for each merged **fork** PR, runs `docs-builder changelog add --prs <N> --use-pr-number --concise --config <config>` to regenerate the entry from the live PR record (title, labels) and writes it into the bundle directory
 4. Authenticates with AWS via OIDC
-5. Runs `docs-builder changelog upload` with `--overwrite` (git is source of truth for changed objects), which reads your `changelog.yml`, discovers YAML files in the configured directory (committed entries plus any regenerated fork-PR entries), and incrementally uploads them to the **private** S3 bucket — only files whose content has changed are transferred
+5. Runs `docs-builder changelog upload` with `--overwrite` unless you pass `overwrite: false`, which reads your `changelog.yml`, discovers YAML files in the configured directory (committed entries plus any regenerated fork-PR entries), and incrementally uploads them to the **private** S3 bucket — only files whose content has changed are transferred. With `overwrite: false`, an existing remote object whose content differs is left in place and the command exits non-zero.
 6. An SQS-triggered Lambda scrubs private repository references and writes sanitized copies to the **public** bucket behind CloudFront
 
 If the directory has no files and no fork PRs are associated, the command exits silently without error.
@@ -478,7 +490,7 @@ If your changelog configuration is not at `docs/changelog.yml`, pass the path ex
 
 ### Output
 
-The primary workflow (`changelog-bundle.yml`) uploads the bundle to the `elastic-docs-v3-changelog-bundles` S3 bucket under `bundle/{product}/{filename}`. The bundle is available to downstream rendering workflows immediately after upload.
+The primary workflow (`changelog-bundle.yml`) uploads the bundle to the `elastic-docs-v3-changelog-bundles` S3 bucket under `bundle/{product}/{filename}`. The bundle is available to downstream rendering workflows immediately after upload. Pass `overwrite: false` to omit `--overwrite` so a different remote bundle is left in place and the upload fails instead of replacing it.
 
 > **Note:** Bundles are keyed by product, so a shared product (e.g. `cloud-serverless`) bundled by more than one repository shares the `bundle/{product}/` prefix. Profile mode writes `{repo}-{product}-{version}.yaml` (for example `kibana-cloud-serverless-2026-08-27.yaml`) so those objects do not overwrite each other. Set `bundle.repo` (or pass `repo:`) so the prefix is stable; the CDN `:cdn:` listing includes every object under `bundle/{product}/`.
 
@@ -566,5 +578,5 @@ Notes:
 - The profile in `docs/changelog.yml` contributes output metadata only (`output_products`, `repo`/`owner`, `rules`); it must not set a `products` pattern or `source: github_release`.
 - Profile mode names the bundle `{repo}-{product}-{version}.yaml` (repo from `bundle.repo`, `--repo`, or git `origin`) under the profile's `output_directory` if set, otherwise `bundle.output_directory`.
 - Pass `dry-run: true` to resolve the range and publish the run report — the resolved PR list with each PR's entry source (pool / inferred / missing) plus commits without an associated PR — to the job summary without building or uploading anything. Useful for wiring and for pre-flight checks.
-- The upload goes to the private S3 bucket; the scrubber Lambda mirrors a sanitized copy to the public CDN, same as `changelog-bundle.yml`. The same OIDC prerequisite applies (your repository must have the changelog IAM role provisioned).
+- The upload goes to the private S3 bucket; the scrubber Lambda mirrors a sanitized copy to the public CDN, same as `changelog-bundle.yml`. The same OIDC prerequisite applies (your repository must have the changelog IAM role provisioned). Pass `overwrite: false` to omit `--overwrite` so a different remote bundle is left in place and the upload fails instead of replacing it.
 - A `GITHUB_TOKEN` is required at bundle time: the GraphQL API used for commit→PR association does not accept anonymous requests. The workflow passes the ambient `github.token`.

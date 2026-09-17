@@ -15,6 +15,13 @@ on:
         description: 'Require a changelog file to be present in the PR (evaluate-pr gate)'
         type: boolean
         default: false
+      overwrite:
+        description: >
+          Pass --overwrite to docs-builder changelog upload in the sync and bundle jobs.
+          Default true so existing callers keep replacing. Set false to omit the flag;
+          docs-builder then refuses replacements when the remote object differs.
+        type: boolean
+        default: true
 permissions: {}
 
 concurrency:
@@ -141,6 +148,7 @@ jobs:
           config: ${{ inputs.config }}
           artifact-type: changelog,amend
           branch: ${{ github.ref_name }}
+          overwrite: ${{ inputs.overwrite }}
 
   bundle:
     if: github.event_name == 'release' && inputs.bundle-on-release
@@ -173,3 +181,4 @@ jobs:
         with:
           config: ${{ inputs.config }}
           bundle-path: ${{ steps.create.outputs.output }}
+          overwrite: ${{ inputs.overwrite }}

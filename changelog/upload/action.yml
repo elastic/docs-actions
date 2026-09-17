@@ -28,9 +28,8 @@ inputs:
   overwrite:
     description: >
       Pass --overwrite to docs-builder changelog upload so git remains source of truth
-      when replacing changed objects. Default true. Set false to omit the flag (today
-      that still replaces; a later docs-builder release will refuse replacements unless
-      this stays true).
+      when replacing changed objects. Default true. Set false to omit the flag;
+      docs-builder then refuses replacements when the remote object differs.
     default: 'true'
 
 runs:

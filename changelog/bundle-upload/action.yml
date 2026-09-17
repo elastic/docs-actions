@@ -36,9 +36,8 @@ inputs:
   overwrite:
     description: >
       Pass --overwrite to docs-builder changelog upload so restaging a bundle version
-      can replace the remote object. Default true. Set false to omit the flag (today
-      that still replaces; a later docs-builder release will refuse replacements unless
-      this stays true).
+      can replace the remote object. Default true. Set false to omit the flag;
+      docs-builder then refuses replacements when the remote object differs.
     default: 'true'
 
 runs:

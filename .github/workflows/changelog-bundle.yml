@@ -60,6 +60,14 @@ on:
         description: 'AWS account ID for OIDC. Only override if provisioned for the target account.'
         type: string
         default: '197730964718'
+      overwrite:
+        description: >
+          Pass --overwrite to docs-builder changelog upload so restaging a bundle version
+          can replace the remote object. Default true so existing callers keep replacing.
+          Set false to omit the flag; docs-builder then refuses replacements when the
+          remote object differs.
+        type: boolean
+        default: true
 
 permissions: {}
 
@@ -105,3 +113,4 @@ jobs:
           config: ${{ inputs.config }}
           docs-builder-version: ${{ inputs.docs-builder-version }}
           aws-account-id: ${{ inputs.aws-account-id }}
+          overwrite: ${{ inputs.overwrite }}
