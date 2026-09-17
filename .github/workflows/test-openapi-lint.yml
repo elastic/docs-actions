@@ -53,6 +53,12 @@ jobs:
           - fixture: convention-warnings.yaml
             fail-on-warn: 'true'
             expect: failure
+          - fixture: placeholder-host-2.0.yaml
+            fail-on-warn: 'false'
+            expect: success
+          - fixture: placeholder-host-2.0.yaml
+            fail-on-warn: 'true'
+            expect: failure
 
     steps:
       - name: Checkout repository
