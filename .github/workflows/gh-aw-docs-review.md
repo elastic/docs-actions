@@ -20,11 +20,11 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-model: claude-sonnet-5
+model: sonnet
 engine:
   id: claude
   env:
-    ANTHROPIC_BASE_URL: https://openrouter.ai/api/v1
+    ANTHROPIC_BASE_URL: https://openrouter.ai/api
     ANTHROPIC_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 on:
   roles: [admin, maintainer, write]
