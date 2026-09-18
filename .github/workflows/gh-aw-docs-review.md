@@ -75,6 +75,7 @@ network:
     - defaults
     - github
     - "openrouter.ai"
+    - "api.anthropic.com"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
     - "ela.st"
