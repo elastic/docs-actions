@@ -20,7 +20,7 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-model: anthropic/claude-sonnet-5
+model: claude-sonnet-5
 engine:
   id: claude
   env:
