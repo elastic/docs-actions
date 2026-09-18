@@ -64,7 +64,7 @@ Default [protected files](https://github.com/github/gh-aw/blob/main/docs/src/con
 
 ## How it works
 
-1. **Pre-step** — validates `source-repos`, resolves the lookback window, and writes one digest per source repo (merged PRs via the GitHub search API, commits via the commits API) plus an `index.md` summary to `/tmp/gh-aw/docs-source-sync/`.
+1. **Pre-step** — validates `source-repos`, resolves the lookback window, and writes one digest per source repo (merged PRs via the GitHub search API, commits via the commits API) plus an `index.md` summary to `/tmp/gh-aw/docs-source-sync/`. The digest step fails if a GitHub API call fails or returns an unexpected payload, so a token or permission problem is not reported as "no changes."
 2. **Agent** — reads the digests, classifies each change as ignore / update / fix-procedure / add / delete-or-rewrite, maps it to a docs path using `repo-path-mapping` (or infers one), and either opens a PR or calls `noop`.
 
 A change is only ignored when it has no observable effect on how the team builds, runs, deploys, or operates the system. Broken runbook steps are treated as defects in their own right, even when the rest of the page is correct.
