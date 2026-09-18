@@ -20,16 +20,12 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-model: sonnet
+model: openai/gpt-5.6-luna
 engine:
-  id: claude
+  id: codex
   env:
-    ANTHROPIC_BASE_URL: https://openrouter.ai/api
-    ANTHROPIC_CUSTOM_HEADERS: |-
-      HTTP-Referer: https://github.com/${{ github.repository }}
-      X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
-      X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
-    ANTHROPIC_DEFAULT_SONNET_MODEL: anthropic/claude-sonnet-5
+    OPENAI_BASE_URL: https://openrouter.ai/api/v1
+    OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 on:
   roles: [admin, maintainer, write]
   workflow_call:
@@ -79,7 +75,6 @@ network:
     - defaults
     - github
     - "openrouter.ai"
-    - "api.anthropic.com"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
     - "ela.st"
@@ -328,14 +323,16 @@ Skip:
 
 Review each eligible file by applying the six criteria from the imported `review-criteria.md` rubric. The rubric is the authoritative source for every criterion. Where a criterion references the network (e.g., `find_related_docs`, MCP tool calls), perform those checks here.
 
-When a changed file would benefit from one of the installed APM skills, use that skill's guidance as implementation detail for the relevant criterion:
+Before reviewing the changed files, invoke these APM skills using the `Skill` tool. Each skill deepens coverage for its criterion and may surface findings that pure reasoning would miss:
 
-- `docs-check-style` for Language and Style criteria (formatting, accessibility, UI writing).
-- `docs-flag-jargon-skill` for Language criterion (jargon, outdated terms, unexplained acronyms).
-- `docs-frontmatter-audit` for Applicability criterion (frontmatter quality).
-- `docs-content-type-checker` for User Focus criterion (content type fit, page structure).
-- `docs-applies-to-tagging` for Applicability criterion (`applies_to` validity, lifecycle scope).
-- `docs-check-contradictions` for Technical accuracy criterion (see Step 4).
+- `docs-check-style` (Language and Style): invoke once per eligible file — `Skill({skill: "docs-check-style", args: "<file-path>"})`.
+- `docs-flag-jargon-skill` (Language): invoke once per eligible file for jargon, outdated terms, and unexplained acronyms.
+- `docs-frontmatter-audit` (Applicability): invoke once per eligible file for frontmatter quality.
+- `docs-content-type-checker` (User Focus): invoke once per eligible file for content-type fit and page structure.
+- `docs-applies-to-tagging` (Applicability): invoke once per eligible file for `applies_to` validity and lifecycle scope.
+- `docs-check-contradictions` (Technical accuracy): covered separately in Step 4.
+
+If a skill invocation fails or returns no output, continue reviewing that criterion without it — do not retry or stall. Incorporate skill findings into the relevant criterion's inline comments and summary. Do not duplicate a finding that Vale or a skill already reported.
 
 Before making manual style or clarity judgments, refresh the published Elastic style guidance with `elastic-docs.get_document_by_url`. At minimum, read the style guide overview once per run. Fetch the relevant subpage for specific findings (voice and tone, accessibility, grammar and spelling, word choice, formatting, UI writing). For content-type and `applies_to` judgments, also fetch:
 
