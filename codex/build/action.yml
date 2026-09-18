@@ -67,6 +67,19 @@ runs:
       with:
           vault-instance: "ci-prod"
           vault-role: "${{ steps.generate-vault-role.outputs.result }}"
+    - name: Explain codex-link-index token fetch failure
+      if: steps.fetch-ephemeral-token.outcome == 'failure'
+      shell: bash
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        REPOSITORY: ${{ github.repository }}
+      run: |
+        if [[ "${EVENT_NAME}" == "pull_request" && "${HEAD_REPOSITORY}" != "${REPOSITORY}" ]]; then
+          echo "::error::Fork pull_request jobs cannot clone elastic/codex-link-index. GitHub does not mint an OIDC token for fork PRs, so cross-links declared in docset.yml cannot be validated. Push the branch to ${REPOSITORY} and open the PR from there."
+        else
+          echo "::warning::Could not fetch a GitHub token for elastic/codex-link-index. Cross-links declared in docset.yml may fail to resolve. Confirm permissions.id-token: write on this job and that catalog-info registers a token policy for this workflow."
+        fi
     - name: Build
       shell: bash
       run: |
