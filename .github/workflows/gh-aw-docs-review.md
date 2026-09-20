@@ -24,11 +24,18 @@ engine:
   # Claude engine. permission-mode and --disallowed-tools are Claude Code flags and do not
   # exist here, so the Edit(./**) write guard is gone: the remaining protection is that the
   # skills themselves default to report-only since elastic-docs-skills#152.
+  # The baseline Luna run sent `"reasoning": {"summary": "auto"}` with no effort key at all
+  # (1,258 reasoning tokens across 11 calls). --effort is the only lever: gh-aw has no
+  # reasoning field, and COPILOT_MODEL_EFFORT is an unimplemented feature request
+  # (github/copilot-cli#2559). COPILOT_OFFLINE bypasses the CLI's internal model registry,
+  # which rejects effort for BYOK slugs it does not know (github/copilot-cli#4012, #3119).
+  args: ["--effort", "xhigh"]
   env:
     COPILOT_PROVIDER_BASE_URL: https://openrouter.ai/api/v1
     COPILOT_PROVIDER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
     COPILOT_PROVIDER_TYPE: openai
     COPILOT_PROVIDER_WIRE_API: responses
+    COPILOT_OFFLINE: "true"
 on:
   roles: [admin, maintainer, write]
   workflow_call:
@@ -252,6 +259,7 @@ Apply these rules to every inline comment and review body you write:
 - Do not use passive constructions such as "It is recommended that..." or "X should be...".
 - When a specific fix is clear, state it directly: "Change X to Y" or "Use X instead of Y."
 - When you make an explicit recommendation between two or more valid options, use "we recommend".
+- Link to published Elastic documentation only on the `https://www.elastic.co/docs/` domain. `elastic.com` is not an Elastic documentation domain; a link to it is dead and is stripped from the posted comment. When you are not certain of a documentation URL, name the guidance in prose instead of guessing a link.
 
 For `describe-recommended` phrasing (default):
 
@@ -408,6 +416,16 @@ Report only findings that are:
 - worth a human author's time.
 
 Use line-level review comments when you can point to an exact changed line or nearby changed hunk. Keep each inline comment narrowly scoped.
+
+Anchor every inline comment to a line number you derived mechanically. Never pass a line number you recalled, estimated, or read earlier in the session. Before each `create_pull_request_review_comment` call:
+
+1. Pick a short, distinctive snippet of the exact source text the comment is about.
+2. Run `grep -n` for that snippet in the target file to obtain the line number.
+3. Pass that number as the line, and quote the snippet in the comment body so a reader can confirm the anchor.
+
+If `grep -n` returns no match, or more than one, refine the snippet until it returns exactly one match. If you cannot reduce it to a single match, move the finding to the review body and post no inline comment for it. A comment attached to the wrong line is worse than no comment.
+
+The line number must come from the file the comment targets. Do not reuse a line number derived from a different file.
 
 When helpful, include a concrete replacement sentence, frontmatter snippet, or markdown wording in the comment body. Prefer GitHub suggestion blocks when the proposed edit cleanly maps to the reviewed line or hunk and can be applied directly. Fall back to plain prose when the change is too large, crosses multiple distant hunks, or the exact replacement range is ambiguous.
 
