@@ -20,12 +20,12 @@ skills:
 model: sonnet
 engine:
   id: claude
-  # gh-aw never adds Skill to --allowed-tools; this is the only mode that lets the agent invoke skills.
+  # The six rule sets are Read into this agent's context rather than invoked through the Skill
+  # tool. Claude Code runs forked skills in the foreground in non-interactive mode, so one fork
+  # per skill per file serialises: a six-file PR needed 36 forks at ~52s each and hit the
+  # 30-minute cap with nothing posted. Reading them keeps the wall clock near-flat in file
+  # count. The catalog keeps `context: fork`, which is still the right default locally.
   permission-mode: bypassPermissions
-  # Deny rules hold in every mode, including bypassPermissions. Claude consults path rules for
-  # Edit only, so this one rule covers Edit, Write, MultiEdit, and NotebookEdit across the
-  # checkout, for the agent and for any skill it forks. It also covers the file commands and
-  # redirections Claude recognizes in bash, but not a subprocess that opens files itself.
   args: ["--disallowed-tools", "Edit(./**)"]
   env:
     ANTHROPIC_BASE_URL: https://openrouter.ai/api
@@ -91,6 +91,10 @@ network:
     - "search.elastic.co"
 strict: false
 safe-outputs:
+  threat-detection:
+    engine:
+      id: copilot
+      model: sonnet
   urls: allowed-or-code-region
   allowed-domains:
     - elastic.co
@@ -253,6 +257,7 @@ Apply these rules to every inline comment and review body you write:
 - Do not use passive constructions such as "It is recommended that..." or "X should be...".
 - When a specific fix is clear, state it directly: "Change X to Y" or "Use X instead of Y."
 - When you make an explicit recommendation between two or more valid options, use "we recommend".
+- Link to published Elastic documentation only on the `https://www.elastic.co/docs/` domain. `elastic.com` is not an Elastic documentation domain; a link to it is dead and is stripped from the posted comment. When you are not certain of a documentation URL, name the guidance in prose instead of guessing a link.
 
 For `describe-recommended` phrasing (default):
 
@@ -335,20 +340,24 @@ Skip:
 
 Review each eligible file by applying the six criteria from the imported `review-criteria.md` rubric. The rubric is the authoritative source for every criterion. Where a criterion references the network (e.g., `find_related_docs`, MCP tool calls), perform those checks here.
 
-Before reviewing the changed files, invoke these skills with the `Skill` tool, using the directory names below. Each skill deepens coverage for its criterion and may surface findings that pure reasoning would miss:
+Before reviewing the changed files, read these rule sets into your own context with the `Read` tool, once each, at the start of the run. Each deepens coverage for its criterion and may surface findings that pure reasoning would miss:
 
-- `Skill({skill: "docs-check-style", args: "<file-path>. Do not run vale; its JSON output for this file is already at /tmp/gh-aw/docs-review-data/vale.json, keyed by /tmp/gh-aw/docs-review-data/scope/<file-path>. Read that file."})` (Language and Style): once per eligible file.
-- `Skill({skill: "docs-flag-jargon-skill", args: "<file-path>"})` (Language): once per eligible file, for jargon, outdated terms, and unexplained acronyms.
-- `Skill({skill: "docs-frontmatter-audit", args: "<file-path>"})` (Applicability): once per eligible file, for frontmatter quality.
-- `Skill({skill: "docs-content-type-checker", args: "<file-path>"})` (User Focus): once per eligible file, for content-type fit and page structure.
-- `Skill({skill: "docs-applies-to-tagging", args: "<file-path>. Validate only: report every issue with its line number and the corrected syntax. Do not edit any file."})` (Applicability): once per eligible file, for `applies_to` validity and lifecycle scope.
-- `docs-check-contradictions` (Technical accuracy): covered separately in Step 4.
+- `.claude/skills/docs-check-style/SKILL.md` (Language and Style). Do not run vale: its JSON output is already at `/tmp/gh-aw/docs-review-data/vale.json`, keyed by `/tmp/gh-aw/docs-review-data/scope/<file-path>`.
+- `.claude/skills/docs-flag-jargon-skill/SKILL.md` (Language): jargon, outdated terms, and unexplained acronyms.
+- `.claude/skills/docs-frontmatter-audit/SKILL.md` (Applicability): frontmatter quality.
+- `.claude/skills/docs-content-type-checker/SKILL.md` (User Focus): content-type fit and page structure.
+- `.claude/skills/docs-applies-to-tagging/SKILL.md` (Applicability): `applies_to` validity and lifecycle scope.
+- `.claude/skills/docs-check-contradictions/SKILL.md` (Technical accuracy): also used in Step 4.
 
-Skills must not change the working tree. If a skill reports that it edited or fixed a file, run `git checkout -- <file-path>` to restore it, and treat each change it described as a finding to report, not as resolved.
+**Do not use the `Skill` tool in this workflow.** Read each `SKILL.md` as a file and apply its rules yourself, across every eligible file. Read each one once for the whole run, not once per file: the rules do not change between files.
 
-If a skill invocation fails or returns no output, do not retry or stall. Record it in the `Notes` section of the review body as `Not checked by <skill>: <reason>`, then continue reviewing that criterion with the rubric alone. Incorporate skill findings into the relevant criterion's inline comments and summary. Do not duplicate a finding that Vale or a skill already reported.
+Apply every rule set to every eligible file. Reading the rules into one context is what lets you find issues that span sections or files — an internal contradiction between two statements in the same page, or the same defect repeated across pages. Report those explicitly; they are higher value than single-line nits.
 
-The skills fetch the published style, content-type, and cumulative-docs guidance they need through the Elastic docs MCP server; do not fetch those pages again for the same purpose. Use `elastic-docs.get_document_by_url` yourself only when a finding depends on a page no skill covered:
+Applying these rules must not change the working tree. If you edit a file, run `git checkout -- <file-path>` to restore it, and treat the change as a finding to report, not as resolved.
+
+If a rule set cannot be read, do not retry or stall. Record it in the `Notes` section of the review body as `Not checked by <name>: <reason>`, then continue reviewing that criterion with the rubric alone. Do not duplicate a finding that Vale already reported.
+
+Each rule set names the published style, content-type, and cumulative-docs guidance it depends on. Fetch a page through the Elastic docs MCP server when a rule set requires it or when a finding depends on it, and do not fetch the same page twice:
 
 - Content types: `/docs/contribute-docs/content-types/overviews`, `/docs/contribute-docs/content-types/how-tos`, `/docs/contribute-docs/content-types/tutorials`, `/docs/contribute-docs/content-types/troubleshooting`, `/docs/contribute-docs/content-types/changelogs`.
 - Cumulative docs: `/docs/contribute-docs/how-to/cumulative-docs/guidelines` and `/docs/contribute-docs/how-to/cumulative-docs/reference`.
@@ -358,6 +367,10 @@ Apply the six criteria in order:
 1. **User focus** — Content completeness, scannability, findability, and logical flow. Apply the three-location user-benefit check (intro, decision points, title promise). Check that warnings appear before the content they warn about. Use `elastic-docs.find_related_docs` for cross-page findability issues.
 
 2. **Technical accuracy** — Correctness, SME evidence, code sample validity, and precise prerequisites. Use the pre-fetched Vale output as one signal. When the change references a code PR or commit, check that parameter names, defaults, and behavior match.
+
+   **Verify before you post.** Before you post an inline comment under this criterion, call `elastic-docs.search_docs` for the claim you are challenging. Read the most on-topic hit with `elastic-docs.get_document_by_url` and `includeBody: true`. If you have no search result for the claim, do not post an inline comment for it: put the finding in the review body instead. An unverified technical claim is a suggestion, not a finding.
+
+   This applies to product names, API endpoints, default values, retention periods, port numbers, required privileges, and UI navigation paths. Your training data is out of date on all of them.
 
 3. **Applicability** — `applies_to` tags, cumulative structure, markup correctness, and deployment types. For validity judgments, verify against the repository's checked-in schema or the published cumulative-docs guidance fetched during this run. Do not rely on training knowledge for valid keys or lifecycle values. If you cannot verify, do not report.
 
@@ -381,7 +394,7 @@ Treat this as a PR review, not a full repository audit:
 
 ## Step 4: Check for contradictions
 
-After completing Step 3, run the contradictions skill on the eligible changed files with `Skill({skill: "docs-check-contradictions", args: "<file-path>"})` to find places in the existing docs — both in the local repo and in published Elastic docs — that contradict or conflict with the new or updated content.
+After completing Step 3, apply the `docs-check-contradictions` rules you read in Step 3 to the eligible changed files, to find places in the existing docs — both in the local repo and in published Elastic docs — that contradict or conflict with the new or updated content.
 
 Call the skill once for each eligible file, passing the file path as the argument. If there are many eligible files, group them by directory and call the skill once per directory instead.
 
@@ -409,6 +422,16 @@ Report only findings that are:
 - worth a human author's time.
 
 Use line-level review comments when you can point to an exact changed line or nearby changed hunk. Keep each inline comment narrowly scoped.
+
+Anchor every inline comment to a line number you derived mechanically. Never pass a line number you recalled, estimated, or read earlier in the session. Before each `create_pull_request_review_comment` call:
+
+1. Pick a short, distinctive snippet of the exact source text the comment is about.
+2. Run `grep -n` for that snippet in the target file to obtain the line number.
+3. Pass that number as the line, and quote the snippet in the comment body so a reader can confirm the anchor.
+
+If `grep -n` returns no match, or more than one, refine the snippet until it returns exactly one match. If you cannot reduce it to a single match, move the finding to the review body and post no inline comment for it. A comment attached to the wrong line is worse than no comment.
+
+The line number must come from the file the comment targets. Do not reuse a line number derived from a different file.
 
 When helpful, include a concrete replacement sentence, frontmatter snippet, or markdown wording in the comment body. Prefer GitHub suggestion blocks when the proposed edit cleanly maps to the reviewed line or hunk and can be applied directly. Fall back to plain prose when the change is too large, crosses multiple distant hunks, or the exact replacement range is ambiguous.
 

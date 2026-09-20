@@ -16,6 +16,15 @@ imports:
 model: openai/gpt-5.6-luna
 engine:
   id: codex
+  # Codex sends no OpenRouter attribution of its own. gh-aw writes the provider block as
+  # `[model_providers.openai-proxy]` and strips any user copy of that exact heading, but the
+  # `.http_headers` sub-table is a different literal line, so it survives the filter and TOML
+  # allows defining a sub-table after its parent.
+  # gh-aw injects engine.config into the lock's `run:` block at column 0, which terminates the
+  # YAML block scalar (the run body is indented 10). A `|` block cannot emit leading whitespace
+  # on its first line, so this is a double-quoted scalar with each TOML line padded to 10
+  # spaces; YAML strips those 10 again when the step runs, leaving valid column-0 TOML.
+  config: "          [model_providers.openai-proxy.http_headers]\n          \"HTTP-Referer\" = \"https://github.com/${{ github.repository }}\"\n          \"X-OpenRouter-Title\" = \"${{ github.repository }}/${{ github.workflow }}\"\n          \"X-Session-ID\" = \"${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}\"\n"
   env:
     OPENAI_BASE_URL: https://openrouter.ai/api/v1
     OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
