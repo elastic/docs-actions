@@ -20,7 +20,7 @@ mkdir -p .github/workflows && curl -sL \
 Add the following to the caller workflow before running this workflow:
 
 - `permissions.copilot-requests: write`
-- A repo or organization secret named `ANTHROPIC_API_KEY` containing your OpenRouter API key. Pass it with `secrets: inherit` or as an explicit secret in the `uses:` call.
+- A repo or organization secret named `OPENROUTER_API_KEY` containing your OpenRouter API key. Pass it with `secrets: inherit`, or explicitly as `OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}` in the `uses:` call. The workflow maps it to `ANTHROPIC_API_KEY` internally.
 
 The workflow uses the Claude engine via OpenRouter for improved consistency and to use your own API key rather than shared Copilot credits.
 
