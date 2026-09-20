@@ -22,6 +22,8 @@ engine:
   id: claude
   # gh-aw never adds Skill to --allowed-tools; this is the only mode that lets the agent invoke skills.
   permission-mode: bypassPermissions
+  # Deny rules hold in every mode. Review is read-only: no tool may edit the checkout, forked skills included.
+  args: ["--disallowed-tools", "Edit(./**)"]
   env:
     ANTHROPIC_BASE_URL: https://openrouter.ai/api
     ANTHROPIC_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
