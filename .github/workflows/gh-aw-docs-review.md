@@ -17,19 +17,19 @@ skills:
   - elastic/elastic-docs-skills/skills/review/docs-check-contradictions@main
   - elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker@main
   - elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging@main
-model: openai/gpt-5.6-luna
+model: openai/gpt-5.6-terra
 engine:
   id: copilot
   # Luna is an OpenAI model, so this runs Copilot BYOK against OpenRouter rather than the
   # Claude engine. permission-mode and --disallowed-tools are Claude Code flags and do not
   # exist here, so the Edit(./**) write guard is gone: the remaining protection is that the
   # skills themselves default to report-only since elastic-docs-skills#152.
-  # The baseline Luna run sent `"reasoning": {"summary": "auto"}` with no effort key at all
+  # Terra arm: priced like Sonnet 5 ($2/M prompt), 10x Luna. The baseline Luna run sent `"reasoning": {"summary": "auto"}` with no effort key at all
   # (1,258 reasoning tokens across 11 calls). --effort is the only lever: gh-aw has no
   # reasoning field, and COPILOT_MODEL_EFFORT is an unimplemented feature request
   # (github/copilot-cli#2559). COPILOT_OFFLINE bypasses the CLI's internal model registry,
   # which rejects effort for BYOK slugs it does not know (github/copilot-cli#4012, #3119).
-  args: ["--effort", "max"]
+  args: ["--effort", "high"]
   env:
     COPILOT_PROVIDER_BASE_URL: https://openrouter.ai/api/v1
     COPILOT_PROVIDER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
