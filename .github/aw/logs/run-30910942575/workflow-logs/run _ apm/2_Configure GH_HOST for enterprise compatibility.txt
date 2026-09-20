@@ -1,8 +1,0 @@
-﻿2026-08-04T12:51:49.9543765Z ##[group]Run # Derive GH_HOST from GITHUB_SERVER_URL so the gh CLI targets the correct
-2026-08-04T12:51:49.9544968Z [36;1m# Derive GH_HOST from GITHUB_SERVER_URL so the gh CLI targets the correct[0m
-2026-08-04T12:51:49.9546331Z [36;1m# GitHub instance (GHES/GHEC). On github.com this is a harmless no-op.[0m
-2026-08-04T12:51:49.9547164Z [36;1mGH_HOST="${GITHUB_SERVER_URL#https://}"[0m
-2026-08-04T12:51:49.9547798Z [36;1mGH_HOST="${GH_HOST#http://}"[0m
-2026-08-04T12:51:49.9548407Z [36;1mecho "GH_HOST=${GH_HOST}" >> "$GITHUB_ENV"[0m
-2026-08-04T12:51:49.9558782Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
-2026-08-04T12:51:49.9559821Z ##[endgroup]

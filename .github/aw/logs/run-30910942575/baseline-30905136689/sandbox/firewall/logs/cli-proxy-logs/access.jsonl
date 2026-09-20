@@ -1,1 +1,0 @@
-{"timestamp":"2026-08-04T11:33:27.098Z","_schema":"cli-proxy-access/v0.0.0-dev","event":"server_start","port":11000,"timeoutMs":30000,"ghHost":"localhost:18443","caCert":"/tmp/proxy-tls/ca.crt","hasGhToken":true}

@@ -1,9 +1,0 @@
-[2026-08-04T11:33:07.890Z] [INFO] [difc] Guard policy: {"write-sink":{"accept":["*"],"sink-visibility":"public"}}
-[2026-08-04T11:33:08.217Z] [INFO] [difc] Sink visibility runtime verification passed: repo=elastic/opentelemetry, configured="public", actual="public"
-[2026-08-04T11:33:08.217Z] [INFO] [difc] Created write-sink guard with 1 accept patterns, sink-visibility="public"
-[2026-08-04T11:33:08.223Z] [INFO] [difc] Registered guard 'write-sink'
-[2026-08-04T11:33:08.237Z] [DEBUG] [backend] GetOrLaunch called for server: elastic-docs
-[2026-08-04T11:33:08.238Z] [INFO] [backend] Configuring HTTP MCP backend: elastic-docs, url=https://www.elastic.co/docs/_mcp/
-[2026-08-04T11:33:08.309Z] [INFO] [backend] Successfully configured HTTP MCP backend: elastic-docs
-[2026-08-04T11:33:08.310Z] [INFO] [backend] Backend server info: name=bootstrap, version=1.0.0.0
-[2026-08-04T11:33:11.891Z] [INFO] [backend] Successfully registered tools from elastic-docs (took 107.774002ms)
