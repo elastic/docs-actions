@@ -22,7 +22,10 @@ engine:
   id: claude
   # gh-aw never adds Skill to --allowed-tools; this is the only mode that lets the agent invoke skills.
   permission-mode: bypassPermissions
-  # Deny rules hold in every mode. Review is read-only: no tool may edit the checkout, forked skills included.
+  # Deny rules hold in every mode, including bypassPermissions. Claude consults path rules for
+  # Edit only, so this one rule covers Edit, Write, MultiEdit, and NotebookEdit across the
+  # checkout, for the agent and for any skill it forks. It also covers the file commands and
+  # redirections Claude recognizes in bash, but not a subprocess that opens files itself.
   args: ["--disallowed-tools", "Edit(./**)"]
   env:
     ANTHROPIC_BASE_URL: https://openrouter.ai/api
