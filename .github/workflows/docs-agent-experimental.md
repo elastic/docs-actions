@@ -8,18 +8,15 @@ emoji: 🧪
 
 inlined-imports: true
 imports:
-  - uses: shared/apm.md
-    with:
-      target: claude
-      packages:
-        - elastic/elastic-docs-skills/skills/authoring/content-type-checker
-        - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
-        - elastic/elastic-docs-skills/skills/authoring/docs-syntax-help
-        - elastic/elastic-docs-skills/skills/authoring/frontmatter-description
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
 
+skills:
+  - elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker@main
+  - elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging@main
+  - elastic/elastic-docs-skills/skills/authoring/docs-syntax-help@main
+  - elastic/elastic-docs-skills/skills/authoring/docs-frontmatter-description@main
 model: claude-sonnet-5
 engine:
   id: copilot

@@ -1,34 +1,49 @@
 {
   "entries": {
-    "elastic/elastic-docs-skills/skills/authoring/applies-to-tagging@main": {
-      "repo": "elastic/elastic-docs-skills/skills/authoring/applies-to-tagging",
+    "elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging@main": {
+      "repo": "elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging",
       "version": "main",
-      "sha": "b079923c3cd4122dc7eef07de48cb90c4113fbf0"
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
     },
-    "elastic/elastic-docs-skills/skills/authoring/content-type-checker@main": {
-      "repo": "elastic/elastic-docs-skills/skills/authoring/content-type-checker",
+    "elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker@main": {
+      "repo": "elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker",
       "version": "main",
-      "sha": "b079923c3cd4122dc7eef07de48cb90c4113fbf0"
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
     },
-    "elastic/elastic-docs-skills/skills/review/check-contradictions@main": {
-      "repo": "elastic/elastic-docs-skills/skills/review/check-contradictions",
+    "elastic/elastic-docs-skills/skills/authoring/docs-frontmatter-description@main": {
+      "repo": "elastic/elastic-docs-skills/skills/authoring/docs-frontmatter-description",
       "version": "main",
-      "sha": "b079923c3cd4122dc7eef07de48cb90c4113fbf0"
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
+    },
+    "elastic/elastic-docs-skills/skills/authoring/docs-page-opening-optimizer@main": {
+      "repo": "elastic/elastic-docs-skills/skills/authoring/docs-page-opening-optimizer",
+      "version": "main",
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
+    },
+    "elastic/elastic-docs-skills/skills/authoring/docs-syntax-help@main": {
+      "repo": "elastic/elastic-docs-skills/skills/authoring/docs-syntax-help",
+      "version": "main",
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
+    },
+    "elastic/elastic-docs-skills/skills/review/docs-check-contradictions@main": {
+      "repo": "elastic/elastic-docs-skills/skills/review/docs-check-contradictions",
+      "version": "main",
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
     },
     "elastic/elastic-docs-skills/skills/review/docs-check-style@main": {
       "repo": "elastic/elastic-docs-skills/skills/review/docs-check-style",
       "version": "main",
-      "sha": "b079923c3cd4122dc7eef07de48cb90c4113fbf0"
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
     },
-    "elastic/elastic-docs-skills/skills/review/flag-jargon-skill@main": {
-      "repo": "elastic/elastic-docs-skills/skills/review/flag-jargon-skill",
+    "elastic/elastic-docs-skills/skills/review/docs-flag-jargon-skill@main": {
+      "repo": "elastic/elastic-docs-skills/skills/review/docs-flag-jargon-skill",
       "version": "main",
-      "sha": "b079923c3cd4122dc7eef07de48cb90c4113fbf0"
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
     },
-    "elastic/elastic-docs-skills/skills/review/frontmatter-audit@main": {
-      "repo": "elastic/elastic-docs-skills/skills/review/frontmatter-audit",
+    "elastic/elastic-docs-skills/skills/review/docs-frontmatter-audit@main": {
+      "repo": "elastic/elastic-docs-skills/skills/review/docs-frontmatter-audit",
       "version": "main",
-      "sha": "b079923c3cd4122dc7eef07de48cb90c4113fbf0"
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
     },
     "github/gh-aw-actions/setup-cli@v0.88.7": {
       "repo": "github/gh-aw-actions/setup-cli",
@@ -39,11 +54,6 @@
       "repo": "github/gh-aw-actions/setup",
       "version": "v0.88.7",
       "sha": "5e508589e03a7757a7e05b26e834292f5445bfb6"
-    },
-    "microsoft/apm-action@v1.10.0": {
-      "repo": "microsoft/apm-action",
-      "version": "v1.10.0",
-      "sha": "d723bb64ed70c135bbaf87d126b721dd2dae0439"
     }
   }
 }

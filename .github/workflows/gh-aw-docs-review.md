@@ -6,17 +6,17 @@ description: |
 
 inlined-imports: true
 imports:
-  - elastic/elastic-docs-skills/skills/review/review-pr/references/review-criteria.md@main
+  - elastic/elastic-docs-skills/skills/review/docs-review-pr/references/review-criteria.md@main
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
 skills:
   - elastic/elastic-docs-skills/skills/review/docs-check-style@main
-  - elastic/elastic-docs-skills/skills/review/flag-jargon-skill@main
-  - elastic/elastic-docs-skills/skills/review/frontmatter-audit@main
-  - elastic/elastic-docs-skills/skills/review/check-contradictions@main
-  - elastic/elastic-docs-skills/skills/authoring/content-type-checker@main
-  - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging@main
+  - elastic/elastic-docs-skills/skills/review/docs-flag-jargon-skill@main
+  - elastic/elastic-docs-skills/skills/review/docs-frontmatter-audit@main
+  - elastic/elastic-docs-skills/skills/review/docs-check-contradictions@main
+  - elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker@main
+  - elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging@main
 model: sonnet
 engine:
   id: claude
@@ -227,16 +227,16 @@ You are a documentation pull request reviewer for Elastic documentation reposito
 
 Apply the six-criteria review rubric imported into this workflow (`review-criteria.md`), use deterministic evidence from the pull request and local files, and use the Elastic docs MCP server when published documentation is needed to verify a claim.
 
-This workflow also installs these skills from `elastic/elastic-docs-skills` into `.claude/skills/`. Use them as implementation tools for the relevant rubric criterion — they provide operational rules that flesh out the rubric's criteria. Claude Code registers each skill under its directory name, so invoke them with the names in the first column:
+This workflow also installs these skills from `elastic/elastic-docs-skills` into `.claude/skills/`. Use them as implementation tools for the relevant rubric criterion — they provide operational rules that flesh out the rubric's criteria. Claude Code registers each skill under its directory name, which matches its frontmatter name, so invoke each one by the name below:
 
-| Invoke as | Skill | Criterion |
-|---|---|---|
-| `docs-check-style` | docs-check-style | Language, Style |
-| `flag-jargon-skill` | docs-flag-jargon-skill | Language |
-| `frontmatter-audit` | docs-frontmatter-audit | Applicability |
-| `content-type-checker` | docs-content-type-checker | User focus |
-| `applies-to-tagging` | docs-applies-to-tagging | Applicability |
-| `check-contradictions` | docs-check-contradictions | Technical accuracy (Step 4) |
+| Skill | Criterion |
+|---|---|
+| `docs-check-style` | Language, Style |
+| `docs-flag-jargon-skill` | Language |
+| `docs-frontmatter-audit` | Applicability |
+| `docs-content-type-checker` | User focus |
+| `docs-applies-to-tagging` | Applicability |
+| `docs-check-contradictions` | Technical accuracy (Step 4) |
 
 **Two overrides apply in this GitHub workflow context:**
 
@@ -338,11 +338,11 @@ Review each eligible file by applying the six criteria from the imported `review
 Before reviewing the changed files, invoke these skills with the `Skill` tool, using the directory names below. Each skill deepens coverage for its criterion and may surface findings that pure reasoning would miss:
 
 - `Skill({skill: "docs-check-style", args: "<file-path>. Do not run vale; its JSON output for this file is already at /tmp/gh-aw/docs-review-data/vale.json, keyed by /tmp/gh-aw/docs-review-data/scope/<file-path>. Read that file."})` (Language and Style): once per eligible file.
-- `Skill({skill: "flag-jargon-skill", args: "<file-path>"})` (Language): once per eligible file, for jargon, outdated terms, and unexplained acronyms.
-- `Skill({skill: "frontmatter-audit", args: "<file-path>"})` (Applicability): once per eligible file, for frontmatter quality.
-- `Skill({skill: "content-type-checker", args: "<file-path>"})` (User Focus): once per eligible file, for content-type fit and page structure.
-- `Skill({skill: "applies-to-tagging", args: "<file-path>. Validate only: report every issue with its line number and the corrected syntax. Do not edit any file."})` (Applicability): once per eligible file, for `applies_to` validity and lifecycle scope.
-- `check-contradictions` (Technical accuracy): covered separately in Step 4.
+- `Skill({skill: "docs-flag-jargon-skill", args: "<file-path>"})` (Language): once per eligible file, for jargon, outdated terms, and unexplained acronyms.
+- `Skill({skill: "docs-frontmatter-audit", args: "<file-path>"})` (Applicability): once per eligible file, for frontmatter quality.
+- `Skill({skill: "docs-content-type-checker", args: "<file-path>"})` (User Focus): once per eligible file, for content-type fit and page structure.
+- `Skill({skill: "docs-applies-to-tagging", args: "<file-path>. Validate only: report every issue with its line number and the corrected syntax. Do not edit any file."})` (Applicability): once per eligible file, for `applies_to` validity and lifecycle scope.
+- `docs-check-contradictions` (Technical accuracy): covered separately in Step 4.
 
 Skills must not change the working tree. If a skill reports that it edited or fixed a file, run `git checkout -- <file-path>` to restore it, and treat each change it described as a finding to report, not as resolved.
 
@@ -381,7 +381,7 @@ Treat this as a PR review, not a full repository audit:
 
 ## Step 4: Check for contradictions
 
-After completing Step 3, run the contradictions skill on the eligible changed files with `Skill({skill: "check-contradictions", args: "<file-path>"})` to find places in the existing docs — both in the local repo and in published Elastic docs — that contradict or conflict with the new or updated content.
+After completing Step 3, run the contradictions skill on the eligible changed files with `Skill({skill: "docs-check-contradictions", args: "<file-path>"})` to find places in the existing docs — both in the local repo and in published Elastic docs — that contradict or conflict with the new or updated content.
 
 Call the skill once for each eligible file, passing the file path as the argument. If there are many eligible files, group them by directory and call the skill once per directory instead.
 

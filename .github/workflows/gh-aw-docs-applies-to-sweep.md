@@ -7,15 +7,12 @@ description: |
 
 inlined-imports: true
 imports:
-  - uses: shared/apm.md
-    with:
-      target: claude
-      packages:
-        - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/findings-contract.md
+skills:
+  - elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging@main
 model: claude-sonnet-5
 engine:
   id: copilot
