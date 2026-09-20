@@ -1,0 +1,20 @@
+swagger: "2.0"
+info:
+  title: Test API
+  version: "1.0.0"
+  description: A Swagger 2.0 fixture with a placeholder host, as published by self-hosted products such as Elastic Cloud Enterprise. `host` must lint as a warning, not an error.
+host: "{{hostname}}"
+basePath: /api/v1
+schemes: [https]
+paths:
+  /things:
+    get:
+      operationId: getThings
+      summary: Get things
+      description: Returns a list of things.
+      tags: [things]
+      responses:
+        '200':
+          description: OK
+tags:
+  - name: things

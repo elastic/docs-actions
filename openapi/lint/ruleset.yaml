@@ -13,6 +13,15 @@
 #     as-is; flip a consumer's `fail-on-warn` input to `true` to enforce.
 extends: [["spectral:oas", off]]
 
+# Swagger 2.0 forbids braces in `host`, but self-hosted products publish a
+# placeholder host on purpose (Elastic Cloud Enterprise: `{{hostname}}`, the
+# coordinator the reader installs). Bump.sh accepts it; so do we. Only `host`
+# is relaxed, every other oas2-schema check stays at error.
+overrides:
+  - files: ["**#/host"]
+    rules:
+      oas2-schema: warn
+
 rules:
   # ---- Core tier (error) ----
   oas2-schema: error

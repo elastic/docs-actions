@@ -43,6 +43,8 @@ It has two severity tiers:
 
 - **error** — the spec parses, all `$ref`s resolve, and it conforms to the OAS schema for its
   detected version (Swagger 2.0, OpenAPI 3.0.x, or OpenAPI 3.1.x). These always fail the check.
+  One exception: a Swagger 2.0 `host` that fails the schema pattern (for example a placeholder
+  like `{{hostname}}` in a self-hosted product's spec) is reported as a warning.
 - **warn** — authoring conventions, currently the generic hygiene rules built into `spectral:oas`
   (`operationId` presence, required descriptions/tags/servers, tags defined at root). These pass
   by default so existing specs aren't broken; set `fail-on-warn: true` to enforce them.
