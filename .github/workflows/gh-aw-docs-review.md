@@ -19,30 +19,25 @@ skills:
   - elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging@main
 model: openai/gpt-5.6-sol
 engine:
-  id: copilot
-  # Luna is an OpenAI model, so this runs Copilot BYOK against OpenRouter rather than the
-  # Claude engine. permission-mode and --disallowed-tools are Claude Code flags and do not
-  # exist here, so the Edit(./**) write guard is gone: the remaining protection is that the
-  # skills themselves default to report-only since elastic-docs-skills#152.
-  # Terra arm: priced like Sonnet 5 ($2/M prompt), 10x Luna. The baseline Luna run sent `"reasoning": {"summary": "auto"}` with no effort key at all
-  # (1,258 reasoning tokens across 11 calls). --effort is the only lever: gh-aw has no
-  # reasoning field, and COPILOT_MODEL_EFFORT is an unimplemented feature request
-  # (github/copilot-cli#2559). COPILOT_OFFLINE bypasses the CLI's internal model registry,
-  # which rejects effort for BYOK slugs it does not know (github/copilot-cli#4012, #3119).
-  args: ["--effort", "max"]
+  id: codex
+  # Codex harness arm. codex takes reasoning effort as config, not a CLI flag, and its
+  # documented values stop at xhigh -- there is no `max`, so this arm sits one notch below
+  # the Copilot arm by necessity.
+  #
+  # http_headers on a model provider is the documented way to send OpenRouter attribution
+  # (openai/codex#1473, merged 2025-07-07). gh-aw names the provider `openai-proxy` and strips
+  # only that exact heading from user config, so the .http_headers sub-table survives.
+  #
+  # Double-quoted scalar because gh-aw injects engine.config into the lock at column 0 inside
+  # a run: body indented 10, which breaks the YAML block scalar (github/gh-aw#62204). Each
+  # line is padded to 10 spaces; YAML strips them again at run time.
+  config: "          model_reasoning_effort = \"xhigh\"\n          [model_providers.openai-proxy.http_headers]\n          \"HTTP-Referer\" = \"https://github.com/${{ github.repository }}\"\n          \"X-OpenRouter-Title\" = \"${{ github.repository }}/${{ github.workflow }}\"\n          \"X-Session-ID\" = \"${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}\"\n"
   env:
-    COPILOT_PROVIDER_BASE_URL: https://openrouter.ai/api/v1
-    COPILOT_PROVIDER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-    COPILOT_PROVIDER_TYPE: openai
-    COPILOT_PROVIDER_WIRE_API: responses
-    COPILOT_OFFLINE: "true"
-    # Copilot BYOK sends no attribution of its own: the xhigh run landed on OpenRouter with
-    # app_id null, empty origin, and a random-hash session_id. This is the Copilot equivalent
-    # of ANTHROPIC_CUSTOM_HEADERS, same newline-separated "Name: Value" format.
-    COPILOT_PROVIDER_HEADERS: |-
-      HTTP-Referer: https://github.com/${{ github.repository }}
-      X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
-      X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
+    OPENAI_BASE_URL: https://openrouter.ai/api/v1
+    OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    # Codex is Rust; debug logging is the only way to see outgoing request headers from inside
+    # the run, because the codex engine writes no OpenRouter generation IDs into artifacts.
+    RUST_LOG: codex_core=debug
 on:
   roles: [admin, maintainer, write]
   workflow_call:
