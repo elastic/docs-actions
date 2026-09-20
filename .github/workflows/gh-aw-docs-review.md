@@ -332,7 +332,7 @@ Review each eligible file by applying the six criteria from the imported `review
 
 Before reviewing the changed files, invoke these skills with the `Skill` tool, using the directory names below. Each skill deepens coverage for its criterion and may surface findings that pure reasoning would miss:
 
-- `Skill({skill: "docs-check-style", args: "<file-path>. Vale is not installed; its JSON output for this file is already at /tmp/gh-aw/docs-review-data/vale.json, keyed by /tmp/gh-aw/docs-review-data/scope/<file-path>. Read it instead of running vale."})` (Language and Style): once per eligible file.
+- `Skill({skill: "docs-check-style", args: "<file-path>. Do not run vale; its JSON output for this file is already at /tmp/gh-aw/docs-review-data/vale.json, keyed by /tmp/gh-aw/docs-review-data/scope/<file-path>. Read that file."})` (Language and Style): once per eligible file.
 - `Skill({skill: "flag-jargon-skill", args: "<file-path>"})` (Language): once per eligible file, for jargon, outdated terms, and unexplained acronyms.
 - `Skill({skill: "frontmatter-audit", args: "<file-path>"})` (Applicability): once per eligible file, for frontmatter quality.
 - `Skill({skill: "content-type-checker", args: "<file-path>"})` (User Focus): once per eligible file, for content-type fit and page structure.
@@ -343,7 +343,7 @@ Skills must not change the working tree. If a skill reports that it edited or fi
 
 If a skill invocation fails or returns no output, do not retry or stall. Record it in the `Notes` section of the review body as `Not checked by <skill>: <reason>`, then continue reviewing that criterion with the rubric alone. Incorporate skill findings into the relevant criterion's inline comments and summary. Do not duplicate a finding that Vale or a skill already reported.
 
-Before making manual style or clarity judgments, refresh the published Elastic style guidance with `elastic-docs.get_document_by_url`. At minimum, read the style guide overview once per run. Fetch the relevant subpage for specific findings (voice and tone, accessibility, grammar and spelling, word choice, formatting, UI writing). For content-type and `applies_to` judgments, also fetch:
+The skills fetch the published style, content-type, and cumulative-docs guidance they need through the Elastic docs MCP server; do not fetch those pages again for the same purpose. Use `elastic-docs.get_document_by_url` yourself only when a finding depends on a page no skill covered:
 
 - Content types: `/docs/contribute-docs/content-types/overviews`, `/docs/contribute-docs/content-types/how-tos`, `/docs/contribute-docs/content-types/tutorials`, `/docs/contribute-docs/content-types/troubleshooting`, `/docs/contribute-docs/content-types/changelogs`.
 - Cumulative docs: `/docs/contribute-docs/how-to/cumulative-docs/guidelines` and `/docs/contribute-docs/how-to/cumulative-docs/reference`.
