@@ -1,0 +1,125 @@
+﻿2026-08-04T12:52:05.8253191Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-08-04T12:52:05.8253598Z with:
+2026-08-04T12:52:05.8253890Z   persist-credentials: false
+2026-08-04T12:52:05.8254182Z   repository: elastic/opentelemetry
+2026-08-04T12:52:05.8256968Z   token: ***
+2026-08-04T12:52:05.8257190Z   ssh-strict: true
+2026-08-04T12:52:05.8257408Z   ssh-user: git
+2026-08-04T12:52:05.8257620Z   clean: true
+2026-08-04T12:52:05.8257847Z   sparse-checkout-cone-mode: true
+2026-08-04T12:52:05.8258114Z   fetch-depth: 1
+2026-08-04T12:52:05.8258329Z   fetch-tags: false
+2026-08-04T12:52:05.8258551Z   show-progress: true
+2026-08-04T12:52:05.8258806Z   lfs: false
+2026-08-04T12:52:05.8259015Z   submodules: false
+2026-08-04T12:52:05.8259447Z   set-safe-directory: true
+2026-08-04T12:52:05.8259709Z   allow-unsafe-pr-checkout: false
+2026-08-04T12:52:05.8259967Z env:
+2026-08-04T12:52:05.8260179Z   DEFAULT_BRANCH: main
+2026-08-04T12:52:05.8260415Z   GH_AW_ASSETS_ALLOWED_EXTS: 
+2026-08-04T12:52:05.8260664Z   GH_AW_ASSETS_BRANCH: 
+2026-08-04T12:52:05.8260937Z   GH_AW_ASSETS_MAX_SIZE_KB: 0
+2026-08-04T12:52:05.8261224Z   GH_AW_MCP_LOG_DIR: /tmp/gh-aw/mcp-logs/safeoutputs
+2026-08-04T12:52:05.8261547Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:52:05.8261824Z   GH_AW_WORKFLOW_ID_SANITIZED: docsagentexperimental
+2026-08-04T12:52:05.8262183Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:52:05.8262541Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: 4e867a969570a95e
+2026-08-04T12:52:05.8262854Z   GITHUB_AW_OTEL_JOB_START_MS: 1785847925783
+2026-08-04T12:52:05.8263132Z ##[endgroup]
+2026-08-04T12:52:05.9194831Z Syncing repository: elastic/opentelemetry
+2026-08-04T12:52:05.9196604Z ##[group]Getting Git version info
+2026-08-04T12:52:05.9197127Z Working directory is '/home/runner/work/opentelemetry/opentelemetry'
+2026-08-04T12:52:05.9197731Z [command]/usr/bin/git version
+2026-08-04T12:52:05.9266627Z git version 2.54.0
+2026-08-04T12:52:05.9286961Z ##[endgroup]
+2026-08-04T12:52:05.9297454Z Temporarily overriding HOME='/home/runner/work/_temp/2e441671-a596-4985-9056-d4da0929c0a8' before making global git config changes
+2026-08-04T12:52:05.9298726Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-04T12:52:05.9303033Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/opentelemetry/opentelemetry
+2026-08-04T12:52:05.9349123Z Deleting the contents of '/home/runner/work/opentelemetry/opentelemetry'
+2026-08-04T12:52:05.9352444Z ##[group]Determining repository object format
+2026-08-04T12:52:05.9353867Z ##[endgroup]
+2026-08-04T12:52:05.9354427Z ##[group]Initializing the repository
+2026-08-04T12:52:05.9358899Z [command]/usr/bin/git init /home/runner/work/opentelemetry/opentelemetry
+2026-08-04T12:52:05.9450270Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-08-04T12:52:05.9451193Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-08-04T12:52:05.9451982Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-08-04T12:52:05.9452399Z hint: call:
+2026-08-04T12:52:05.9452601Z hint:
+2026-08-04T12:52:05.9452931Z hint: 	git config --global init.defaultBranch <name>
+2026-08-04T12:52:05.9453263Z hint:
+2026-08-04T12:52:05.9453665Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-08-04T12:52:05.9454292Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-08-04T12:52:05.9454763Z hint:
+2026-08-04T12:52:05.9455096Z hint: 	git branch -m <name>
+2026-08-04T12:52:05.9455451Z hint:
+2026-08-04T12:52:05.9456184Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-08-04T12:52:05.9457201Z Initialized empty Git repository in /home/runner/work/opentelemetry/opentelemetry/.git/
+2026-08-04T12:52:05.9466430Z [command]/usr/bin/git remote add origin https://github.com/elastic/opentelemetry
+2026-08-04T12:52:05.9508785Z ##[endgroup]
+2026-08-04T12:52:05.9509310Z ##[group]Disabling automatic garbage collection
+2026-08-04T12:52:05.9512477Z [command]/usr/bin/git config --local gc.auto 0
+2026-08-04T12:52:05.9541800Z ##[endgroup]
+2026-08-04T12:52:05.9542360Z ##[group]Setting up auth
+2026-08-04T12:52:05.9542808Z Removing SSH command configuration
+2026-08-04T12:52:05.9548341Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-04T12:52:05.9582882Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-04T12:52:05.9932916Z Removing HTTP extra header
+2026-08-04T12:52:05.9938413Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-04T12:52:05.9971868Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-04T12:52:06.0202507Z Removing includeIf entries pointing to credentials config files
+2026-08-04T12:52:06.0207483Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-04T12:52:06.0247020Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-04T12:52:06.0489931Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-a42d981a-3b98-49c9-a91b-cc3639188931.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-08-04T12:52:06.0530714Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/opentelemetry/opentelemetry/.git.path /home/runner/work/_temp/git-credentials-a42d981a-3b98-49c9-a91b-cc3639188931.config
+2026-08-04T12:52:06.0564378Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/opentelemetry/opentelemetry/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-a42d981a-3b98-49c9-a91b-cc3639188931.config
+2026-08-04T12:52:06.0601142Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-a42d981a-3b98-49c9-a91b-cc3639188931.config
+2026-08-04T12:52:06.0632981Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-a42d981a-3b98-49c9-a91b-cc3639188931.config
+2026-08-04T12:52:06.0663180Z ##[endgroup]
+2026-08-04T12:52:06.0663604Z ##[group]Fetching the repository
+2026-08-04T12:52:06.0671882Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +cf2ab66295741936dca4db15941bcd5afa512146:refs/remotes/origin/main
+2026-08-04T12:52:06.8478245Z From https://github.com/elastic/opentelemetry
+2026-08-04T12:52:06.8479094Z  * [new ref]         cf2ab66295741936dca4db15941bcd5afa512146 -> origin/main
+2026-08-04T12:52:06.8518052Z [command]/usr/bin/git branch --list --remote origin/main
+2026-08-04T12:52:06.8546325Z   origin/main
+2026-08-04T12:52:06.8554280Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+2026-08-04T12:52:06.8580232Z cf2ab66295741936dca4db15941bcd5afa512146
+2026-08-04T12:52:06.8591768Z ##[endgroup]
+2026-08-04T12:52:06.8592341Z ##[group]Determining the checkout info
+2026-08-04T12:52:06.8592788Z ##[endgroup]
+2026-08-04T12:52:06.8593054Z [command]/usr/bin/git sparse-checkout disable
+2026-08-04T12:52:06.8637085Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-08-04T12:52:06.8665387Z ##[group]Checking out the ref
+2026-08-04T12:52:06.8669610Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-08-04T12:52:06.9005815Z Switched to a new branch 'main'
+2026-08-04T12:52:06.9008527Z branch 'main' set up to track 'origin/main'.
+2026-08-04T12:52:06.9016551Z ##[endgroup]
+2026-08-04T12:52:06.9086314Z [command]/usr/bin/git log -1 --format=%H
+2026-08-04T12:52:06.9103080Z cf2ab66295741936dca4db15941bcd5afa512146
+2026-08-04T12:52:06.9104416Z ##[group]Removing auth
+2026-08-04T12:52:06.9104817Z Removing SSH command configuration
+2026-08-04T12:52:06.9126622Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-04T12:52:06.9145129Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-04T12:52:06.9385790Z Removing HTTP extra header
+2026-08-04T12:52:06.9389714Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-04T12:52:06.9426253Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-04T12:52:06.9668949Z Removing includeIf entries pointing to credentials config files
+2026-08-04T12:52:06.9696972Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-04T12:52:06.9706506Z includeif.gitdir:/home/runner/work/opentelemetry/opentelemetry/.git.path
+2026-08-04T12:52:06.9707758Z includeif.gitdir:/home/runner/work/opentelemetry/opentelemetry/.git/worktrees/*.path
+2026-08-04T12:52:06.9708747Z includeif.gitdir:/github/workspace/.git.path
+2026-08-04T12:52:06.9709541Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-08-04T12:52:06.9713187Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/opentelemetry/opentelemetry/.git.path
+2026-08-04T12:52:06.9759052Z /home/runner/work/_temp/git-credentials-a42d981a-3b98-49c9-a91b-cc3639188931.config
+2026-08-04T12:52:06.9768041Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/opentelemetry/opentelemetry/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-a42d981a\-3b98\-49c9\-a91b\-cc3639188931\.config
+2026-08-04T12:52:06.9853156Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/opentelemetry/opentelemetry/.git/worktrees/*.path
+2026-08-04T12:52:06.9897082Z /home/runner/work/_temp/git-credentials-a42d981a-3b98-49c9-a91b-cc3639188931.config
+2026-08-04T12:52:06.9921597Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/opentelemetry/opentelemetry/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-a42d981a\-3b98\-49c9\-a91b\-cc3639188931\.config
+2026-08-04T12:52:06.9940552Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-08-04T12:52:06.9967910Z /github/runner_temp/git-credentials-a42d981a-3b98-49c9-a91b-cc3639188931.config
+2026-08-04T12:52:06.9976944Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-a42d981a\-3b98\-49c9\-a91b\-cc3639188931\.config
+2026-08-04T12:52:07.0009726Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-08-04T12:52:07.0033527Z /github/runner_temp/git-credentials-a42d981a-3b98-49c9-a91b-cc3639188931.config
+2026-08-04T12:52:07.0040612Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-a42d981a\-3b98\-49c9\-a91b\-cc3639188931\.config
+2026-08-04T12:52:07.0075660Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-04T12:52:07.0318475Z Removing credentials config '/home/runner/work/_temp/git-credentials-a42d981a-3b98-49c9-a91b-cc3639188931.config'
+2026-08-04T12:52:07.0325061Z ##[endgroup]

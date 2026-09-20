@@ -1,0 +1,461 @@
+services:
+  squid-proxy:
+    container_name: awf-squid
+    networks:
+      awf-net:
+        ipv4_address: 172.30.0.10
+      awf-ext: {}
+    volumes:
+      - /tmp/gh-aw/sandbox/firewall/logs:/var/log/squid:rw
+    healthcheck:
+      test:
+        - CMD
+        - nc
+        - '-z'
+        - localhost
+        - '3128'
+      interval: 2s
+      timeout: 2s
+      retries: 10
+      start_period: 5s
+    ports:
+      - '3128:3128'
+    cap_drop:
+      - NET_RAW
+      - SYS_ADMIN
+      - SYS_PTRACE
+      - SYS_MODULE
+      - MKNOD
+      - AUDIT_WRITE
+      - SETFCAP
+    stop_grace_period: 2s
+    user: '0:0'
+    environment:
+      AWF_SQUID_CONFIG_B64: '[REDACTED]'
+    entrypoint:
+      - /bin/bash
+      - '-c'
+      - chown proxy:proxy /var/log/squid 2>/dev/null || chmod 0777 /var/log/squid; if [ -d /var/spool/squid_ssl_db ]; then chown proxy:proxy /var/spool/squid_ssl_db 2>/dev/null || chmod 0777 /var/spool/squid_ssl_db; fi && exec su -s /bin/bash proxy -c 'echo "$$AWF_SQUID_CONFIG_B64" | base64 -d > /etc/squid/squid.conf && exec /usr/local/bin/entrypoint.sh'
+    image: ghcr.io/github/gh-aw-firewall/squid:0.27.42@sha256:42dfeb649c680a8558cd5423dbc530b653a69413e35ffbe5e71da5d48c94bdf0
+  agent:
+    container_name: awf-agent
+    networks:
+      awf-net:
+        ipv4_address: 172.30.0.20
+    dns:
+      - 127.0.0.11
+    dns_search: []
+    volumes:
+      - /tmp:/tmp:rw
+      - /home/runner/work/opentelemetry/opentelemetry:/home/runner/work/opentelemetry/opentelemetry:rw
+      - /tmp/awf-1785843194340/agent-logs:/home/runner/.copilot/logs:rw
+      - /tmp/awf-1785843194340/agent-session-state:/home/runner/.copilot/session-state:rw
+      - /tmp/awf-1785843194340/init-signal:/tmp/awf-init:rw
+      - /usr:/host/usr:ro
+      - /bin:/host/bin:ro
+      - /sbin:/host/sbin:ro
+      - /lib:/host/lib:ro
+      - /lib64:/host/lib64:ro
+      - /opt:/host/opt:ro
+      - /sys:/host/sys:ro
+      - /dev:/host/dev:ro
+      - /dev/null:/host/dev/null:rw
+      - /home/runner/work/opentelemetry/opentelemetry:/host/home/runner/work/opentelemetry/opentelemetry:rw
+      - /tmp:/host/tmp:rw
+      - /tmp/awf-1785843194340-chroot-home:/host/home/runner:rw
+      - /home/runner/.copilot:/host/home/runner/.copilot:rw
+      - /tmp/awf-1785843194340/agent-session-state:/host/home/runner/.copilot/session-state:rw
+      - /tmp/awf-1785843194340/agent-logs:/host/home/runner/.copilot/logs:rw
+      - /home/runner/.cache:/host/home/runner/.cache:rw
+      - /home/runner/.config:/host/home/runner/.config:rw
+      - /home/runner/.local:/host/home/runner/.local:rw
+      - /home/runner/.anthropic:/host/home/runner/.anthropic:rw
+      - /home/runner/.claude:/host/home/runner/.claude:rw
+      - /home/runner/.cargo:/host/home/runner/.cargo:rw
+      - /home/runner/.rustup:/host/home/runner/.rustup:rw
+      - /home/runner/.npm:/host/home/runner/.npm:rw
+      - /home/runner/.nvm:/host/home/runner/.nvm:rw
+      - /opt/hostedtoolcache:/host/opt/hostedtoolcache:ro
+      - /etc/ssl:/host/etc/ssl:ro
+      - /etc/ca-certificates:/host/etc/ca-certificates:ro
+      - /etc/alternatives:/host/etc/alternatives:ro
+      - /etc/ld.so.cache:/host/etc/ld.so.cache:ro
+      - /etc/nsswitch.conf:/host/etc/nsswitch.conf:ro
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /tmp/awf-1785843194340/chroot-K7rcAd/hosts:/host/etc/hosts:ro
+      - /dev/null:/host/var/run/docker.sock:ro
+      - /dev/null:/host/run/docker.sock:ro
+      - /home/runner/work/_temp/gh-aw:/host/home/runner/work/_temp/gh-aw:ro
+      - /home/runner/work/_temp/gh-aw:/host/host/home/runner/work/_temp/gh-aw:ro
+      - /dev/null:/home/runner/.docker/config.json:ro
+      - /dev/null:/home/runner/.npmrc:ro
+      - /dev/null:/home/runner/.composer/auth.json:ro
+      - /dev/null:/home/runner/.ssh/id_rsa:ro
+      - /dev/null:/home/runner/.ssh/id_ed25519:ro
+      - /dev/null:/home/runner/.ssh/id_ecdsa:ro
+      - /dev/null:/home/runner/.ssh/id_dsa:ro
+      - /dev/null:/home/runner/.aws/credentials:ro
+      - /dev/null:/home/runner/.aws/config:ro
+      - /dev/null:/home/runner/.kube/config:ro
+      - /dev/null:/home/runner/.azure/credentials:ro
+      - /dev/null:/home/runner/.cargo/credentials:ro
+      - /dev/null:/home/runner/.cargo/credentials.toml:ro
+      - /dev/null:/home/runner/.claude/.credentials.json:ro
+      - /dev/null:/home/runner/.gemini/oauth_creds.json:ro
+      - /dev/null:/home/runner/.gemini/google_accounts.json:ro
+      - /dev/null:/home/runner/.gemini/access_tokens.json:ro
+      - /dev/null:/home/runner/.config/gh/hosts.yml:ro
+      - /dev/null:/home/runner/.config/gcloud/credentials.db:ro
+      - /dev/null:/home/runner/.config/gcloud/access_tokens.db:ro
+      - /dev/null:/home/runner/.config/gcloud/application_default_credentials.json:ro
+      - /dev/null:/home/runner/.config/doctl/config.yaml:ro
+      - /dev/null:/home/runner/.config/rclone/rclone.conf:ro
+      - /dev/null:/home/runner/.config/containers/auth.json:ro
+      - /dev/null:/home/runner/.config/pulumi/credentials.json:ro
+      - /dev/null:/home/runner/.config/helm/repositories.yaml:ro
+      - /dev/null:/host/home/runner/.docker/config.json:ro
+      - /dev/null:/host/home/runner/.npmrc:ro
+      - /dev/null:/host/home/runner/.composer/auth.json:ro
+      - /dev/null:/host/home/runner/.ssh/id_rsa:ro
+      - /dev/null:/host/home/runner/.ssh/id_ed25519:ro
+      - /dev/null:/host/home/runner/.ssh/id_ecdsa:ro
+      - /dev/null:/host/home/runner/.ssh/id_dsa:ro
+      - /dev/null:/host/home/runner/.aws/credentials:ro
+      - /dev/null:/host/home/runner/.aws/config:ro
+      - /dev/null:/host/home/runner/.kube/config:ro
+      - /dev/null:/host/home/runner/.azure/credentials:ro
+      - /dev/null:/host/home/runner/.cargo/credentials:ro
+      - /dev/null:/host/home/runner/.cargo/credentials.toml:ro
+      - /dev/null:/host/home/runner/.claude/.credentials.json:ro
+      - /dev/null:/host/home/runner/.gemini/oauth_creds.json:ro
+      - /dev/null:/host/home/runner/.gemini/google_accounts.json:ro
+      - /dev/null:/host/home/runner/.gemini/access_tokens.json:ro
+      - /dev/null:/host/home/runner/.config/gh/hosts.yml:ro
+      - /dev/null:/host/home/runner/.config/gcloud/credentials.db:ro
+      - /dev/null:/host/home/runner/.config/gcloud/access_tokens.db:ro
+      - /dev/null:/host/home/runner/.config/gcloud/application_default_credentials.json:ro
+      - /dev/null:/host/home/runner/.config/doctl/config.yaml:ro
+      - /dev/null:/host/home/runner/.config/rclone/rclone.conf:ro
+      - /dev/null:/host/home/runner/.config/containers/auth.json:ro
+      - /dev/null:/host/home/runner/.config/pulumi/credentials.json:ro
+      - /dev/null:/host/home/runner/.config/helm/repositories.yaml:ro
+    environment:
+      HTTP_PROXY: http://172.30.0.10:3128
+      HTTPS_PROXY: http://172.30.0.10:3128
+      https_proxy: http://172.30.0.10:3128
+      SQUID_PROXY_HOST: squid-proxy
+      SQUID_PROXY_PORT: '3128'
+      HOME: /home/runner
+      PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      NO_COLOR: '1'
+      AWF_ONE_SHOT_TOKENS: '[REDACTED]'
+      AWF_REQUIRE_NODE: '1'
+      COPILOT_GITHUB_TOKEN: '[REDACTED]'
+      COPILOT_PROVIDER_API_KEY: '[REDACTED]'
+      NO_PROXY: localhost,127.0.0.1,::1,0.0.0.0,172.30.0.10,172.30.0.20,awmg-mcpg,awmg-cli-proxy,172.30.0.30,api-proxy
+      no_proxy: localhost,127.0.0.1,::1,0.0.0.0,172.30.0.10,172.30.0.20,awmg-mcpg,awmg-cli-proxy,172.30.0.30,api-proxy
+      AWF_HOST_PATH: '[REDACTED]'
+      AWF_JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
+      SHELL: /bin/bash
+      SELENIUM_JAR_PATH: '[REDACTED]'
+      CONDA: /usr/share/miniconda
+      COPILOT_API_KEY: '[REDACTED]'
+      GITHUB_WORKSPACE: /home/runner/work/opentelemetry/opentelemetry
+      GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+      JAVA_HOME_11_X64: /usr/lib/jvm/temurin-11-jdk-amd64
+      JAVA_HOME_25_X64: /usr/lib/jvm/temurin-25-jdk-amd64
+      GH_AW_ASSETS_ALLOWED_EXTS: ''
+      GITHUB_PATH: '[REDACTED]'
+      GH_AW_TIMEOUT_MINUTES: '45'
+      GITHUB_ACTION: agentic_execution
+      JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
+      AWF_REFLECT_ENABLED: '1'
+      GITHUB_RUN_NUMBER: '2'
+      RUNNER_NAME: GitHub Actions 1013487051
+      GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
+      GRADLE_HOME: /usr/share/gradle-9.6.1
+      COPILOT_DUMMY_BYOK: dummy-byok-key-for-offline-mode
+      GITHUB_REPOSITORY_OWNER_ID: '6764390'
+      ACTIONS_RUNNER_ACTION_ARCHIVE_CACHE: /opt/actionarchivecache
+      XDG_CONFIG_HOME: /home/runner
+      MEMORY_PRESSURE_WRITE: c29tZSAyMDAwMDAgMjAwMDAwMAA=
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
+      ANT_HOME: /usr/share/ant
+      JAVA_HOME_8_X64: /usr/lib/jvm/temurin-8-jdk-amd64
+      GITHUB_TRIGGERING_ACTOR: theletterf
+      GITHUB_REF_TYPE: branch
+      GH_AW_MAX_TURNS: ''
+      HOMEBREW_CLEANUP_PERIODIC_FULL_DAYS: '3650'
+      ACTIONS_RUNNER_RETURN_JOB_RESULT_FOR_HOSTED: '1'
+      GITHUB_AW_OTEL_JOB_START_MS: '1785843160896'
+      ANDROID_NDK: /usr/local/lib/android/sdk/ndk/27.3.13750724
+      BOOTSTRAP_HASKELL_NONINTERACTIVE: '1'
+      PIPX_BIN_DIR: /opt/pipx_bin
+      LOGNAME: runner
+      GITHUB_ARTIFACTS_LIST: /home/runner/work/_temp/_runner_file_commands/artifacts_list_83bdbb25-8dd0-41fe-9930-7275cbffb204
+      GITHUB_REPOSITORY_ID: '833987353'
+      GITHUB_ACTIONS: 'true'
+      USE_BAZEL_FALLBACK_VERSION: 'silent:'
+      ANDROID_NDK_LATEST_HOME: /usr/local/lib/android/sdk/ndk/29.0.14206865
+      SYSTEMD_EXEC_PID: '2095'
+      GITHUB_SHA: 7a3034aafb47e6f7ee2c0b12b7a793f0ce5fa07b
+      GIT_COMMITTER_NAME: github-actions[bot]
+      GITHUB_WORKFLOW_REF: elastic/opentelemetry/.github/workflows/docs-agent-experimental.yml@refs/heads/fix-docs-agent-actions-permission
+      POWERSHELL_DISTRIBUTION_CHANNEL: GitHub-Actions-Linux
+      RUNNER_ENVIRONMENT: github-hosted
+      S2STOKENS: '[REDACTED]'
+      DOTNET_MULTILEVEL_LOOKUP: '0'
+      GITHUB_REF: refs/heads/fix-docs-agent-actions-permission
+      GH_AW_MCP_CONFIG: /home/runner/.copilot/mcp-config.json
+      RUNNER_OS: Linux
+      GITHUB_REF_PROTECTED: 'false'
+      GITHUB_API_URL: https://api.github.com
+      LANG: C.UTF-8
+      GOROOT_1_25_X64: /opt/hostedtoolcache/go/1.25.12/x64
+      RUNNER_TRACKING_ID: github_c691a0c9-7065-4975-9c99-29f3c09adb14
+      RUNNER_ARCH: X64
+      MEMORY_PRESSURE_WATCH: /sys/fs/cgroup/system.slice/hosted-compute-agent.service/memory.pressure
+      RUNNER_TEMP: /home/runner/work/_temp
+      GITHUB_STATE: /home/runner/work/_temp/_runner_file_commands/save_state_83bdbb25-8dd0-41fe-9930-7275cbffb204
+      GH_AW_NODE_BIN: /usr/local/bin/node
+      EDGEWEBDRIVER: /usr/local/share/edge_driver
+      GH_AW_ASSETS_MAX_SIZE_KB: '0'
+      JAVA_HOME_21_X64: /usr/lib/jvm/temurin-21-jdk-amd64
+      GITHUB_ENV: /home/runner/work/_temp/_runner_file_commands/set_env_83bdbb25-8dd0-41fe-9930-7275cbffb204
+      INVOCATION_ID: 0cd834761cf34b5b89394a0fd82011aa
+      GITHUB_EVENT_PATH: '[REDACTED]'
+      GITHUB_EVENT_NAME: workflow_dispatch
+      GITHUB_RUN_ID: '30905136689'
+      JAVA_HOME_17_X64: /usr/lib/jvm/temurin-17-jdk-amd64
+      GIT_AUTHOR_EMAIL: '[REDACTED]'
+      GITHUB_AW_OTEL_PARENT_SPAN_ID: a1010411c1a337c7
+      ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/27.3.13750724
+      GITHUB_COPILOT_INTEGRATION_ID: agentic-workflows
+      GITHUB_STEP_SUMMARY: /home/runner/work/_temp/_runner_file_commands/step_summary_83bdbb25-8dd0-41fe-9930-7275cbffb204
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      GITHUB_ACTOR: theletterf
+      NVM_DIR: /home/runner/.nvm
+      SGX_AESM_ADDR: '1'
+      GITHUB_RUN_ATTEMPT: '1'
+      GH_AW_RUNTIME_FEATURES: ''
+      DEFAULT_BRANCH: main
+      GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
+      TRACEPARENT: 00-95d9b87a63e5cfce5fc3c37aa1e1e92f-a1010411c1a337c7-01
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      GH_AW_ASSETS_BRANCH: ''
+      GITHUB_GRAPHQL_URL: https://api.github.com/graphql
+      ACCEPT_EULA: 'Y'
+      USER: runner
+      PSModulePath: /root/.local/share/powershell/Modules:/usr/local/share/powershell/Modules:/opt/microsoft/powershell/7/Modules:/usr/share/az_15.6.1
+      GITHUB_SERVER_URL: https://github.com
+      PIPX_HOME: /opt/pipx
+      GECKOWEBDRIVER: /usr/local/share/gecko_driver
+      COPILOT_MODEL: claude-sonnet-5
+      CHROMEWEBDRIVER: /usr/local/share/chromedriver-linux64
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      VCPKG_INSTALLATION_ROOT: /usr/local/share/vcpkg
+      GITHUB_ACTOR_ID: '1773616'
+      ACTIONS_ORCHESTRATION_ID: df3d0f9f-51c8-41ad-938e-8212be7207b1.run.agent.__default
+      RUNNER_TOOL_CACHE: /opt/hostedtoolcache
+      ImageVersion: 20260720.247.2
+      DOTNET_NOLOGO: '1'
+      GITHUB_ARTIFACTS: /home/runner/work/_temp/_runner_file_commands/artifacts_83bdbb25-8dd0-41fe-9930-7275cbffb204
+      GH_AW_LLM_PROVIDER: github
+      GITHUB_WORKFLOW_SHA: 7a3034aafb47e6f7ee2c0b12b7a793f0ce5fa07b
+      GOROOT_1_24_X64: /opt/hostedtoolcache/go/1.24.13/x64
+      GITHUB_REF_NAME: fix-docs-agent-actions-permission
+      GH_AW_WORKFLOW_ID_SANITIZED: docsagentexperimental
+      GH_AW_PHASE: agent
+      GITHUB_JOB: agent
+      XDG_RUNTIME_DIR: /run/user/1001
+      GH_AW_SAFE_OUTPUTS_STAGED: 'true'
+      AZURE_EXTENSION_DIR: /opt/az/azcliextensions
+      GOROOT_1_26_X64: /opt/hostedtoolcache/go/1.26.5/x64
+      GITHUB_REPOSITORY: elastic/opentelemetry
+      GH_AW_MCP_LOG_DIR: /tmp/gh-aw/mcp-logs/safeoutputs
+      CHROME_BIN: /usr/bin/google-chrome
+      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/27.3.13750724
+      GITHUB_RETENTION_DAYS: '90'
+      JOURNAL_STREAM: '9:14007'
+      RUNNER_WORKSPACE: /home/runner/work/opentelemetry
+      GH_AW_VERSION: v0.83.4
+      GITHUB_ACTION_REPOSITORY: ''
+      GIT_AUTHOR_NAME: '[REDACTED]'
+      HCA_CLOUD_PROVIDER: azure
+      GITHUB_BASE_REF: ''
+      GHCUP_INSTALL_BASE_PREFIX: /usr/local
+      CI: 'true'
+      SWIFT_PATH: '[REDACTED]'
+      ImageOS: ubuntu24
+      GITHUB_AW: 'true'
+      GITHUB_REPOSITORY_OWNER: elastic
+      GITHUB_HEAD_REF: ''
+      GITHUB_ACTION_REF: ''
+      ENABLE_RUNNER_TRACING: 'true'
+      GITHUB_WORKFLOW: Docs Agent Experimental
+      DEBIAN_FRONTEND: noninteractive
+      COPILOT_AGENT_RUNNER_TYPE: STANDALONE
+      GITHUB_OUTPUT: /home/runner/work/_temp/_runner_file_commands/set_output_83bdbb25-8dd0-41fe-9930-7275cbffb204
+      AGENT_TOOLSDIRECTORY: /opt/hostedtoolcache
+      GH_AW_MODELS_JSON_PATH: '[REDACTED]'
+      GH_AW_SAFE_OUTPUTS: /home/runner/work/_temp/gh-aw/safeoutputs/outputs.jsonl
+      AWF_DNS_SERVERS: 168.63.129.16
+      AWF_CHROOT_ENABLED: 'true'
+      AWF_WORKDIR: /home/runner/work/opentelemetry/opentelemetry
+      AWF_USER_UID: '1001'
+      AWF_USER_GID: '1001'
+      AWF_API_PROXY_IP: 172.30.0.30
+      AWF_CLI_PROXY_IP: 172.30.0.50
+      AWF_NETWORK_ISOLATION: '1'
+      COPILOT_API_URL: http://172.30.0.30:10002
+      COPILOT_PROVIDER_BASE_URL: http://172.30.0.30:10002
+      COPILOT_TOKEN: '[REDACTED]'
+      COPILOT_OFFLINE: 'true'
+      AWF_CLI_PROXY_URL: http://172.30.0.50:11000
+    depends_on:
+      squid-proxy:
+        condition: service_healthy
+      api-proxy:
+        condition: service_healthy
+      cli-proxy:
+        condition: service_healthy
+    tmpfs:
+      - /tmp/gh-aw/mcp-logs:rw,noexec,nosuid,size=1m
+      - /host/tmp/gh-aw/mcp-logs:rw,noexec,nosuid,size=1m
+      - /tmp/awf-1785843194340:rw,noexec,nosuid,size=1m
+      - /host/tmp/awf-1785843194340:rw,noexec,nosuid,size=1m
+      - /host/dev/shm:rw,noexec,nosuid,nodev,size=65536k
+    cap_add:
+      - SYS_CHROOT
+      - SYS_ADMIN
+    cap_drop:
+      - NET_RAW
+      - SYS_PTRACE
+      - SYS_MODULE
+      - SYS_RAWIO
+      - MKNOD
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/tmp/awf-1785843194340/seccomp-profile.json
+      - apparmor:unconfined
+    mem_limit: 6g
+    memswap_limit: 6g
+    pids_limit: 1000
+    cpu_shares: 1024
+    stdin_open: true
+    tty: false
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'true'
+      interval: 1s
+      timeout: 1s
+      retries: 3
+      start_period: 1s
+    command:
+      - /bin/bash
+      - '-c'
+      - '/bin/bash -c ''set +o histexpand; export PATH="$${RUNNER_TEMP}/gh-aw/mcp-cli/bin:$$PATH" && : "$${RUNNER_TOOL_CACHE:?RUNNER_TOOL_CACHE must be set}"; GH_AW_TOOL_CACHE="$$RUNNER_TOOL_CACHE"; export PATH="$$(find "$$GH_AW_TOOL_CACHE" -maxdepth 5 -type d -name bin 2>/dev/null | tr ''\''''\n''\'''' ''\'''':''\'''')$$PATH"; [ -n "$$GOROOT" ] && export PATH="$$GOROOT/bin:$$PATH" || true; [ -n "$$ERLANG_HOME" ] && export PATH="$$ERLANG_HOME/bin:$$PATH" || true && GH_AW_NODE_EXEC="$${GH_AW_NODE_BIN:-}"; if [ -z "$$GH_AW_NODE_EXEC" ] || [ ! -x "$$GH_AW_NODE_EXEC" ]; then GH_AW_NODE_EXEC="$$(command -v node 2>/dev/null || true)"; fi; if [ -z "$$GH_AW_NODE_EXEC" ]; then echo "node runtime missing on this runner — check runtimes.node in workflow YAML" >&2; exit 127; fi; GH_AW_NPM_GLOBAL_ROOT="$$(npm root -g 2>/dev/null || true)"; if [ -n "$$GH_AW_NPM_GLOBAL_ROOT" ]; then export NODE_PATH="$${GH_AW_NPM_GLOBAL_ROOT}$${NODE_PATH:+:$${NODE_PATH}}"; fi; "$$GH_AW_NODE_EXEC" $${RUNNER_TEMP}/gh-aw/actions/copilot_harness.cjs /usr/local/bin/copilot --add-dir /tmp/gh-aw/ --log-level all --log-dir /tmp/gh-aw/sandbox/agent/logs/ --disable-builtin-mcps --no-ask-user --allow-all-tools --allow-all-paths --add-dir "$${GITHUB_WORKSPACE}" --prompt-file /tmp/gh-aw/aw-prompts/prompt.txt'''
+    working_dir: /home/runner/work/opentelemetry/opentelemetry
+    image: ghcr.io/github/gh-aw-firewall/agent:0.27.42@sha256:26a8af4e5566485b02f52af59ee03803ae798271a9619d4767e94d07806deb9b
+  api-proxy:
+    container_name: awf-api-proxy
+    user: '1001:1001'
+    networks:
+      awf-net:
+        ipv4_address: 172.30.0.30
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - http://localhost:10000/health
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 30s
+    volumes:
+      - /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs:/var/log/api-proxy:rw
+    environment:
+      COPILOT_GITHUB_TOKEN: '[REDACTED]'
+      AWF_REQUESTED_MODEL: claude-sonnet-5
+      GITHUB_SERVER_URL: https://github.com
+      GITHUB_API_URL: https://api.github.com
+      AWF_API_PROXY_SHUTDOWN_TIMEOUT_MS: '8000'
+      HTTP_PROXY: http://172.30.0.10:3128
+      HTTPS_PROXY: http://172.30.0.10:3128
+      https_proxy: http://172.30.0.10:3128
+      NO_PROXY: localhost,127.0.0.1,::1
+      no_proxy: localhost,127.0.0.1,::1
+      GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+      GITHUB_AW_OTEL_PARENT_SPAN_ID: a1010411c1a337c7
+      OTEL_SERVICE_NAME: awf-api-proxy
+      AWF_RATE_LIMIT_ENABLED: 'false'
+      AWF_RATE_LIMIT_RPM: '0'
+      AWF_RATE_LIMIT_RPH: '0'
+      AWF_RATE_LIMIT_BYTES_PM: '0'
+      AWF_MAX_AI_CREDITS: '2000'
+      AWF_MAX_RUNS: '500'
+      AWF_MAX_CACHE_MISSES: '5'
+      AWF_MODEL_ALIASES: '{"models":{"agent":["sonnet-6x","gpt-5.4","gpt-5.5","gpt-5.6","gpt-5.3","gemini-pro","any"],"antigravity":["copilot/antigravity*","google/antigravity*","gemini/antigravity*"],"any":["copilot/*","anthropic/*","openai/*","google/*","gemini/*"],"claude":["agent"],"codex":["agent"],"coding":["copilot/gpt-5*codex*","openai/gpt-5*codex*","gpt-5-codex","kimi"],"computer-use":["copilot/*computer-use*","google/*computer-use*","gemini/*computer-use*","openai/*computer-use*"],"copilot":["agent"],"deep-research":["copilot/deep-research*","copilot/o3-deep-research*","copilot/o4-mini-deep-research*","google/deep-research*","gemini/deep-research*","openai/o3-deep-research*","openai/o4-mini-deep-research*"],"fable":["copilot/*fable*","anthropic/*fable*"],"gemini":["agent"],"gemini-3-flash":["copilot/gemini-3*flash*","google/gemini-3*flash*","gemini/gemini-3*flash*"],"gemini-3-pro":["copilot/gemini-3*pro*","google/gemini-3*pro*","google/nano-banana*","gemini/gemini-3*pro*"],"gemini-3.1-flash":["copilot/gemini-3.1*flash*","google/gemini-3.1*flash*","gemini/gemini-3.1*flash*"],"gemini-3.1-pro":["copilot/gemini-3.1*pro*","google/gemini-3.1*pro*","gemini/gemini-3.1*pro*"],"gemini-3.5-flash":["copilot/gemini-3.5*flash*","google/gemini-3.5*flash*","gemini/gemini-3.5*flash*"],"gemini-3.6-flash":["copilot/gemini-3.6*flash*","google/gemini-3.6*flash*","gemini/gemini-3.6*flash*"],"gemini-flash":["copilot/gemini-*flash*","google/gemini-*flash*","gemini/gemini-*flash*"],"gemini-flash-lite":["copilot/gemini-*flash*lite*","google/gemini-*flash*lite*","gemini/gemini-*flash*lite*"],"gemini-omni":["copilot/gemini-omni*","google/gemini-omni*","gemini/gemini-omni*"],"gemini-pro":["copilot/gemini-*pro*","google/gemini-*pro*","gemini/gemini-*pro*"],"gemma":["copilot/gemma*","google/gemma*","gemini/gemma*"],"gpt-5":["copilot/gpt-5*","openai/gpt-5*"],"gpt-5-codex":["copilot/gpt-5*codex*","openai/gpt-5*codex*"],"gpt-5-mini":["copilot/gpt-5*mini*","openai/gpt-5*mini*"],"gpt-5-nano":["copilot/gpt-5*nano*","openai/gpt-5*nano*"],"gpt-5-pro":["copilot/gpt-5*pro*","openai/gpt-5*pro*"],"gpt-5.1":["copilot/gpt-5.1*","openai/gpt-5.1*"],"gpt-5.2":["copilot/gpt-5.2*","openai/gpt-5.2*"],"gpt-5.3":["copilot/gpt-5.3*","openai/gpt-5.3*"],"gpt-5.4":["copilot/gpt-5.4*","openai/gpt-5.4*"],"gpt-5.5":["copilot/gpt-5.5*","openai/gpt-5.5*"],"gpt-5.6":["copilot/gpt-5.6*","openai/gpt-5.6*"],"haiku":["copilot/*haiku*","anthropic/*haiku*"],"image-generation":["copilot/gpt-image*","openai/gpt-image*","openai/chatgpt-image*","copilot/gemini-*image*","google/gemini-*image*","gemini/gemini-*image*","google/imagen*"],"kimi":["copilot/kimi*","openai/kimi*"],"kiwi":["copilot/kiwi*","openai/kiwi*"],"large":["fable","sonnet","gpt-5-pro","gpt-5","gemini-pro"],"lyria":["google/lyria*","gemini/lyria*","copilot/lyria*"],"mai-code":["copilot/MAI-Code*","copilot/mai-code*","openai/MAI-Code*"],"mai-code-1-flash-picker":["copilot/MAI-Code-1-Flash-picker*","copilot/mai-code-1-flash-picker*","openai/MAI-Code-1-Flash-picker*"],"mini":["haiku","gpt-5-mini","gpt-5-nano","gemini-flash-lite"],"nano-banana":["copilot/nano-banana*","google/nano-banana*","gemini/nano-banana*"],"opus":["copilot/*opus*","anthropic/*opus*"],"opusplan":["opus?effort=high"],"raptor-mini":["copilot/raptor*","openai/raptor*"],"reasoning":["copilot/o1*","copilot/o3*","copilot/o4*","openai/o1*","openai/o3*","openai/o4*"],"robotics":["copilot/*robotics*","google/*robotics*","gemini/*robotics*"],"small":["mini"],"small-agent":["haiku","gpt-5-mini","gemini-flash"],"sonnet":["copilot/*sonnet*","anthropic/*sonnet*"],"sonnet-6x":["copilot/*sonnet-4.5*","copilot/*sonnet-4.6*","copilot/*sonnet-5*","copilot/*sonnet-4-5-*","anthropic/*sonnet-4-5-*","copilot/*sonnet-4-6*","anthropic/*sonnet-4-6*","anthropic/*sonnet-5*"],"summarization":["haiku","gpt-5-mini","gemini-flash-lite","mini"],"veo":["google/veo*","gemini/veo*"],"vision":["copilot/gemini-*image*","google/gemini-*image*","gemini/gemini-*image*","copilot/gemini-*flash*","google/gemini-*flash*","gemini/gemini-*flash*"]}}'
+      AWF_ENABLE_TOKEN_STEERING: '[REDACTED]'
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    memswap_limit: 512m
+    pids_limit: 100
+    cpu_shares: 512
+    stop_grace_period: 10s
+    image: ghcr.io/github/gh-aw-firewall/api-proxy:0.27.42@sha256:944f2686c9ab9bec338fd14b662461662f77cd12cd0ea8a3e7cb8c0987cd1607
+  cli-proxy:
+    container_name: awf-cli-proxy
+    networks:
+      awf-net:
+        ipv4_address: 172.30.0.50
+    extra_hosts:
+      host.docker.internal: host-gateway
+    volumes:
+      - /tmp/gh-aw/sandbox/firewall/logs/cli-proxy-logs:/var/log/cli-proxy:rw
+      - /tmp/gh-aw/difc-proxy-tls/ca.crt:/tmp/proxy-tls/ca.crt:ro
+    environment:
+      AWF_DIFC_PROXY_HOST: awmg-cli-proxy
+      AWF_DIFC_PROXY_PORT: '18443'
+      GITHUB_REPOSITORY: elastic/opentelemetry
+      GH_TOKEN: '[REDACTED]'
+      NO_PROXY: localhost,127.0.0.1,::1,host.docker.internal
+      no_proxy: localhost,127.0.0.1,::1,host.docker.internal
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - http://127.0.0.1:11000/health
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      squid-proxy:
+        condition: service_healthy
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    memswap_limit: 256m
+    pids_limit: 50
+    cpu_shares: 256
+    stop_grace_period: 2s
+    image: ghcr.io/github/gh-aw-firewall/cli-proxy:0.27.42@sha256:da006bf96d2d246dd269d57b233c1798d2ad63d6cd64ca02f7bf71045028781f
+networks:
+  awf-net:
+    name: awf-net
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+  awf-ext:
+    driver: bridge

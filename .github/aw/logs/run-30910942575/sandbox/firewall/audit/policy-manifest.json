@@ -1,0 +1,177 @@
+{
+  "version": 1,
+  "generatedAt": "2026-08-04T12:52:48.839Z",
+  "rules": [
+    {
+      "id": "deny-unsafe-ports",
+      "action": "deny",
+      "aclName": "!Safe_ports",
+      "protocol": "both",
+      "domains": [],
+      "description": "Deny requests to ports not in Safe_ports ACL (only 80, 443, and user-specified ports allowed)",
+      "order": 1
+    },
+    {
+      "id": "deny-connect-unsafe-ports",
+      "action": "deny",
+      "aclName": "CONNECT !Safe_ports",
+      "protocol": "https",
+      "domains": [],
+      "description": "Deny CONNECT (HTTPS) to ports not in Safe_ports ACL",
+      "order": 2
+    },
+    {
+      "id": "allow-api-proxy-ip",
+      "action": "allow",
+      "aclName": "allow_api_proxy_ip",
+      "protocol": "both",
+      "domains": [
+        "172.30.0.30"
+      ],
+      "description": "Allow connections to the AWF api-proxy sidecar IP before raw-IP deny rules",
+      "order": 3
+    },
+    {
+      "id": "allow-from-api-proxy",
+      "action": "allow",
+      "aclName": "from_api_proxy",
+      "protocol": "both",
+      "domains": [
+        "*"
+      ],
+      "description": "Allow unrestricted outbound from api-proxy sidecar (trusted AWF component, not subject to agent domain ACL)",
+      "order": 4
+    },
+    {
+      "id": "deny-raw-ipv4",
+      "action": "deny",
+      "aclName": "dst_ipv4",
+      "protocol": "both",
+      "domains": [
+        "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$"
+      ],
+      "description": "Deny requests to raw IPv4 addresses (bypasses domain filtering)",
+      "order": 5
+    },
+    {
+      "id": "deny-raw-ipv6",
+      "action": "deny",
+      "aclName": "dst_ipv6",
+      "protocol": "both",
+      "domains": [
+        "^\\[?[0-9a-fA-F:]+\\]?$"
+      ],
+      "description": "Deny requests to raw IPv6 addresses (bypasses domain filtering)",
+      "order": 6
+    },
+    {
+      "id": "allow-both-plain",
+      "action": "allow",
+      "aclName": "allowed_domains",
+      "protocol": "both",
+      "domains": [
+        ".api.business.githubcopilot.com",
+        ".api.enterprise.githubcopilot.com",
+        ".api.githubcopilot.com",
+        ".api.individual.githubcopilot.com",
+        ".api.snapcraft.io",
+        ".archive.ubuntu.com",
+        ".crl.geotrust.com",
+        ".crl.globalsign.com",
+        ".crl.identrust.com",
+        ".crl.sectigo.com",
+        ".crl.thawte.com",
+        ".crl.usertrust.com",
+        ".crl.verisign.com",
+        ".crl3.digicert.com",
+        ".crl4.digicert.com",
+        ".crls.ssl.com",
+        ".docs-v3-preview.elastic.dev",
+        ".github-cloud.s3.amazonaws.com",
+        ".github.blog",
+        ".github.com",
+        ".github.githubassets.com",
+        ".host.docker.internal",
+        ".json-schema.org",
+        ".json.schemastore.org",
+        ".keyserver.ubuntu.com",
+        ".ocsp.digicert.com",
+        ".ocsp.geotrust.com",
+        ".ocsp.globalsign.com",
+        ".ocsp.identrust.com",
+        ".ocsp.sectigo.com",
+        ".ocsp.ssl.com",
+        ".ocsp.thawte.com",
+        ".ocsp.usertrust.com",
+        ".ocsp.verisign.com",
+        ".packagecloud.io",
+        ".packages.cloud.google.com",
+        ".packages.microsoft.com",
+        ".ppa.launchpad.net",
+        ".registry.npmjs.org",
+        ".s.symcb.com",
+        ".s.symcd.com",
+        ".security.ubuntu.com",
+        ".telemetry.enterprise.githubcopilot.com",
+        ".ts-crl.ws.symantec.com",
+        ".ts-ocsp.ws.symantec.com",
+        ".www.elastic.co",
+        ".www.googleapis.com",
+        ".awmg-mcpg",
+        ".awmg-cli-proxy"
+      ],
+      "description": "Allow HTTP and HTTPS traffic to these domains",
+      "order": 7
+    },
+    {
+      "id": "allow-both-regex",
+      "action": "allow",
+      "aclName": "allowed_domains_regex",
+      "protocol": "both",
+      "domains": [
+        "^[a-zA-Z0-9.-]*\\.githubusercontent\\.com$"
+      ],
+      "description": "Allow HTTP and HTTPS traffic matching these patterns",
+      "order": 8
+    },
+    {
+      "id": "deny-default",
+      "action": "deny",
+      "aclName": "all",
+      "protocol": "both",
+      "domains": [],
+      "description": "Deny all traffic not matching any allow rule (default deny)",
+      "order": 9
+    }
+  ],
+  "dangerousPorts": [
+    22,
+    23,
+    25,
+    110,
+    143,
+    445,
+    1433,
+    1521,
+    3306,
+    3389,
+    5432,
+    5984,
+    6379,
+    6984,
+    8086,
+    8088,
+    9200,
+    9300,
+    27017,
+    27018,
+    28017
+  ],
+  "dnsServers": [
+    "168.63.129.16"
+  ],
+  "sslBumpEnabled": false,
+  "dlpEnabled": false,
+  "hostAccessEnabled": false,
+  "allowHostPorts": null
+}

@@ -1,0 +1,13 @@
+﻿2026-08-04T12:57:10.8955551Z ##[group]Run actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+2026-08-04T12:57:10.8958108Z with:
+2026-08-04T12:57:10.8961809Z   key: agentic-workflow-usage-docsagentexperimental-30910942575
+2026-08-04T12:57:10.8964021Z   path: /tmp/gh-aw/agentic-workflow-usage-cache.jsonl
+2026-08-04T12:57:10.8968057Z   enableCrossOsArchive: false
+2026-08-04T12:57:10.8971669Z env:
+2026-08-04T12:57:10.8978976Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:57:10.8984672Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:57:10.8989405Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: f282ba6f076e9f34
+2026-08-04T12:57:10.8995743Z   GITHUB_AW_OTEL_JOB_START_MS: 1785848221999
+2026-08-04T12:57:10.8999914Z ##[endgroup]
+2026-08-04T12:57:11.3261007Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/opentelemetry/opentelemetry --files-from manifest.txt --use-compress-program zstdmt
+2026-08-04T12:57:11.4720979Z ##[warning]Failed to save: Unable to reserve cache with key agentic-workflow-usage-docsagentexperimental-30910942575. More details: cache write denied: token has no writable scopes

@@ -1,0 +1,50 @@
+﻿2026-08-04T12:51:39.1824556Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T12:51:39.1825011Z with:
+2026-08-04T12:51:39.1828490Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+
+const substitutePlaceholders = require('/home/runner/work/_temp/gh-aw/actions/substitute_placeholders.cjs');
+
+// Call the substitution function
+return await substitutePlaceholders({
+  file: process.env.GH_AW_PROMPT,
+  substitutions: {
+    GH_AW_EXPR_1A3A194A: process.env.GH_AW_EXPR_1A3A194A,
+    GH_AW_EXPR_463A214A: process.env.GH_AW_EXPR_463A214A,
+    GH_AW_EXPR_802A9F6A: process.env.GH_AW_EXPR_802A9F6A,
+    GH_AW_EXPR_FF1D34CE: process.env.GH_AW_EXPR_FF1D34CE,
+    GH_AW_GITHUB_ACTOR: process.env.GH_AW_GITHUB_ACTOR,
+    GH_AW_GITHUB_REPOSITORY: process.env.GH_AW_GITHUB_REPOSITORY,
+    GH_AW_GITHUB_RUN_ID: process.env.GH_AW_GITHUB_RUN_ID,
+    GH_AW_GITHUB_WORKSPACE: process.env.GH_AW_GITHUB_WORKSPACE,
+    GH_AW_MCP_CLI_SERVERS_LIST: process.env.GH_AW_MCP_CLI_SERVERS_LIST,
+    GH_AW_NEEDS_PRE_ACTIVATION_OUTPUTS_ACTIVATED: process.env.GH_AW_NEEDS_PRE_ACTIVATION_OUTPUTS_ACTIVATED
+  }
+});
+
+2026-08-04T12:51:39.1849598Z   github-token: ***
+2026-08-04T12:51:39.1849893Z   debug: false
+2026-08-04T12:51:39.1850148Z   user-agent: actions/github-script
+2026-08-04T12:51:39.1850455Z   result-encoding: json
+2026-08-04T12:51:39.1850708Z   retries: 0
+2026-08-04T12:51:39.1850978Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T12:51:39.1851306Z env:
+2026-08-04T12:51:39.1851536Z   GH_AW_MAX_DAILY_AI_CREDITS: 5000
+2026-08-04T12:51:39.1851833Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:51:39.1852160Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:51:39.1852775Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: be5afee5d3fcfcb9
+2026-08-04T12:51:39.1853134Z   GITHUB_AW_OTEL_JOB_START_MS: 1785847888167
+2026-08-04T12:51:39.1853483Z   GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
+2026-08-04T12:51:39.1853986Z   GH_AW_EXPR_1A3A194A: false
+2026-08-04T12:51:39.1854263Z   GH_AW_EXPR_463A214A: false
+2026-08-04T12:51:39.1854525Z   GH_AW_EXPR_802A9F6A: 648
+2026-08-04T12:51:39.1854781Z   GH_AW_EXPR_FF1D34CE: 
+2026-08-04T12:51:39.1855036Z   GH_AW_GITHUB_ACTOR: theletterf
+2026-08-04T12:51:39.1855345Z   GH_AW_GITHUB_REPOSITORY: elastic/opentelemetry
+2026-08-04T12:51:39.1855677Z   GH_AW_GITHUB_RUN_ID: 30910942575
+2026-08-04T12:51:39.1856058Z   GH_AW_GITHUB_WORKSPACE: /home/runner/work/opentelemetry/opentelemetry
+2026-08-04T12:51:39.1856884Z   GH_AW_MCP_CLI_SERVERS_LIST: - `elastic-docs` — run `elastic-docs --help` to see available tools
+- `safeoutputs` — run `safeoutputs --help` to see available tools
+2026-08-04T12:51:39.1857649Z   GH_AW_NEEDS_PRE_ACTIVATION_OUTPUTS_ACTIVATED: true
+2026-08-04T12:51:39.1857981Z ##[endgroup]
+2026-08-04T12:51:39.3023821Z [substitutePlaceholders] /tmp/gh-aw/aw-prompts/prompt.txt (10 substitution(s))

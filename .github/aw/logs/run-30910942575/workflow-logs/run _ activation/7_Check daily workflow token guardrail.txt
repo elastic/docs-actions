@@ -1,0 +1,41 @@
+﻿2026-08-04T12:51:31.1683714Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T12:51:31.1684924Z with:
+2026-08-04T12:51:31.1687949Z   github-token: ***
+2026-08-04T12:51:31.1689031Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/check_daily_aic_workflow_guardrail.cjs');
+await main();
+
+2026-08-04T12:51:31.1690743Z   debug: false
+2026-08-04T12:51:31.1691026Z   user-agent: actions/github-script
+2026-08-04T12:51:31.1691339Z   result-encoding: json
+2026-08-04T12:51:31.1691598Z   retries: 0
+2026-08-04T12:51:31.1691873Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T12:51:31.1692288Z env:
+2026-08-04T12:51:31.1693313Z   GH_AW_MAX_DAILY_AI_CREDITS: 5000
+2026-08-04T12:51:31.1693635Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:51:31.1693981Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:51:31.1694450Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: be5afee5d3fcfcb9
+2026-08-04T12:51:31.1694819Z   GITHUB_AW_OTEL_JOB_START_MS: 1785847888167
+2026-08-04T12:51:31.1695720Z   GH_AW_WORKFLOW_NAME: docs-agent-experimental
+2026-08-04T12:51:31.1696158Z   GH_AW_WORKFLOW_ID: docs-agent-experimental
+2026-08-04T12:51:31.1696649Z   GH_AW_RUN_URL: https://github.com/elastic/opentelemetry/actions/runs/30910942575
+2026-08-04T12:51:31.1697127Z   GH_AW_WORKFLOW_DISPATCH_AW_CONTEXT: 
+2026-08-04T12:51:31.1697454Z   GH_AW_HAS_SLASH_COMMAND: false
+2026-08-04T12:51:31.1697754Z   GH_AW_HAS_LABEL_COMMAND: false
+2026-08-04T12:51:31.1701141Z   GH_AW_GITHUB_TOKEN: ***
+2026-08-04T12:51:31.1701456Z ##[endgroup]
+2026-08-04T12:51:31.9194458Z [daily-workflow-aic] Resolved current workflow AI Credits guardrail context: {"owner":"elastic","repo":"opentelemetry","currentRunId":30910942575,"workflowId":326942080,"workflowName":"docs-agent-experimental","actorLogin":"theletterf","threshold":5000,"rateLimitRemaining":14995,"rateLimitLimit":15000}
+2026-08-04T12:51:31.9200460Z [daily-workflow-aic] Querying completed workflow runs: {"workflowId":326942080,"page":1,"perPage":100,"cutoff":"2026-08-03T12:51:31.919Z"}
+2026-08-04T12:51:32.2327353Z [daily-workflow-aic] Received workflow runs page: {"page":1,"runCount":2,"firstRunId":30905136689,"lastRunId":30904930798}
+2026-08-04T12:51:32.2332127Z [daily-workflow-aic] Prepared candidate workflow runs for artifact inspection: {"candidateRunsCount":2,"candidateRunIds":[30905136689,30904930798],"maxInspectableRuns":7440,"truncatedByRateLimit":false}
+2026-08-04T12:51:32.2338896Z [daily-workflow-aic] Loaded usage cache: {"path":"/tmp/gh-aw/agentic-workflow-usage-cache.jsonl","entriesLoaded":1,"skippedStale":0}
+2026-08-04T12:51:32.2343161Z [daily-workflow-aic] Cache hit: using cached AIC for run: {"runId":30905136689,"cachedAIC":62.036899999999996}
+2026-08-04T12:51:32.2347521Z [daily-workflow-aic] Updated current AIC state: {"runId":30905136689,"runAIC":62.036899999999996,"currentAIC":62.036899999999996,"threshold":5000,"countedRunIds":[30905136689]}
+2026-08-04T12:51:32.4104502Z [daily-workflow-aic] Listed workflow artifacts: {"runId":30904930798,"artifactCount":0,"artifacts":[]}
+2026-08-04T12:51:32.4110935Z [daily-workflow-aic] No matching guardrail artifact found: {"runId":30904930798,"availableArtifacts":[]}
+2026-08-04T12:51:32.4117520Z [daily-workflow-aic] Skipping run without AIC usage artifact data: {"runId":30904930798,"currentAIC":62.036899999999996,"threshold":5000}
+2026-08-04T12:51:32.4146908Z [daily-workflow-aic] Appended zero-AIC run entries to usage cache: {"path":"/tmp/gh-aw/agentic-workflow-usage-cache.jsonl","count":1,"runIds":[30904930798]}
+2026-08-04T12:51:32.4151765Z [daily-workflow-aic] Completed AIC inspection window: {"candidateRunsCount":2,"inspectedRunsCount":1,"countedRunIds":[30905136689],"currentAIC":62.036899999999996,"threshold":5000,"exceeded":false}
+2026-08-04T12:51:32.5436859Z [daily-workflow-aic] GitHub API rate limit consumed by daily AIC guardrail: {"rateLimitBeforeInspection":14995,"rateLimitAfterInspection":14992,"consumed":3,"limit":15000,"reset":"2026-08-04T13:50:52.000Z"}
+2026-08-04T12:51:32.5545564Z Daily workflow AIC guardrail not exceeded (62.036899999999996/5000).

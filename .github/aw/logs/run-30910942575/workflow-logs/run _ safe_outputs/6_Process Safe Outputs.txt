@@ -1,0 +1,110 @@
+﻿2026-08-04T12:56:41.8730676Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T12:56:41.8731645Z with:
+2026-08-04T12:56:41.8738813Z   github-token: ***
+2026-08-04T12:56:41.8740682Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/process_safe_outputs.cjs');
+await main();
+
+2026-08-04T12:56:41.8742600Z   debug: false
+2026-08-04T12:56:41.8743202Z   user-agent: actions/github-script
+2026-08-04T12:56:41.8743824Z   result-encoding: json
+2026-08-04T12:56:41.8744342Z   retries: 0
+2026-08-04T12:56:41.8744874Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T12:56:41.8746827Z env:
+2026-08-04T12:56:41.8747426Z   GH_AW_AGENT_AIC: 36.562
+2026-08-04T12:56:41.8748221Z   GH_AW_AIC: 36.562
+2026-08-04T12:56:41.8749133Z   GH_AW_AMBIENT_CONTEXT: 10949
+2026-08-04T12:56:41.8750541Z   GH_AW_CALLER_WORKFLOW_ID: elastic/opentelemetry/docs-agent-experimental
+2026-08-04T12:56:41.8751492Z   GH_AW_DETECTION_CONCLUSION: success
+2026-08-04T12:56:41.8752089Z   GH_AW_DETECTION_REASON: 
+2026-08-04T12:56:41.8752720Z   GH_AW_EFFECTIVE_TOKENS: 
+2026-08-04T12:56:41.8753261Z   GH_AW_ENGINE_ID: copilot
+2026-08-04T12:56:41.8753807Z   GH_AW_ENGINE_MODEL: claude-sonnet-5
+2026-08-04T12:56:41.8755731Z   GH_AW_ENGINE_VERSION: 1.0.75
+2026-08-04T12:56:41.8756391Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:56:41.8756940Z   GH_AW_SAFE_OUTPUTS_STAGED: true
+2026-08-04T12:56:41.8757742Z   GH_AW_THREAT_DETECTION_AIC: 9.593
+2026-08-04T12:56:41.8758349Z   GH_AW_WORKFLOW_EMOJI: 🧪
+2026-08-04T12:56:41.8758922Z   GH_AW_WORKFLOW_ID: docs-agent-experimental
+2026-08-04T12:56:41.8759612Z   GH_AW_WORKFLOW_NAME: docs-agent-experimental
+2026-08-04T12:56:41.8762238Z   GH_AW_WORKFLOW_SOURCE_URL: https://github.com/elastic/opentelemetry/blob/main/.github/workflows/docs-agent-experimental.md
+2026-08-04T12:56:41.8763568Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:56:41.8764396Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: 516bfbb80227e48e
+2026-08-04T12:56:41.8765074Z   GITHUB_AW_OTEL_JOB_START_MS: 1785848200699
+2026-08-04T12:56:41.8765693Z   GH_HOST: github.com
+2026-08-04T12:56:41.8766273Z   GH_AW_AGENT_OUTPUT: /tmp/gh-aw/agent_output.json
+2026-08-04T12:56:41.8768478Z   GH_AW_COMMENT_ID: 
+2026-08-04T12:56:41.8789898Z   GH_AW_ALLOWED_DOMAINS: *.githubusercontent.com,api.business.githubcopilot.com,api.enterprise.githubcopilot.com,api.github.com,api.githubcopilot.com,api.individual.githubcopilot.com,api.snapcraft.io,archive.ubuntu.com,azure.archive.ubuntu.com,codeload.github.com,crl.geotrust.com,crl.globalsign.com,crl.identrust.com,crl.sectigo.com,crl.thawte.com,crl.usertrust.com,crl.verisign.com,crl3.digicert.com,crl4.digicert.com,crls.ssl.com,docs-v3-preview.elastic.dev,docs.github.com,github-cloud.githubusercontent.com,github-cloud.s3.amazonaws.com,github.blog,github.com,github.githubassets.com,host.docker.internal,json-schema.org,json.schemastore.org,keyserver.ubuntu.com,lfs.github.com,localhost,objects.githubusercontent.com,ocsp.digicert.com,ocsp.geotrust.com,ocsp.globalsign.com,ocsp.identrust.com,ocsp.sectigo.com,ocsp.ssl.com,ocsp.thawte.com,ocsp.usertrust.com,ocsp.verisign.com,packagecloud.io,packages.cloud.google.com,packages.microsoft.com,patch-diff.githubusercontent.com,patchdiff.githubusercontent.com,ppa.launchpad.net,raw.githubusercontent.com,registry.npmjs.org,s.symcb.com,s.symcd.com,security.ubuntu.com,telemetry.enterprise.githubcopilot.com,ts-crl.ws.symantec.com,ts-ocsp.ws.symantec.com,www.elastic.co,www.googleapis.com
+2026-08-04T12:56:41.8809923Z   GITHUB_SERVER_URL: https://github.com
+2026-08-04T12:56:41.8810585Z   GITHUB_API_URL: https://api.github.com
+2026-08-04T12:56:41.8820376Z   GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: {"add_comment":{"discussions":false,"max":2,"target":"648"},"add_labels":{"allowed":["docs-agent-declined"],"max":1,"target":"648"},"create_pull_request":{"allowed_files":["README.md","agentic-workflows/**/*.md","aws/**/*.md","changelog/**/*.md","codex/**/*.md","docs-builder/**/*.md","git/**/*.md","github/**/*.md","openapi/**/*.md","slack/**/*.md","vale/**/*.md","docs/**","404.md","archive.md","index.md","versions.md","docset.yml","redirects.yml","cloud-account/**","contribute-docs/**","deploy-manage/**","explore-analyze/**","extend/**","get-started/**","manage-data/**","reference/**","release-notes/**","serverless/**","solutions/**","troubleshoot/**"],"auto_close_issue":false,"draft":true,"expires":336,"fallback_as_issue":true,"labels":["automation","docs-agent"],"max":1,"max_patch_files":20,"max_patch_size":512,"protect_top_level_dot_folders":true,"protected_files":["package.json","bun.lockb","bunfig.toml","deno.json","deno.jsonc","deno.lock","global.json","NuGet.Config","Directory.Packages.props","mix.exs","mix.lock","go.mod","go.sum","stack.yaml","stack.yaml.lock","pom.xml","build.gradle","build.gradle.kts","settings.gradle","settings.gradle.kts","gradle.properties","package-lock.json","yarn.lock","pnpm-lock.yaml","npm-shrinkwrap.json","requirements.txt","Pipfile","Pipfile.lock","pyproject.toml","setup.py","setup.cfg","Gemfile","Gemfile.lock","uv.lock","CODEOWNERS","DESIGN.md","README.md","CONTRIBUTING.md","CHANGELOG.md","SECURITY.md","CODE_OF_CONDUCT.md","AGENTS.md","CLAUDE.md","GEMINI.md"],"protected_files_policy":"request_review","title_prefix":"[docs-agent] "},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{}}
+2026-08-04T12:56:41.8830953Z ##[endgroup]
+2026-08-04T12:56:42.0240745Z Safe Output Handler Manager starting...
+2026-08-04T12:56:42.0259752Z Loaded config from GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: {"add_comment":{"discussions":false,"max":2,"target":"648"},"add_labels":{"allowed":["docs-agent-declined"],"max":1,"target":"648"},"create_pull_request":{"allowed_files":["README.md","agentic-workflows/**/*.md","aws/**/*.md","changelog/**/*.md","codex/**/*.md","docs-builder/**/*.md","git/**/*.md","github/**/*.md","openapi/**/*.md","slack/**/*.md","vale/**/*.md","docs/**","404.md","archive.md","index.md","versions.md","docset.yml","redirects.yml","cloud-account/**","contribute-docs/**","deploy-manage/**","explore-analyze/**","extend/**","get-started/**","manage-data/**","reference/**","release-notes/**","serverless/**","solutions/**","troubleshoot/**"],"auto_close_issue":false,"draft":true,"expires":336,"fallback_as_issue":true,"labels":["automation","docs-agent"],"max":1,"max_patch_files":20,"max_patch_size":512,"protect_top_level_dot_folders":true,"protected_files":["package.json","bun.lockb","bunfig.toml","deno.json","deno.jsonc","deno.lock","global.json","NuGet.Config","Directory.Packages.props","mix.exs","mix.lock","go.mod","go.sum","stack.yaml","stack.yaml.lock","pom.xml","build.gradle","build.gradle.kts","settings.gradle","settings.gradle.kts","gradle.properties","package-lock.json","yarn.lock","pnpm-lock.yaml","npm-shrinkwrap.json","requirements.txt","Pipfile","Pipfile.lock","pyproject.toml","setup.py","setup.cfg","Gemfile","Gemfile.lock","uv.lock","CODEOWNERS","DESIGN.md","README.md","CONTRIBUTING.md","CHANGELOG.md","SECURITY.md","CODE_OF_CONDUCT.md","AGENTS.md","CLAUDE.md","GEMINI.md"],"protected_files_policy":"request_review","title_prefix":"[docs-agent] "},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{}}
+2026-08-04T12:56:42.0292017Z Agent output content length: 2833
+2026-08-04T12:56:42.0292728Z Found 2 message(s) in agent output
+2026-08-04T12:56:42.0293549Z Loading and initializing safe output handlers based on configuration...
+2026-08-04T12:56:42.0368789Z Add comment configuration: max=2, target=648
+2026-08-04T12:56:42.5687344Z Default target repo: elastic/opentelemetry
+2026-08-04T12:56:42.5689003Z ✓ Loaded and initialized handler for: add_comment
+2026-08-04T12:56:42.5694024Z Add labels configuration: max=1
+2026-08-04T12:56:42.5694780Z Allowed labels: docs-agent-declined
+2026-08-04T12:56:42.5695426Z Default target repo: elastic/opentelemetry
+2026-08-04T12:56:42.5696227Z ✓ Loaded and initialized handler for: add_labels
+2026-08-04T12:56:42.5781725Z Base branch: (dynamic - resolved per target repo)
+2026-08-04T12:56:42.5783514Z Default target repo: elastic/opentelemetry
+2026-08-04T12:56:42.5787468Z Default labels: automation, docs-agent
+2026-08-04T12:56:42.5791287Z Title prefix: [docs-agent] 
+2026-08-04T12:56:42.5796498Z Draft default: true
+2026-08-04T12:56:42.5798408Z If no changes: warn
+2026-08-04T12:56:42.5798950Z Allow empty: false
+2026-08-04T12:56:42.5799443Z Auto-merge: false
+2026-08-04T12:56:42.5806209Z Signed commits: true
+2026-08-04T12:56:42.5808625Z Pull requests expire after: 336 hours
+2026-08-04T12:56:42.5810809Z Max count: 1
+2026-08-04T12:56:42.5811311Z Max patch size: 512 KB
+2026-08-04T12:56:42.5811830Z Max patch files: 20
+2026-08-04T12:56:42.5814217Z ✓ Loaded and initialized handler for: create_pull_request
+2026-08-04T12:56:42.5823342Z Max count: unlimited
+2026-08-04T12:56:42.5826000Z ✓ Loaded and initialized handler for: missing_tool
+2026-08-04T12:56:42.5827471Z Max count: unlimited
+2026-08-04T12:56:42.5828408Z ✓ Loaded and initialized handler for: missing_data
+2026-08-04T12:56:42.5829094Z Max count: 1
+2026-08-04T12:56:42.5846041Z ✓ Loaded and initialized handler for: noop
+2026-08-04T12:56:42.5846847Z Max count: unlimited
+2026-08-04T12:56:42.5847786Z ✓ Loaded and initialized handler for: report_incomplete
+2026-08-04T12:56:42.5848534Z Title prefix: [incomplete]
+2026-08-04T12:56:42.5849116Z Default labels: agentic-workflows
+2026-08-04T12:56:42.5849711Z Max count: 1
+2026-08-04T12:56:42.5850435Z ✓ Loaded and initialized handler for: create_report_incomplete_issue
+2026-08-04T12:56:42.5853129Z Loaded 8 handler(s)
+2026-08-04T12:56:42.5854101Z ℹ️ Rate-limit headroom: 14991/15000 requests remaining (99%) [safe_outputs_pre_check]
+2026-08-04T12:56:42.5855334Z Collected 0 missing tool(s), 0 missing data item(s), 1 noop message(s), and 0 incomplete signal(s)
+2026-08-04T12:56:42.5856329Z Processing 2 message(s) in order of appearance...
+2026-08-04T12:56:42.5857028Z Processing message 1/2: noop
+2026-08-04T12:56:42.5858252Z ✓ Recorded noop message: Starting comprehension review of the provided metrics ingestion section.
+2026-08-04T12:56:42.5859307Z ✓ Message 1 (noop) completed successfully
+2026-08-04T12:56:42.5859993Z Processing message 2/2: create_pull_request
+2026-08-04T12:56:42.5861261Z Processing create_pull_request: title=Scope histogram delta-temporality limitation to collector Elasticsearch exporter, bodyLength=2347
+2026-08-04T12:56:42.5862745Z Patch file path: /tmp/gh-aw/aw-docs-agent-issue-648-histogram-temporality.patch
+2026-08-04T12:56:42.5863842Z Bundle file path: /tmp/gh-aw/aw-docs-agent-issue-648-histogram-temporality.bundle
+2026-08-04T12:56:42.5864726Z Target repository: elastic/opentelemetry
+2026-08-04T12:56:42.5865376Z Base branch for elastic/opentelemetry: main
+2026-08-04T12:56:42.5866128Z Apply transport mode: bundle (bundle file present: true)
+2026-08-04T12:56:42.5866863Z Patch size: 4 KB (maximum allowed: 512 KB)
+2026-08-04T12:56:42.5867673Z Patch size validation passed
+2026-08-04T12:56:42.5868293Z Patch content validation passed
+2026-08-04T12:56:42.5869029Z 📝 Pull request creation preview written to step summary
+2026-08-04T12:56:42.5869868Z ✓ Message 2 (create_pull_request) completed successfully
+2026-08-04T12:56:42.5870943Z Stored 0 missing tool(s), 0 missing data item(s), 1 noop message(s), and 0 incomplete signal(s) for footer generation
+2026-08-04T12:56:42.5872038Z 📝 Safe output summaries written to step summary
+2026-08-04T12:56:42.5872492Z 
+2026-08-04T12:56:42.5872725Z === Processing Summary ===
+2026-08-04T12:56:42.5873270Z Total messages: 2
+2026-08-04T12:56:42.5873762Z Successful: 2
+2026-08-04T12:56:42.5874321Z Failed: 0
+2026-08-04T12:56:42.5874808Z Temporary IDs registered: 0
+2026-08-04T12:56:42.5875363Z Synthetic updates: 0
+2026-08-04T12:56:42.5875929Z Exported temporary ID map with 0 mapping(s)
+2026-08-04T12:56:42.5876581Z Safe Output Handler Manager completed

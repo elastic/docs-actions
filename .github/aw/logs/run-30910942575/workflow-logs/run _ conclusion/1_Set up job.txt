@@ -1,0 +1,34 @@
+﻿2026-08-04T12:56:52.7485164Z Current runner version: '2.336.0'
+2026-08-04T12:56:52.7608694Z ##[group]Runner Image Provisioner
+2026-08-04T12:56:52.7609698Z Hosted Compute Agent
+2026-08-04T12:56:52.7610262Z Version: 20260707.563
+2026-08-04T12:56:52.7610918Z Commit: 02667638d2b423fbc733a8e32a88b44996a3ba6e
+2026-08-04T12:56:52.7611696Z Build Date: 2026-07-07T19:33:50Z
+2026-08-04T12:56:52.7612403Z Worker ID: {5da57c6e-a260-4bf0-bd3f-1b6beb3b8f3a}
+2026-08-04T12:56:52.7613086Z Azure Region: eastus
+2026-08-04T12:56:52.7613672Z ##[endgroup]
+2026-08-04T12:56:52.7615503Z ##[group]VM Image
+2026-08-04T12:56:52.7616103Z - OS: Linux (x64)
+2026-08-04T12:56:52.7616665Z - Source: Docker
+2026-08-04T12:56:52.7693700Z - Name: ubuntu:24.04
+2026-08-04T12:56:52.7694463Z - Version: 20260728.2.1
+2026-08-04T12:56:52.7695042Z ##[endgroup]
+2026-08-04T12:56:52.7696098Z ##[group]GITHUB_TOKEN Permissions
+2026-08-04T12:56:52.7702176Z Actions: write
+2026-08-04T12:56:52.7703734Z Metadata: read
+2026-08-04T12:56:52.7704359Z ##[endgroup]
+2026-08-04T12:56:52.7712419Z Secret source: Actions
+2026-08-04T12:56:52.7716576Z Prepare workflow directory
+2026-08-04T12:56:53.0649370Z Prepare all required actions
+2026-08-04T12:56:53.0859332Z Getting action download info
+2026-08-04T12:56:53.7418604Z Download action repository 'github/gh-aw-actions@e89c65e17eb281bbd5ff2ff9e9199a03e96654c7' (SHA:e89c65e17eb281bbd5ff2ff9e9199a03e96654c7)
+2026-08-04T12:56:54.3843334Z Download action repository 'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c' (SHA:3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c)
+2026-08-04T12:56:54.5521777Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-08-04T12:56:54.9776145Z Download action repository 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9' (SHA:55cc8345863c7cc4c66a329aec7e433d2d1c52a9)
+2026-08-04T12:56:55.2329809Z Download action repository 'actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3' (SHA:3a2844b7e9c422d3c10d287c895573f7108da1b3)
+2026-08-04T12:56:55.8551901Z Uses: elastic/docs-actions/.github/workflows/docs-agent-experimental.lock.yml@refs/tags/v1 (e014503440bde473e6730388b8c8b6091352b82c)
+2026-08-04T12:56:55.8587090Z ##[group] Inputs
+2026-08-04T12:56:55.8587686Z   aw_context: 
+2026-08-04T12:56:55.8623880Z   issue_number: 648
+2026-08-04T12:56:55.8624421Z ##[endgroup]
+2026-08-04T12:56:55.8624858Z Complete job name: run / conclusion

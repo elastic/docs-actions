@@ -1,0 +1,85 @@
+2026/08/04 12:52:49| Processing Configuration File: /etc/squid/squid.conf (depth 0)
+2026/08/04 12:52:49| ERROR: 'pinger_enable' requires --enable-icmp
+2026/08/04 12:52:49| WARNING: HTTP requires the use of Via
+2026/08/04 12:52:49| Created PID file (/var/run/squid/squid.pid)
+2026/08/04 12:52:49| Current Directory is /
+2026/08/04 12:52:49| Starting Squid Cache version 7.6-VCS for x86_64-alpine-linux-musl...
+2026/08/04 12:52:49| Service Name: squid
+2026/08/04 12:52:49| Process ID 1
+2026/08/04 12:52:49| Process Roles: master worker
+2026/08/04 12:52:49| With 65536 file descriptors available
+2026/08/04 12:52:49| Initializing IP Cache...
+2026/08/04 12:52:49| DNS IPv6 socket created at [::], FD 8
+2026/08/04 12:52:49| DNS IPv4 socket created at 0.0.0.0, FD 9
+2026/08/04 12:52:49| Adding nameserver 168.63.129.16 from squid.conf
+2026/08/04 12:52:49| Logfile: opening log /var/log/squid/access.log
+2026/08/04 12:52:49| WARNING: log name now starts with a module name. Use 'stdio:/var/log/squid/access.log'
+2026/08/04 12:52:49| Logfile: opening log /var/log/squid/audit.jsonl
+2026/08/04 12:52:49| WARNING: log name now starts with a module name. Use 'stdio:/var/log/squid/audit.jsonl'
+2026/08/04 12:52:49| Local cache digest enabled; rebuild/rewrite every 3600/3600 sec
+2026/08/04 12:52:49| Store logging disabled
+2026/08/04 12:52:49| Swap maxSize 0 + 65536 KB, estimated 5041 objects
+2026/08/04 12:52:49| Target number of buckets: 252
+2026/08/04 12:52:49| Using 8192 Store buckets
+2026/08/04 12:52:49| Max Mem  size: 65536 KB
+2026/08/04 12:52:49| Max Swap size: 0 KB
+2026/08/04 12:52:49| Using Least Load store dir selection
+2026/08/04 12:52:49| Current Directory is /
+2026/08/04 12:52:49| Finished loading MIME types and icons.
+2026/08/04 12:52:49| HTCP Disabled.
+2026/08/04 12:52:49| Squid plugin modules loaded: 0
+2026/08/04 12:52:49| Adaptation support is off.
+2026/08/04 12:52:49| Accepting HTTP Socket connections at conn3 local=[::]:3128 remote=[::] FD 12 flags=9
+    listening port: 3128
+2026/08/04 12:52:49| Accepting HTTP Socket connections at conn5 local=[::]:3128 remote=[::] FD 13 flags=9
+    listening port: [::]:3128
+2026/08/04 12:52:49| ERROR: listen(..., 16384) system call failed: (98) Address in use
+    listening port: [::]:3128
+2026/08/04 12:52:50| storeLateRelease: released 0 objects
+2026/08/04 12:52:51| Processing Configuration File: /etc/squid/squid.conf (depth 0)
+2026/08/04 12:52:51| ERROR: 'pinger_enable' requires --enable-icmp
+2026/08/04 12:52:51| WARNING: HTTP requires the use of Via
+2026/08/04 12:52:51| Created PID file (/var/run/squid/squid.pid)
+2026/08/04 12:52:51| Current Directory is /
+2026/08/04 12:52:51| Starting Squid Cache version 7.6-VCS for x86_64-alpine-linux-musl...
+2026/08/04 12:52:51| Service Name: squid
+2026/08/04 12:52:51| Process ID 1
+2026/08/04 12:52:51| Process Roles: master worker
+2026/08/04 12:52:51| With 65536 file descriptors available
+2026/08/04 12:52:51| Initializing IP Cache...
+2026/08/04 12:52:51| DNS IPv6 socket created at [::], FD 8
+2026/08/04 12:52:51| DNS IPv4 socket created at 0.0.0.0, FD 9
+2026/08/04 12:52:51| Adding nameserver 168.63.129.16 from squid.conf
+2026/08/04 12:52:51| Logfile: opening log /var/log/squid/access.log
+2026/08/04 12:52:51| WARNING: log name now starts with a module name. Use 'stdio:/var/log/squid/access.log'
+2026/08/04 12:52:51| Logfile: opening log /var/log/squid/audit.jsonl
+2026/08/04 12:52:51| WARNING: log name now starts with a module name. Use 'stdio:/var/log/squid/audit.jsonl'
+2026/08/04 12:52:51| Local cache digest enabled; rebuild/rewrite every 3600/3600 sec
+2026/08/04 12:52:51| Store logging disabled
+2026/08/04 12:52:51| Swap maxSize 0 + 65536 KB, estimated 5041 objects
+2026/08/04 12:52:51| Target number of buckets: 252
+2026/08/04 12:52:51| Using 8192 Store buckets
+2026/08/04 12:52:51| Max Mem  size: 65536 KB
+2026/08/04 12:52:51| Max Swap size: 0 KB
+2026/08/04 12:52:51| Using Least Load store dir selection
+2026/08/04 12:52:51| Current Directory is /
+2026/08/04 12:52:51| Finished loading MIME types and icons.
+2026/08/04 12:52:51| HTCP Disabled.
+2026/08/04 12:52:51| Squid plugin modules loaded: 0
+2026/08/04 12:52:51| Adaptation support is off.
+2026/08/04 12:52:51| Accepting HTTP Socket connections at conn3 local=[::]:3128 remote=[::] FD 12 flags=9
+    listening port: 3128
+2026/08/04 12:52:51| Accepting HTTP Socket connections at conn5 local=[::]:3128 remote=[::] FD 13 flags=9
+    listening port: [::]:3128
+2026/08/04 12:52:51| ERROR: listen(..., 16384) system call failed: (98) Address in use
+    listening port: [::]:3128
+2026/08/04 12:52:52| storeLateRelease: released 0 objects
+2026/08/04 12:54:55| Preparing for shutdown after 38 requests
+2026/08/04 12:54:55| Waiting 0 seconds for active connections to finish
+2026/08/04 12:54:55| Closing HTTP(S) port [::]:3128
+    listening port: 3128
+2026/08/04 12:54:55| Closing HTTP(S) port [::]:3128
+    listening port: [::]:3128
+2026/08/04 12:54:56| Shutdown: Negotiate authentication.
+2026/08/04 12:54:56| Shutdown: Digest authentication.
+2026/08/04 12:54:56| Shutdown: Basic authentication.

@@ -1,0 +1,40 @@
+﻿2026-08-04T12:51:39.4202769Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-08-04T12:51:39.4203259Z with:
+2026-08-04T12:51:39.4203574Z   name: be543d6f-activation
+2026-08-04T12:51:39.4203852Z   include-hidden-files: true
+2026-08-04T12:51:39.4204933Z   path: /tmp/gh-aw/aw_info.json
+/tmp/gh-aw/models.json
+/tmp/gh-aw/aw-prompts/prompt.txt
+/tmp/gh-aw/aw-prompts/prompt-template.txt
+/tmp/gh-aw/aw-prompts/prompt-import-tree.json
+/tmp/gh-aw/github_rate_limits.jsonl
+/tmp/gh-aw/base
+/tmp/gh-aw/.github/agents
+/tmp/gh-aw/.github/skills
+
+2026-08-04T12:51:39.4206105Z   if-no-files-found: ignore
+2026-08-04T12:51:39.4206379Z   retention-days: 1
+2026-08-04T12:51:39.4206640Z   compression-level: 6
+2026-08-04T12:51:39.4206888Z   overwrite: false
+2026-08-04T12:51:39.4207127Z   archive: true
+2026-08-04T12:51:39.4207351Z env:
+2026-08-04T12:51:39.4207575Z   GH_AW_MAX_DAILY_AI_CREDITS: 5000
+2026-08-04T12:51:39.4207868Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:51:39.4208186Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:51:39.4208732Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: be5afee5d3fcfcb9
+2026-08-04T12:51:39.4209082Z   GITHUB_AW_OTEL_JOB_START_MS: 1785847888167
+2026-08-04T12:51:39.4209384Z ##[endgroup]
+2026-08-04T12:51:39.6653578Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-08-04T12:51:39.6666460Z The least common ancestor is /tmp/gh-aw. This will be the root directory of the artifact
+2026-08-04T12:51:39.6667999Z With the provided path, there will be 27 files uploaded
+2026-08-04T12:51:39.6677246Z Artifact name is valid!
+2026-08-04T12:51:39.6679332Z Root directory input is valid!
+2026-08-04T12:51:40.0133801Z Uploading artifact: be543d6f-activation.zip
+2026-08-04T12:51:40.0221546Z Beginning upload of artifact content to blob storage
+2026-08-04T12:51:40.5198620Z Uploaded bytes 51776
+2026-08-04T12:51:40.5838086Z Finished uploading artifact content to blob storage!
+2026-08-04T12:51:40.5843202Z SHA256 digest of uploaded artifact is 2360696ff16a968a4a91ced0788656194d3f0658bea1222c39f36932e6b17665
+2026-08-04T12:51:40.5846599Z Finalizing artifact upload
+2026-08-04T12:51:40.9677981Z Artifact be543d6f-activation successfully finalized. Artifact ID 8893044564
+2026-08-04T12:51:40.9678897Z Artifact be543d6f-activation has been successfully uploaded! Final size is 51776 bytes. Artifact ID is 8893044564
+2026-08-04T12:51:40.9679841Z Artifact download URL: https://github.com/elastic/opentelemetry/actions/runs/30910942575/artifacts/8893044564

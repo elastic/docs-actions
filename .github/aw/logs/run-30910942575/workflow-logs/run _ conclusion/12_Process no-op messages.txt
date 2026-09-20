@@ -1,0 +1,39 @@
+﻿2026-08-04T12:57:12.4797580Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T12:57:12.4799334Z with:
+2026-08-04T12:57:12.4810459Z   github-token: ***
+2026-08-04T12:57:12.4813846Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/handle_noop_message.cjs');
+await main();
+
+2026-08-04T12:57:12.4818659Z   debug: false
+2026-08-04T12:57:12.4819596Z   user-agent: actions/github-script
+2026-08-04T12:57:12.4820691Z   result-encoding: json
+2026-08-04T12:57:12.4821622Z   retries: 0
+2026-08-04T12:57:12.4822581Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T12:57:12.4823744Z env:
+2026-08-04T12:57:12.4824566Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:57:12.4825877Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:57:12.4827467Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: f282ba6f076e9f34
+2026-08-04T12:57:12.4828803Z   GITHUB_AW_OTEL_JOB_START_MS: 1785848221999
+2026-08-04T12:57:12.4830076Z   GH_AW_AGENT_OUTPUT: /tmp/gh-aw/agent_output.json
+2026-08-04T12:57:12.4831276Z   GH_AW_NOOP_MAX: 1
+2026-08-04T12:57:12.4832827Z   GH_AW_WORKFLOW_NAME: docs-agent-experimental
+2026-08-04T12:57:12.4835633Z   GH_AW_WORKFLOW_SOURCE_URL: https://github.com/elastic/opentelemetry/blob/main/.github/workflows/docs-agent-experimental.md
+2026-08-04T12:57:12.4838343Z   GH_AW_RUN_URL: https://github.com/elastic/opentelemetry/actions/runs/30910942575
+2026-08-04T12:57:12.4839937Z   GH_AW_AGENT_CONCLUSION: success
+2026-08-04T12:57:12.4842053Z   GH_AW_NOOP_REPORT_AS_ISSUE: true
+2026-08-04T12:57:12.4843227Z   GH_AW_AIC: 36.562
+2026-08-04T12:57:12.4844184Z   GH_AW_THREAT_DETECTION_AIC: 9.593
+2026-08-04T12:57:12.4845821Z   GH_AW_AMBIENT_CONTEXT: 10949
+2026-08-04T12:57:12.4847526Z   GH_AW_WORKFLOW_ID: docs-agent-experimental
+2026-08-04T12:57:12.4848738Z ##[endgroup]
+2026-08-04T12:57:12.8574830Z Agent output content length: 2833
+2026-08-04T12:57:12.8594495Z Found 1 noop item(s)
+2026-08-04T12:57:12.8602166Z No-op message 1: Starting comprehension review of the provided metrics ingestion section.
+2026-08-04T12:57:12.9167312Z Successfully processed 1 noop message(s)
+2026-08-04T12:57:12.9212849Z Workflow name: docs-agent-experimental
+2026-08-04T12:57:12.9224381Z Run URL: https://github.com/elastic/opentelemetry/actions/runs/30910942575
+2026-08-04T12:57:12.9229963Z Agent conclusion: success
+2026-08-04T12:57:12.9233579Z Report as issue: true
+2026-08-04T12:57:12.9374426Z Found 1 non-noop output(s), skipping no-op message posting

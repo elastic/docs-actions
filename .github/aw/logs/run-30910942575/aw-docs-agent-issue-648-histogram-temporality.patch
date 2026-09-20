@@ -1,0 +1,45 @@
+From d89dc4ae37046db4396f3fc426ed7bf7a780f23d Mon Sep 17 00:00:00 2001
+From: "github-actions[bot]" <github-actions[bot]@users.noreply.github.com>
+Date: Tue, 4 Aug 2026 12:54:38 +0000
+Subject: [PATCH] docs: scope histogram delta-temporality limitation to
+ collector ES exporter
+
+Both delta and cumulative temporality are now supported for histograms
+and counters via the Elasticsearch OTLP endpoint (motlp) on stack 9.5+
+and serverless. The delta-only restriction still applies to the
+collector's Elasticsearch exporter.
+
+Related to #648
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+---
+ docs/reference/compatibility/limitations.md | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/docs/reference/compatibility/limitations.md b/docs/reference/compatibility/limitations.md
+index 83c913a..e75adef 100644
+--- a/docs/reference/compatibility/limitations.md
++++ b/docs/reference/compatibility/limitations.md
+@@ -58,11 +58,16 @@ When collecting host metrics through a distribution of the OTel Collector other
+ 
+ ## Metrics data ingestion
+ 
+-### Histograms in delta temporality only
++### Histogram and counter temporality
+ 
+-Ingestion of OpenTelemetry metrics with the type [`Histogram`](https://opentelemetry.io/docs/specs/otel/metrics/data-model/#histogram) are only supported with [`delta temporality`](https://opentelemetry.io/docs/specs/otel/metrics/data-model/#temporality). Histograms with `cumulative` temporality are dropped before being ingested into {{es}}.
++```{applies_to}
++stack: ga 9.5
++serverless: ga
++```
+ 
+-Make sure to export histogram metrics with delta temporality or use the [`cumulativetodelta processor`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/cumulativetodeltaprocessor) as a workaround to convert the temporality for histogram metrics.
++When you send data using the [{{es}} OTLP endpoint](docs-content://manage-data/ingest/otlp-endpoint.md#metric-temporality) (`motlp`), both `delta` and `cumulative` [temporality](https://opentelemetry.io/docs/specs/otel/metrics/data-model/#temporality) are supported for histograms and counters. Refer to [Metric temporality](docs-content://manage-data/ingest/otlp-endpoint.md#metric-temporality) for details, including the requirement to set `xpack.otel_data.histogram_field_type` to `exponential_histogram` for cumulative histograms. This setting is the default from stack version 9.4.
++
++When you send data through the collector's {{es}} exporter, ingestion of OpenTelemetry metrics with the type [`Histogram`](https://opentelemetry.io/docs/specs/otel/metrics/data-model/#histogram) is only supported with `delta` temporality. Histograms with `cumulative` temporality are dropped before being ingested into {{es}}. This restriction doesn't apply to counters. Make sure to export histogram metrics with delta temporality or use the [`cumulativetodelta processor`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/cumulativetodeltaprocessor) as a workaround to convert the temporality for histogram metrics.
+ 
+ ### Exemplars
+ 
+-- 
+2.54.0
+

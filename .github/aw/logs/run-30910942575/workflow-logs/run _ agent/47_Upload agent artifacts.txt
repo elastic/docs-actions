@@ -1,0 +1,56 @@
+﻿2026-08-04T12:55:00.9378357Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-08-04T12:55:00.9378804Z with:
+2026-08-04T12:55:00.9379010Z   name: be543d6f-agent
+2026-08-04T12:55:00.9380874Z   path: /tmp/gh-aw/aw-prompts/prompt.txt
+/tmp/gh-aw/sandbox/agent/logs/
+/tmp/gh-aw/redacted-urls.log
+/tmp/gh-aw/mcp-logs/
+/tmp/gh-aw/proxy-logs/
+!/tmp/gh-aw/proxy-logs/proxy-tls/
+/tmp/gh-aw/agent_usage.json
+/tmp/gh-aw/agent-stdio.log
+/tmp/gh-aw/pre-agent-audit.txt
+/tmp/gh-aw/agent/
+/tmp/gh-aw/github_rate_limits.jsonl
+/tmp/gh-aw/safeoutputs.jsonl
+/tmp/gh-aw/agent_output.json
+/tmp/gh-aw/aw-*.patch
+/tmp/gh-aw/aw-*.bundle
+/tmp/gh-aw/awf-config.json
+/tmp/gh-aw/sandbox/firewall/logs/
+/tmp/gh-aw/sandbox/firewall/audit/
+/tmp/gh-aw/sandbox/firewall/awf-reflect.json
+
+2026-08-04T12:55:00.9382742Z   if-no-files-found: ignore
+2026-08-04T12:55:00.9382997Z   compression-level: 6
+2026-08-04T12:55:00.9383224Z   overwrite: false
+2026-08-04T12:55:00.9383454Z   include-hidden-files: false
+2026-08-04T12:55:00.9383716Z   archive: true
+2026-08-04T12:55:00.9383940Z env:
+2026-08-04T12:55:00.9384134Z   DEFAULT_BRANCH: main
+2026-08-04T12:55:00.9384368Z   GH_AW_ASSETS_ALLOWED_EXTS: 
+2026-08-04T12:55:00.9384611Z   GH_AW_ASSETS_BRANCH: 
+2026-08-04T12:55:00.9384839Z   GH_AW_ASSETS_MAX_SIZE_KB: 0
+2026-08-04T12:55:00.9385131Z   GH_AW_MCP_LOG_DIR: /tmp/gh-aw/mcp-logs/safeoutputs
+2026-08-04T12:55:00.9385452Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:55:00.9386100Z   GH_AW_WORKFLOW_ID_SANITIZED: docsagentexperimental
+2026-08-04T12:55:00.9386494Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:55:00.9386859Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: 4e867a969570a95e
+2026-08-04T12:55:00.9387187Z   GITHUB_AW_OTEL_JOB_START_MS: 1785847925783
+2026-08-04T12:55:00.9387511Z   GH_AW_AGENT_OUTPUT: /tmp/gh-aw/agent_output.json
+2026-08-04T12:55:00.9387817Z   GH_AW_AIC: 36.562
+2026-08-04T12:55:00.9388049Z   GH_AW_AMBIENT_CONTEXT: 10949
+2026-08-04T12:55:00.9388318Z   GH_AW_PRIMARY_MODEL: claude-sonnet-5
+2026-08-04T12:55:00.9388589Z ##[endgroup]
+2026-08-04T12:55:01.0977216Z With the provided path, there will be 35 files uploaded
+2026-08-04T12:55:01.0981940Z Artifact name is valid!
+2026-08-04T12:55:01.0982421Z Root directory input is valid!
+2026-08-04T12:55:01.4290534Z Uploading artifact: be543d6f-agent.zip
+2026-08-04T12:55:01.4330592Z Beginning upload of artifact content to blob storage
+2026-08-04T12:55:02.2054113Z Uploaded bytes 776816
+2026-08-04T12:55:02.2780171Z Finished uploading artifact content to blob storage!
+2026-08-04T12:55:02.2781127Z SHA256 digest of uploaded artifact is 6bd9332fcfdbf39e2c80f6eb1d91d053face1482e60f71db02ef813565ef096f
+2026-08-04T12:55:02.2781690Z Finalizing artifact upload
+2026-08-04T12:55:02.6726361Z Artifact be543d6f-agent successfully finalized. Artifact ID 8893151962
+2026-08-04T12:55:02.6727550Z Artifact be543d6f-agent has been successfully uploaded! Final size is 776816 bytes. Artifact ID is 8893151962
+2026-08-04T12:55:02.6731830Z Artifact download URL: https://github.com/elastic/opentelemetry/actions/runs/30910942575/artifacts/8893151962

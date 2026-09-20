@@ -1,0 +1,24 @@
+﻿2026-08-04T12:50:59.8920838Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T12:50:59.8921867Z with:
+2026-08-04T12:50:59.8925467Z   github-token: ***
+2026-08-04T12:50:59.8927106Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/check_membership.cjs');
+await main();
+
+2026-08-04T12:50:59.8928835Z   debug: false
+2026-08-04T12:50:59.8929299Z   user-agent: actions/github-script
+2026-08-04T12:50:59.8929828Z   result-encoding: json
+2026-08-04T12:50:59.8930284Z   retries: 0
+2026-08-04T12:50:59.8931022Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T12:50:59.8931599Z env:
+2026-08-04T12:50:59.8931994Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:50:59.8932563Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:50:59.8933245Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: 79fae9e247633fb5
+2026-08-04T12:50:59.8933850Z   GITHUB_AW_OTEL_JOB_START_MS: 1785847859820
+2026-08-04T12:50:59.8934474Z   GH_AW_REQUIRED_ROLES: admin,maintainer,write
+2026-08-04T12:50:59.8935068Z ##[endgroup]
+2026-08-04T12:51:00.1340248Z Checking if user 'theletterf' has required permissions for elastic/opentelemetry
+2026-08-04T12:51:00.1341552Z Required permissions: admin, maintainer, write
+2026-08-04T12:51:00.3849457Z Repository permission level: write
+2026-08-04T12:51:00.3875753Z ✅ User has write access to repository

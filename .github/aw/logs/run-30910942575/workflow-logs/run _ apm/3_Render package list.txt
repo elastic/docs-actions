@@ -1,0 +1,31 @@
+﻿2026-08-04T12:51:49.9784542Z ##[group]Run set -euo pipefail
+2026-08-04T12:51:49.9785191Z [36;1mset -euo pipefail[0m
+2026-08-04T12:51:49.9786072Z [36;1mraw="${AW_APM_PACKAGES:-[]}"[0m
+2026-08-04T12:51:49.9786633Z [36;1m[0m
+2026-08-04T12:51:49.9787231Z [36;1mif printf '%s' "$raw" | jq -e 'type == "array"' >/dev/null 2>&1; then[0m
+2026-08-04T12:51:49.9787971Z [36;1m  packages_json="$raw"[0m
+2026-08-04T12:51:49.9788487Z [36;1melse[0m
+2026-08-04T12:51:49.9789758Z [36;1m  packages_json="$(python3 -c 'import json, re, sys; s=sys.argv[1].strip(); s=s[1:-1] if s.startswith("[") and s.endswith("]") else s; print(json.dumps([t for t in re.split(r"[\s,]+", s) if t]))' "$raw")"[0m
+2026-08-04T12:51:49.9791103Z [36;1mfi[0m
+2026-08-04T12:51:49.9791515Z [36;1m[0m
+2026-08-04T12:51:49.9792047Z [36;1mcount="$(printf '%s' "$packages_json" | jq 'length')"[0m
+2026-08-04T12:51:49.9792728Z [36;1mif [ "$count" -eq 0 ]; then[0m
+2026-08-04T12:51:49.9793427Z [36;1m  echo "::error::shared/apm.md import provided no packages."[0m
+2026-08-04T12:51:49.9794127Z [36;1m  exit 1[0m
+2026-08-04T12:51:49.9794556Z [36;1mfi[0m
+2026-08-04T12:51:49.9794964Z [36;1m[0m
+2026-08-04T12:51:49.9795518Z [36;1mdeps="$(printf '%s' "$packages_json" | jq -r '.[] | "- " + .')"[0m
+2026-08-04T12:51:49.9796589Z [36;1mdelim="APMDEPS_$(openssl rand -hex 8)"[0m
+2026-08-04T12:51:49.9797182Z [36;1m{[0m
+2026-08-04T12:51:49.9797770Z [36;1m  printf 'deps<<%s\n' "$delim"[0m
+2026-08-04T12:51:49.9798568Z [36;1m  printf '%s\n' "$deps"[0m
+2026-08-04T12:51:49.9799107Z [36;1m  printf '%s\n' "$delim"[0m
+2026-08-04T12:51:49.9799639Z [36;1m} >> "$GITHUB_OUTPUT"[0m
+2026-08-04T12:51:49.9800137Z [36;1m[0m
+2026-08-04T12:51:49.9800896Z [36;1mprintf '::notice::APM packages: %s\n' "$(printf '%s' "$packages_json" | jq -r 'join(", ")')"[0m
+2026-08-04T12:51:49.9805114Z shell: /usr/bin/bash -e {0}
+2026-08-04T12:51:49.9805902Z env:
+2026-08-04T12:51:49.9806332Z   GH_HOST: github.com
+2026-08-04T12:51:49.9808307Z   AW_APM_PACKAGES: ["elastic/elastic-docs-skills/skills/authoring/content-type-checker","elastic/elastic-docs-skills/skills/authoring/applies-to-tagging","elastic/elastic-docs-skills/skills/authoring/docs-syntax-help","elastic/elastic-docs-skills/skills/authoring/frontmatter-description"]
+2026-08-04T12:51:49.9810316Z ##[endgroup]
+2026-08-04T12:51:50.0199389Z ##[notice]APM packages: elastic/elastic-docs-skills/skills/authoring/content-type-checker, elastic/elastic-docs-skills/skills/authoring/applies-to-tagging, elastic/elastic-docs-skills/skills/authoring/docs-syntax-help, elastic/elastic-docs-skills/skills/authoring/frontmatter-description

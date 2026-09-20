@@ -1,0 +1,42 @@
+﻿2026-08-04T12:56:40.7263192Z ##[group]Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+2026-08-04T12:56:40.7264198Z with:
+2026-08-04T12:56:40.7264817Z   name: be543d6f-agent
+2026-08-04T12:56:40.7265408Z   path: /tmp/gh-aw/
+2026-08-04T12:56:40.7265980Z   merge-multiple: false
+2026-08-04T12:56:40.7266628Z   repository: elastic/opentelemetry
+2026-08-04T12:56:40.7267256Z   run-id: 30910942575
+2026-08-04T12:56:40.7268218Z   skip-decompress: false
+2026-08-04T12:56:40.7268932Z   digest-mismatch: error
+2026-08-04T12:56:40.7269528Z env:
+2026-08-04T12:56:40.7270086Z   GH_AW_AGENT_AIC: 36.562
+2026-08-04T12:56:40.7270665Z   GH_AW_AIC: 36.562
+2026-08-04T12:56:40.7271212Z   GH_AW_AMBIENT_CONTEXT: 10949
+2026-08-04T12:56:40.7272070Z   GH_AW_CALLER_WORKFLOW_ID: elastic/opentelemetry/docs-agent-experimental
+2026-08-04T12:56:40.7272962Z   GH_AW_DETECTION_CONCLUSION: success
+2026-08-04T12:56:40.7273669Z   GH_AW_DETECTION_REASON: 
+2026-08-04T12:56:40.7274294Z   GH_AW_EFFECTIVE_TOKENS: 
+2026-08-04T12:56:40.7274909Z   GH_AW_ENGINE_ID: copilot
+2026-08-04T12:56:40.7275773Z   GH_AW_ENGINE_MODEL: claude-sonnet-5
+2026-08-04T12:56:40.7276441Z   GH_AW_ENGINE_VERSION: 1.0.75
+2026-08-04T12:56:40.7277100Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:56:40.7277946Z   GH_AW_SAFE_OUTPUTS_STAGED: true
+2026-08-04T12:56:40.7279412Z   GH_AW_THREAT_DETECTION_AIC: 9.593
+2026-08-04T12:56:40.7280212Z   GH_AW_WORKFLOW_EMOJI: 🧪
+2026-08-04T12:56:40.7280867Z   GH_AW_WORKFLOW_ID: docs-agent-experimental
+2026-08-04T12:56:40.7281634Z   GH_AW_WORKFLOW_NAME: docs-agent-experimental
+2026-08-04T12:56:40.7282895Z   GH_AW_WORKFLOW_SOURCE_URL: https://github.com/elastic/opentelemetry/blob/main/.github/workflows/docs-agent-experimental.md
+2026-08-04T12:56:40.7284211Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:56:40.7285100Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: 516bfbb80227e48e
+2026-08-04T12:56:40.7285846Z   GITHUB_AW_OTEL_JOB_START_MS: 1785848200699
+2026-08-04T12:56:40.7286495Z ##[endgroup]
+2026-08-04T12:56:40.9066564Z Downloading single artifact
+2026-08-04T12:56:41.0538776Z Preparing to download the following artifacts:
+2026-08-04T12:56:41.0546524Z - be543d6f-agent (ID: 8893151962, Size: 776816, Expected Digest: sha256:6bd9332fcfdbf39e2c80f6eb1d91d053face1482e60f71db02ef813565ef096f)
+2026-08-04T12:56:41.3285933Z Redirecting to blob download url: https://productionresultssa16.blob.core.windows.net/actions-results/3749ec3a-8201-40b7-80bf-5262e4a9f786/workflow-job-run-38f32334-93db-5a76-b39c-640582a9395b/artifacts/627feddada02a485f01dcdedf4cfa7f2773c75ebd72eb34afdc0b644f2832f88.zip
+2026-08-04T12:56:41.3290910Z Starting download of artifact to: /tmp/gh-aw
+2026-08-04T12:56:41.4812082Z (node:1359) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-08-04T12:56:41.4814311Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-04T12:56:41.7554730Z SHA256 digest of downloaded artifact is 6bd9332fcfdbf39e2c80f6eb1d91d053face1482e60f71db02ef813565ef096f
+2026-08-04T12:56:41.7559466Z Artifact download completed successfully.
+2026-08-04T12:56:41.7562925Z Total of 1 artifact(s) downloaded
+2026-08-04T12:56:41.7570906Z Download artifact has finished successfully

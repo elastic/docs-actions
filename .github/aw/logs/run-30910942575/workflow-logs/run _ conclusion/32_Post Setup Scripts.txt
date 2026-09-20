@@ -1,0 +1,6 @@
+﻿2026-08-04T12:57:17.0747115Z Post job cleanup.
+2026-08-04T12:57:17.3240527Z [info] [otlp] GH_AW_OTLP_ENDPOINTS not set, skipping OTLP export (will attempt JSONL mirror)
+2026-08-04T12:57:17.3540309Z Cleaning up /tmp/gh-aw...
+2026-08-04T12:57:17.4588202Z Cleaned up /tmp/gh-aw
+2026-08-04T12:57:17.5054239Z No /tmp/awf-*-chroot-home directories found
+2026-08-04T12:57:17.5369207Z No /tmp/awf-chroot-* directories found

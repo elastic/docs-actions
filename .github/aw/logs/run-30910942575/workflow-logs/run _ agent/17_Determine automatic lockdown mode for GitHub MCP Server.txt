@@ -1,0 +1,36 @@
+﻿2026-08-04T12:52:24.7548412Z ##[group]Run actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553
+2026-08-04T12:52:24.7548832Z with:
+2026-08-04T12:52:24.7549569Z   script: const determineAutomaticLockdown = require('/home/runner/work/_temp/gh-aw/actions/determine_automatic_lockdown.cjs');
+await determineAutomaticLockdown(github, context, core);
+
+2026-08-04T12:52:24.7552594Z   github-token: ***
+2026-08-04T12:52:24.7552849Z   debug: false
+2026-08-04T12:52:24.7553109Z   user-agent: actions/github-script
+2026-08-04T12:52:24.7553401Z   result-encoding: json
+2026-08-04T12:52:24.7553646Z   retries: 0
+2026-08-04T12:52:24.7553895Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T12:52:24.7554205Z env:
+2026-08-04T12:52:24.7554407Z   DEFAULT_BRANCH: main
+2026-08-04T12:52:24.7554657Z   GH_AW_ASSETS_ALLOWED_EXTS: 
+2026-08-04T12:52:24.7554912Z   GH_AW_ASSETS_BRANCH: 
+2026-08-04T12:52:24.7555150Z   GH_AW_ASSETS_MAX_SIZE_KB: 0
+2026-08-04T12:52:24.7555461Z   GH_AW_MCP_LOG_DIR: /tmp/gh-aw/mcp-logs/safeoutputs
+2026-08-04T12:52:24.7556101Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:52:24.7556398Z   GH_AW_WORKFLOW_ID_SANITIZED: docsagentexperimental
+2026-08-04T12:52:24.7556774Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:52:24.7557144Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: 4e867a969570a95e
+2026-08-04T12:52:24.7557468Z   GITHUB_AW_OTEL_JOB_START_MS: 1785847925783
+2026-08-04T12:52:24.7557763Z   GH_AW_GITHUB_TOKEN: 
+2026-08-04T12:52:24.7558011Z   GH_AW_GITHUB_MCP_SERVER_TOKEN: 
+2026-08-04T12:52:24.7558281Z   GH_AW_GITHUB_MIN_INTEGRITY: none
+2026-08-04T12:52:24.7558548Z ##[endgroup]
+2026-08-04T12:52:24.8536125Z Determining automatic guard policy for GitHub MCP server
+2026-08-04T12:52:24.8537450Z Checking repository: elastic/opentelemetry
+2026-08-04T12:52:25.2871503Z Repository visibility: public
+2026-08-04T12:52:25.2872230Z Repository is private: false
+2026-08-04T12:52:25.2878764Z Configured min-integrity: none
+2026-08-04T12:52:25.2879260Z Configured repos: (not set)
+2026-08-04T12:52:25.2880113Z min-integrity already configured as 'none' — not overriding
+2026-08-04T12:52:25.2881070Z repos not configured — automatically setting to 'public' for public repository
+2026-08-04T12:52:25.2886491Z Automatic guard policy determination complete for public repository
+2026-08-04T12:52:25.2887535Z GitHub MCP guard policy automatically applied for public repository. min-integrity='none' and repos='public'.

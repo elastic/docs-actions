@@ -1,0 +1,15 @@
+2026-08-04T11:32:11.8980000Z Evaluating run.if
+2026-08-04T11:32:11.8980000Z Evaluating: (success() && (((github.event_name == 'workflow_dispatch') || (github.event.label.name == 'docs-agent'))))
+2026-08-04T11:32:11.8980000Z Expanded: (true && (('workflow_dispatch' == 'workflow_dispatch') || (github.event.label.name == 'docs-agent')))
+2026-08-04T11:32:11.8980000Z Result: true
+2026-08-04T11:32:11.8980000Z Evaluating run.apm.if
+2026-08-04T11:32:11.8980000Z Evaluating: success()
+2026-08-04T11:32:11.8980000Z Result: true
+2026-08-04T11:32:12.1940000Z Job is about to start running on the hosted runner: GitHub Actions 1013487017
+2026-08-04T11:32:12.1840000Z Requested labels: ubuntu-slim
+2026-08-04T11:32:12.1840000Z Job defined at: elastic/docs-actions/.github/workflows/docs-agent-experimental.lock.yml@refs/tags/v1
+2026-08-04T11:32:12.1840000Z Reusable workflow chain:
+2026-08-04T11:32:12.1840000Z elastic/opentelemetry/.github/workflows/docs-agent-experimental.yml@refs/heads/fix-docs-agent-actions-permission (7a3034aafb47e6f7ee2c0b12b7a793f0ce5fa07b)
+2026-08-04T11:32:12.1840000Z -> elastic/docs-actions/.github/workflows/docs-agent-experimental.lock.yml@refs/tags/v1 (e014503440bde473e6730388b8c8b6091352b82c)
+2026-08-04T11:32:12.1840000Z Waiting for a runner to pick up this job...
+2026-08-04T11:32:12.1940000Z Job is waiting for a hosted runner to come online.

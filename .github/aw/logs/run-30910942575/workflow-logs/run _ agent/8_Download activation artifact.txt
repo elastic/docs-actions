@@ -1,0 +1,32 @@
+﻿2026-08-04T12:52:12.0577483Z ##[group]Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+2026-08-04T12:52:12.0577925Z with:
+2026-08-04T12:52:12.0578132Z   name: be543d6f-activation
+2026-08-04T12:52:12.0578377Z   path: /tmp/gh-aw
+2026-08-04T12:52:12.0578609Z   merge-multiple: false
+2026-08-04T12:52:12.0578853Z   repository: elastic/opentelemetry
+2026-08-04T12:52:12.0579110Z   run-id: 30910942575
+2026-08-04T12:52:12.0579329Z   skip-decompress: false
+2026-08-04T12:52:12.0579557Z   digest-mismatch: error
+2026-08-04T12:52:12.0579769Z env:
+2026-08-04T12:52:12.0579956Z   DEFAULT_BRANCH: main
+2026-08-04T12:52:12.0580180Z   GH_AW_ASSETS_ALLOWED_EXTS: 
+2026-08-04T12:52:12.0580419Z   GH_AW_ASSETS_BRANCH: 
+2026-08-04T12:52:12.0580636Z   GH_AW_ASSETS_MAX_SIZE_KB: 0
+2026-08-04T12:52:12.0580906Z   GH_AW_MCP_LOG_DIR: /tmp/gh-aw/mcp-logs/safeoutputs
+2026-08-04T12:52:12.0581212Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:52:12.0581477Z   GH_AW_WORKFLOW_ID_SANITIZED: docsagentexperimental
+2026-08-04T12:52:12.0581823Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:52:12.0582226Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: 4e867a969570a95e
+2026-08-04T12:52:12.0582533Z   GITHUB_AW_OTEL_JOB_START_MS: 1785847925783
+2026-08-04T12:52:12.0582800Z ##[endgroup]
+2026-08-04T12:52:12.1954455Z Downloading single artifact
+2026-08-04T12:52:12.4867951Z Preparing to download the following artifacts:
+2026-08-04T12:52:12.4869029Z - be543d6f-activation (ID: 8893044564, Size: 51776, Expected Digest: sha256:2360696ff16a968a4a91ced0788656194d3f0658bea1222c39f36932e6b17665)
+2026-08-04T12:52:13.0240357Z Redirecting to blob download url: https://productionresultssa16.blob.core.windows.net/actions-results/3749ec3a-8201-40b7-80bf-5262e4a9f786/workflow-job-run-90297615-deb3-5b30-93a5-a28822f16228/artifacts/3ebd6b86ba523a99c2e3a3ef6e9eb8742ec15d97699e9d35fa9879f54523e941.zip
+2026-08-04T12:52:13.0241587Z Starting download of artifact to: /tmp/gh-aw
+2026-08-04T12:52:13.3221192Z (node:4738) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-08-04T12:52:13.3222658Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-04T12:52:13.4098727Z SHA256 digest of downloaded artifact is 2360696ff16a968a4a91ced0788656194d3f0658bea1222c39f36932e6b17665
+2026-08-04T12:52:13.4099645Z Artifact download completed successfully.
+2026-08-04T12:52:13.4100199Z Total of 1 artifact(s) downloaded
+2026-08-04T12:52:13.4104463Z Download artifact has finished successfully

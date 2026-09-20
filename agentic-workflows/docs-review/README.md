@@ -17,7 +17,12 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-review.yml
 ```
 
-Add `permissions.copilot-requests: write` to the caller workflow before running this workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
+Add the following to the caller workflow before running this workflow:
+
+- `permissions.copilot-requests: write`
+- A repo or organization secret named `OPENROUTER_API_KEY` containing your OpenRouter API key. Pass it with `secrets: inherit`, or explicitly as `OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}` in the `uses:` call. The workflow maps it to `ANTHROPIC_API_KEY` internally.
+
+The workflow uses the Claude engine via OpenRouter for improved consistency and to use your own API key rather than shared Copilot credits.
 
 ## Inputs
 
@@ -74,23 +79,31 @@ The `comment-phrasing` input controls how the action phrases its review comments
 
 ## Autonomous checks
 
-This workflow combines deterministic pre-steps with runtime APM skills from `elastic/elastic-docs-skills`. A pre-step runs Vale with `elastic/vale-rules` on eligible changed markdown files, and the prompt still embeds the review rules directly so the workflow can continue making evidence-based judgments even when a specific skill is not decisive. Vale is one input into the review, not a blocker for whether review happens. The workflow still reviews all eligible markdown files even when Vale finds nothing or is unavailable. It focuses on:
+This workflow combines deterministic pre-steps with the `elastic/elastic-docs-skills` six-criteria review rubric. A pre-step runs Vale with `elastic/vale-rules` on eligible changed markdown files. Vale is one input into the review, not a blocker — the workflow still reviews all eligible files even when Vale finds nothing or is unavailable.
 
-- Style and clarity issues from Vale, plus high-confidence Formatting, Accessibility, and UI writing checks from the embedded style guide checklist.
-- Elastic-internal jargon, outdated terms, informal shorthand, and unexplained acronyms that external readers will not understand.
-- Frontmatter quality for `description`, `products`, `navigation_title`, and verified `applies_to` guidance.
-- Content type fit and structure for overviews, how-to guides, tutorials, troubleshooting pages, and changelog entries.
-- Parent issue satisfaction when the pull request links to a docs issue.
+The review rubric (`review-criteria.md`) is compiled into the workflow and covers six criteria:
 
-At runtime, the workflow imports these skills through APM:
+| Criterion | Covers |
+|-----------|--------|
+| User focus | Content completeness, scannability, findability, logical flow |
+| Technical accuracy | Correctness, SME evidence, code samples, prerequisites |
+| Applicability | `applies_to` tags, cumulative structure, deployment types |
+| Maintainability | Single source of truth, redirects, high-maintenance content |
+| Language | Grammar, plain language, jargon, variables |
+| Style | Voice and tense, formatting, admonitions, accessibility |
 
-- `docs-check-style`.
-- `docs-flag-jargon-skill`.
-- `docs-frontmatter-audit`.
-- `docs-content-type-checker`.
-- `docs-applies-to-tagging`.
+At runtime, the workflow installs these `elastic/elastic-docs-skills` skills through the gh-aw `skills:` frontmatter key and the agent invokes each one with the `Skill` tool as an implementation tool for the relevant criterion:
 
-The workflow uses the Elastic docs MCP server only for targeted verification, such as published cumulative-docs guidance or sibling-page context. It noops or skips a finding when it cannot verify the evidence.
+- `docs-check-style` (Language and Style criteria).
+- `docs-flag-jargon-skill` (Language criterion).
+- `docs-frontmatter-audit` (Applicability criterion).
+- `docs-content-type-checker` (User Focus criterion).
+- `docs-applies-to-tagging` (Applicability criterion).
+- `docs-check-contradictions` (Technical accuracy criterion).
+
+The skills are pinned to `elastic-docs-skills@main` at compile time; the weekly recompile moves the pin. The Claude engine runs with `permission-mode: bypassPermissions` because gh-aw never adds the `Skill` tool to Claude's allowlist; the MCP gateway `allowed:` lists and the network firewall remain the enforced boundaries.
+
+The workflow uses the Elastic docs MCP server for targeted verification, such as cross-page duplication checks, published cumulative-docs guidance, and sibling-page context. It noops or skips a finding when it cannot verify the evidence.
 
 When an inline comment can be expressed as a small, exact replacement for the reviewed line or hunk, the workflow should prefer an apply-ready GitHub suggestion block over prose-only guidance.
 
@@ -107,6 +120,7 @@ permissions:
   contents: read
   discussions: write
   pull-requests: write
+  copilot-requests: write
 
 jobs:
   run:
@@ -119,6 +133,8 @@ jobs:
       additional-instructions: |
         This repository stores product documentation in `docs/`.
         Prefer concise review comments with exact replacement text when possible.
+    secrets:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 ```
 
 ## PR checkbox menus

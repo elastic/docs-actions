@@ -1,0 +1,25 @@
+﻿2026-08-04T12:55:41.6143984Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T12:55:41.6144425Z with:
+2026-08-04T12:55:41.6145378Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/setup_threat_detection.cjs');
+await main();
+
+2026-08-04T12:55:41.6148645Z   github-token: ***
+2026-08-04T12:55:41.6148867Z   debug: false
+2026-08-04T12:55:41.6149082Z   user-agent: actions/github-script
+2026-08-04T12:55:41.6149355Z   result-encoding: json
+2026-08-04T12:55:41.6149568Z   retries: 0
+2026-08-04T12:55:41.6149796Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T12:55:41.6150090Z env:
+2026-08-04T12:55:41.6150277Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:55:41.6150564Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:55:41.6150917Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: c1c9aac905e7fb89
+2026-08-04T12:55:41.6151263Z   GITHUB_AW_OTEL_JOB_START_MS: 1785848127520
+2026-08-04T12:55:41.6151553Z   WORKFLOW_NAME: docs-agent-experimental
+2026-08-04T12:55:41.6152376Z   WORKFLOW_DESCRIPTION: Experimentally triages well-specified documentation issues and stages contribution-guided, reader-tested draft pull request previews for separate validation and review.
+2026-08-04T12:55:41.6153697Z   HAS_PATCH: true
+2026-08-04T12:55:41.6153906Z ##[endgroup]
+2026-08-04T12:55:41.7183582Z Prompt file found: /tmp/gh-aw/threat-detection/aw-prompts/prompt.txt (21587 bytes)
+2026-08-04T12:55:41.7186438Z Agent output file found: /tmp/gh-aw/threat-detection/agent_output.json (2833 bytes)
+2026-08-04T12:55:41.7211730Z Threat detection setup completed

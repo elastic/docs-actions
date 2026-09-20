@@ -1,0 +1,66 @@
+﻿2026-08-04T12:51:50.0481971Z ##[group]Run microsoft/apm-action@b48dd081eb0050f6d7f32d0e7caa0a59a2d419fd
+2026-08-04T12:51:50.0482848Z with:
+2026-08-04T12:51:50.0483262Z   archive: true
+2026-08-04T12:51:50.0485236Z   dependencies: - elastic/elastic-docs-skills/skills/authoring/content-type-checker
+- elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
+- elastic/elastic-docs-skills/skills/authoring/docs-syntax-help
+- elastic/elastic-docs-skills/skills/authoring/frontmatter-description
+2026-08-04T12:51:50.0487699Z   isolated: true
+2026-08-04T12:51:50.0488145Z   pack: true
+2026-08-04T12:51:50.0488559Z   target: claude
+2026-08-04T12:51:50.0489050Z   working-directory: /tmp/gh-aw/apm-workspace
+2026-08-04T12:51:50.0489644Z   apm-version: 0.12.4
+2026-08-04T12:51:50.0490098Z   compile: false
+2026-08-04T12:51:50.0493752Z   github-token: ***
+2026-08-04T12:51:50.0494238Z   setup-only: false
+2026-08-04T12:51:50.0494663Z env:
+2026-08-04T12:51:50.0495066Z   GH_HOST: github.com
+2026-08-04T12:51:50.0498829Z   GITHUB_TOKEN: ***
+2026-08-04T12:51:50.0499324Z ##[endgroup]
+2026-08-04T12:51:50.3389184Z Working directory: /tmp/gh-aw/apm-workspace
+2026-08-04T12:51:50.3389978Z Installing APM (version: 0.12.4)...
+2026-08-04T12:51:50.8963551Z Downloading APM 0.12.4 from https://github.com/microsoft/apm/releases/download/v0.12.4/apm-linux-x86_64.tar.gz
+2026-08-04T12:51:50.8967392Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/0571ce2b-3538-46b4-80fe-12bf3ca7022b -f /home/runner/work/_temp/f2a95963-bffd-4a42-9fdf-4b98f013db86
+2026-08-04T12:51:51.9005235Z [command]/opt/hostedtoolcache/apm/0.12.4/x64/apm --version
+2026-08-04T12:51:51.9006507Z Agent Package Manager (APM) CLI version 0.12.4 (6aceef7)
+2026-08-04T12:51:51.9007245Z APM 0.12.4 installed successfully
+2026-08-04T12:51:51.9008136Z No .github/ directory found — nothing to clear
+2026-08-04T12:51:51.9009046Z Generated apm.yml with 4 dependencies (isolated mode) (target: claude)
+2026-08-04T12:51:51.9009941Z [command]/opt/hostedtoolcache/apm/0.12.4/x64/apm install
+2026-08-04T12:51:52.8834251Z [!] A new version of APM is available: 0.27.0 (current: 0.12.4)
+2026-08-04T12:51:52.8835508Z Run apm update to upgrade
+2026-08-04T12:51:52.8836363Z 
+2026-08-04T12:51:52.8836757Z [>] Installing dependencies from apm.yml...
+2026-08-04T12:51:52.8837914Z [>] Resolving elastic-docs-skills-content-type-checker...
+2026-08-04T12:51:52.8839191Z [>] Resolving elastic-docs-skills-applies-to-tagging...
+2026-08-04T12:51:52.8840396Z [>] Resolving elastic-docs-skills-docs-syntax-help...
+2026-08-04T12:51:52.8841693Z [>] Resolving elastic-docs-skills-frontmatter-description...
+2026-08-04T12:51:53.3284831Z [i] Targets: claude  (source: apm.yml)
+2026-08-04T12:51:53.3368501Z   [+] github.com/elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
+2026-08-04T12:51:53.3369830Z @b901a460
+2026-08-04T12:51:53.3527026Z   |-- Skill integrated -> .claude/skills/
+2026-08-04T12:51:53.3538038Z   [+] 
+2026-08-04T12:51:53.3539116Z github.com/elastic/elastic-docs-skills/skills/authoring/content-type-checker 
+2026-08-04T12:51:53.3577711Z @b901a460
+2026-08-04T12:51:53.3652824Z   |-- Skill integrated -> .claude/skills/
+2026-08-04T12:51:53.3662995Z   [+] github.com/elastic/elastic-docs-skills/skills/authoring/docs-syntax-help 
+2026-08-04T12:51:53.3664108Z @b901a460
+2026-08-04T12:51:53.3744204Z   |-- Skill integrated -> .claude/skills/
+2026-08-04T12:51:53.3753924Z   [+] 
+2026-08-04T12:51:53.3755042Z github.com/elastic/elastic-docs-skills/skills/authoring/frontmatter-description 
+2026-08-04T12:51:53.3756525Z @b901a460
+2026-08-04T12:51:53.3838487Z   |-- Skill integrated -> .claude/skills/
+2026-08-04T12:51:53.3849771Z [i] Added apm_modules/ to .gitignore
+2026-08-04T12:51:53.3952990Z   [!] 4 dependencies unpinned: elastic/elastic-docs-skills -- add #tag or #sha 
+2026-08-04T12:51:53.3954321Z to prevent drift
+2026-08-04T12:51:53.3961418Z [*] Installed 4 APM dependencies in 1.0s.
+2026-08-04T12:51:53.4578948Z Primitives deployed to: /tmp/gh-aw/apm-workspace/.github
+2026-08-04T12:51:53.4580859Z No .github directory found after install — no primitives deployed
+2026-08-04T12:51:53.4582683Z Running: apm pack -o /tmp/gh-aw/apm-workspace/build --format apm --target claude --archive
+2026-08-04T12:51:53.4597682Z [command]/opt/hostedtoolcache/apm/0.12.4/x64/apm pack -o /tmp/gh-aw/apm-workspace/build --format apm --target claude --archive
+2026-08-04T12:51:53.9800203Z [!] Bundle contains 1 hidden character(s) across source files — run 'apm audit' 
+2026-08-04T12:51:53.9801680Z to inspect before publishing
+2026-08-04T12:51:54.0007939Z [*] Packed 4 file(s) -> 
+2026-08-04T12:51:54.0009278Z /tmp/gh-aw/apm-workspace/build/inline-workflow-1.0.0.tar.gz
+2026-08-04T12:51:54.0668446Z Bundle produced: /tmp/gh-aw/apm-workspace/build/inline-workflow-1.0.0.tar.gz
+2026-08-04T12:51:54.0670042Z APM action completed successfully

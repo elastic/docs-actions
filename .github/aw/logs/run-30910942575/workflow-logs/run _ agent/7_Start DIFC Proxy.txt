@@ -1,0 +1,75 @@
+﻿2026-08-04T12:52:07.0857298Z ##[group]Run bash "${RUNNER_TEMP}/gh-aw/actions/start_difc_proxy.sh"
+2026-08-04T12:52:07.0857767Z [36;1mbash "${RUNNER_TEMP}/gh-aw/actions/start_difc_proxy.sh"[0m
+2026-08-04T12:52:07.0898366Z shell: /usr/bin/bash -e {0}
+2026-08-04T12:52:07.0898631Z env:
+2026-08-04T12:52:07.0898837Z   DEFAULT_BRANCH: main
+2026-08-04T12:52:07.0899083Z   GH_AW_ASSETS_ALLOWED_EXTS: 
+2026-08-04T12:52:07.0899327Z   GH_AW_ASSETS_BRANCH: 
+2026-08-04T12:52:07.0899551Z   GH_AW_ASSETS_MAX_SIZE_KB: 0
+2026-08-04T12:52:07.0899841Z   GH_AW_MCP_LOG_DIR: /tmp/gh-aw/mcp-logs/safeoutputs
+2026-08-04T12:52:07.0900157Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:52:07.0900433Z   GH_AW_WORKFLOW_ID_SANITIZED: docsagentexperimental
+2026-08-04T12:52:07.0900788Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:52:07.0901157Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: 4e867a969570a95e
+2026-08-04T12:52:07.0901489Z   GITHUB_AW_OTEL_JOB_START_MS: 1785847925783
+2026-08-04T12:52:07.0904066Z   GH_TOKEN: ***
+2026-08-04T12:52:07.0904317Z   GITHUB_SERVER_URL: https://github.com
+2026-08-04T12:52:07.0904664Z   GITHUB_API_URL: https://api.github.com
+2026-08-04T12:52:07.0904945Z   GH_HOST: 
+2026-08-04T12:52:07.0905134Z   GITHUB_HOST: 
+2026-08-04T12:52:07.0905343Z   GITHUB_ENTERPRISE_HOST: 
+2026-08-04T12:52:07.0905823Z   GITHUB_GRAPHQL_URL: 
+2026-08-04T12:52:07.0906048Z   GITHUB_COPILOT_BASE_URL: 
+2026-08-04T12:52:07.0906291Z   GH_AW_NETWORK_ISOLATION: true
+2026-08-04T12:52:07.0906642Z   DIFC_PROXY_POLICY: {"allow-only":{"min-integrity":"none","repos":"all"}}
+2026-08-04T12:52:07.0907060Z   DIFC_PROXY_IMAGE: ghcr.io/github/gh-aw-mcpg:v0.4.6
+2026-08-04T12:52:07.0907362Z ##[endgroup]
+2026-08-04T12:52:07.1022168Z Starting DIFC proxy container: ghcr.io/github/gh-aw-mcpg:v0.4.6
+2026-08-04T12:52:07.1022939Z Using DIFC proxy upstream host: github.com (API: https://api.github.com)
+2026-08-04T12:52:07.2328214Z Unable to find image 'ghcr.io/github/gh-aw-mcpg:v0.4.6' locally
+2026-08-04T12:52:07.9563745Z v0.4.6: Pulling from github/gh-aw-mcpg
+2026-08-04T12:52:08.1259689Z f7ee36c9aa34: Pulling fs layer
+2026-08-04T12:52:08.1260199Z a2afaebcc6ed: Pulling fs layer
+2026-08-04T12:52:08.1260587Z bc2c2f6d8be7: Pulling fs layer
+2026-08-04T12:52:08.1260861Z 9ffb8fd9c09a: Pulling fs layer
+2026-08-04T12:52:08.1261097Z 7bd751b54f6d: Pulling fs layer
+2026-08-04T12:52:08.1261336Z edb1bfeb1a1f: Pulling fs layer
+2026-08-04T12:52:08.1261563Z 4f4fb700ef54: Pulling fs layer
+2026-08-04T12:52:08.1261797Z 25e96be76d1e: Pulling fs layer
+2026-08-04T12:52:08.1262025Z 9ffb8fd9c09a: Waiting
+2026-08-04T12:52:08.1262365Z 7bd751b54f6d: Waiting
+2026-08-04T12:52:08.1262708Z edb1bfeb1a1f: Waiting
+2026-08-04T12:52:08.1262979Z 4f4fb700ef54: Waiting
+2026-08-04T12:52:08.1263182Z 25e96be76d1e: Waiting
+2026-08-04T12:52:08.2976439Z bc2c2f6d8be7: Verifying Checksum
+2026-08-04T12:52:08.2977114Z bc2c2f6d8be7: Download complete
+2026-08-04T12:52:08.3077630Z f7ee36c9aa34: Verifying Checksum
+2026-08-04T12:52:08.3078125Z f7ee36c9aa34: Download complete
+2026-08-04T12:52:08.4411648Z a2afaebcc6ed: Verifying Checksum
+2026-08-04T12:52:08.4412251Z a2afaebcc6ed: Download complete
+2026-08-04T12:52:08.4507029Z f7ee36c9aa34: Pull complete
+2026-08-04T12:52:08.4712989Z 7bd751b54f6d: Download complete
+2026-08-04T12:52:08.4931629Z 9ffb8fd9c09a: Verifying Checksum
+2026-08-04T12:52:08.4932338Z 9ffb8fd9c09a: Download complete
+2026-08-04T12:52:08.6559139Z 25e96be76d1e: Download complete
+2026-08-04T12:52:08.7043776Z edb1bfeb1a1f: Verifying Checksum
+2026-08-04T12:52:08.7044844Z edb1bfeb1a1f: Download complete
+2026-08-04T12:52:08.7596631Z 4f4fb700ef54: Verifying Checksum
+2026-08-04T12:52:09.2625195Z 4f4fb700ef54: Download complete
+2026-08-04T12:52:09.2625886Z a2afaebcc6ed: Pull complete
+2026-08-04T12:52:09.2718496Z bc2c2f6d8be7: Pull complete
+2026-08-04T12:52:09.4042533Z 9ffb8fd9c09a: Pull complete
+2026-08-04T12:52:09.4124353Z 7bd751b54f6d: Pull complete
+2026-08-04T12:52:09.4212494Z edb1bfeb1a1f: Pull complete
+2026-08-04T12:52:09.4276811Z 4f4fb700ef54: Pull complete
+2026-08-04T12:52:09.4376992Z 25e96be76d1e: Pull complete
+2026-08-04T12:52:09.4413365Z Digest: sha256:fecabec51bbc41f2ad61076d6bcd9a36ef23b142e672a444e054d37fc29de93c
+2026-08-04T12:52:09.4424932Z Status: Downloaded newer image for ghcr.io/github/gh-aw-mcpg:v0.4.6
+2026-08-04T12:52:09.4552886Z d42a23e3be5ef6cf51f12584e8b4df50caf25bc9fb250bee4e27a9eae5b51489
+2026-08-04T12:52:11.1866080Z Updating certificates in /etc/ssl/certs...
+2026-08-04T12:52:11.9283058Z rehash: warning: skipping ca-certificates.crt,it does not contain exactly one certificate or CRL
+2026-08-04T12:52:11.9331943Z 1 added, 0 removed; done.
+2026-08-04T12:52:11.9334986Z Running hooks in /etc/ca-certificates/update.d...
+2026-08-04T12:52:12.0143273Z /etc/ssl/certs/adoptium/cacerts successfully populated.
+2026-08-04T12:52:12.0145292Z done.
+2026-08-04T12:52:12.0475037Z DIFC proxy ready on port 18443

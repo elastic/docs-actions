@@ -1,0 +1,58 @@
+﻿2026-08-04T12:52:14.8650826Z ##[group]Run microsoft/apm-action@b48dd081eb0050f6d7f32d0e7caa0a59a2d419fd
+2026-08-04T12:52:14.8651246Z with:
+2026-08-04T12:52:14.8651495Z   bundles-file: /tmp/gh-aw/apm-bundle-list.txt
+2026-08-04T12:52:14.8651823Z   working-directory: .
+2026-08-04T12:52:14.8652063Z   apm-version: 0.12.4
+2026-08-04T12:52:14.8652297Z   isolated: false
+2026-08-04T12:52:14.8652521Z   compile: false
+2026-08-04T12:52:14.8652735Z   pack: false
+2026-08-04T12:52:14.8652945Z   archive: true
+2026-08-04T12:52:14.8655443Z   github-token: ***
+2026-08-04T12:52:14.8655900Z   setup-only: false
+2026-08-04T12:52:14.8656117Z env:
+2026-08-04T12:52:14.8656327Z   DEFAULT_BRANCH: main
+2026-08-04T12:52:14.8656571Z   GH_AW_ASSETS_ALLOWED_EXTS: 
+2026-08-04T12:52:14.8656829Z   GH_AW_ASSETS_BRANCH: 
+2026-08-04T12:52:14.8657062Z   GH_AW_ASSETS_MAX_SIZE_KB: 0
+2026-08-04T12:52:14.8657358Z   GH_AW_MCP_LOG_DIR: /tmp/gh-aw/mcp-logs/safeoutputs
+2026-08-04T12:52:14.8657698Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:52:14.8657990Z   GH_AW_WORKFLOW_ID_SANITIZED: docsagentexperimental
+2026-08-04T12:52:14.8658407Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:52:14.8658777Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: 4e867a969570a95e
+2026-08-04T12:52:14.8659111Z   GITHUB_AW_OTEL_JOB_START_MS: 1785847925783
+2026-08-04T12:52:14.8659399Z   GH_HOST: github.com
+2026-08-04T12:52:14.8659640Z   GH_REPO: elastic/opentelemetry
+2026-08-04T12:52:14.8659955Z   GITHUB_API_URL: https://localhost:18443/api/v3
+2026-08-04T12:52:14.8660330Z   GITHUB_GRAPHQL_URL: https://localhost:18443/api/graphql
+2026-08-04T12:52:14.8660734Z   NODE_EXTRA_CA_CERTS: /tmp/gh-aw/proxy-logs/proxy-tls/ca.crt
+2026-08-04T12:52:14.8661070Z ##[endgroup]
+2026-08-04T12:52:14.9448340Z Working directory: /home/runner/work/opentelemetry/opentelemetry
+2026-08-04T12:52:14.9461837Z Multi-bundle restore: 1 bundle(s) from /tmp/gh-aw/apm-bundle-list.txt
+2026-08-04T12:52:14.9464366Z Installing APM (version: 0.12.4)...
+2026-08-04T12:52:14.9470394Z Downloading APM 0.12.4 from https://github.com/microsoft/apm/releases/download/v0.12.4/apm-linux-x86_64.tar.gz
+2026-08-04T12:52:15.5597965Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/cb1dd857-f9d8-407f-a6e9-c9174cb3c2c4 -f /home/runner/work/_temp/5a40fc35-0132-4cb3-9f3f-88c2d6074285
+2026-08-04T12:52:15.7803793Z [command]/opt/hostedtoolcache/apm/0.12.4/x64/apm --version
+2026-08-04T12:52:16.2373850Z Agent Package Manager (APM) CLI version 0.12.4 (6aceef7)
+2026-08-04T12:52:16.2859904Z APM 0.12.4 installed successfully
+2026-08-04T12:52:16.7907795Z [bundle 1 of 1] Unpacking: /tmp/gh-aw/apm-bundles/inline-workflow-1.0.0.tar.gz
+2026-08-04T12:52:16.7920005Z [command]/opt/hostedtoolcache/apm/0.12.4/x64/apm unpack /tmp/gh-aw/apm-bundles/inline-workflow-1.0.0.tar.gz -o /home/runner/work/opentelemetry/opentelemetry
+2026-08-04T12:52:17.4690970Z [!] A new version of APM is available: 0.27.0 (current: 0.12.4)
+2026-08-04T12:52:17.4691629Z Run apm update to upgrade
+2026-08-04T12:52:17.4692341Z 
+2026-08-04T12:52:17.4699635Z [!] 'apm unpack' is deprecated and will be removed in v0.14. Use 'apm install 
+2026-08-04T12:52:17.4700775Z <bundle-path>' instead.
+2026-08-04T12:52:17.4702205Z [>] Unpacking /tmp/gh-aw/apm-bundles/inline-workflow-1.0.0.tar.gz -> 
+2026-08-04T12:52:17.4702866Z /home/runner/work/opentelemetry/opentelemetry
+2026-08-04T12:52:17.4929971Z [i] Bundle target: claude (4 dep(s), 4 file(s))
+2026-08-04T12:52:17.4933586Z [i]   elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
+2026-08-04T12:52:17.4935974Z     - .claude/skills/applies-to-tagging
+2026-08-04T12:52:17.4938576Z [i]   elastic/elastic-docs-skills/skills/authoring/content-type-checker
+2026-08-04T12:52:17.4940499Z     - .claude/skills/content-type-checker
+2026-08-04T12:52:17.4943088Z [i]   elastic/elastic-docs-skills/skills/authoring/docs-syntax-help
+2026-08-04T12:52:17.4946483Z     - .claude/skills/docs-syntax-help
+2026-08-04T12:52:17.4957131Z [i]   elastic/elastic-docs-skills/skills/authoring/frontmatter-description
+2026-08-04T12:52:17.4957826Z     - .claude/skills/frontmatter-description
+2026-08-04T12:52:17.4958600Z [*] Unpacked 4 file(s) (verified)
+2026-08-04T12:52:17.5461461Z [bundle 1 of 1] OK
+2026-08-04T12:52:17.5461996Z Restored 1 bundle(s) successfully into /home/runner/work/opentelemetry/opentelemetry
+2026-08-04T12:52:17.5463160Z APM action completed successfully (multi-bundle restore mode)

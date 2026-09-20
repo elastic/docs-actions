@@ -1,0 +1,190 @@
+﻿2026-08-04T12:52:35.6954006Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T12:52:35.6954678Z with:
+2026-08-04T12:52:35.6956483Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/generate_safe_outputs_tools.cjs');
+await main();
+
+2026-08-04T12:52:35.6962459Z   github-token: ***
+2026-08-04T12:52:35.6962858Z   debug: false
+2026-08-04T12:52:35.6963219Z   user-agent: actions/github-script
+2026-08-04T12:52:35.6963715Z   result-encoding: json
+2026-08-04T12:52:35.6964114Z   retries: 0
+2026-08-04T12:52:35.6964654Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T12:52:35.6965120Z env:
+2026-08-04T12:52:35.6965423Z   DEFAULT_BRANCH: main
+2026-08-04T12:52:35.6965979Z   GH_AW_ASSETS_ALLOWED_EXTS: 
+2026-08-04T12:52:35.6966363Z   GH_AW_ASSETS_BRANCH: 
+2026-08-04T12:52:35.6966723Z   GH_AW_ASSETS_MAX_SIZE_KB: 0
+2026-08-04T12:52:35.6967527Z   GH_AW_MCP_LOG_DIR: /tmp/gh-aw/mcp-logs/safeoutputs
+2026-08-04T12:52:35.6968012Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:52:35.6968488Z   GH_AW_WORKFLOW_ID_SANITIZED: docsagentexperimental
+2026-08-04T12:52:35.6969088Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:52:35.6969681Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: 4e867a969570a95e
+2026-08-04T12:52:35.6970219Z   GITHUB_AW_OTEL_JOB_START_MS: 1785847925783
+2026-08-04T12:52:35.6973482Z   GH_AW_TOOLS_META_JSON: {
+  "description_suffixes": {
+    "add_comment": " CONSTRAINTS: Maximum 2 comment(s) can be added. Target: 648. Supports reply_to_id for discussion threading.",
+    "add_labels": " CONSTRAINTS: Maximum 1 label(s) can be added. Only these labels are allowed: [\"docs-agent-declined\"]. Target: 648.",
+    "create_pull_request": " CONSTRAINTS: Maximum 1 pull request(s) can be created. Title will be prefixed with \"[docs-agent] \". Labels [\"automation\" \"docs-agent\"] will be automatically added. PRs will be created as drafts."
+  },
+  "repo_params": {},
+  "dynamic_tools": []
+}
+
+2026-08-04T12:52:35.6986831Z   GH_AW_VALIDATION_JSON: {
+  "add_comment": {
+    "defaultMax": 1,
+    "fields": {
+      "body": {
+        "required": true,
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 65000
+      },
+      "item_number": {
+        "issueOrPRNumber": true
+      },
+      "reply_to_id": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "repo": {
+        "type": "string",
+        "maxLength": 256
+      }
+    }
+  },
+  "add_labels": {
+    "defaultMax": 5,
+    "fields": {
+      "item_number": {
+        "issueNumberOrTemporaryId": true
+      },
+      "labels": {
+        "required": true,
+        "type": "array"
+      },
+      "repo": {
+        "type": "string",
+        "maxLength": 256
+      }
+    }
+  },
+  "create_pull_request": {
+    "defaultMax": 1,
+    "fields": {
+      "base": {
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 128
+      },
+      "body": {
+        "required": true,
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 65000
+      },
+      "branch": {
+        "required": true,
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 256
+      },
+      "draft": {
+        "type": "boolean"
+      },
+      "labels": {
+        "type": "array",
+        "itemType": "string",
+        "itemSanitize": true,
+        "itemMaxLength": 128
+      },
+      "repo": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "title": {
+        "required": true,
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 128
+      }
+    }
+  },
+  "missing_data": {
+    "defaultMax": 20,
+    "fields": {
+      "alternatives": {
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 256
+      },
+      "context": {
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 256
+      },
+      "data_type": {
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 128
+      },
+      "reason": {
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 256
+      }
+    }
+  },
+  "missing_tool": {
+    "defaultMax": 20,
+    "fields": {
+      "alternatives": {
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 512
+      },
+      "reason": {
+        "required": true,
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 256
+      },
+      "tool": {
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 128
+      }
+    }
+  },
+  "noop": {
+    "defaultMax": 1,
+    "fields": {
+      "message": {
+        "required": true,
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 65000
+      }
+    }
+  },
+  "report_incomplete": {
+    "defaultMax": 5,
+    "fields": {
+      "details": {
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 65000
+      },
+      "reason": {
+        "required": true,
+        "type": "string",
+        "sanitize": true,
+        "maxLength": 1024
+      }
+    }
+  }
+}
+
+2026-08-04T12:52:35.6994034Z ##[endgroup]

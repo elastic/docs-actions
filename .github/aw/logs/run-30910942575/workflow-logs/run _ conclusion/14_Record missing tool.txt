@@ -1,0 +1,24 @@
+﻿2026-08-04T12:57:14.7267641Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T12:57:14.7269508Z with:
+2026-08-04T12:57:14.7321298Z   github-token: ***
+2026-08-04T12:57:14.7324602Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/missing_tool.cjs');
+await main();
+
+2026-08-04T12:57:14.7328362Z   debug: false
+2026-08-04T12:57:14.7329289Z   user-agent: actions/github-script
+2026-08-04T12:57:14.7330360Z   result-encoding: json
+2026-08-04T12:57:14.7331283Z   retries: 0
+2026-08-04T12:57:14.7332233Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T12:57:14.7333388Z env:
+2026-08-04T12:57:14.7334204Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:57:14.7335354Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:57:14.7336888Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: f282ba6f076e9f34
+2026-08-04T12:57:14.7338132Z   GITHUB_AW_OTEL_JOB_START_MS: 1785848221999
+2026-08-04T12:57:14.7339562Z   GH_AW_AGENT_OUTPUT: /tmp/gh-aw/agent_output.json
+2026-08-04T12:57:14.7340801Z   GH_AW_MISSING_TOOL_CREATE_ISSUE: true
+2026-08-04T12:57:14.7342300Z   GH_AW_WORKFLOW_NAME: docs-agent-experimental
+2026-08-04T12:57:14.7344443Z   GH_AW_WORKFLOW_SOURCE_URL: https://github.com/elastic/opentelemetry/blob/main/.github/workflows/docs-agent-experimental.md
+2026-08-04T12:57:14.7356247Z ##[endgroup]
+2026-08-04T12:57:15.4698659Z Max count: unlimited

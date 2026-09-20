@@ -1,0 +1,18 @@
+﻿2026-08-04T12:55:41.5529997Z ##[group]Run if [[ -n "$OUTPUT_TYPES" || "$HAS_PATCH" == "true" ]]; then
+2026-08-04T12:55:41.5530555Z [36;1mif [[ -n "$OUTPUT_TYPES" || "$HAS_PATCH" == "true" ]]; then[0m
+2026-08-04T12:55:41.5530979Z [36;1m  echo "run_detection=true" >> "$GITHUB_OUTPUT"[0m
+2026-08-04T12:55:41.5531427Z [36;1m  echo "Detection will run: output_types=$OUTPUT_TYPES, has_patch=$HAS_PATCH"[0m
+2026-08-04T12:55:41.5531823Z [36;1melse[0m
+2026-08-04T12:55:41.5532072Z [36;1m  echo "run_detection=false" >> "$GITHUB_OUTPUT"[0m
+2026-08-04T12:55:41.5533136Z [36;1m  echo "Detection skipped: no agent outputs or patches to analyze"[0m
+2026-08-04T12:55:41.5533606Z [36;1mfi[0m
+2026-08-04T12:55:41.5577408Z shell: /usr/bin/bash -e {0}
+2026-08-04T12:55:41.5577675Z env:
+2026-08-04T12:55:41.5577875Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:55:41.5578190Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:55:41.5578559Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: c1c9aac905e7fb89
+2026-08-04T12:55:41.5578874Z   GITHUB_AW_OTEL_JOB_START_MS: 1785848127520
+2026-08-04T12:55:41.5579222Z   OUTPUT_TYPES: noop,create_pull_request
+2026-08-04T12:55:41.5579501Z   HAS_PATCH: true
+2026-08-04T12:55:41.5579697Z ##[endgroup]
+2026-08-04T12:55:41.5645229Z Detection will run: output_types=noop,create_pull_request, has_patch=true

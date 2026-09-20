@@ -1,0 +1,47 @@
+﻿2026-08-04T12:51:34.1859513Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T12:51:34.1860066Z with:
+2026-08-04T12:51:34.1862956Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/check_workflow_timestamp_api.cjs');
+await main();
+
+2026-08-04T12:51:34.1870481Z   github-token: ***
+2026-08-04T12:51:34.1870796Z   debug: false
+2026-08-04T12:51:34.1871052Z   user-agent: actions/github-script
+2026-08-04T12:51:34.1871356Z   result-encoding: json
+2026-08-04T12:51:34.1872813Z   retries: 0
+2026-08-04T12:51:34.1873179Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T12:51:34.1873524Z env:
+2026-08-04T12:51:34.1873758Z   GH_AW_MAX_DAILY_AI_CREDITS: 5000
+2026-08-04T12:51:34.1874057Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:51:34.1874390Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:51:34.1878090Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: be5afee5d3fcfcb9
+2026-08-04T12:51:34.1878579Z   GITHUB_AW_OTEL_JOB_START_MS: 1785847888167
+2026-08-04T12:51:34.1878971Z   GH_AW_WORKFLOW_FILE: docs-agent-experimental.lock.yml
+2026-08-04T12:51:34.1879584Z   GH_AW_CONTEXT_WORKFLOW_REF: elastic/opentelemetry/.github/workflows/docs-agent-experimental.yml@refs/heads/main
+2026-08-04T12:51:34.1880761Z ##[endgroup]
+2026-08-04T12:51:34.3261923Z Checking for stale lock file using frontmatter hash:
+2026-08-04T12:51:34.3268570Z   Source: .github/workflows/docs-agent-experimental.md
+2026-08-04T12:51:34.3271358Z   Lock file: .github/workflows/docs-agent-experimental.lock.yml
+2026-08-04T12:51:34.3275251Z Checking for cross-repo callee via referenced_workflows API (run 30910942575)
+2026-08-04T12:51:34.6680812Z Found 1 referenced workflow(s) in run
+2026-08-04T12:51:34.6685393Z Resolved callee repo from referenced_workflows: elastic/docs-actions @ e014503440bde473e6730388b8c8b6091352b82c
+2026-08-04T12:51:34.6689838Z   Referenced workflow path: elastic/docs-actions/.github/workflows/docs-agent-experimental.lock.yml@v1
+2026-08-04T12:51:34.6734681Z GITHUB_WORKFLOW_REF: elastic/opentelemetry/.github/workflows/docs-agent-experimental.yml@refs/heads/main
+2026-08-04T12:51:34.6738622Z GH_AW_CONTEXT_WORKFLOW_REF: elastic/opentelemetry/.github/workflows/docs-agent-experimental.yml@refs/heads/main (available as env fallback)
+2026-08-04T12:51:34.6740800Z GITHUB_REPOSITORY: elastic/opentelemetry
+2026-08-04T12:51:34.6742278Z Resolved source repo: elastic/docs-actions @ e014503440bde473e6730388b8c8b6091352b82c
+2026-08-04T12:51:34.6745978Z Cross-repo invocation detected: workflow source is "elastic/docs-actions", current repo is "elastic/opentelemetry"
+2026-08-04T12:51:35.6117802Z GET /repos/elastic/docs-actions/contents/.github%2Fworkflows%2Felastic%2Felastic-docs-skills%2Fskills%2Fauthoring%2Fapplies-to-tagging?ref=e014503440bde473e6730388b8c8b6091352b82c - 404 with id 2029:134A4E:240A977:79F7B3D:6A71E056 in 173ms
+2026-08-04T12:51:35.7967560Z GET /repos/elastic/docs-actions/contents/.github%2Fworkflows%2Felastic?ref=e014503440bde473e6730388b8c8b6091352b82c - 404 with id 2028:23E6E6:8A13AA:1CE025D:6A71E057 in 184ms
+2026-08-04T12:51:35.9735025Z GET /repos/elastic/docs-actions/contents/.github%2Fworkflows%2Felastic%2Felastic-docs-skills?ref=e014503440bde473e6730388b8c8b6091352b82c - 404 with id 2029:134A4E:240ABF0:79F83A9:6A71E057 in 176ms
+2026-08-04T12:51:36.1675786Z GET /repos/elastic/docs-actions/contents/.github%2Fworkflows%2Felastic%2Felastic-docs-skills%2Fskills?ref=e014503440bde473e6730388b8c8b6091352b82c - 404 with id 2028:23E6E6:8A16CA:1CE0C58:6A71E057 in 194ms
+2026-08-04T12:51:36.3370278Z GET /repos/elastic/docs-actions/contents/.github%2Fworkflows%2Felastic%2Felastic-docs-skills%2Fskills%2Fauthoring?ref=e014503440bde473e6730388b8c8b6091352b82c - 404 with id 2029:134A4E:240AE7C:79F8C34:6A71E057 in 168ms
+2026-08-04T12:51:36.5136550Z GET /repos/elastic/docs-actions/contents/.github%2Fworkflows%2Felastic%2Felastic-docs-skills%2Fskills%2Fauthoring%2Fcontent-type-checker?ref=e014503440bde473e6730388b8c8b6091352b82c - 404 with id 2028:23E6E6:8A19BE:1CE167E:6A71E058 in 178ms
+2026-08-04T12:51:36.6954420Z GET /repos/elastic/docs-actions/contents/.github%2Fworkflows%2Felastic%2Felastic-docs-skills%2Fskills%2Fauthoring%2Fdocs-syntax-help?ref=e014503440bde473e6730388b8c8b6091352b82c - 404 with id 2029:134A4E:240B0CE:79F9412:6A71E058 in 181ms
+2026-08-04T12:51:36.8636825Z GET /repos/elastic/docs-actions/contents/.github%2Fworkflows%2Felastic%2Felastic-docs-skills%2Fskills%2Fauthoring%2Ffrontmatter-description?ref=e014503440bde473e6730388b8c8b6091352b82c - 404 with id 2028:23E6E6:8A1CEC:1CE20D2:6A71E058 in 167ms
+2026-08-04T12:51:37.5740840Z Frontmatter hash comparison:
+2026-08-04T12:51:37.5745681Z   Lock file hash:    e2aff714323a52c25ee84a65393b3506554d930a57c61df79748988526939516
+2026-08-04T12:51:37.5748394Z   Recomputed hash:   e2aff714323a52c25ee84a65393b3506554d930a57c61df79748988526939516
+2026-08-04T12:51:37.5751389Z   Status: ✅ Hashes match
+2026-08-04T12:51:37.5754444Z ✅ Lock file is up to date (hashes match)

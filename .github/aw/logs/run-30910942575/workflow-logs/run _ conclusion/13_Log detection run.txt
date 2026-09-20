@@ -1,0 +1,30 @@
+﻿2026-08-04T12:57:13.1551624Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T12:57:13.1553326Z with:
+2026-08-04T12:57:13.1586086Z   github-token: ***
+2026-08-04T12:57:13.1589751Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/handle_detection_runs.cjs');
+await main();
+
+2026-08-04T12:57:13.1593444Z   debug: false
+2026-08-04T12:57:13.1594372Z   user-agent: actions/github-script
+2026-08-04T12:57:13.1595470Z   result-encoding: json
+2026-08-04T12:57:13.1596403Z   retries: 0
+2026-08-04T12:57:13.1597541Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T12:57:13.1598728Z env:
+2026-08-04T12:57:13.1599564Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:57:13.1600740Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:57:13.1602174Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: f282ba6f076e9f34
+2026-08-04T12:57:13.1603570Z   GITHUB_AW_OTEL_JOB_START_MS: 1785848221999
+2026-08-04T12:57:13.1604939Z   GH_AW_AGENT_OUTPUT: /tmp/gh-aw/agent_output.json
+2026-08-04T12:57:13.1607152Z   GH_AW_WORKFLOW_NAME: docs-agent-experimental
+2026-08-04T12:57:13.1609382Z   GH_AW_WORKFLOW_SOURCE_URL: https://github.com/elastic/opentelemetry/blob/main/.github/workflows/docs-agent-experimental.md
+2026-08-04T12:57:13.1655940Z   GH_AW_RUN_URL: https://github.com/elastic/opentelemetry/actions/runs/30910942575
+2026-08-04T12:57:13.1667207Z   GH_AW_DETECTION_CONCLUSION: success
+2026-08-04T12:57:13.1671209Z   GH_AW_DETECTION_REASON: 
+2026-08-04T12:57:13.1672230Z ##[endgroup]
+2026-08-04T12:57:14.6106125Z Detection conclusion: success
+2026-08-04T12:57:14.6109974Z Detection reason: 
+2026-08-04T12:57:14.6222268Z Workflow name: docs-agent-experimental
+2026-08-04T12:57:14.6226564Z Run URL: https://github.com/elastic/opentelemetry/actions/runs/30910942575
+2026-08-04T12:57:14.6228673Z Detection conclusion is "success", no issue comment needed

@@ -1,0 +1,533 @@
+﻿2026-08-04T11:37:48.5482721Z Current runner version: '2.336.0'
+2026-08-04T11:37:48.5508362Z ##[group]Runner Image Provisioner
+2026-08-04T11:37:48.5509279Z Hosted Compute Agent
+2026-08-04T11:37:48.5509828Z Version: 20260707.563
+2026-08-04T11:37:48.5510501Z Commit: 02667638d2b423fbc733a8e32a88b44996a3ba6e
+2026-08-04T11:37:48.5511178Z Build Date: 2026-07-07T19:33:50Z
+2026-08-04T11:37:48.5511822Z Worker ID: {7bf5afff-ff28-40ca-b356-f2cabd8e54e5}
+2026-08-04T11:37:48.5512546Z Azure Region: northcentralus
+2026-08-04T11:37:48.5513534Z ##[endgroup]
+2026-08-04T11:37:48.5515248Z ##[group]VM Image
+2026-08-04T11:37:48.5515838Z - OS: Linux (x64)
+2026-08-04T11:37:48.5516393Z - Source: Docker
+2026-08-04T11:37:48.5516949Z - Name: ubuntu:24.04
+2026-08-04T11:37:48.5517481Z - Version: 20260728.2.1
+2026-08-04T11:37:48.5518021Z ##[endgroup]
+2026-08-04T11:37:48.5519042Z ##[group]GITHUB_TOKEN Permissions
+2026-08-04T11:37:48.5521233Z Actions: write
+2026-08-04T11:37:48.5521863Z Metadata: read
+2026-08-04T11:37:48.5522405Z ##[endgroup]
+2026-08-04T11:37:48.5525300Z Secret source: Actions
+2026-08-04T11:37:48.5526468Z Prepare workflow directory
+2026-08-04T11:37:48.6108987Z Prepare all required actions
+2026-08-04T11:37:48.6169162Z Getting action download info
+2026-08-04T11:37:49.0733860Z Download action repository 'github/gh-aw-actions@e89c65e17eb281bbd5ff2ff9e9199a03e96654c7' (SHA:e89c65e17eb281bbd5ff2ff9e9199a03e96654c7)
+2026-08-04T11:37:50.4094842Z Download action repository 'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c' (SHA:3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c)
+2026-08-04T11:37:50.7279494Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-08-04T11:37:50.8885057Z Download action repository 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9' (SHA:55cc8345863c7cc4c66a329aec7e433d2d1c52a9)
+2026-08-04T11:37:51.2368176Z Download action repository 'actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3' (SHA:3a2844b7e9c422d3c10d287c895573f7108da1b3)
+2026-08-04T11:37:51.8908974Z Uses: elastic/docs-actions/.github/workflows/docs-agent-experimental.lock.yml@refs/tags/v1 (e014503440bde473e6730388b8c8b6091352b82c)
+2026-08-04T11:37:51.8914165Z ##[group] Inputs
+2026-08-04T11:37:51.8914824Z   aw_context: 
+2026-08-04T11:37:51.8915255Z   issue_number: 648
+2026-08-04T11:37:51.8915690Z ##[endgroup]
+2026-08-04T11:37:51.8916125Z Complete job name: run / conclusion
+2026-08-04T11:37:52.0007066Z ##[group]Run github/gh-aw-actions/setup@e89c65e17eb281bbd5ff2ff9e9199a03e96654c7
+2026-08-04T11:37:52.0008178Z with:
+2026-08-04T11:37:52.0008674Z   destination: /home/runner/work/_temp/gh-aw/actions
+2026-08-04T11:37:52.0009288Z   job-name: conclusion
+2026-08-04T11:37:52.0009777Z   trace-id: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:37:52.0010343Z   parent-span-id: e798c76330cd29e8
+2026-08-04T11:37:52.0010877Z   safe-output-artifact-client: false
+2026-08-04T11:37:52.0011572Z env:
+2026-08-04T11:37:52.0011977Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:37:52.0012523Z   GH_AW_SETUP_WORKFLOW_NAME: docs-agent-experimental
+2026-08-04T11:37:52.0014151Z   GH_AW_CURRENT_WORKFLOW_REF: elastic/opentelemetry/.github/workflows/docs-agent-experimental.lock.yml@refs/heads/fix-docs-agent-actions-permission
+2026-08-04T11:37:52.0015339Z   GH_AW_INFO_VERSION: 1.0.75
+2026-08-04T11:37:52.0015828Z   GH_AW_INFO_AWF_VERSION: v0.27.42
+2026-08-04T11:37:52.0016345Z   GH_AW_INFO_ENGINE_ID: copilot
+2026-08-04T11:37:52.0016866Z   GH_AW_SETUP_AW_CONTEXT: 
+2026-08-04T11:37:52.0017315Z ##[endgroup]
+2026-08-04T11:37:55.1802325Z Successfully copied 444 files to /home/runner/work/_temp/gh-aw/actions
+2026-08-04T11:37:55.4910745Z [info] [otlp] INPUT_TRACE_ID=95d9b87a63e5cfce5fc3c37aa1e1e92f (will reuse activation trace)
+2026-08-04T11:37:55.4911899Z Successfully copied 27 mcp-scripts files to /home/runner/work/_temp/gh-aw/mcp-scripts
+2026-08-04T11:37:55.4914673Z Successfully copied 82 safe-outputs files to /home/runner/work/_temp/gh-aw/safeoutputs
+2026-08-04T11:37:55.5221732Z [info] [otlp] INPUT_PARENT_SPAN_ID=e798c76330cd29e8 (will parent setup span)
+2026-08-04T11:37:55.5226467Z [info] [otlp] GH_AW_OTLP_ENDPOINTS not set, skipping setup span
+2026-08-04T11:37:55.5229347Z [info] [otlp] resolved trace-id=95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:37:55.5264081Z [info] [otlp] trace-id=95d9b87a63e5cfce5fc3c37aa1e1e92f written to GITHUB_OUTPUT
+2026-08-04T11:37:55.5267214Z [info] [otlp] span-id=e826344a4996a5b2 written to GITHUB_OUTPUT
+2026-08-04T11:37:55.5268648Z [info] [otlp] parent-span-id=e798c76330cd29e8 written to GITHUB_OUTPUT
+2026-08-04T11:37:55.5269445Z [info] [otlp] GITHUB_AW_OTEL_TRACE_ID written to GITHUB_ENV
+2026-08-04T11:37:55.5270189Z [info] [otlp] GITHUB_AW_OTEL_PARENT_SPAN_ID written to GITHUB_ENV
+2026-08-04T11:37:55.5270961Z [info] [otlp] GITHUB_AW_OTEL_JOB_START_MS written to GITHUB_ENV
+2026-08-04T11:37:55.5481181Z ##[group]Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+2026-08-04T11:37:55.5481985Z with:
+2026-08-04T11:37:55.5482379Z   name: be543d6f-agent
+2026-08-04T11:37:55.5482845Z   path: /tmp/gh-aw/
+2026-08-04T11:37:55.5483704Z   merge-multiple: false
+2026-08-04T11:37:55.5484195Z   repository: elastic/opentelemetry
+2026-08-04T11:37:55.5484706Z   run-id: 30905136689
+2026-08-04T11:37:55.5485147Z   skip-decompress: false
+2026-08-04T11:37:55.5485606Z   digest-mismatch: error
+2026-08-04T11:37:55.5486038Z env:
+2026-08-04T11:37:55.5486425Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:37:55.5487002Z   GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:37:55.5487685Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: e826344a4996a5b2
+2026-08-04T11:37:55.5488280Z   GITHUB_AW_OTEL_JOB_START_MS: 1785843475495
+2026-08-04T11:37:55.5488812Z ##[endgroup]
+2026-08-04T11:37:55.9854266Z Downloading single artifact
+2026-08-04T11:37:56.1725429Z Preparing to download the following artifacts:
+2026-08-04T11:37:56.1731196Z - be543d6f-agent (ID: 8890846600, Size: 1236500, Expected Digest: sha256:269d57b55e9f16187c860add6bfe9b1e287e1d7b46683d6e4a4b5b1fdbd9c416)
+2026-08-04T11:37:56.3929336Z Redirecting to blob download url: https://productionresultssa19.blob.core.windows.net/actions-results/df3d0f9f-51c8-41ad-938e-8212be7207b1/workflow-job-run-10b8d3ba-a191-5047-978b-c46ba0320622/artifacts/627feddada02a485f01dcdedf4cfa7f2773c75ebd72eb34afdc0b644f2832f88.zip
+2026-08-04T11:37:56.3933454Z Starting download of artifact to: /tmp/gh-aw
+2026-08-04T11:37:56.5989081Z (node:1334) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-08-04T11:37:56.5990929Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-04T11:37:56.8754330Z SHA256 digest of downloaded artifact is 269d57b55e9f16187c860add6bfe9b1e287e1d7b46683d6e4a4b5b1fdbd9c416
+2026-08-04T11:37:56.8758595Z Artifact download completed successfully.
+2026-08-04T11:37:56.8762847Z Total of 1 artifact(s) downloaded
+2026-08-04T11:37:56.8772355Z Download artifact has finished successfully
+2026-08-04T11:37:56.8926044Z ##[group]Run mkdir -p /tmp/gh-aw/
+2026-08-04T11:37:56.8926715Z [36;1mmkdir -p /tmp/gh-aw/[0m
+2026-08-04T11:37:56.8927293Z [36;1mfind "/tmp/gh-aw/" -type f -print[0m
+2026-08-04T11:37:56.8928093Z [36;1mecho "GH_AW_AGENT_OUTPUT=/tmp/gh-aw/agent_output.json" >> "$GITHUB_OUTPUT"[0m
+2026-08-04T11:37:56.8936625Z shell: /usr/bin/bash -e {0}
+2026-08-04T11:37:56.8937161Z env:
+2026-08-04T11:37:56.8937567Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:37:56.8938172Z   GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:37:56.8938884Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: e826344a4996a5b2
+2026-08-04T11:37:56.8939515Z   GITHUB_AW_OTEL_JOB_START_MS: 1785843475495
+2026-08-04T11:37:56.8940061Z ##[endgroup]
+2026-08-04T11:37:56.9240213Z /tmp/gh-aw/aw-prompts/prompt.txt
+2026-08-04T11:37:56.9241133Z /tmp/gh-aw/agent-stdio.log
+2026-08-04T11:37:56.9241842Z /tmp/gh-aw/pre-agent-audit.txt
+2026-08-04T11:37:56.9275314Z /tmp/gh-aw/otel.jsonl
+2026-08-04T11:37:56.9275893Z /tmp/gh-aw/mcp-logs/mcp-gateway.log
+2026-08-04T11:37:56.9276635Z /tmp/gh-aw/mcp-logs/elastic-docs.log
+2026-08-04T11:37:56.9277201Z /tmp/gh-aw/mcp-logs/rpc-messages.jsonl
+2026-08-04T11:37:56.9277753Z /tmp/gh-aw/mcp-logs/stderr.log
+2026-08-04T11:37:56.9278288Z /tmp/gh-aw/mcp-logs/start-gateway.log
+2026-08-04T11:37:56.9278861Z /tmp/gh-aw/mcp-logs/safeoutputs/server.log
+2026-08-04T11:37:56.9279446Z /tmp/gh-aw/mcp-logs/proxy.log
+2026-08-04T11:37:56.9279977Z /tmp/gh-aw/mcp-logs/safeoutputs.log
+2026-08-04T11:37:56.9280515Z /tmp/gh-aw/mcp-logs/gateway.md
+2026-08-04T11:37:56.9281021Z /tmp/gh-aw/mcp-logs/tools.json
+2026-08-04T11:37:56.9281564Z /tmp/gh-aw/mcp-logs/observed-url-domains.json
+2026-08-04T11:37:56.9282157Z /tmp/gh-aw/github_rate_limits.jsonl
+2026-08-04T11:37:56.9282845Z /tmp/gh-aw/aw-docs-agent-histogram-temporality-limitation-648.patch
+2026-08-04T11:37:56.9284496Z /tmp/gh-aw/agent_output.json
+2026-08-04T11:37:56.9285033Z /tmp/gh-aw/awf-config.json
+2026-08-04T11:37:56.9285524Z /tmp/gh-aw/agent_usage.json
+2026-08-04T11:37:56.9286023Z /tmp/gh-aw/safeoutputs.jsonl
+2026-08-04T11:37:56.9286694Z /tmp/gh-aw/aw-docs-agent-histogram-temporality-limitation-648.bundle
+2026-08-04T11:37:56.9287454Z /tmp/gh-aw/sandbox/firewall/audit/squid.conf
+2026-08-04T11:37:56.9288108Z /tmp/gh-aw/sandbox/firewall/audit/policy-manifest.json
+2026-08-04T11:37:56.9294976Z /tmp/gh-aw/sandbox/firewall/audit/awf-resolved-config.json
+2026-08-04T11:37:56.9296034Z /tmp/gh-aw/sandbox/firewall/audit/docker-compose.redacted.yml
+2026-08-04T11:37:56.9297389Z /tmp/gh-aw/sandbox/firewall/logs/audit.jsonl
+2026-08-04T11:37:56.9298079Z /tmp/gh-aw/sandbox/firewall/logs/access.log
+2026-08-04T11:37:56.9298695Z /tmp/gh-aw/sandbox/firewall/logs/cache.log
+2026-08-04T11:37:56.9299376Z /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs/otel.jsonl
+2026-08-04T11:37:56.9300232Z /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs/token-tracker-audit.jsonl
+2026-08-04T11:37:56.9301122Z /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs/models.json
+2026-08-04T11:37:56.9301956Z /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs/token-usage.jsonl
+2026-08-04T11:37:56.9302787Z /tmp/gh-aw/sandbox/firewall/logs/cli-proxy-logs/access.jsonl
+2026-08-04T11:37:56.9303722Z /tmp/gh-aw/sandbox/firewall/awf-reflect.json
+2026-08-04T11:37:56.9304427Z /tmp/gh-aw/sandbox/agent/logs/process-1785843213926-126.log
+2026-08-04T11:37:56.9407433Z ##[group]Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+2026-08-04T11:37:56.9408232Z with:
+2026-08-04T11:37:56.9408657Z   name: be543d6f-safe-outputs-items
+2026-08-04T11:37:56.9409185Z   path: /tmp/gh-aw/
+2026-08-04T11:37:56.9409627Z   merge-multiple: false
+2026-08-04T11:37:56.9410103Z   repository: elastic/opentelemetry
+2026-08-04T11:37:56.9410612Z   run-id: 30905136689
+2026-08-04T11:37:56.9411062Z   skip-decompress: false
+2026-08-04T11:37:56.9411530Z   digest-mismatch: error
+2026-08-04T11:37:56.9411968Z env:
+2026-08-04T11:37:56.9412359Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:37:56.9413206Z   GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:37:56.9413913Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: e826344a4996a5b2
+2026-08-04T11:37:56.9414544Z   GITHUB_AW_OTEL_JOB_START_MS: 1785843475495
+2026-08-04T11:37:56.9415083Z ##[endgroup]
+2026-08-04T11:37:57.1205349Z Downloading single artifact
+2026-08-04T11:37:57.2625358Z ##[error]Unable to download artifact(s): Artifact not found for name: be543d6f-safe-outputs-items
+        Please ensure that your artifact is not expired and the artifact was uploaded using a compatible version of toolkit/upload-artifact.
+        For more information, visit the GitHub Artifacts FAQ: https://github.com/actions/toolkit/blob/main/packages/artifact/docs/faq.md
+2026-08-04T11:37:57.2771552Z ##[group]Run mkdir -p /tmp/gh-aw/usage/agent /tmp/gh-aw/usage/detection
+2026-08-04T11:37:57.2773382Z [36;1mmkdir -p /tmp/gh-aw/usage/agent /tmp/gh-aw/usage/detection[0m
+2026-08-04T11:37:57.2774171Z [36;1mecho "Usage artifact source file status:"[0m
+2026-08-04T11:37:57.2778899Z [36;1mfor file in /tmp/gh-aw/aw_info.json /tmp/gh-aw/aw-info.jsonl /tmp/gh-aw/agent_usage.json /tmp/gh-aw/agent_usage.jsonl /tmp/gh-aw/detection_usage.jsonl /tmp/gh-aw/evals/evals.jsonl /tmp/gh-aw/github_rate_limits.jsonl /tmp/gh-aw/sandbox/firewall-audit-logs/api-proxy-logs/token-usage.jsonl /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs/token-usage.jsonl /tmp/gh-aw/sandbox/firewall/audit/api-proxy-logs/token-usage.jsonl /tmp/gh-aw/threat-detection/sandbox/firewall-audit-logs/api-proxy-logs/token-usage.jsonl /tmp/gh-aw/threat-detection/sandbox/firewall/logs/api-proxy-logs/token-usage.jsonl /tmp/gh-aw/threat-detection/sandbox/firewall/audit/api-proxy-logs/token-usage.jsonl; do[0m
+2026-08-04T11:37:57.2783684Z [36;1m  [ -f "$file" ] && echo "FOUND: $file" || echo "MISSING: $file"[0m
+2026-08-04T11:37:57.2784367Z [36;1mdone[0m
+2026-08-04T11:37:57.2785111Z [36;1m[ -f /tmp/gh-aw/aw_info.json ] && cp /tmp/gh-aw/aw_info.json /tmp/gh-aw/usage/aw_info.json || true[0m
+2026-08-04T11:37:57.2786280Z [36;1m[ -f /tmp/gh-aw/aw-info.jsonl ] && cp /tmp/gh-aw/aw-info.jsonl /tmp/gh-aw/usage/aw-info.jsonl || true[0m
+2026-08-04T11:37:57.2787536Z [36;1m[ -f /tmp/gh-aw/agent_usage.json ] && cp /tmp/gh-aw/agent_usage.json /tmp/gh-aw/usage/agent_usage.json || true[0m
+2026-08-04T11:37:57.2788840Z [36;1m[ -f /tmp/gh-aw/agent_usage.jsonl ] && cp /tmp/gh-aw/agent_usage.jsonl /tmp/gh-aw/usage/agent_usage.jsonl || true[0m
+2026-08-04T11:37:57.2790709Z [36;1m[ -f /tmp/gh-aw/detection_usage.jsonl ] && cp /tmp/gh-aw/detection_usage.jsonl /tmp/gh-aw/usage/detection_usage.jsonl || true[0m
+2026-08-04T11:37:57.2792099Z [36;1m[ -f /tmp/gh-aw/evals/evals.jsonl ] && cp /tmp/gh-aw/evals/evals.jsonl /tmp/gh-aw/usage/evals.jsonl || true[0m
+2026-08-04T11:37:57.2793708Z [36;1m[ -f /tmp/gh-aw/github_rate_limits.jsonl ] && cp /tmp/gh-aw/github_rate_limits.jsonl /tmp/gh-aw/usage/github_rate_limits.jsonl || true[0m
+2026-08-04T11:37:57.2795717Z [36;1m[ -s /tmp/gh-aw/sandbox/firewall-audit-logs/api-proxy-logs/token-usage.jsonl ] && cp /tmp/gh-aw/sandbox/firewall-audit-logs/api-proxy-logs/token-usage.jsonl /tmp/gh-aw/usage/agent/token_usage.jsonl || true[0m
+2026-08-04T11:37:57.2798061Z [36;1m[ -s /tmp/gh-aw/sandbox/firewall/audit/api-proxy-logs/token-usage.jsonl ] && cp /tmp/gh-aw/sandbox/firewall/audit/api-proxy-logs/token-usage.jsonl /tmp/gh-aw/usage/agent/token_usage.jsonl || true[0m
+2026-08-04T11:37:57.2800425Z [36;1m[ -s /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs/token-usage.jsonl ] && cp /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs/token-usage.jsonl /tmp/gh-aw/usage/agent/token_usage.jsonl || true[0m
+2026-08-04T11:37:57.2804471Z [36;1m[ -s /tmp/gh-aw/threat-detection/sandbox/firewall-audit-logs/api-proxy-logs/token-usage.jsonl ] && cp /tmp/gh-aw/threat-detection/sandbox/firewall-audit-logs/api-proxy-logs/token-usage.jsonl /tmp/gh-aw/usage/detection/token_usage.jsonl || true[0m
+2026-08-04T11:37:57.2807335Z [36;1m[ -s /tmp/gh-aw/threat-detection/sandbox/firewall/audit/api-proxy-logs/token-usage.jsonl ] && cp /tmp/gh-aw/threat-detection/sandbox/firewall/audit/api-proxy-logs/token-usage.jsonl /tmp/gh-aw/usage/detection/token_usage.jsonl || true[0m
+2026-08-04T11:37:57.2810080Z [36;1m[ -s /tmp/gh-aw/threat-detection/sandbox/firewall/logs/api-proxy-logs/token-usage.jsonl ] && cp /tmp/gh-aw/threat-detection/sandbox/firewall/logs/api-proxy-logs/token-usage.jsonl /tmp/gh-aw/usage/detection/token_usage.jsonl || true[0m
+2026-08-04T11:37:57.2812017Z [36;1m[ -f /tmp/gh-aw/usage/agent/token_usage.jsonl ] || : > /tmp/gh-aw/usage/agent/token_usage.jsonl[0m
+2026-08-04T11:37:57.2813845Z [36;1m[ -f /tmp/gh-aw/usage/detection/token_usage.jsonl ] || : > /tmp/gh-aw/usage/detection/token_usage.jsonl[0m
+2026-08-04T11:37:57.2815008Z [36;1mmkdir -p /tmp/gh-aw/usage/activity[0m
+2026-08-04T11:37:57.2815803Z [36;1mnode "${RUNNER_TEMP}/gh-aw/actions/generate_usage_activity_summary.cjs"[0m
+2026-08-04T11:37:57.2816631Z [36;1mfind /tmp/gh-aw/usage -type f -print | sort[0m
+2026-08-04T11:37:57.2821269Z shell: /usr/bin/bash -e {0}
+2026-08-04T11:37:57.2821771Z env:
+2026-08-04T11:37:57.2822179Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:37:57.2822780Z   GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:37:57.2823950Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: e826344a4996a5b2
+2026-08-04T11:37:57.2824595Z   GITHUB_AW_OTEL_JOB_START_MS: 1785843475495
+2026-08-04T11:37:57.2825715Z ##[endgroup]
+2026-08-04T11:37:57.2888082Z Usage artifact source file status:
+2026-08-04T11:37:57.2888901Z MISSING: /tmp/gh-aw/aw_info.json
+2026-08-04T11:37:57.2889614Z MISSING: /tmp/gh-aw/aw-info.jsonl
+2026-08-04T11:37:57.2890292Z FOUND: /tmp/gh-aw/agent_usage.json
+2026-08-04T11:37:57.2929120Z MISSING: /tmp/gh-aw/agent_usage.jsonl
+2026-08-04T11:37:57.2929793Z MISSING: /tmp/gh-aw/detection_usage.jsonl
+2026-08-04T11:37:57.2930392Z MISSING: /tmp/gh-aw/evals/evals.jsonl
+2026-08-04T11:37:57.2930959Z FOUND: /tmp/gh-aw/github_rate_limits.jsonl
+2026-08-04T11:37:57.2931757Z MISSING: /tmp/gh-aw/sandbox/firewall-audit-logs/api-proxy-logs/token-usage.jsonl
+2026-08-04T11:37:57.2932711Z FOUND: /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs/token-usage.jsonl
+2026-08-04T11:37:57.2933952Z MISSING: /tmp/gh-aw/sandbox/firewall/audit/api-proxy-logs/token-usage.jsonl
+2026-08-04T11:37:57.2935030Z MISSING: /tmp/gh-aw/threat-detection/sandbox/firewall-audit-logs/api-proxy-logs/token-usage.jsonl
+2026-08-04T11:37:57.2936183Z MISSING: /tmp/gh-aw/threat-detection/sandbox/firewall/logs/api-proxy-logs/token-usage.jsonl
+2026-08-04T11:37:57.2937309Z MISSING: /tmp/gh-aw/threat-detection/sandbox/firewall/audit/api-proxy-logs/token-usage.jsonl
+2026-08-04T11:37:57.3810915Z [info] /tmp/gh-aw/usage/activity/summary.json
+2026-08-04T11:37:57.4120117Z /tmp/gh-aw/usage/activity/summary.json
+2026-08-04T11:37:57.4121135Z /tmp/gh-aw/usage/agent/token_usage.jsonl
+2026-08-04T11:37:57.4121927Z /tmp/gh-aw/usage/agent_usage.json
+2026-08-04T11:37:57.4122676Z /tmp/gh-aw/usage/detection/token_usage.jsonl
+2026-08-04T11:37:57.4125591Z /tmp/gh-aw/usage/github_rate_limits.jsonl
+2026-08-04T11:37:57.4241618Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-08-04T11:37:57.4242445Z with:
+2026-08-04T11:37:57.4242866Z   name: be543d6f-usage
+2026-08-04T11:37:57.4245401Z   path: /tmp/gh-aw/usage/aw_info.json
+/tmp/gh-aw/usage/aw-info.jsonl
+/tmp/gh-aw/usage/agent_usage.json
+/tmp/gh-aw/usage/agent_usage.jsonl
+/tmp/gh-aw/usage/detection_usage.jsonl
+/tmp/gh-aw/usage/evals.jsonl
+/tmp/gh-aw/usage/github_rate_limits.jsonl
+/tmp/gh-aw/usage/agent/token_usage.jsonl
+/tmp/gh-aw/usage/detection/token_usage.jsonl
+/tmp/gh-aw/usage/activity/summary.json
+
+2026-08-04T11:37:57.4247715Z   if-no-files-found: ignore
+2026-08-04T11:37:57.4249375Z   compression-level: 6
+2026-08-04T11:37:57.4249870Z   overwrite: false
+2026-08-04T11:37:57.4250318Z   include-hidden-files: false
+2026-08-04T11:37:57.4250808Z   archive: true
+2026-08-04T11:37:57.4251210Z env:
+2026-08-04T11:37:57.4251606Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:37:57.4252222Z   GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:37:57.4253257Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: e826344a4996a5b2
+2026-08-04T11:37:57.4253905Z   GITHUB_AW_OTEL_JOB_START_MS: 1785843475495
+2026-08-04T11:37:57.4254477Z ##[endgroup]
+2026-08-04T11:37:57.6082474Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-08-04T11:37:57.6099216Z The least common ancestor is /tmp/gh-aw/usage. This will be the root directory of the artifact
+2026-08-04T11:37:57.6101228Z With the provided path, there will be 5 files uploaded
+2026-08-04T11:37:57.6109323Z Artifact name is valid!
+2026-08-04T11:37:57.6111593Z Root directory input is valid!
+2026-08-04T11:37:58.1776417Z Uploading artifact: be543d6f-usage.zip
+2026-08-04T11:37:58.1777393Z Beginning upload of artifact content to blob storage
+2026-08-04T11:37:58.1778591Z Uploaded bytes 3510
+2026-08-04T11:37:58.1779133Z Finished uploading artifact content to blob storage!
+2026-08-04T11:37:58.1780176Z SHA256 digest of uploaded artifact is 16671f0e47b1e7c475db37778aecc017ca7c2c7662e27ccee854be17ca25c065
+2026-08-04T11:37:58.1781144Z Finalizing artifact upload
+2026-08-04T11:37:58.2555729Z Artifact be543d6f-usage successfully finalized. Artifact ID 8890887528
+2026-08-04T11:37:58.2557126Z Artifact be543d6f-usage has been successfully uploaded! Final size is 3510 bytes. Artifact ID is 8890887528
+2026-08-04T11:37:58.2558459Z Artifact download URL: https://github.com/elastic/opentelemetry/actions/runs/30905136689/artifacts/8890887528
+2026-08-04T11:37:58.2707997Z ##[group]Run actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+2026-08-04T11:37:58.2708795Z with:
+2026-08-04T11:37:58.2709418Z   key: agentic-workflow-usage-docsagentexperimental-30905136689
+2026-08-04T11:37:58.2710259Z   restore-keys: agentic-workflow-usage-docsagentexperimental-
+2026-08-04T11:37:58.2711018Z   path: /tmp/gh-aw/agentic-workflow-usage-cache.jsonl
+2026-08-04T11:37:58.2711667Z   enableCrossOsArchive: false
+2026-08-04T11:37:58.2712179Z   fail-on-cache-miss: false
+2026-08-04T11:37:58.2712661Z   lookup-only: false
+2026-08-04T11:37:58.2713470Z env:
+2026-08-04T11:37:58.2713885Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:37:58.2714480Z   GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:37:58.2715209Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: e826344a4996a5b2
+2026-08-04T11:37:58.2715850Z   GITHUB_AW_OTEL_JOB_START_MS: 1785843475495
+2026-08-04T11:37:58.2716402Z ##[endgroup]
+2026-08-04T11:37:58.5560734Z Cache not found for input keys: agentic-workflow-usage-docsagentexperimental-30905136689, agentic-workflow-usage-docsagentexperimental-
+2026-08-04T11:37:58.5706233Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T11:37:58.5707027Z with:
+2026-08-04T11:37:58.5710640Z   github-token: ***
+2026-08-04T11:37:58.5713202Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/write_daily_aic_usage_cache.cjs');
+await main();
+
+2026-08-04T11:37:58.5714953Z   debug: false
+2026-08-04T11:37:58.5715401Z   user-agent: actions/github-script
+2026-08-04T11:37:58.5716650Z   result-encoding: json
+2026-08-04T11:37:58.5717160Z   retries: 0
+2026-08-04T11:37:58.5717642Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T11:37:58.5718223Z env:
+2026-08-04T11:37:58.5718640Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:37:58.5719242Z   GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:37:58.5719948Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: e826344a4996a5b2
+2026-08-04T11:37:58.5720597Z   GITHUB_AW_OTEL_JOB_START_MS: 1785843475495
+2026-08-04T11:37:58.5721149Z ##[endgroup]
+2026-08-04T11:37:58.7236217Z [daily-aic-cache] Scanning usage JSONL files: {"dir":"/tmp/gh-aw/usage","count":3,"files":["/tmp/gh-aw/usage/github_rate_limits.jsonl","/tmp/gh-aw/usage/agent/token_usage.jsonl","/tmp/gh-aw/usage/detection/token_usage.jsonl"]}
+2026-08-04T11:37:58.7305865Z [daily-aic-cache] Computed AIC for current run: {"runId":30905136689,"aic":62.036899999999996}
+2026-08-04T11:37:58.7311228Z [daily-aic-cache] No existing cache file found; starting fresh: {"path":"/tmp/gh-aw/agentic-workflow-usage-cache.jsonl"}
+2026-08-04T11:37:58.7428276Z [daily-aic-cache] Wrote cache entry: {"runId":30905136689,"aic":62.036899999999996,"path":"/tmp/gh-aw/agentic-workflow-usage-cache.jsonl"}
+2026-08-04T11:37:58.7595889Z ##[group]Run actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+2026-08-04T11:37:58.7597291Z with:
+2026-08-04T11:37:58.7597894Z   key: agentic-workflow-usage-docsagentexperimental-30905136689
+2026-08-04T11:37:58.7598690Z   path: /tmp/gh-aw/agentic-workflow-usage-cache.jsonl
+2026-08-04T11:37:58.7599335Z   enableCrossOsArchive: false
+2026-08-04T11:37:58.7599829Z env:
+2026-08-04T11:37:58.7600698Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:37:58.7601365Z   GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:37:58.7605258Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: e826344a4996a5b2
+2026-08-04T11:37:58.7606614Z   GITHUB_AW_OTEL_JOB_START_MS: 1785843475495
+2026-08-04T11:37:58.7607234Z ##[endgroup]
+2026-08-04T11:37:58.9613650Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/opentelemetry/opentelemetry --files-from manifest.txt --use-compress-program zstdmt
+2026-08-04T11:37:59.2494991Z Sent 279 of 279 (100.0%), 0.0 MBs/sec
+2026-08-04T11:37:59.9894278Z Cache saved with key: agentic-workflow-usage-docsagentexperimental-30905136689
+2026-08-04T11:38:00.0093191Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-08-04T11:38:00.0094100Z with:
+2026-08-04T11:38:00.0094538Z   name: aic-usage-cache
+2026-08-04T11:38:00.0095131Z   path: /tmp/gh-aw/agentic-workflow-usage-cache.jsonl
+2026-08-04T11:38:00.0095784Z   if-no-files-found: ignore
+2026-08-04T11:38:00.0096295Z   retention-days: 7
+2026-08-04T11:38:00.0096766Z   compression-level: 6
+2026-08-04T11:38:00.0097240Z   overwrite: false
+2026-08-04T11:38:00.0097720Z   include-hidden-files: false
+2026-08-04T11:38:00.0098233Z   archive: true
+2026-08-04T11:38:00.0098667Z env:
+2026-08-04T11:38:00.0099086Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:38:00.0099699Z   GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:38:00.0100432Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: e826344a4996a5b2
+2026-08-04T11:38:00.0101070Z   GITHUB_AW_OTEL_JOB_START_MS: 1785843475495
+2026-08-04T11:38:00.0101649Z ##[endgroup]
+2026-08-04T11:38:00.1944939Z With the provided path, there will be 1 file uploaded
+2026-08-04T11:38:00.1956089Z Artifact name is valid!
+2026-08-04T11:38:00.1959700Z Root directory input is valid!
+2026-08-04T11:38:00.4010569Z Uploading artifact: aic-usage-cache.zip
+2026-08-04T11:38:00.4074323Z Beginning upload of artifact content to blob storage
+2026-08-04T11:38:00.5573207Z Uploaded bytes 263
+2026-08-04T11:38:00.5960604Z Finished uploading artifact content to blob storage!
+2026-08-04T11:38:00.5967371Z SHA256 digest of uploaded artifact is 482f7626e346f942cbe91b3c1d73faf852f8256cbd0defdadbfc9b6df9099ada
+2026-08-04T11:38:00.5972742Z Finalizing artifact upload
+2026-08-04T11:38:00.8568952Z Artifact aic-usage-cache successfully finalized. Artifact ID 8890888737
+2026-08-04T11:38:00.8571628Z Artifact aic-usage-cache has been successfully uploaded! Final size is 263 bytes. Artifact ID is 8890888737
+2026-08-04T11:38:00.8578463Z Artifact download URL: https://github.com/elastic/opentelemetry/actions/runs/30905136689/artifacts/8890888737
+2026-08-04T11:38:00.8740623Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T11:38:00.8741444Z with:
+2026-08-04T11:38:00.8745516Z   github-token: ***
+2026-08-04T11:38:00.8747260Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/handle_noop_message.cjs');
+await main();
+
+2026-08-04T11:38:00.8749018Z   debug: false
+2026-08-04T11:38:00.8749493Z   user-agent: actions/github-script
+2026-08-04T11:38:00.8750077Z   result-encoding: json
+2026-08-04T11:38:00.8750559Z   retries: 0
+2026-08-04T11:38:00.8751064Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T11:38:00.8751679Z env:
+2026-08-04T11:38:00.8752137Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:38:00.8752765Z   GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:38:00.8753752Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: e826344a4996a5b2
+2026-08-04T11:38:00.8754420Z   GITHUB_AW_OTEL_JOB_START_MS: 1785843475495
+2026-08-04T11:38:00.8755085Z   GH_AW_AGENT_OUTPUT: /tmp/gh-aw/agent_output.json
+2026-08-04T11:38:00.8757210Z   GH_AW_NOOP_MAX: 1
+2026-08-04T11:38:00.8757836Z   GH_AW_WORKFLOW_NAME: docs-agent-experimental
+2026-08-04T11:38:00.8759185Z   GH_AW_WORKFLOW_SOURCE_URL: https://github.com/elastic/opentelemetry/blob/fix-docs-agent-actions-permission/.github/workflows/docs-agent-experimental.md
+2026-08-04T11:38:00.8760659Z   GH_AW_RUN_URL: https://github.com/elastic/opentelemetry/actions/runs/30905136689
+2026-08-04T11:38:00.8761491Z   GH_AW_AGENT_CONCLUSION: success
+2026-08-04T11:38:00.8762068Z   GH_AW_NOOP_REPORT_AS_ISSUE: true
+2026-08-04T11:38:00.8762618Z   GH_AW_AIC: 60.577
+2026-08-04T11:38:00.8763339Z   GH_AW_THREAT_DETECTION_AIC: 9.552
+2026-08-04T11:38:00.8764148Z   GH_AW_AMBIENT_CONTEXT: 10949
+2026-08-04T11:38:00.8764733Z   GH_AW_WORKFLOW_ID: docs-agent-experimental
+2026-08-04T11:38:00.8765335Z ##[endgroup]
+2026-08-04T11:38:01.0057130Z Agent output content length: 2525
+2026-08-04T11:38:01.0062838Z No noop items found in agent output
+2026-08-04T11:38:01.0207705Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T11:38:01.0208510Z with:
+2026-08-04T11:38:01.0212641Z   github-token: ***
+2026-08-04T11:38:01.0214751Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/handle_detection_runs.cjs');
+await main();
+
+2026-08-04T11:38:01.0216538Z   debug: false
+2026-08-04T11:38:01.0217011Z   user-agent: actions/github-script
+2026-08-04T11:38:01.0217581Z   result-encoding: json
+2026-08-04T11:38:01.0218058Z   retries: 0
+2026-08-04T11:38:01.0218592Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T11:38:01.0219197Z env:
+2026-08-04T11:38:01.0219630Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:38:01.0220253Z   GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:38:01.0221015Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: e826344a4996a5b2
+2026-08-04T11:38:01.0221672Z   GITHUB_AW_OTEL_JOB_START_MS: 1785843475495
+2026-08-04T11:38:01.0222330Z   GH_AW_AGENT_OUTPUT: /tmp/gh-aw/agent_output.json
+2026-08-04T11:38:01.0223212Z   GH_AW_WORKFLOW_NAME: docs-agent-experimental
+2026-08-04T11:38:01.0224540Z   GH_AW_WORKFLOW_SOURCE_URL: https://github.com/elastic/opentelemetry/blob/fix-docs-agent-actions-permission/.github/workflows/docs-agent-experimental.md
+2026-08-04T11:38:01.0226004Z   GH_AW_RUN_URL: https://github.com/elastic/opentelemetry/actions/runs/30905136689
+2026-08-04T11:38:01.0226814Z   GH_AW_DETECTION_CONCLUSION: success
+2026-08-04T11:38:01.0227388Z   GH_AW_DETECTION_REASON: 
+2026-08-04T11:38:01.0227897Z ##[endgroup]
+2026-08-04T11:38:01.1434641Z Detection conclusion: success
+2026-08-04T11:38:01.1439618Z Detection reason: 
+2026-08-04T11:38:01.1442424Z Workflow name: docs-agent-experimental
+2026-08-04T11:38:01.1445864Z Run URL: https://github.com/elastic/opentelemetry/actions/runs/30905136689
+2026-08-04T11:38:01.1449019Z Detection conclusion is "success", no issue comment needed
+2026-08-04T11:38:01.1604203Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T11:38:01.1605065Z with:
+2026-08-04T11:38:01.1609367Z   github-token: ***
+2026-08-04T11:38:01.1611460Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/missing_tool.cjs');
+await main();
+
+2026-08-04T11:38:01.1703998Z   debug: false
+2026-08-04T11:38:01.1704674Z   user-agent: actions/github-script
+2026-08-04T11:38:01.1705424Z   result-encoding: json
+2026-08-04T11:38:01.1706045Z   retries: 0
+2026-08-04T11:38:01.1706720Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T11:38:01.1707528Z env:
+2026-08-04T11:38:01.1708079Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:38:01.1708926Z   GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:38:01.1709690Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: e826344a4996a5b2
+2026-08-04T11:38:01.1710412Z   GITHUB_AW_OTEL_JOB_START_MS: 1785843475495
+2026-08-04T11:38:01.1711208Z   GH_AW_AGENT_OUTPUT: /tmp/gh-aw/agent_output.json
+2026-08-04T11:38:01.1711894Z   GH_AW_MISSING_TOOL_CREATE_ISSUE: true
+2026-08-04T11:38:01.1712542Z   GH_AW_WORKFLOW_NAME: docs-agent-experimental
+2026-08-04T11:38:01.1714266Z   GH_AW_WORKFLOW_SOURCE_URL: https://github.com/elastic/opentelemetry/blob/fix-docs-agent-actions-permission/.github/workflows/docs-agent-experimental.md
+2026-08-04T11:38:01.1715571Z ##[endgroup]
+2026-08-04T11:38:01.2884793Z Max count: unlimited
+2026-08-04T11:38:01.3022752Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T11:38:01.3024125Z with:
+2026-08-04T11:38:01.3027806Z   github-token: ***
+2026-08-04T11:38:01.3029561Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/report_incomplete_handler.cjs');
+await main();
+
+2026-08-04T11:38:01.3031361Z   debug: false
+2026-08-04T11:38:01.3031832Z   user-agent: actions/github-script
+2026-08-04T11:38:01.3032402Z   result-encoding: json
+2026-08-04T11:38:01.3032885Z   retries: 0
+2026-08-04T11:38:01.3033599Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T11:38:01.3034210Z env:
+2026-08-04T11:38:01.3034649Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:38:01.3035273Z   GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:38:01.3036042Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: e826344a4996a5b2
+2026-08-04T11:38:01.3036694Z   GITHUB_AW_OTEL_JOB_START_MS: 1785843475495
+2026-08-04T11:38:01.3050031Z   GH_AW_AGENT_OUTPUT: /tmp/gh-aw/agent_output.json
+2026-08-04T11:38:01.3050797Z   GH_AW_REPORT_INCOMPLETE_CREATE_ISSUE: true
+2026-08-04T11:38:01.3051494Z   GH_AW_WORKFLOW_NAME: docs-agent-experimental
+2026-08-04T11:38:01.3052822Z   GH_AW_WORKFLOW_SOURCE_URL: https://github.com/elastic/opentelemetry/blob/fix-docs-agent-actions-permission/.github/workflows/docs-agent-experimental.md
+2026-08-04T11:38:01.3054414Z ##[endgroup]
+2026-08-04T11:38:01.4267811Z Max count: unlimited
+2026-08-04T11:38:01.4427179Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T11:38:01.4428014Z with:
+2026-08-04T11:38:01.4432331Z   github-token: ***
+2026-08-04T11:38:01.4434818Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/handle_agent_failure.cjs');
+await main();
+
+2026-08-04T11:38:01.4436672Z   debug: false
+2026-08-04T11:38:01.4437167Z   user-agent: actions/github-script
+2026-08-04T11:38:01.4437741Z   result-encoding: json
+2026-08-04T11:38:01.4438237Z   retries: 0
+2026-08-04T11:38:01.4438742Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T11:38:01.4439364Z env:
+2026-08-04T11:38:01.4439797Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T11:38:01.4440448Z   GITHUB_AW_OTEL_TRACE_ID: 95d9b87a63e5cfce5fc3c37aa1e1e92f
+2026-08-04T11:38:01.4441235Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: e826344a4996a5b2
+2026-08-04T11:38:01.4441892Z   GITHUB_AW_OTEL_JOB_START_MS: 1785843475495
+2026-08-04T11:38:01.4442568Z   GH_AW_AGENT_OUTPUT: /tmp/gh-aw/agent_output.json
+2026-08-04T11:38:01.4443498Z   GH_AW_WORKFLOW_NAME: docs-agent-experimental
+2026-08-04T11:38:01.4445025Z   GH_AW_WORKFLOW_SOURCE_URL: https://github.com/elastic/opentelemetry/blob/fix-docs-agent-actions-permission/.github/workflows/docs-agent-experimental.md
+2026-08-04T11:38:01.4446609Z   GH_AW_RUN_URL: https://github.com/elastic/opentelemetry/actions/runs/30905136689
+2026-08-04T11:38:01.4447438Z   GH_AW_AGENT_CONCLUSION: success
+2026-08-04T11:38:01.4448041Z   GH_AW_WORKFLOW_ID: docs-agent-experimental
+2026-08-04T11:38:01.4448703Z   GH_AW_ACTION_FAILURE_ISSUE_EXPIRES_HOURS: 168
+2026-08-04T11:38:01.4449333Z   GH_AW_ENGINE_ID: copilot
+2026-08-04T11:38:01.4449885Z   GH_AW_CHECKOUT_PR_SUCCESS: true
+2026-08-04T11:38:01.4450450Z   GH_AW_EFFECTIVE_TOKENS: 
+2026-08-04T11:38:01.4450994Z   GH_AW_AI_CREDITS_RATE_LIMIT_ERROR: false
+2026-08-04T11:38:01.4451629Z   GH_AW_UNKNOWN_MODEL_AI_CREDITS: false
+2026-08-04T11:38:01.4452204Z   GH_AW_AIC: 60.577
+2026-08-04T11:38:01.4452699Z   GH_AW_THREAT_DETECTION_AIC: 9.552
+2026-08-04T11:38:01.4454317Z   GH_AW_MAX_AI_CREDITS: 2000
+2026-08-04T11:38:01.4455090Z   GH_AW_INFERENCE_ACCESS_ERROR: false
+2026-08-04T11:38:01.4456103Z   GH_AW_MCP_POLICY_ERROR: false
+2026-08-04T11:38:01.4456667Z   GH_AW_AGENTIC_ENGINE_TIMEOUT: false
+2026-08-04T11:38:01.4457359Z   GH_AW_MODEL_NOT_SUPPORTED_ERROR: false
+2026-08-04T11:38:01.4457978Z   GH_AW_HTTP_400_RESPONSE_ERROR: false
+2026-08-04T11:38:01.4459685Z   GH_AW_ENGINE_API_HOSTS: api.enterprise.githubcopilot.com,api.githubcopilot.com,api.business.githubcopilot.com,api.individual.githubcopilot.com
+2026-08-04T11:38:01.4461024Z   GH_AW_CODE_PUSH_FAILURE_ERRORS: 
+2026-08-04T11:38:01.4461604Z   GH_AW_CODE_PUSH_FAILURE_COUNT: 0
+2026-08-04T11:38:01.4462183Z   GH_AW_LOCKDOWN_CHECK_FAILED: false
+2026-08-04T11:38:01.4462773Z   GH_AW_OAUTH_TOKEN_CHECK_FAILED: false
+2026-08-04T11:38:01.4463598Z   GH_AW_STALE_LOCK_FILE_FAILED: false
+2026-08-04T11:38:01.4464192Z   GH_AW_DAILY_AI_CREDITS_EXCEEDED: false
+2026-08-04T11:38:01.4464844Z   GH_AW_DAILY_AI_CREDITS_TOTAL_EFFECTIVE_TOKENS: 
+2026-08-04T11:38:01.4465498Z   GH_AW_DAILY_AI_CREDITS_THRESHOLD: 
+2026-08-04T11:38:01.4466068Z   GH_AW_GROUP_REPORTS: false
+2026-08-04T11:38:01.4466620Z   GH_AW_FAILURE_REPORT_AS_ISSUE: true
+2026-08-04T11:38:01.4467230Z   GH_AW_MISSING_TOOL_REPORT_AS_FAILURE: true
+2026-08-04T11:38:01.4467881Z   GH_AW_MISSING_DATA_REPORT_AS_FAILURE: true
+2026-08-04T11:38:01.4468482Z   GH_AW_TIMEOUT_MINUTES: 45
+2026-08-04T11:38:01.4469002Z ##[endgroup]
+2026-08-04T11:38:01.5940232Z [ai-credits] aiCredits source=env(GH_AW_AIC) value=60.577
+2026-08-04T11:38:01.5944534Z [ai-credits] maxAICredits source=env(GH_AW_MAX_AI_CREDITS) value=2000
+2026-08-04T11:38:01.5946131Z [ai-credits] rateLimitSignal source=none
+2026-08-04T11:38:01.6052087Z Agent conclusion: success
+2026-08-04T11:38:01.6053724Z Workflow name: docs-agent-experimental
+2026-08-04T11:38:01.6055142Z Workflow ID: docs-agent-experimental
+2026-08-04T11:38:01.6055998Z Secret verification result: 
+2026-08-04T11:38:01.6056716Z Engine secret failure message: (none)
+2026-08-04T11:38:01.6057477Z Assignment error count: 0
+2026-08-04T11:38:01.6058176Z Assign copilot failure count: 0
+2026-08-04T11:38:01.6058908Z Skill install failure count: 0
+2026-08-04T11:38:01.6059600Z Create discussion error count: 0
+2026-08-04T11:38:01.6060297Z Code push failure count: 0
+2026-08-04T11:38:01.6061004Z Checkout PR success: true
+2026-08-04T11:38:01.6061660Z AI credits: 60.577
+2026-08-04T11:38:01.6062286Z Configured max AI credits: 2000
+2026-08-04T11:38:01.6064034Z AI credits rate-limit error: false
+2026-08-04T11:38:01.6064840Z Max AI credits exceeded (harness budget abort): false
+2026-08-04T11:38:01.6065676Z Daily workflow AIC guardrail exceeded: false
+2026-08-04T11:38:01.6066529Z Inference access error: false
+2026-08-04T11:38:01.6067146Z MCP policy error: false
+2026-08-04T11:38:01.6067734Z Agentic engine timeout: false
+2026-08-04T11:38:01.6068379Z Model not supported error: false
+2026-08-04T11:38:01.6069012Z HTTP 400 response error: false
+2026-08-04T11:38:01.6069627Z Unknown model AI credits error: false
+2026-08-04T11:38:01.6070403Z Unknown model AI credits sources (audit/output): false/false
+2026-08-04T11:38:01.6071190Z Push repo-memory result: 
+2026-08-04T11:38:01.6072011Z App token minting failed (safe_outputs/conclusion/activation): false/false/false
+2026-08-04T11:38:01.6073110Z Lockdown check failed: false
+2026-08-04T11:38:01.6073755Z OAuth token check failed: false
+2026-08-04T11:38:01.6074388Z Stale lock file check failed: false
+2026-08-04T11:38:01.6075021Z Cache memory enabled: false
+2026-08-04T11:38:01.6075702Z Cache memory restored (from restore outputs): false
+2026-08-04T11:38:01.6076514Z Missing tool report-as-failure: true
+2026-08-04T11:38:01.6077177Z Missing data report-as-failure: true
+2026-08-04T11:38:01.6077824Z Agent output content length: 2525
+2026-08-04T11:38:01.6080482Z Agent job did not fail and no assignment/discussion/code-push/push-repo-memory/app-token/lockdown/oauth-token-check/stale-lock-file/daily-workflow-aic/ai-credits/max-ai-credits-exceeded/report-incomplete/cache-miss/missing-tool/missing-data/tool-denials-exceeded/secret-verification errors and has safe outputs (conclusion: success), skipping failure handling
+2026-08-04T11:38:01.6351699Z Post job cleanup.
+2026-08-04T11:38:01.6814830Z [info] [otlp] GH_AW_OTLP_ENDPOINTS not set, skipping OTLP export (will attempt JSONL mirror)
+2026-08-04T11:38:01.6992415Z Cleaning up /tmp/gh-aw...
+2026-08-04T11:38:01.7215481Z Cleaned up /tmp/gh-aw
+2026-08-04T11:38:01.7415977Z No /tmp/awf-*-chroot-home directories found
+2026-08-04T11:38:01.7535144Z No /tmp/awf-chroot-* directories found
+2026-08-04T11:38:01.7632150Z Evaluate and set job outputs
+2026-08-04T11:38:01.7641028Z Cleaning up orphan processes

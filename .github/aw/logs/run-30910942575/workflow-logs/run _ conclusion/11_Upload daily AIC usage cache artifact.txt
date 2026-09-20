@@ -1,0 +1,28 @@
+﻿2026-08-04T12:57:11.5070479Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-08-04T12:57:11.5072811Z with:
+2026-08-04T12:57:11.5073766Z   name: aic-usage-cache
+2026-08-04T12:57:11.5076328Z   path: /tmp/gh-aw/agentic-workflow-usage-cache.jsonl
+2026-08-04T12:57:11.5077950Z   if-no-files-found: ignore
+2026-08-04T12:57:11.5078927Z   retention-days: 7
+2026-08-04T12:57:11.5079909Z   compression-level: 6
+2026-08-04T12:57:11.5080821Z   overwrite: false
+2026-08-04T12:57:11.5082330Z   include-hidden-files: false
+2026-08-04T12:57:11.5083357Z   archive: true
+2026-08-04T12:57:11.5084180Z env:
+2026-08-04T12:57:11.5084972Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:57:11.5086116Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:57:11.5087738Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: f282ba6f076e9f34
+2026-08-04T12:57:11.5089026Z   GITHUB_AW_OTEL_JOB_START_MS: 1785848221999
+2026-08-04T12:57:11.5090158Z ##[endgroup]
+2026-08-04T12:57:11.7613767Z With the provided path, there will be 1 file uploaded
+2026-08-04T12:57:11.7626262Z Artifact name is valid!
+2026-08-04T12:57:11.7630750Z Root directory input is valid!
+2026-08-04T12:57:11.9392161Z Uploading artifact: aic-usage-cache.zip
+2026-08-04T12:57:11.9549021Z Beginning upload of artifact content to blob storage
+2026-08-04T12:57:12.1261487Z Uploaded bytes 259
+2026-08-04T12:57:12.1643727Z Finished uploading artifact content to blob storage!
+2026-08-04T12:57:12.1649636Z SHA256 digest of uploaded artifact is ac812a522a316468af706e9d8a15704dec7279506c63a717bcdce6d86f47a6f4
+2026-08-04T12:57:12.1651718Z Finalizing artifact upload
+2026-08-04T12:57:12.3915384Z Artifact aic-usage-cache successfully finalized. Artifact ID 8893222142
+2026-08-04T12:57:12.3921290Z Artifact aic-usage-cache has been successfully uploaded! Final size is 259 bytes. Artifact ID is 8893222142
+2026-08-04T12:57:12.3955594Z Artifact download URL: https://github.com/elastic/opentelemetry/actions/runs/30910942575/artifacts/8893222142

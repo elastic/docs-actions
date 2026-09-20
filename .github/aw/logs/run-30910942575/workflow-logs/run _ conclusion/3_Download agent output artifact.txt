@@ -1,0 +1,26 @@
+﻿2026-08-04T12:57:02.2880614Z ##[group]Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+2026-08-04T12:57:02.2883255Z with:
+2026-08-04T12:57:02.2885091Z   name: be543d6f-agent
+2026-08-04T12:57:02.2888263Z   path: /tmp/gh-aw/
+2026-08-04T12:57:02.2892187Z   merge-multiple: false
+2026-08-04T12:57:02.2894128Z   repository: elastic/opentelemetry
+2026-08-04T12:57:02.2896089Z   run-id: 30910942575
+2026-08-04T12:57:02.2900830Z   skip-decompress: false
+2026-08-04T12:57:02.3097287Z   digest-mismatch: error
+2026-08-04T12:57:02.3100458Z env:
+2026-08-04T12:57:02.3101525Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:57:02.3102330Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:57:02.3103789Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: f282ba6f076e9f34
+2026-08-04T12:57:02.3106584Z   GITHUB_AW_OTEL_JOB_START_MS: 1785848221999
+2026-08-04T12:57:02.3112536Z ##[endgroup]
+2026-08-04T12:57:04.6160037Z Downloading single artifact
+2026-08-04T12:57:04.9178515Z Preparing to download the following artifacts:
+2026-08-04T12:57:04.9213332Z - be543d6f-agent (ID: 8893151962, Size: 776816, Expected Digest: sha256:6bd9332fcfdbf39e2c80f6eb1d91d053face1482e60f71db02ef813565ef096f)
+2026-08-04T12:57:05.1626046Z Redirecting to blob download url: https://productionresultssa16.blob.core.windows.net/actions-results/3749ec3a-8201-40b7-80bf-5262e4a9f786/workflow-job-run-38f32334-93db-5a76-b39c-640582a9395b/artifacts/627feddada02a485f01dcdedf4cfa7f2773c75ebd72eb34afdc0b644f2832f88.zip
+2026-08-04T12:57:05.1641033Z Starting download of artifact to: /tmp/gh-aw
+2026-08-04T12:57:05.2671571Z (node:1343) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-08-04T12:57:05.2677772Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-04T12:57:05.5391197Z SHA256 digest of downloaded artifact is 6bd9332fcfdbf39e2c80f6eb1d91d053face1482e60f71db02ef813565ef096f
+2026-08-04T12:57:05.5398515Z Artifact download completed successfully.
+2026-08-04T12:57:05.5405101Z Total of 1 artifact(s) downloaded
+2026-08-04T12:57:05.5421763Z Download artifact has finished successfully

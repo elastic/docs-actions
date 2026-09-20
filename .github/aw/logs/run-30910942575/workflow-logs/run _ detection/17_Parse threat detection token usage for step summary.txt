@@ -1,0 +1,35 @@
+﻿2026-08-04T12:56:14.8378032Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-08-04T12:56:14.8378470Z with:
+2026-08-04T12:56:14.8379410Z   script: const { setupGlobals } = require('/home/runner/work/_temp/gh-aw/actions/setup_globals.cjs');
+setupGlobals(core, github, context, exec, io, getOctokit);
+const { main } = require('/home/runner/work/_temp/gh-aw/actions/parse_token_usage.cjs');
+await main();
+
+2026-08-04T12:56:14.8382991Z   github-token: ***
+2026-08-04T12:56:14.8383241Z   debug: false
+2026-08-04T12:56:14.8383463Z   user-agent: actions/github-script
+2026-08-04T12:56:14.8383977Z   result-encoding: json
+2026-08-04T12:56:14.8384195Z   retries: 0
+2026-08-04T12:56:14.8384424Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-08-04T12:56:14.8384717Z env:
+2026-08-04T12:56:14.8384905Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:56:14.8385199Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:56:14.8385569Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: c1c9aac905e7fb89
+2026-08-04T12:56:14.8385891Z   GITHUB_AW_OTEL_JOB_START_MS: 1785848127520
+2026-08-04T12:56:14.8386242Z   GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
+2026-08-04T12:56:14.8386606Z   GH_AW_TOKEN_USAGE_SUMMARY_TITLE: Threat Detection Token Usage
+2026-08-04T12:56:14.8386955Z ##[endgroup]
+2026-08-04T12:56:14.9458553Z Parsing token usage from 1 file(s): /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs/token-usage.jsonl (935 bytes)
+2026-08-04T12:56:14.9610834Z Threat Detection Token Usage
+2026-08-04T12:56:14.9611219Z 
+2026-08-04T12:56:14.9612249Z # | Alias | Input | Output | Cache Read | Cache Write | ΔAI Credits | AI Credits | Duration 
+2026-08-04T12:56:14.9613235Z 
+2026-08-04T12:56:14.9613599Z  1 | sonnet50 | 2,430 | 149 | 0 | 30,097 | 8.16 | 8.16 | 3.8s 
+2026-08-04T12:56:14.9614374Z  2 | sonnet50 | 2 | 92 | 30,097 | 4,904 | 1.92 | 10.1 | 4.0s 
+2026-08-04T12:56:14.9615099Z  Total |  | 2,432 | 241 | 30,097 | 35,001 |  | 9.59 | 7.9s 
+2026-08-04T12:56:14.9615522Z 
+2026-08-04T12:56:14.9617218Z Legend: `Alias` shows the model shorthand used in the table. `ΔAI Credits` is the per-request cost, and `AI Credits` is the running total computed with the current AI credits pricing model.
+2026-08-04T12:56:14.9618811Z Token usage summary appended to step summary
+2026-08-04T12:56:14.9622503Z Primary model: claude-sonnet-5
+2026-08-04T12:56:14.9624045Z AI Credits: 9.593
+2026-08-04T12:56:14.9625813Z Ambient context: 5440

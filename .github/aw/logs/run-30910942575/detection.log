@@ -1,0 +1,139 @@
+[INFO] Auto-detected DNS servers from /run/systemd/resolve/resolv.conf: 168.63.129.16
+[WARN] ⚠️  Using --env-all: All host environment variables will be passed to container
+[WARN]    This may expose sensitive credentials if logs or configs are shared
+[INFO] API proxy enabled: OpenAI=false, Anthropic=false, Copilot=true (github-token), Gemini=false, Vertex=false
+[INFO] Allowed domains: api.business.githubcopilot.com, api.enterprise.githubcopilot.com, api.github.com, api.githubcopilot.com, api.individual.githubcopilot.com, github.com, host.docker.internal, registry.npmjs.org, telemetry.enterprise.githubcopilot.com
+[INFO] Network-isolation mode: enforcing egress via Docker network topology (no host iptables, no sudo).
+[INFO] Generating configuration files...
+[INFO] API proxy sidecar enabled - API keys will be held securely in sidecar container
+[INFO] API proxy will route through Squid to respect domain whitelisting
+[INFO] Starting containers...
+ Network awf-net  Creating
+ Network awf-net  Created
+ Network awf-1785848149914_awf-ext  Creating
+ Network awf-1785848149914_awf-ext  Created
+ Container awf-squid  Creating
+ Container awf-api-proxy  Creating
+ Container awf-api-proxy  Created
+ Container awf-squid  Created
+ Container awf-agent  Creating
+ Container awf-agent  Created
+ Container awf-squid  Starting
+ Container awf-api-proxy  Starting
+ Container awf-api-proxy  Started
+ Container awf-squid  Started
+ Container awf-api-proxy  Waiting
+ Container awf-squid  Waiting
+ Container awf-api-proxy  Healthy
+ Container awf-squid  Healthy
+ Container awf-agent  Starting
+ Container awf-agent  Started
+[SUCCESS] Containers started successfully
+[INFO] Executing agent command...
+[entrypoint] Agentic Workflow Firewall - Agent Container
+[entrypoint] ==================================
+[entrypoint] Adjusting awfuser UID:GID from 1000:1000 to 1001:1001
+[entrypoint] UID/GID adjustment complete
+[entrypoint] Configuring DNS...
+[entrypoint] DNS configured with Docker embedded DNS (127.0.0.11) only
+[entrypoint] iptables-init skipped (proxy-based egress): skipping init container wait
+[health-check] API Proxy Pre-flight Check
+[health-check] ==========================================
+[health-check] Checking GitHub Copilot API proxy configuration...
+[health-check] COPILOT_API_URL=http://172.30.0.30:10002
+[health-check] ✓ COPILOT_GITHUB_TOKEN is placeholder value (correct)
+[health-check] ✓ COPILOT_TOKEN is placeholder value (correct)
+[health-check] ✓ COPILOT_PROVIDER_API_KEY is placeholder value (correct)
+[health-check] COPILOT_PROVIDER_BASE_URL=http://172.30.0.30:10002 (offline+BYOK mode)
+[health-check] ✓ COPILOT_PROVIDER_BASE_URL matches COPILOT_API_URL
+[health-check] ✓ Copilot CLI offline+BYOK mode configured
+[health-check] Testing connectivity to GitHub Copilot API proxy at http://172.30.0.30:10002...
+[health-check] ✓ GitHub Copilot API proxy is reachable at http://172.30.0.30:10002
+[health-check] ==========================================
+[health-check] ✓ All API proxy health checks passed
+[health-check] ✓ Credential isolation verified
+[health-check] ✓ Connectivity established
+[health-check] ==========================================
+[entrypoint] Pre-seeding JVM build tool proxy configuration (squid-proxy:3128)...
+[entrypoint] ✓ Created Maven proxy config (/host/home/runner/.m2/settings.xml)
+[entrypoint] ✓ Created Gradle proxy config (/host/home/runner/.gradle/gradle.properties)
+[entrypoint] ✓ Set JAVA_TOOL_OPTIONS with proxy and nonProxyHosts flags
+[entrypoint] Proxy configuration:
+[entrypoint]   HTTP_PROXY=http://172.30.0.10:3128
+[entrypoint]   HTTPS_PROXY=http://172.30.0.10:3128
+[entrypoint] Network information:
+[entrypoint]   IP address: 172.30.0.20 
+[entrypoint]   Hostname: d44b406ba6d0
+[entrypoint] ==================================
+[entrypoint] Chroot mode enabled - dropping CAP_SYS_CHROOT and CAP_SYS_ADMIN
+[entrypoint] Switching to awfuser (UID: 1001, GID: 1001)
+[entrypoint] Executing command: /bin/bash -c /bin/bash -c 'set +o histexpand; : "${RUNNER_TOOL_CACHE:?RUNNER_TOOL_CACHE must be set}"; GH_AW_TOOL_CACHE="$RUNNER_TOOL_CACHE"; export PATH="$(find "$GH_AW_TOOL_CACHE" -maxdepth 5 -type d -name bin 2>/dev/null | tr '\''\n'\'' '\'':'\'')$PATH"; [ -n "$GOROOT" ] && export PATH="$GOROOT/bin:$PATH" || true; [ -n "$ERLANG_HOME" ] && export PATH="$ERLANG_HOME/bin:$PATH" || true && GH_AW_NODE_EXEC="${GH_AW_NODE_BIN:-}"; if [ -z "$GH_AW_NODE_EXEC" ] || [ ! -x "$GH_AW_NODE_EXEC" ]; then GH_AW_NODE_EXEC="$(command -v node 2>/dev/null || true)"; fi; if [ -z "$GH_AW_NODE_EXEC" ]; then echo "node runtime missing on this runner — check runtimes.node in workflow YAML" >&2; exit 127; fi; GH_AW_NPM_GLOBAL_ROOT="$(npm root -g 2>/dev/null || true)"; if [ -n "$GH_AW_NPM_GLOBAL_ROOT" ]; then export NODE_PATH="${GH_AW_NPM_GLOBAL_ROOT}${NODE_PATH:+:${NODE_PATH}}"; fi; "$GH_AW_NODE_EXEC" ${RUNNER_TEMP}/gh-aw/actions/copilot_harness.cjs /usr/local/bin/copilot --add-dir /tmp/gh-aw/ --log-level all --log-dir /tmp/gh-aw/sandbox/agent/logs/ --disable-builtin-mcps --no-ask-user --allow-all-tools --add-dir "${GITHUB_WORKSPACE}" --prompt-file /tmp/gh-aw/aw-prompts/prompt.txt'
+
+[entrypoint] Chroot mode: running command inside host filesystem (/host)
+[entrypoint] Mounted procfs at /host/proc (nosuid,nodev,noexec,hidepid=2)
+[entrypoint] One-shot token library copied to chroot at /tmp/awf-lib/one-shot-token.so
+[entrypoint] System CA bundle found at /etc/ssl/certs/ca-certificates.crt (already accessible in chroot)
+[entrypoint] DNS configuration created in chroot (/host/etc/resolv.conf)
+[entrypoint] Running as host user: runner (UID: 1001)
+[entrypoint] Chroot working directory: /home/runner/work/opentelemetry/opentelemetry
+[entrypoint] Using host PATH for chroot
+[entrypoint] Adding JAVA_HOME/bin to PATH: /usr/lib/jvm/temurin-17-jdk-amd64/bin
+[entrypoint] DNS configuration will be removed on exit
+[entrypoint] Transferred /host/tmp/gh-aw ownership to chroot user (1001:1001)
+[entrypoint] Node.js available via GH_AW_NODE_BIN: /opt/hostedtoolcache/node/24.18.0/x64/bin/node
+[copilot-harness] starting: command=/usr/local/bin/copilot maxRetries=3 initialDelayMs=5000 backoffMultiplier=2 maxDelayMs=60000 nodeVersion=v24.18.0 platform=linux
+[copilot-harness] pre-flight: command is accessible and executable: /usr/local/bin/copilot
+[copilot-harness] resolved --prompt-file: path=/tmp/gh-aw/aw-prompts/prompt.txt size=6632B
+[copilot-harness] awf-reflect: fetching http://api-proxy:10000/reflect (timeout=60000ms)
+[entrypoint] Unsetting sensitive tokens from parent shell environment...
+[entrypoint] Unset COPILOT_GITHUB_TOKEN from /proc/1/environ
+[entrypoint] Unset COPILOT_PROVIDER_API_KEY from /proc/1/environ
+[copilot-harness] awf-reflect: saved 10866B to /tmp/gh-aw/sandbox/firewall/awf-reflect.json
+[copilot-harness] attempt 1: spawning: /usr/local/bin/copilot --add-dir /tmp/gh-aw/ --log-level all --log-dir /tmp/gh-aw/sandbox/agent/logs/ --disable-builtin-mcps --no-ask-user --allow-all-tools --add-dir /home/runner/work/opentelemetry/opentelemetry -p <redact
+[copilot-harness] attempt 1: process started (pid=111)
+● Inspect agent output and patch (shell)
+  │ cat /tmp/gh-aw/threat-detection/agent_output.json; echo ---; cat
+  │ /tmp/gh-aw/threat-detection/aw-docs-agent-issue-648-histogram-temporality.patch
+  └ 46 lines…
+
+Legitimate documentation update matching the workflow's purpose. No injection, secrets, or malicious code found.
+
+THREAT_DETECTION_RESULT:{"prompt_injection":false,"secret_leak":false,"malicious_patch":false,"reasons":[]}
+
+
+
+Changes    +0 -0
+Duration   8s
+Tokens     ↑ 67.5k (30.1k cached) • ↓ 241
+Resume     copilot --resume=4cd08d4d-7b31-4acb-846e-c3fabca7a129
+[copilot-harness] attempt 1: process exit event exitCode=0
+[copilot-harness] attempt 1: process closed exitCode=0 duration=8s stdout=442B stderr=146B hasOutput=true
+[copilot-harness] success on attempt 1: totalDuration=8s
+[copilot-harness] awf-reflect: fetching http://api-proxy:10000/reflect (timeout=60000ms)
+[copilot-harness] awf-reflect: saved 11021B to /tmp/gh-aw/sandbox/firewall/awf-reflect.json
+[copilot-harness] done: exitCode=0 totalDuration=9s
+[INFO] Stopping containers...
+ Container awf-agent  Stopping
+ Container awf-agent  Stopped
+ Container awf-agent  Removing
+ Container awf-agent  Removed
+ Container awf-api-proxy  Stopping
+ Container awf-squid  Stopping
+ Container awf-api-proxy  Stopped
+ Container awf-api-proxy  Removing
+ Container awf-api-proxy  Removed
+ Container awf-squid  Stopped
+ Container awf-squid  Removing
+ Container awf-squid  Removed
+ Network awf-1785848149914_awf-ext  Removing
+ Network awf-net  Removing
+ Network awf-1785848149914_awf-ext  Removed
+ Network awf-net  Removed
+[SUCCESS] Containers stopped successfully
+[INFO] Agent session state preserved at: /tmp/awf-agent-session-state-1785848149914
+[INFO] API proxy logs available at: /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs
+[INFO] CLI proxy logs available at: /tmp/gh-aw/sandbox/firewall/logs/cli-proxy-logs
+[INFO] Squid logs available at: /tmp/gh-aw/sandbox/firewall/logs
+[INFO] Audit artifacts available at: /tmp/gh-aw/sandbox/firewall/audit
+[SUCCESS] Command completed successfully
+Process exiting with code: 0

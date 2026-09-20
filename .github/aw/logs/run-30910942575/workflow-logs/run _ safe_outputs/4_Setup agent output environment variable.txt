@@ -1,0 +1,63 @@
+﻿2026-08-04T12:56:41.7807164Z ##[group]Run mkdir -p /tmp/gh-aw/
+2026-08-04T12:56:41.7811341Z [36;1mmkdir -p /tmp/gh-aw/[0m
+2026-08-04T12:56:41.7812209Z [36;1mfind "/tmp/gh-aw/" -type f -print[0m
+2026-08-04T12:56:41.7813130Z [36;1mecho "GH_AW_AGENT_OUTPUT=/tmp/gh-aw/agent_output.json" >> "$GITHUB_OUTPUT"[0m
+2026-08-04T12:56:41.7822509Z shell: /usr/bin/bash -e {0}
+2026-08-04T12:56:41.7823166Z env:
+2026-08-04T12:56:41.7823653Z   GH_AW_AGENT_AIC: 36.562
+2026-08-04T12:56:41.7824203Z   GH_AW_AIC: 36.562
+2026-08-04T12:56:41.7826840Z   GH_AW_AMBIENT_CONTEXT: 10949
+2026-08-04T12:56:41.7827999Z   GH_AW_CALLER_WORKFLOW_ID: elastic/opentelemetry/docs-agent-experimental
+2026-08-04T12:56:41.7828882Z   GH_AW_DETECTION_CONCLUSION: success
+2026-08-04T12:56:41.7829523Z   GH_AW_DETECTION_REASON: 
+2026-08-04T12:56:41.7830072Z   GH_AW_EFFECTIVE_TOKENS: 
+2026-08-04T12:56:41.7830620Z   GH_AW_ENGINE_ID: copilot
+2026-08-04T12:56:41.7831185Z   GH_AW_ENGINE_MODEL: claude-sonnet-5
+2026-08-04T12:56:41.7831792Z   GH_AW_ENGINE_VERSION: 1.0.75
+2026-08-04T12:56:41.7832425Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:56:41.7832986Z   GH_AW_SAFE_OUTPUTS_STAGED: true
+2026-08-04T12:56:41.7833589Z   GH_AW_THREAT_DETECTION_AIC: 9.593
+2026-08-04T12:56:41.7834190Z   GH_AW_WORKFLOW_EMOJI: 🧪
+2026-08-04T12:56:41.7834785Z   GH_AW_WORKFLOW_ID: docs-agent-experimental
+2026-08-04T12:56:41.7835485Z   GH_AW_WORKFLOW_NAME: docs-agent-experimental
+2026-08-04T12:56:41.7836653Z   GH_AW_WORKFLOW_SOURCE_URL: https://github.com/elastic/opentelemetry/blob/main/.github/workflows/docs-agent-experimental.md
+2026-08-04T12:56:41.7838120Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:56:41.7838900Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: 516bfbb80227e48e
+2026-08-04T12:56:41.7839595Z   GITHUB_AW_OTEL_JOB_START_MS: 1785848200699
+2026-08-04T12:56:41.7840225Z ##[endgroup]
+2026-08-04T12:56:41.8408591Z /tmp/gh-aw/aw-prompts/prompt.txt
+2026-08-04T12:56:41.8410186Z /tmp/gh-aw/github_rate_limits.jsonl
+2026-08-04T12:56:41.8410863Z /tmp/gh-aw/pre-agent-audit.txt
+2026-08-04T12:56:41.8411452Z /tmp/gh-aw/otel.jsonl
+2026-08-04T12:56:41.8412043Z /tmp/gh-aw/agent_usage.json
+2026-08-04T12:56:41.8412607Z /tmp/gh-aw/awf-config.json
+2026-08-04T12:56:41.8413269Z /tmp/gh-aw/sandbox/agent/logs/process-1785847987346-125.log
+2026-08-04T12:56:41.8414076Z /tmp/gh-aw/sandbox/firewall/awf-reflect.json
+2026-08-04T12:56:41.8414870Z /tmp/gh-aw/sandbox/firewall/audit/docker-compose.redacted.yml
+2026-08-04T12:56:41.8415720Z /tmp/gh-aw/sandbox/firewall/audit/awf-resolved-config.json
+2026-08-04T12:56:41.8416474Z /tmp/gh-aw/sandbox/firewall/audit/squid.conf
+2026-08-04T12:56:41.8417201Z /tmp/gh-aw/sandbox/firewall/audit/policy-manifest.json
+2026-08-04T12:56:41.8418201Z /tmp/gh-aw/sandbox/firewall/logs/audit.jsonl
+2026-08-04T12:56:41.8418887Z /tmp/gh-aw/sandbox/firewall/logs/cache.log
+2026-08-04T12:56:41.8419568Z /tmp/gh-aw/sandbox/firewall/logs/access.log
+2026-08-04T12:56:41.8420343Z /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs/models.json
+2026-08-04T12:56:41.8421270Z /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs/token-tracker-audit.jsonl
+2026-08-04T12:56:41.8422253Z /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs/token-usage.jsonl
+2026-08-04T12:56:41.8423228Z /tmp/gh-aw/sandbox/firewall/logs/api-proxy-logs/otel.jsonl
+2026-08-04T12:56:41.8424320Z /tmp/gh-aw/sandbox/firewall/logs/cli-proxy-logs/access.jsonl
+2026-08-04T12:56:41.8425197Z /tmp/gh-aw/aw-docs-agent-issue-648-histogram-temporality.bundle
+2026-08-04T12:56:41.8425979Z /tmp/gh-aw/mcp-logs/safeoutputs/server.log
+2026-08-04T12:56:41.8426618Z /tmp/gh-aw/mcp-logs/tools.json
+2026-08-04T12:56:41.8427206Z /tmp/gh-aw/mcp-logs/elastic-docs.log
+2026-08-04T12:56:41.8428025Z /tmp/gh-aw/mcp-logs/gateway.md
+2026-08-04T12:56:41.8428617Z /tmp/gh-aw/mcp-logs/mcp-gateway.log
+2026-08-04T12:56:41.8429216Z /tmp/gh-aw/mcp-logs/proxy.log
+2026-08-04T12:56:41.8429841Z /tmp/gh-aw/mcp-logs/observed-url-domains.json
+2026-08-04T12:56:41.8430507Z /tmp/gh-aw/mcp-logs/stderr.log
+2026-08-04T12:56:41.8431085Z /tmp/gh-aw/mcp-logs/safeoutputs.log
+2026-08-04T12:56:41.8431697Z /tmp/gh-aw/mcp-logs/start-gateway.log
+2026-08-04T12:56:41.8432510Z /tmp/gh-aw/mcp-logs/rpc-messages.jsonl
+2026-08-04T12:56:41.8433271Z /tmp/gh-aw/aw-docs-agent-issue-648-histogram-temporality.patch
+2026-08-04T12:56:41.8434028Z /tmp/gh-aw/safeoutputs.jsonl
+2026-08-04T12:56:41.8434624Z /tmp/gh-aw/agent-stdio.log
+2026-08-04T12:56:41.8435175Z /tmp/gh-aw/agent_output.json

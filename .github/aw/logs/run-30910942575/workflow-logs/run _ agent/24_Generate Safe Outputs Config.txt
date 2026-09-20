@@ -1,0 +1,20 @@
+﻿2026-08-04T12:52:35.6674597Z ##[group]Run mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
+2026-08-04T12:52:35.6676272Z [36;1mmkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"[0m
+2026-08-04T12:52:35.6677037Z [36;1mmkdir -p /tmp/gh-aw/safeoutputs[0m
+2026-08-04T12:52:35.6677851Z [36;1mmkdir -p /tmp/gh-aw/mcp-logs/safeoutputs[0m
+2026-08-04T12:52:35.6678883Z [36;1mcat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_eeb2ef0a69000b55_EOF'[0m
+2026-08-04T12:52:35.6688556Z [36;1m{"add_comment":{"discussions":false,"max":2,"target":"648"},"add_labels":{"allowed":["docs-agent-declined"],"max":1,"target":"648"},"create_pull_request":{"allowed_files":["README.md","agentic-workflows/**/*.md","aws/**/*.md","changelog/**/*.md","codex/**/*.md","docs-builder/**/*.md","git/**/*.md","github/**/*.md","openapi/**/*.md","slack/**/*.md","vale/**/*.md","docs/**","404.md","archive.md","index.md","versions.md","docset.yml","redirects.yml","cloud-account/**","contribute-docs/**","deploy-manage/**","explore-analyze/**","extend/**","get-started/**","manage-data/**","reference/**","release-notes/**","serverless/**","solutions/**","troubleshoot/**"],"auto_close_issue":false,"draft":true,"expires":336,"fallback_as_issue":true,"labels":["automation","docs-agent"],"max":1,"max_patch_files":20,"max_patch_size":512,"protect_top_level_dot_folders":true,"protected_files":["package.json","bun.lockb","bunfig.toml","deno.json","deno.jsonc","deno.lock","global.json","NuGet.Config","Directory.Packages.props","mix.exs","mix.lock","go.mod","go.sum","stack.yaml","stack.yaml.lock","pom.xml","build.gradle","build.gradle.kts","settings.gradle","settings.gradle.kts","gradle.properties","package-lock.json","yarn.lock","pnpm-lock.yaml","npm-shrinkwrap.json","requirements.txt","Pipfile","Pipfile.lock","pyproject.toml","setup.py","setup.cfg","Gemfile","Gemfile.lock","uv.lock","CODEOWNERS","DESIGN.md","README.md","CONTRIBUTING.md","CHANGELOG.md","SECURITY.md","CODE_OF_CONDUCT.md","AGENTS.md","CLAUDE.md","GEMINI.md"],"protected_files_policy":"request_review","title_prefix":"[docs-agent] "},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{}}[0m
+2026-08-04T12:52:35.6696085Z [36;1mGH_AW_SAFE_OUTPUTS_CONFIG_eeb2ef0a69000b55_EOF[0m
+2026-08-04T12:52:35.6742065Z shell: /usr/bin/bash -e {0}
+2026-08-04T12:52:35.6742624Z env:
+2026-08-04T12:52:35.6743164Z   DEFAULT_BRANCH: main
+2026-08-04T12:52:35.6743759Z   GH_AW_ASSETS_ALLOWED_EXTS: 
+2026-08-04T12:52:35.6744314Z   GH_AW_ASSETS_BRANCH: 
+2026-08-04T12:52:35.6744919Z   GH_AW_ASSETS_MAX_SIZE_KB: 0
+2026-08-04T12:52:35.6745398Z   GH_AW_MCP_LOG_DIR: /tmp/gh-aw/mcp-logs/safeoutputs
+2026-08-04T12:52:35.6746285Z   GH_AW_RUNTIME_FEATURES: 
+2026-08-04T12:52:35.6746906Z   GH_AW_WORKFLOW_ID_SANITIZED: docsagentexperimental
+2026-08-04T12:52:35.6747467Z   GITHUB_AW_OTEL_TRACE_ID: d01b5494a0b998f6aae47db61d6abe06
+2026-08-04T12:52:35.6748077Z   GITHUB_AW_OTEL_PARENT_SPAN_ID: 4e867a969570a95e
+2026-08-04T12:52:35.6748529Z   GITHUB_AW_OTEL_JOB_START_MS: 1785847925783
+2026-08-04T12:52:35.6749055Z ##[endgroup]
