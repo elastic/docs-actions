@@ -368,6 +368,10 @@ Apply the six criteria in order:
 
 2. **Technical accuracy** — Correctness, SME evidence, code sample validity, and precise prerequisites. Use the pre-fetched Vale output as one signal. When the change references a code PR or commit, check that parameter names, defaults, and behavior match.
 
+   **Verify before you post.** Before you post an inline comment under this criterion, call `elastic-docs.search_docs` for the claim you are challenging. Read the most on-topic hit with `elastic-docs.get_document_by_url` and `includeBody: true`. If you have no search result for the claim, do not post an inline comment for it: put the finding in the review body instead. An unverified technical claim is a suggestion, not a finding.
+
+   This applies to product names, API endpoints, default values, retention periods, port numbers, required privileges, and UI navigation paths. Your training data is out of date on all of them.
+
 3. **Applicability** — `applies_to` tags, cumulative structure, markup correctness, and deployment types. For validity judgments, verify against the repository's checked-in schema or the published cumulative-docs guidance fetched during this run. Do not rely on training knowledge for valid keys or lifecycle values. If you cannot verify, do not report.
 
 4. **Maintainability** — Single source of truth (use `elastic-docs.find_related_docs` or `elastic-docs.search_docs` to check for cross-page duplication when a section embeds reference material), repository hygiene (redirect entries for renamed or deleted pages), and high-maintenance content.
