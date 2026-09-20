@@ -212,10 +212,11 @@ Before any other research, use the `elastic-docs` MCP server:
 3. Call `get_document_by_url` for every docs URL that appears in the issue, its comments, or the
    linked changes, to check whether that page needs updating.
 
-Do not call `get_file_contents` or read any repository source file until you have recorded at
-least one `search_docs` result set. The published documentation is the corpus you are scoping
-against; repository files are secondary evidence for confirming details. A run that reached this
-step but made no `search_docs` call cannot be 🟢.
+Do not call `get_file_contents` on a repository source file until you have recorded at least one
+`search_docs` result set. The `.github/CODEOWNERS` read in Step 1 is the one exception: it supplies
+path vocabulary, not evidence, so it may happen before any search. The published documentation is
+the corpus you are scoping against; repository files are secondary evidence for confirming details.
+A run that reached this step but made no `search_docs` call cannot be 🟢.
 
 ## Step 5 — Verify the issue premise
 
