@@ -29,7 +29,7 @@ engine:
   # reasoning field, and COPILOT_MODEL_EFFORT is an unimplemented feature request
   # (github/copilot-cli#2559). COPILOT_OFFLINE bypasses the CLI's internal model registry,
   # which rejects effort for BYOK slugs it does not know (github/copilot-cli#4012, #3119).
-  args: ["--effort", "max"]
+  args: ["--effort", "medium"]
   env:
     COPILOT_PROVIDER_BASE_URL: https://openrouter.ai/api/v1
     COPILOT_PROVIDER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
