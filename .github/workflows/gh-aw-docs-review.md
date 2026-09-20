@@ -20,9 +20,11 @@ skills:
 model: sonnet
 engine:
   id: claude
-  # A/B against experiment/docs-review-luna: identical prompt, including the grep -n anchoring
-  # rule and the elastic.co domain rule. The engine block is the only difference, so any
-  # change in findings is attributable to the model.
+  # Inline arm: same model and engine as experiment/docs-review-sonnet-ab. The only change is
+  # that the six rule sets are Read into the orchestrator's context instead of invoked through
+  # the Skill tool, so Claude stops spawning one forked subagent per skill per file. Tests
+  # whether losing per-criterion isolation costs recall, and how much of the 10m41s was fork
+  # serialisation rather than inference.
   permission-mode: bypassPermissions
   args: ["--disallowed-tools", "Edit(./**)"]
   env:
@@ -338,20 +340,24 @@ Skip:
 
 Review each eligible file by applying the six criteria from the imported `review-criteria.md` rubric. The rubric is the authoritative source for every criterion. Where a criterion references the network (e.g., `find_related_docs`, MCP tool calls), perform those checks here.
 
-Before reviewing the changed files, invoke these skills with the `Skill` tool, using the directory names below. Each skill deepens coverage for its criterion and may surface findings that pure reasoning would miss:
+Before reviewing the changed files, read these rule sets into your own context with the `Read` tool, once each, at the start of the run. Each deepens coverage for its criterion and may surface findings that pure reasoning would miss:
 
-- `Skill({skill: "docs-check-style", args: "<file-path>. Do not run vale; its JSON output for this file is already at /tmp/gh-aw/docs-review-data/vale.json, keyed by /tmp/gh-aw/docs-review-data/scope/<file-path>. Read that file."})` (Language and Style): once per eligible file.
-- `Skill({skill: "docs-flag-jargon-skill", args: "<file-path>"})` (Language): once per eligible file, for jargon, outdated terms, and unexplained acronyms.
-- `Skill({skill: "docs-frontmatter-audit", args: "<file-path>"})` (Applicability): once per eligible file, for frontmatter quality.
-- `Skill({skill: "docs-content-type-checker", args: "<file-path>"})` (User Focus): once per eligible file, for content-type fit and page structure.
-- `Skill({skill: "docs-applies-to-tagging", args: "<file-path>. Validate only: report every issue with its line number and the corrected syntax. Do not edit any file."})` (Applicability): once per eligible file, for `applies_to` validity and lifecycle scope.
-- `docs-check-contradictions` (Technical accuracy): covered separately in Step 4.
+- `.claude/skills/docs-check-style/SKILL.md` (Language and Style). Do not run vale: its JSON output is already at `/tmp/gh-aw/docs-review-data/vale.json`, keyed by `/tmp/gh-aw/docs-review-data/scope/<file-path>`.
+- `.claude/skills/docs-flag-jargon-skill/SKILL.md` (Language): jargon, outdated terms, and unexplained acronyms.
+- `.claude/skills/docs-frontmatter-audit/SKILL.md` (Applicability): frontmatter quality.
+- `.claude/skills/docs-content-type-checker/SKILL.md` (User Focus): content-type fit and page structure.
+- `.claude/skills/docs-applies-to-tagging/SKILL.md` (Applicability): `applies_to` validity and lifecycle scope.
+- `.claude/skills/docs-check-contradictions/SKILL.md` (Technical accuracy): also used in Step 4.
 
-Skills must not change the working tree. If a skill reports that it edited or fixed a file, run `git checkout -- <file-path>` to restore it, and treat each change it described as a finding to report, not as resolved.
+**Do not use the `Skill` tool in this workflow.** Read each `SKILL.md` as a file and apply its rules yourself, across every eligible file. Read each one once for the whole run, not once per file: the rules do not change between files.
 
-If a skill invocation fails or returns no output, do not retry or stall. Record it in the `Notes` section of the review body as `Not checked by <skill>: <reason>`, then continue reviewing that criterion with the rubric alone. Incorporate skill findings into the relevant criterion's inline comments and summary. Do not duplicate a finding that Vale or a skill already reported.
+Apply every rule set to every eligible file. Reading the rules into one context is what lets you find issues that span sections or files — an internal contradiction between two statements in the same page, or the same defect repeated across pages. Report those explicitly; they are higher value than single-line nits.
 
-The skills fetch the published style, content-type, and cumulative-docs guidance they need through the Elastic docs MCP server; do not fetch those pages again for the same purpose. Use `elastic-docs.get_document_by_url` yourself only when a finding depends on a page no skill covered:
+Applying these rules must not change the working tree. If you edit a file, run `git checkout -- <file-path>` to restore it, and treat the change as a finding to report, not as resolved.
+
+If a rule set cannot be read, do not retry or stall. Record it in the `Notes` section of the review body as `Not checked by <name>: <reason>`, then continue reviewing that criterion with the rubric alone. Do not duplicate a finding that Vale already reported.
+
+Each rule set names the published style, content-type, and cumulative-docs guidance it depends on. Fetch a page through the Elastic docs MCP server when a rule set requires it or when a finding depends on it, and do not fetch the same page twice:
 
 - Content types: `/docs/contribute-docs/content-types/overviews`, `/docs/contribute-docs/content-types/how-tos`, `/docs/contribute-docs/content-types/tutorials`, `/docs/contribute-docs/content-types/troubleshooting`, `/docs/contribute-docs/content-types/changelogs`.
 - Cumulative docs: `/docs/contribute-docs/how-to/cumulative-docs/guidelines` and `/docs/contribute-docs/how-to/cumulative-docs/reference`.
@@ -384,7 +390,7 @@ Treat this as a PR review, not a full repository audit:
 
 ## Step 4: Check for contradictions
 
-After completing Step 3, run the contradictions skill on the eligible changed files with `Skill({skill: "docs-check-contradictions", args: "<file-path>"})` to find places in the existing docs — both in the local repo and in published Elastic docs — that contradict or conflict with the new or updated content.
+After completing Step 3, apply the `docs-check-contradictions` rules you read in Step 3 to the eligible changed files, to find places in the existing docs — both in the local repo and in published Elastic docs — that contradict or conflict with the new or updated content.
 
 Call the skill once for each eligible file, passing the file path as the argument. If there are many eligible files, group them by directory and call the skill once per directory instead.
 
