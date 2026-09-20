@@ -120,6 +120,7 @@ permissions:
   contents: read
   discussions: write
   pull-requests: write
+  copilot-requests: write
 
 jobs:
   run:
