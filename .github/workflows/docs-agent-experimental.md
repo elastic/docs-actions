@@ -12,10 +12,10 @@ imports:
     with:
       target: claude
       packages:
-        - elastic/elastic-docs-skills/skills/authoring/content-type-checker
-        - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
+        - elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker
+        - elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging
         - elastic/elastic-docs-skills/skills/authoring/docs-syntax-help
-        - elastic/elastic-docs-skills/skills/authoring/frontmatter-description
+        - elastic/elastic-docs-skills/skills/authoring/docs-frontmatter-description
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md

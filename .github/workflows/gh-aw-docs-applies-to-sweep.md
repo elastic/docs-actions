@@ -11,7 +11,7 @@ imports:
     with:
       target: claude
       packages:
-        - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
+        - elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
