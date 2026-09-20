@@ -35,6 +35,36 @@
       "version": "v7.0.1",
       "sha": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
     },
+    "elastic/elastic-docs-skills/skills/authoring/applies-to-tagging@main": {
+      "repo": "elastic/elastic-docs-skills/skills/authoring/applies-to-tagging",
+      "version": "main",
+      "sha": "44d2d7a5090ff9beda7097c9a75d6af84c816d35"
+    },
+    "elastic/elastic-docs-skills/skills/authoring/content-type-checker@main": {
+      "repo": "elastic/elastic-docs-skills/skills/authoring/content-type-checker",
+      "version": "main",
+      "sha": "44d2d7a5090ff9beda7097c9a75d6af84c816d35"
+    },
+    "elastic/elastic-docs-skills/skills/review/check-contradictions@main": {
+      "repo": "elastic/elastic-docs-skills/skills/review/check-contradictions",
+      "version": "main",
+      "sha": "44d2d7a5090ff9beda7097c9a75d6af84c816d35"
+    },
+    "elastic/elastic-docs-skills/skills/review/docs-check-style@main": {
+      "repo": "elastic/elastic-docs-skills/skills/review/docs-check-style",
+      "version": "main",
+      "sha": "44d2d7a5090ff9beda7097c9a75d6af84c816d35"
+    },
+    "elastic/elastic-docs-skills/skills/review/flag-jargon-skill@main": {
+      "repo": "elastic/elastic-docs-skills/skills/review/flag-jargon-skill",
+      "version": "main",
+      "sha": "44d2d7a5090ff9beda7097c9a75d6af84c816d35"
+    },
+    "elastic/elastic-docs-skills/skills/review/frontmatter-audit@main": {
+      "repo": "elastic/elastic-docs-skills/skills/review/frontmatter-audit",
+      "version": "main",
+      "sha": "44d2d7a5090ff9beda7097c9a75d6af84c816d35"
+    },
     "github/gh-aw-actions/setup-cli@v0.88.7": {
       "repo": "github/gh-aw-actions/setup-cli",
       "version": "v0.88.7",
