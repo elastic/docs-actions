@@ -332,12 +332,14 @@ Review each eligible file by applying the six criteria from the imported `review
 
 Before reviewing the changed files, invoke these skills with the `Skill` tool, using the directory names below. Each skill deepens coverage for its criterion and may surface findings that pure reasoning would miss:
 
-- `Skill({skill: "docs-check-style", args: "<file-path>"})` (Language and Style): once per eligible file.
+- `Skill({skill: "docs-check-style", args: "<file-path>. Vale is not installed; its JSON output for this file is already at /tmp/gh-aw/docs-review-data/vale.json, keyed by /tmp/gh-aw/docs-review-data/scope/<file-path>. Read it instead of running vale."})` (Language and Style): once per eligible file.
 - `Skill({skill: "flag-jargon-skill", args: "<file-path>"})` (Language): once per eligible file, for jargon, outdated terms, and unexplained acronyms.
 - `Skill({skill: "frontmatter-audit", args: "<file-path>"})` (Applicability): once per eligible file, for frontmatter quality.
 - `Skill({skill: "content-type-checker", args: "<file-path>"})` (User Focus): once per eligible file, for content-type fit and page structure.
-- `Skill({skill: "applies-to-tagging", args: "<file-path>"})` (Applicability): once per eligible file, for `applies_to` validity and lifecycle scope.
+- `Skill({skill: "applies-to-tagging", args: "<file-path>. Validate only: report every issue with its line number and the corrected syntax. Do not edit any file."})` (Applicability): once per eligible file, for `applies_to` validity and lifecycle scope.
 - `check-contradictions` (Technical accuracy): covered separately in Step 4.
+
+Skills must not change the working tree. If a skill reports that it edited or fixed a file, run `git checkout -- <file-path>` to restore it, and treat each change it described as a finding to report, not as resolved.
 
 If a skill invocation fails or returns no output, do not retry or stall. Record it in the `Notes` section of the review body as `Not checked by <skill>: <reason>`, then continue reviewing that criterion with the rubric alone. Incorporate skill findings into the relevant criterion's inline comments and summary. Do not duplicate a finding that Vale or a skill already reported.
 

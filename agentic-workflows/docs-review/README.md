@@ -92,13 +92,16 @@ The review rubric (`review-criteria.md`) is compiled into the workflow and cover
 | Language | Grammar, plain language, jargon, variables |
 | Style | Voice and tense, formatting, admonitions, accessibility |
 
-At runtime, the workflow imports these skills through APM as implementation tools for the relevant criteria:
+At runtime, the workflow installs these `elastic/elastic-docs-skills` skills through the gh-aw `skills:` frontmatter key and the agent invokes each one with the `Skill` tool as an implementation tool for the relevant criterion:
 
 - `docs-check-style` (Language and Style criteria).
 - `docs-flag-jargon-skill` (Language criterion).
 - `docs-frontmatter-audit` (Applicability criterion).
 - `docs-content-type-checker` (User Focus criterion).
 - `docs-applies-to-tagging` (Applicability criterion).
+- `docs-check-contradictions` (Technical accuracy criterion).
+
+The skills are pinned to `elastic-docs-skills@main` at compile time; the weekly recompile moves the pin. The Claude engine runs with `permission-mode: bypassPermissions` because gh-aw never adds the `Skill` tool to Claude's allowlist; the MCP gateway `allowed:` lists and the network firewall remain the enforced boundaries.
 
 The workflow uses the Elastic docs MCP server for targeted verification, such as cross-page duplication checks, published cumulative-docs guidance, and sibling-page context. It noops or skips a finding when it cannot verify the evidence.
 
