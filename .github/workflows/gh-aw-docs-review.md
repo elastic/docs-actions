@@ -17,7 +17,7 @@ skills:
   - elastic/elastic-docs-skills/skills/review/docs-check-contradictions@main
   - elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker@main
   - elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging@main
-model: openai/gpt-5.6-sol
+model: openai/gpt-5.6-luna
 engine:
   id: codex
   # Codex harness arm. codex takes reasoning effort as config, not a CLI flag, and its
