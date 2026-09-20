@@ -20,9 +20,17 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
+skills:
+  - elastic/elastic-docs-skills/skills/review/docs-check-style@952fbdd6e1d64541fbdab9c06aff6a5fade5e924
+  - elastic/elastic-docs-skills/skills/review/flag-jargon-skill@952fbdd6e1d64541fbdab9c06aff6a5fade5e924
+  - elastic/elastic-docs-skills/skills/review/frontmatter-audit@952fbdd6e1d64541fbdab9c06aff6a5fade5e924
+  - elastic/elastic-docs-skills/skills/review/check-contradictions@952fbdd6e1d64541fbdab9c06aff6a5fade5e924
+  - elastic/elastic-docs-skills/skills/authoring/content-type-checker@952fbdd6e1d64541fbdab9c06aff6a5fade5e924
+  - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging@952fbdd6e1d64541fbdab9c06aff6a5fade5e924
 model: sonnet
 engine:
   id: claude
+  permission-mode: bypassPermissions
   env:
     ANTHROPIC_BASE_URL: https://openrouter.ai/api
     ANTHROPIC_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
