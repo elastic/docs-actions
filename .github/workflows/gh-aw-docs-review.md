@@ -17,29 +17,18 @@ skills:
   - elastic/elastic-docs-skills/skills/review/docs-check-contradictions@main
   - elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker@main
   - elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging@main
-model: openai/gpt-5.6-luna
+model: sonnet
 engine:
-  id: copilot
-  # Luna is an OpenAI model, so this runs Copilot BYOK against OpenRouter rather than the
-  # Claude engine. permission-mode and --disallowed-tools are Claude Code flags and do not
-  # exist here, so the Edit(./**) write guard is gone: the remaining protection is that the
-  # skills themselves default to report-only since elastic-docs-skills#152.
-  # The baseline Luna run sent `"reasoning": {"summary": "auto"}` with no effort key at all
-  # (1,258 reasoning tokens across 11 calls). --effort is the only lever: gh-aw has no
-  # reasoning field, and COPILOT_MODEL_EFFORT is an unimplemented feature request
-  # (github/copilot-cli#2559). COPILOT_OFFLINE bypasses the CLI's internal model registry,
-  # which rejects effort for BYOK slugs it does not know (github/copilot-cli#4012, #3119).
-  args: ["--effort", "max"]
+  id: claude
+  # A/B against experiment/docs-review-luna: identical prompt, including the grep -n anchoring
+  # rule and the elastic.co domain rule. The engine block is the only difference, so any
+  # change in findings is attributable to the model.
+  permission-mode: bypassPermissions
+  args: ["--disallowed-tools", "Edit(./**)"]
   env:
-    COPILOT_PROVIDER_BASE_URL: https://openrouter.ai/api/v1
-    COPILOT_PROVIDER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-    COPILOT_PROVIDER_TYPE: openai
-    COPILOT_PROVIDER_WIRE_API: responses
-    COPILOT_OFFLINE: "true"
-    # Copilot BYOK sends no attribution of its own: the xhigh run landed on OpenRouter with
-    # app_id null, empty origin, and a random-hash session_id. This is the Copilot equivalent
-    # of ANTHROPIC_CUSTOM_HEADERS, same newline-separated "Name: Value" format.
-    COPILOT_PROVIDER_HEADERS: |-
+    ANTHROPIC_BASE_URL: https://openrouter.ai/api
+    ANTHROPIC_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    ANTHROPIC_CUSTOM_HEADERS: |-
       HTTP-Referer: https://github.com/${{ github.repository }}
       X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
       X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
