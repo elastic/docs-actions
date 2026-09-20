@@ -35,6 +35,46 @@
       "version": "v7.0.1",
       "sha": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
     },
+    "elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging@main": {
+      "repo": "elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging",
+      "version": "main",
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
+    },
+    "elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker@main": {
+      "repo": "elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker",
+      "version": "main",
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
+    },
+    "elastic/elastic-docs-skills/skills/authoring/docs-frontmatter-description@main": {
+      "repo": "elastic/elastic-docs-skills/skills/authoring/docs-frontmatter-description",
+      "version": "main",
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
+    },
+    "elastic/elastic-docs-skills/skills/authoring/docs-page-opening-optimizer@main": {
+      "repo": "elastic/elastic-docs-skills/skills/authoring/docs-page-opening-optimizer",
+      "version": "main",
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
+    },
+    "elastic/elastic-docs-skills/skills/authoring/docs-syntax-help@main": {
+      "repo": "elastic/elastic-docs-skills/skills/authoring/docs-syntax-help",
+      "version": "main",
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
+    },
+    "elastic/elastic-docs-skills/skills/review/docs-check-style@main": {
+      "repo": "elastic/elastic-docs-skills/skills/review/docs-check-style",
+      "version": "main",
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
+    },
+    "elastic/elastic-docs-skills/skills/review/docs-flag-jargon-skill@main": {
+      "repo": "elastic/elastic-docs-skills/skills/review/docs-flag-jargon-skill",
+      "version": "main",
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
+    },
+    "elastic/elastic-docs-skills/skills/review/docs-frontmatter-audit@main": {
+      "repo": "elastic/elastic-docs-skills/skills/review/docs-frontmatter-audit",
+      "version": "main",
+      "sha": "4d8ad27dafd097b97c64f1972000fc8f3816b1ec"
+    },
     "github/gh-aw-actions/setup-cli@v0.88.7": {
       "repo": "github/gh-aw-actions/setup-cli",
       "version": "v0.88.7",

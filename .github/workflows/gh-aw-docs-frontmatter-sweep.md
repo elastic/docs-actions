@@ -8,16 +8,13 @@ description: |
 
 inlined-imports: true
 imports:
-  - uses: shared/apm.md
-    with:
-      target: claude
-      packages:
-        - elastic/elastic-docs-skills/skills/review/frontmatter-audit
-        - elastic/elastic-docs-skills/skills/authoring/frontmatter-description
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/findings-contract.md
+skills:
+  - elastic/elastic-docs-skills/skills/review/docs-frontmatter-audit@main
+  - elastic/elastic-docs-skills/skills/authoring/docs-frontmatter-description@main
 model: claude-sonnet-5
 engine:
   id: copilot
