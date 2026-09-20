@@ -30,10 +30,20 @@
       "version": "main",
       "sha": "b079923c3cd4122dc7eef07de48cb90c4113fbf0"
     },
+    "github/gh-aw-actions/setup-cli@v0.88.7": {
+      "repo": "github/gh-aw-actions/setup-cli",
+      "version": "v0.88.7",
+      "sha": "5e508589e03a7757a7e05b26e834292f5445bfb6"
+    },
     "github/gh-aw-actions/setup@v0.88.7": {
       "repo": "github/gh-aw-actions/setup",
       "version": "v0.88.7",
       "sha": "5e508589e03a7757a7e05b26e834292f5445bfb6"
+    },
+    "microsoft/apm-action@v1.10.0": {
+      "repo": "microsoft/apm-action",
+      "version": "v1.10.0",
+      "sha": "d723bb64ed70c135bbaf87d126b721dd2dae0439"
     }
   }
 }
