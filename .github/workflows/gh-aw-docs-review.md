@@ -21,12 +21,12 @@ imports:
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
 skills:
-  - elastic/elastic-docs-skills/skills/review/docs-check-style@952fbdd6e1d64541fbdab9c06aff6a5fade5e924
-  - elastic/elastic-docs-skills/skills/review/flag-jargon-skill@952fbdd6e1d64541fbdab9c06aff6a5fade5e924
-  - elastic/elastic-docs-skills/skills/review/frontmatter-audit@952fbdd6e1d64541fbdab9c06aff6a5fade5e924
-  - elastic/elastic-docs-skills/skills/review/check-contradictions@952fbdd6e1d64541fbdab9c06aff6a5fade5e924
-  - elastic/elastic-docs-skills/skills/authoring/content-type-checker@952fbdd6e1d64541fbdab9c06aff6a5fade5e924
-  - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging@952fbdd6e1d64541fbdab9c06aff6a5fade5e924
+  - elastic/elastic-docs-skills/skills/review/docs-check-style@main
+  - elastic/elastic-docs-skills/skills/review/flag-jargon-skill@main
+  - elastic/elastic-docs-skills/skills/review/frontmatter-audit@main
+  - elastic/elastic-docs-skills/skills/review/check-contradictions@main
+  - elastic/elastic-docs-skills/skills/authoring/content-type-checker@main
+  - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging@main
 model: sonnet
 engine:
   id: claude
