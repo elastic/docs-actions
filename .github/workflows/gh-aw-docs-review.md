@@ -29,13 +29,20 @@ engine:
   # reasoning field, and COPILOT_MODEL_EFFORT is an unimplemented feature request
   # (github/copilot-cli#2559). COPILOT_OFFLINE bypasses the CLI's internal model registry,
   # which rejects effort for BYOK slugs it does not know (github/copilot-cli#4012, #3119).
-  args: ["--effort", "xhigh"]
+  args: ["--effort", "max"]
   env:
     COPILOT_PROVIDER_BASE_URL: https://openrouter.ai/api/v1
     COPILOT_PROVIDER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
     COPILOT_PROVIDER_TYPE: openai
     COPILOT_PROVIDER_WIRE_API: responses
     COPILOT_OFFLINE: "true"
+    # Copilot BYOK sends no attribution of its own: the xhigh run landed on OpenRouter with
+    # app_id null, empty origin, and a random-hash session_id. This is the Copilot equivalent
+    # of ANTHROPIC_CUSTOM_HEADERS, same newline-separated "Name: Value" format.
+    COPILOT_PROVIDER_HEADERS: |-
+      HTTP-Referer: https://github.com/${{ github.repository }}
+      X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
+      X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
 on:
   roles: [admin, maintainer, write]
   workflow_call:
