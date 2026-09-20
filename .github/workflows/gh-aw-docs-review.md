@@ -17,23 +17,18 @@ skills:
   - elastic/elastic-docs-skills/skills/review/docs-check-contradictions@main
   - elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker@main
   - elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging@main
-model: sonnet
+model: openai/gpt-5.6-luna
 engine:
-  id: claude
-  # gh-aw never adds Skill to --allowed-tools; this is the only mode that lets the agent invoke skills.
-  permission-mode: bypassPermissions
-  # Deny rules hold in every mode, including bypassPermissions. Claude consults path rules for
-  # Edit only, so this one rule covers Edit, Write, MultiEdit, and NotebookEdit across the
-  # checkout, for the agent and for any skill it forks. It also covers the file commands and
-  # redirections Claude recognizes in bash, but not a subprocess that opens files itself.
-  args: ["--disallowed-tools", "Edit(./**)"]
+  id: copilot
+  # Luna is an OpenAI model, so this runs Copilot BYOK against OpenRouter rather than the
+  # Claude engine. permission-mode and --disallowed-tools are Claude Code flags and do not
+  # exist here, so the Edit(./**) write guard is gone: the remaining protection is that the
+  # skills themselves default to report-only since elastic-docs-skills#152.
   env:
-    ANTHROPIC_BASE_URL: https://openrouter.ai/api
-    ANTHROPIC_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-    ANTHROPIC_CUSTOM_HEADERS: |-
-      HTTP-Referer: https://github.com/${{ github.repository }}
-      X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
-      X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
+    COPILOT_PROVIDER_BASE_URL: https://openrouter.ai/api/v1
+    COPILOT_PROVIDER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    COPILOT_PROVIDER_TYPE: openai
+    COPILOT_PROVIDER_WIRE_API: responses
 on:
   roles: [admin, maintainer, write]
   workflow_call:
@@ -91,6 +86,10 @@ network:
     - "search.elastic.co"
 strict: false
 safe-outputs:
+  threat-detection:
+    engine:
+      id: copilot
+      model: sonnet
   urls: allowed-or-code-region
   allowed-domains:
     - elastic.co
