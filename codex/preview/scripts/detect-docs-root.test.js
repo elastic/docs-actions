@@ -31,4 +31,24 @@ describe('detectDocsRoot', () => {
   it('falls back for an empty file list', () => {
     assert.equal(detectDocsRoot([], 'docs'), 'docs');
   });
+
+  it('ignores root-level files when inferring the top-level dir', () => {
+    // CHANGELOG.md has no '/' so it must not count as a top-level dir candidate.
+    const files = ['new-docs/guide/page.md', 'CHANGELOG.md'];
+    assert.equal(detectDocsRoot(files, 'docs'), 'new-docs');
+  });
+
+  it('returns empty string for path "." (docs at repo root)', () => {
+    const files = ['new-docs/internal/page.md'];
+    assert.equal(detectDocsRoot(files, '.'), '');
+  });
+
+  it('returns empty string for empty fallback (path: "./")', () => {
+    const files = ['new-docs/internal/page.md'];
+    assert.equal(detectDocsRoot(files, ''), '');
+  });
+
+  it('falls back when only root-level files are present', () => {
+    assert.equal(detectDocsRoot(['CHANGELOG.md'], 'docs'), 'docs');
+  });
 });
