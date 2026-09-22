@@ -252,10 +252,26 @@ jobs:
               return;
             }
 
-            const docsRoot = (process.env.DOCS_PATH || 'docs')
+            const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            // Auto-detect the docs root when the configured root doesn't match
+            // any changed file. This handles repos where docs live in a
+            // non-default directory (e.g. `new-docs/`) without requiring the
+            // caller to always pass the `path` input explicitly.
+            const configuredRoot = (process.env.DOCS_PATH || 'docs')
               .replace(/^\.\//, '')
               .replace(/\/+$/, '');
-            const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const detectDocsRoot = (files, fallback) => {
+              if (files.some(f => f.startsWith(fallback + '/'))) return fallback;
+              const dirs = files.map(f => f.split('/').slice(0, -1));
+              const common = dirs.reduce((acc, parts) => {
+                let i = 0;
+                while (i < acc.length && i < parts.length && acc[i] === parts[i]) i++;
+                return acc.slice(0, i);
+              }, dirs[0] || []);
+              return common.length > 0 ? common.join('/') : fallback;
+            };
+            const docsRoot = detectDocsRoot(changedMdFiles, configuredRoot);
             const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
 
             const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
