@@ -42,7 +42,7 @@ steps:
     with:
       files: ${{ needs.check.outputs.all_changed_files }}
       vale-paths: docs/**
-      vale_version: 3.14.1
+      vale_version: 3.22.0
 ```
 <!--/usage-->
 
