@@ -6,12 +6,14 @@ on:
       - main
     paths:
       - 'codex/preview/**'
+      - '.github/workflows/codex-preview.yml'
       - '.github/workflows/test-codex-preview.yml'
   push:
     branches:
       - main
     paths:
       - 'codex/preview/**'
+      - '.github/workflows/codex-preview.yml'
       - '.github/workflows/test-codex-preview.yml'
 
 jobs:
