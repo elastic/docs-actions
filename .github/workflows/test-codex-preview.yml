@@ -1,0 +1,27 @@
+name: test-codex-preview
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'codex/preview/**'
+      - '.github/workflows/test-codex-preview.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'codex/preview/**'
+      - '.github/workflows/test-codex-preview.yml'
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run detect-docs-root tests
+        run: node --test codex/preview/scripts/detect-docs-root.test.js
