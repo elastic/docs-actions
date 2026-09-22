@@ -202,8 +202,17 @@ jobs:
       - deploy
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
     steps:
+      - name: Checkout docs-actions scripts
+        uses: actions/checkout@v6
+        with:
+          repository: elastic/docs-actions
+          ref: ${{ github.workflow_sha }}
+          sparse-checkout: codex/preview/scripts
+          path: _docs-actions
+          persist-credentials: false
       - name: Comment preview links on PR
         continue-on-error: true
         uses: actions/github-script@v9
@@ -252,10 +261,14 @@ jobs:
               return;
             }
 
-            const docsRoot = (process.env.DOCS_PATH || 'docs')
+            const nodePath = require('path');
+            const { detectDocsRoot } = require(nodePath.join(process.env.GITHUB_WORKSPACE, '_docs-actions/codex/preview/scripts/detect-docs-root.js'));
+            const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            const configuredRoot = (process.env.DOCS_PATH || 'docs')
               .replace(/^\.\//, '')
               .replace(/\/+$/, '');
-            const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const docsRoot = detectDocsRoot(changedMdFiles, configuredRoot);
             const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
 
             const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
