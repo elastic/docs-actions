@@ -201,6 +201,8 @@ safe-outputs:
       steps:
         - name: Check out caller repository
           uses: actions/checkout@v7.0.1
+          with:
+            persist-credentials: false
         - name: Validate and apply project fields
           env:
             GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
