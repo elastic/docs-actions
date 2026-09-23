@@ -357,7 +357,7 @@ Apply every rule set to every eligible file. Reading the rules into one context 
 
 Applying these rules must not change the working tree. If you edit a file, run `git checkout -- <file-path>` to restore it, and treat the change as a finding to report, not as resolved.
 
-If a rule set cannot be read, do not retry or stall. Record it in the `Notes` section of the review body as `Not checked by <name>: <reason>`, then continue reviewing that criterion with the rubric alone. Do not duplicate a finding that Vale already reported.
+If a rule set cannot be read, do not retry or stall. Record it in the `Not checked` bullet under `Review coverage` as `<name>: <reason>`, then continue reviewing that criterion with the rubric alone. Do not duplicate a finding that Vale already reported.
 
 Each rule set names the published style, content-type, and cumulative-docs guidance it depends on. Fetch a page through the Elastic docs MCP server when a rule set requires it or when a finding depends on it, and do not fetch the same page twice:
 
@@ -389,6 +389,8 @@ Treat this as a PR review, not a full repository audit:
 - Do not dump every possible style nit from a whole file solely because one paragraph changed.
 - Do not flag pre-existing unrelated problems in untouched sections unless the PR clearly makes that area worse.
 - Do not duplicate docs build failures, broken-link reports, existing Vale lint comments, or pre-fetched Vale findings with multiple inline review comments for the same underlying issue.
+- Treat a finding that Vale or another existing automated review already reported as fully reported. Do not repeat it in an inline comment or the review body. Do not add a statement such as "No additional issues beyond..." that names or summarizes the existing finding.
+- Do not repeat an inline review finding in the review body. Do not add a summary bullet that says a finding was reported inline or tells the reader to see an inline comment.
 - Treat content-type guidance as a reader-centered heuristic. Report content-type issues only when the mismatch materially makes the page harder to use, conflicts with the surrounding section's established pattern, or risks sending the author toward the wrong kind of documentation.
 - Allow mixed-purpose pages and reasonable structural exceptions. For example, do not object to a prerequisites section on a troubleshooting page solely because the troubleshooting content type does not require one; report it only when the requirements are inaccurate, unsupported, confusing, or disruptive to the troubleshooting flow.
 - If the pull request appears linked to a parent issue, assess whether the issue's documentation ask is fully satisfied, only partially satisfied, or still unsupported by the PR.
@@ -411,9 +413,10 @@ If the MCP server is unavailable, fall back to `WebFetch` on specific published 
 Use the skill's findings as follows:
 
 - **High severity** contradictions: include as inline review comments using `create_pull_request_review_comment`, pointed at the relevant changed line or the nearest changed hunk. Use the skill's "Recommendation" field as the comment body.
-- **Medium and Low severity** contradictions: summarize in the `Contradictions` section of the review body (see review body format). Do not open inline comments for medium/low findings unless they overlap with an existing inline comment slot.
+- **Medium and Low severity** contradictions: include a concise item under `Action required` only when the finding is actionable and material to this PR. Otherwise, omit it. Do not open inline comments for medium/low findings unless they overlap with an existing inline comment slot.
+- **Related docs outside this PR**: when the changed content is correct but your verification finds a directly related page that now contains stale or contradictory information, include only a specific, verified, actionable follow-up in the `Follow-up outside this PR` section. Name the page and the required change. Mark the follow-up as nonblocking. Do not include the verification narrative, search history, or a general cleanup suggestion.
 
-Do not report contradictions the skill found in files outside the configured review scope, in `release-notes/` directories, or in `_snippets/` directories.
+Do not report contradictions the skill found in `release-notes/` directories or `_snippets/` directories. Do not report unrelated problems in files outside the configured review scope. The only exception is a directly related, verified contradiction that qualifies for `Follow-up outside this PR` above.
 
 Report only findings that are:
 
@@ -454,7 +457,7 @@ Treat low-priority nits differently:
 
 - avoid nits unless they are grounded in the pre-fetched Vale output or another explicit review rule in this workflow,
 - do not spend inline comment slots on lower-priority nits when higher-priority issues still need review comments, and
-- summarize any remaining style-guide-based nits in a short `Nits` section of the final review body instead of posting more inline comments.
+- include a remaining actionable style-guide-based nit under `Action required` only when another automated review has not already reported it. Omit all other nits from the final review body.
 
 ## What to skip
 
@@ -462,7 +465,7 @@ Do not report:
 
 - speculative preferences,
 - repository-wide cleanup opportunities,
-- comments about markdown files outside the configured review scope,
+- comments about markdown files outside the configured review scope, except a directly related and verified `Follow-up outside this PR`,
 - broken links, missing anchors, missing image targets, or other link existence issues that the docs build already validates,
 - trailing spaces or trailing whitespace,
 - routine wording suggestions that are not grounded in Vale output, unless the wording creates ambiguity or changes the technical meaning,
@@ -491,22 +494,34 @@ Submit one final review body in this shape:
 ```markdown
 ## Docs review summary
 
-### Criteria
-- User focus: <short result>.
-- Technical accuracy: <short result>.
-- Applicability: <short result>.
-- Maintainability: <short result>.
-- Language: <short result>.
-- Style: <short result>.
-- Issue satisfaction: <Not applicable | Satisfied | Partially satisfied — see below | Not satisfied — see below>.
+### Action required
+- <Optional actionable, cross-cutting finding that does not duplicate an inline comment or another automated review. Omit this section if there are no such findings.>
 
-### Nits
-- <Optional short bullet list of lower-priority, style-guide-based nits that did not merit inline comments. Omit this section if there are no such nits.>
+### Issue satisfaction
+<Satisfied — short confirmation. | Partially satisfied — specific missing requirement. | Not satisfied — specific missing requirement.>
 
-### Notes
-- <Optional short note about anything intentionally skipped or any review boundary that matters.>
+### Follow-up outside this PR
+- <Optional verified, actionable, nonblocking follow-up for a directly related page outside the diff. Omit this section if there are no such follow-ups.>
+
+<details>
+<summary>Review coverage</summary>
+
+- Content type: <short classification and material fit assessment>.
+- Checked: user focus, technical accuracy, applicability, maintainability, language, and style.
+- Not checked: <optional criterion and reason; omit this bullet when all checks completed>.
+
+</details>
 ```
 
-Keep the review body concise. Put file-specific detail into inline comments, not into a long summary.
+Apply these rules to the review body:
+
+- Omit `Action required` when every actionable finding has an inline comment or another automated report.
+- Omit `Issue satisfaction` when no parent issue is linked. Never print `Not applicable`.
+- Keep `Issue satisfaction` visible when a parent issue is linked. Use one short status sentence. For a partial or unsatisfied result, name each missing requirement.
+- Omit `Follow-up outside this PR` unless the follow-up meets the related-docs rule in Step 4.
+- Keep `Review coverage` collapsed. Use it to record the content-type classification and which checks ran, not their zero-finding results.
+- Do not list a criterion merely to say that it passed, found nothing, or produced an inline comment.
+- Do not repeat Vale findings, other automated findings, or inline comments anywhere in the body.
+- Keep the review body concise. Put file-specific detail into inline comments, not into a long summary.
 
 ${{ inputs.additional-instructions }}
