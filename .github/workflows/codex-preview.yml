@@ -209,7 +209,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: elastic/docs-actions
-          ref: ${{ github.workflow_sha }}
+          # github.workflow_sha identifies the caller in a reusable workflow.
+          # The JSON round-trip works around actionlint#647 until actionlint supports this property.
+          ref: ${{ fromJSON(toJSON(job)).workflow_sha }}
           sparse-checkout: codex/preview/scripts
           path: _docs-actions
           persist-credentials: false
