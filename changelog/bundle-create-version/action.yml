@@ -35,6 +35,11 @@ inputs:
   artifact-name:
     description: 'Name for the uploaded artifact (must match bundle-publish artifact-name)'
     default: 'changelog-bundle'
+  description:
+    description: >
+      Intro description written into the generated bundle. Supports {VERSION}, {LIFECYCLE},
+      {OWNER}, and {REPO} placeholders. Overrides bundle.description from changelog.yml.
+    default: ''
   github-token:
     description: 'GitHub token (required to fetch the release and its commit range)'
     default: '${{ github.token }}'
@@ -85,6 +90,7 @@ runs:
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
         STRIP_TITLE_PREFIX: ${{ inputs.strip-title-prefix }}
+        DESCRIPTION: ${{ inputs.description }}
       run: |
         ARGS=(changelog gh-release)
 
@@ -102,6 +108,7 @@ runs:
         [ -n "$VERSION" ] && ARGS+=("$VERSION") || ARGS+=(latest)
         [ -n "$CONFIG" ] && ARGS+=(--config "$CONFIG")
         [ "$STRIP_TITLE_PREFIX" = "true" ] && ARGS+=(--strip-title-prefix)
+        [ -n "$DESCRIPTION" ] && ARGS+=(--description "$DESCRIPTION")
 
         docs-builder "${ARGS[@]}"
 
