@@ -307,7 +307,7 @@ safe-outputs:
               exit 1
             fi
 
-            UPDATES_JSON=$(jq -r '[.items[] | select(.type == "apply_project_fields")][0].updates_json // "[]"' "$GH_AW_AGENT_OUTPUT")
+            UPDATES_JSON=$(jq -r '[.items[] | select(.type == "apply_project_fields")][0] | .["updates-json"] // .updates_json // "[]"' "$GH_AW_AGENT_OUTPUT")
             ANALYSIS=$(jq -r '[.items[] | select(.type == "apply_project_fields")][0].analysis // "No analysis supplied."' "$GH_AW_AGENT_OUTPUT")
 
             jq -e '
