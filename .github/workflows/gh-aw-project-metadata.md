@@ -9,17 +9,13 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-model: haiku
+model: openai/gpt-5.6-luna
 engine:
-  id: claude
+  id: codex
+  config: "          model_reasoning_effort = \"high\"\n          [model_providers.openai-proxy.http_headers]\n          \"HTTP-Referer\" = \"https://github.com/${{ github.repository }}\"\n          \"X-OpenRouter-Title\" = \"${{ github.repository }}/${{ github.workflow }}\"\n          \"X-Session-ID\" = \"${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}\"\n"
   env:
-    ANTHROPIC_BASE_URL: https://openrouter.ai/api
-    ANTHROPIC_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-    ANTHROPIC_CUSTOM_HEADERS: |-
-      HTTP-Referer: https://github.com/${{ github.repository }}
-      X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
-      X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
-    ANTHROPIC_DEFAULT_HAIKU_MODEL: anthropic/claude-haiku-4.5
+    OPENAI_BASE_URL: https://openrouter.ai/api/v1
+    OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
 on:
   workflow_call:
