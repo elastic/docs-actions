@@ -28,6 +28,7 @@ rules:
       - gh-aw-docs-style-sweep.lock.yml
       - gh-aw-docs-typos-sweep.lock.yml
       - gh-aw-issue-auto-triage.lock.yml
+      - gh-aw-project-metadata.lock.yml
       - gh-aw-issue-scope.lock.yml
       - gh-aw-issue-triage.lock.yml
 
@@ -48,5 +49,6 @@ rules:
       - gh-aw-docs-style-sweep.lock.yml
       - gh-aw-docs-typos-sweep.lock.yml
       - gh-aw-issue-auto-triage.lock.yml
+      - gh-aw-project-metadata.lock.yml
       - gh-aw-issue-scope.lock.yml
       - gh-aw-issue-triage.lock.yml
