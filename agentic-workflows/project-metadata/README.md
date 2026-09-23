@@ -49,8 +49,9 @@ Edit the profile before the first run. Keep the first runs in dry-run mode.
 | `PROJECT_TOKEN` | Yes | GitHub App installation token or PAT with project read/write access and issue read access for every eligible repository. |
 
 The normal `GITHUB_TOKEN` cannot read or update organization project fields. Prefer a GitHub App
-installation token. The agent accesses projects through a read-only tool gateway. Only the
-deterministic output job receives the credential directly for field writes.
+installation token. A deterministic preparation step reads the selected project's current schema
+and item values. Only deterministic workflow steps receive the credential directly. The agent
+receives the prepared project context without receiving the credential.
 
 ## Profile
 
@@ -68,8 +69,8 @@ The profile is a versioned YAML file in the caller repository. See
 | `excluded_options` | Optional denylist for a single-select field. |
 | `guidance` | Team-specific evidence and selection rules used by the agent. |
 
-The workflow resolves current field and option IDs from GitHub on every run. Do not store IDs in
-the profile.
+The workflow resolves current fields and options from GitHub on every run. Do not store IDs or
+option lists in the profile.
 
 ## Eligibility and write safeguards
 
