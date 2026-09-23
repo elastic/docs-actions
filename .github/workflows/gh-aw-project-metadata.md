@@ -122,10 +122,10 @@ steps:
       fi
 
       ISSUE_REPOSITORY="$ISSUE_OWNER/$ISSUE_REPO"
+      REPOSITORY_ALLOWED=true
       if ! jq -e --arg repository "$ISSUE_REPOSITORY" \
         '.eligibility.repositories | index($repository)' "$PROFILE_JSON" >/dev/null; then
-        echo "Issue repository is not allowed by the selected profile: $ISSUE_REPOSITORY" >&2
-        exit 1
+        REPOSITORY_ALLOWED=false
       fi
 
       read -r -d '' QUERY <<'GRAPHQL' || true
@@ -145,25 +145,34 @@ steps:
       }
       GRAPHQL
 
-      gh api graphql \
-        -f query="$QUERY" \
-        -F owner="$ISSUE_OWNER" \
-        -F repo="$ISSUE_REPO" \
-        -F number="$ISSUE_NUMBER" \
-        > /tmp/gh-aw/agent/project-metadata/graphql.json
+      if [ "$REPOSITORY_ALLOWED" = "true" ]; then
+        gh api graphql \
+          -f query="$QUERY" \
+          -F owner="$ISSUE_OWNER" \
+          -F repo="$ISSUE_REPO" \
+          -F number="$ISSUE_NUMBER" \
+          > /tmp/gh-aw/agent/project-metadata/graphql.json
+      else
+        jq -n '{data:{repository:{issue:null}}}' \
+          > /tmp/gh-aw/agent/project-metadata/graphql.json
+      fi
 
       jq \
         --arg issue_url "$ISSUE_URL" \
         --arg issue_repository "$ISSUE_REPOSITORY" \
+        --argjson repository_allowed "$REPOSITORY_ALLOWED" \
         --slurpfile profile "$PROFILE_JSON" '
           .data as $data |
           ($data.repository.issue // null) as $issue |
           ($profile[0].eligibility.required_labels // []) as $required_labels |
           ([$issue.labels.nodes[]?.name] // []) as $labels |
           ([
-            if $issue == null then "issue-not-found" else empty end,
-            if $issue != null and $issue.state != "OPEN" then "issue-not-open" else empty end,
-            ($required_labels[] as $required | select(($labels | index($required)) == null) | "missing-label:" + $required)
+            if $repository_allowed | not then "repository-not-allowed" else empty end,
+            if $repository_allowed and $issue == null then "issue-not-found" else empty end,
+            if $repository_allowed and $issue != null and $issue.state != "OPEN" then "issue-not-open" else empty end,
+            ($required_labels[] as $required |
+              select($repository_allowed and $issue != null and (($labels | index($required)) == null)) |
+              "missing-label:" + $required)
           ]) as $reasons |
           {
             requested_issue_url: $issue_url,
@@ -263,6 +272,26 @@ safe-outputs:
             PROJECT_OWNER=$(jq -r '.project.owner' "$PROFILE_JSON")
             PROJECT_NUMBER=$(jq -r '.project.number' "$PROFILE_JSON")
 
+            {
+              echo "## Project metadata"
+              echo
+              echo "- Issue: $ISSUE_URL"
+              echo "- Profile: \`$PROFILE_PATH\`"
+              echo "- Mode: $([ "$DRY_RUN" = "true" ] && echo "dry run" || echo "write")"
+              echo
+              echo "${ANALYSIS//$'\n'/ }"
+              echo
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            if ! jq -e --arg repository "$ISSUE_REPOSITORY" \
+              '.eligibility.repositories | index($repository)' "$PROFILE_JSON" >/dev/null; then
+              {
+                echo "### Not eligible"
+                echo "- repository is not allowed"
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+
             read -r -d '' CONTEXT_QUERY <<'GRAPHQL' || true
             query($owner:String!,$repo:String!,$number:Int!,$org:String!,$project:Int!) {
               repository(owner:$owner,name:$repo) {
@@ -327,10 +356,6 @@ safe-outputs:
               "$WORK_DIR/context.json")
 
             REASONS=()
-            if ! jq -e --arg repository "$ISSUE_REPOSITORY" \
-              '.eligibility.repositories | index($repository)' "$PROFILE_JSON" >/dev/null; then
-              REASONS+=("repository is not allowed")
-            fi
             if [ "$ISSUE" = "null" ]; then
               REASONS+=("issue was not found")
             elif [ "$(jq -r '.state' <<<"$ISSUE")" != "OPEN" ]; then
@@ -350,17 +375,6 @@ safe-outputs:
                 REASONS+=("missing required label: $REQUIRED_LABEL")
               fi
             done < <(jq -r '.eligibility.required_labels[]?' "$PROFILE_JSON")
-
-            {
-              echo "## Project metadata"
-              echo
-              echo "- Issue: $ISSUE_URL"
-              echo "- Profile: \`$PROFILE_PATH\`"
-              echo "- Mode: $([ "$DRY_RUN" = "true" ] && echo "dry run" || echo "write")"
-              echo
-              echo "${ANALYSIS//$'\n'/ }"
-              echo
-            } >> "$GITHUB_STEP_SUMMARY"
 
             if [ "${#REASONS[@]}" -gt 0 ]; then
               echo "### Not eligible" >> "$GITHUB_STEP_SUMMARY"
