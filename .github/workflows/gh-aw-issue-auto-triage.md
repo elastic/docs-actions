@@ -242,6 +242,21 @@ Judge only whether the issue can be *routed*. Do not assess whether it is well w
 or ready to work on — that assessment belongs to the scope workflow, not here. When in doubt,
 treat the issue as routable.
 
+## Step 5 — Refresh current team labels
+
+Immediately before your first safe-output call, fetch the issue's current labels again. This
+final read supersedes the labels fetched in Step 1 only for team ownership and `needs-team`
+cleanup.
+
+If the current labels contain a team or area label that the project or inline instructions
+identify as an active ownership label, preserve it. Discard any different team label that you
+selected in Step 3, and do not include another team label in `add_labels`. Do this even when your
+earlier selection differs. Never add a second ownership label to correct an existing one.
+
+If an active ownership label is present and `needs-team` is still present, plan to remove
+`needs-team`. If no active ownership label is present, use the team selection and cleanup plan
+from Step 3.
+
 ## Outcome contract
 
 **Routable** — call `add_labels` once with `triaged` plus every label you selected in Step 3.
