@@ -107,6 +107,7 @@ steps:
 safe-outputs:
   staged: false
   messages:
+    footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
     run-started: "🧪 [docs-agent-experimental]({run_url}) is analyzing this issue. This comment will be updated when the run finishes."
     run-success: "✅ [docs-agent-experimental]({run_url}) finished processing this issue."
     run-failure: "❌ [docs-agent-experimental]({run_url}) could not complete this issue. Open the run for details."
