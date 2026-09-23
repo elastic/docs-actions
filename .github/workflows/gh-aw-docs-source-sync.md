@@ -101,6 +101,8 @@ network:
     - "docs.bump.sh"
     - "search.elastic.co"
 safe-outputs:
+  messages:
+    footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
   noop:
   create-pull-request:
     title-prefix: ${{ inputs.title-prefix }}

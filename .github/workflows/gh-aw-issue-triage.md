@@ -116,6 +116,7 @@ safe-outputs:
       - "needs-team"
     max: 1
   messages:
+    footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
     run-started: "👀 TriageBot is triaging issue #${{ github.event.issue.number }}… [{run_url}]({run_url})"
     run-success: "✅ TriageBot finished. [{run_url}]({run_url})"
     run-failure: "❌ TriageBot failed. [{run_url}]({run_url}) — check the logs."
