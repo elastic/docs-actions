@@ -91,6 +91,8 @@ steps:
       fi
 
 safe-outputs:
+  messages:
+    footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
   threat-detection:
     engine: false
   allowed-domains:

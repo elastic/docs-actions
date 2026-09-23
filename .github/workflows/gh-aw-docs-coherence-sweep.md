@@ -103,6 +103,8 @@ network:
     - "docs.bump.sh"
     - "search.elastic.co"
 safe-outputs:
+  messages:
+    footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
   noop:
   create-issue:
     title-prefix: "Docs fix — coherence: "

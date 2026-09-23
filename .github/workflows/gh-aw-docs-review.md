@@ -91,6 +91,8 @@ network:
     - "search.elastic.co"
 strict: false
 safe-outputs:
+  messages:
+    footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
   threat-detection:
     engine:
       id: copilot

@@ -144,6 +144,7 @@ safe-outputs:
     max: 1
     hide-older-comments: true
   messages:
+    footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
     run-started: "👀 ScopeBot is scoping issue #${{ github.event.issue.number }}… [{run_url}]({run_url})"
     run-success: "✅ ScopeBot finished. [{run_url}]({run_url})"
     run-failure: "❌ ScopeBot failed. [{run_url}]({run_url}) — check the logs."
