@@ -147,7 +147,7 @@ steps:
             projectItems(first:100,includeArchived:false) {
               nodes {
                 id
-                project { number }
+                project { id number }
                 fieldValues(first:100) {
                   nodes {
                     __typename
@@ -167,6 +167,7 @@ steps:
         }
         organization(login:$org) {
           projectV2(number:$project) {
+            id
             number
             title
             url
@@ -200,12 +201,11 @@ steps:
         --arg issue_url "$ISSUE_URL" \
         --arg issue_repository "$ISSUE_REPOSITORY" \
         --argjson repository_allowed "$REPOSITORY_ALLOWED" \
-        --argjson project_number "$PROJECT_NUMBER" \
         --slurpfile profile "$PROFILE_JSON" '
           .data as $data |
           ($data.repository.issue // null) as $issue |
           ($data.organization.projectV2 // null) as $project |
-          ([$issue.projectItems.nodes[]? | select(.project.number == $project_number)] | first // null) as $item |
+          ([$issue.projectItems.nodes[]? | select(.project.id == $project.id)] | first // null) as $item |
           ($profile[0].fields // {}) as $configured_fields |
           ($profile[0].eligibility.required_labels // []) as $required_labels |
           ([$issue.labels.nodes[]?.name] // []) as $labels |
@@ -432,8 +432,9 @@ safe-outputs:
 
             ISSUE=$(jq -c '.data.repository.issue // null' "$WORK_DIR/context.json")
             PROJECT=$(jq -c '.data.organization.projectV2 // null' "$WORK_DIR/context.json")
-            ITEM=$(jq -c --argjson number "$PROJECT_NUMBER" \
-              '[.data.repository.issue.projectItems.nodes[]? | select(.project.number == $number)] | first // null' \
+            PROJECT_ID=$(jq -r '.id // empty' <<<"$PROJECT")
+            ITEM=$(jq -c --arg project_id "$PROJECT_ID" \
+              '[.data.repository.issue.projectItems.nodes[]? | select(.project.id == $project_id)] | first // null' \
               "$WORK_DIR/context.json")
 
             REASONS=()
@@ -470,7 +471,6 @@ safe-outputs:
               exit 0
             fi
 
-            PROJECT_ID=$(jq -r '.id' <<<"$PROJECT")
             ITEM_ID=$(jq -r '.id' <<<"$ITEM")
             : > "$WORK_DIR/validated.jsonl"
 
