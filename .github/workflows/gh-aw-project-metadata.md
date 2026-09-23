@@ -12,7 +12,13 @@ imports:
 model: openai/gpt-5.6-luna
 engine:
   id: codex
-  config: "          model_reasoning_effort = \"high\"\n          [model_providers.openai-proxy.http_headers]\n          \"HTTP-Referer\" = \"https://github.com/${{ github.repository }}\"\n          \"X-OpenRouter-Title\" = \"${{ github.repository }}/${{ github.workflow }}\"\n          \"X-Session-ID\" = \"${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}\"\n"
+  # Use CLI overrides because gh-aw emits engine.config into both the converted and final Codex
+  # configuration. Escape the TOML values so each override remains one shell argument.
+  args:
+    - "-c"
+    - 'model_reasoning_effort=\"high\"'
+    - "-c"
+    - 'model_providers.openai-proxy.http_headers=\{\"HTTP-Referer\"=\"https://github.com/${GITHUB_REPOSITORY}\",\"X-OpenRouter-Title\"=\"${GITHUB_REPOSITORY}/${GITHUB_WORKFLOW// /-}\",\"X-Session-ID\"=\"${GITHUB_REPOSITORY}/${GITHUB_WORKFLOW// /-}/${GITHUB_RUN_ID}\"\}'
   env:
     OPENAI_BASE_URL: https://openrouter.ai/api/v1
     OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
