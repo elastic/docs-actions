@@ -77,7 +77,7 @@ network:
 steps:
   - name: Prepare issue and project context
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
       ISSUE_URL: ${{ inputs.issue-url }}
       PROFILE_PATH: ${{ inputs.profile-path }}
     run: |
