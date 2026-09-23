@@ -29,9 +29,10 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-scope.yml
 ```
 
-These workflows use the built-in `github.token` with `copilot-requests: write` permission for
-authentication — no separate secret passthrough needed. The quality-sweep orchestrator is the
-exception — it dispatches sibling workflows via `gh workflow run`.
+Authentication and secret requirements are workflow-specific. Some workflows use the built-in
+`github.token`, while others require model credentials or service-specific tokens. For example,
+`project-metadata` requires both `OPENROUTER_API_KEY` and `PROJECT_TOKEN`. Copy the selected
+workflow's example and follow its README before enabling the caller.
 
 Skill imports are workflow-specific. Some workflows install APM skills from `elastic/elastic-docs-skills`, while others intentionally rely only on embedded rules and deterministic pre-steps.
 
