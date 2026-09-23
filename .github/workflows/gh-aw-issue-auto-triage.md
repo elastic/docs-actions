@@ -113,7 +113,8 @@ safe-outputs:
     target: "${{ github.event.issue.number }}"
     allowed:
       - "needs-team"
-    max: 1
+      - "triaged"
+    max: 2
   jobs:
     react-green:
       description: "Add a thumbs-up reaction to a newly triaged issue"
@@ -259,12 +260,19 @@ If an active ownership label is present and `needs-team` is still present, plan 
 `needs-team`. If no active ownership label is present, use the team selection and cleanup plan
 from Step 3.
 
+Determine whether the issue will have an active ownership label after this run. This is true when
+the final read found one or when you will add the team label selected in Step 3. If it is true and
+the current labels include `triaged`, plan to remove `triaged`. If it is false, preserve or add
+`triaged`.
+
 ## Outcome contract
 
-**Routable** — call `add_labels` once with `triaged` plus every label you selected in Step 3.
-Always include `triaged`. The list must not contain `human-needed`. Then call `react_green` with
-`outcome: green` to add a 👍 reaction. If you planned a `needs-team` removal, call `remove_labels`
-with `needs-team`.
+**Routable** — start with every label you selected in Step 3, after applying the final ownership
+check in Step 5. If the issue will have an active ownership label, do not include `triaged`. If it
+will not have an active ownership label, include `triaged`. The list must not contain
+`human-needed`. Call `add_labels` once when the final list is not empty. Then call `react_green`
+with `outcome: green` to add a 👍 reaction. If you planned a `needs-team` or `triaged` removal,
+call `remove_labels` once with exactly the planned labels.
 
 **Not routable** — call `add_labels` once with exactly `["human-needed"]` and nothing else.
 Discard every label you selected in Step 3. Do not apply `triaged`. Do not call `react_green`.
