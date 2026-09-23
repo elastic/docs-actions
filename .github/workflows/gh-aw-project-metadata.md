@@ -284,6 +284,8 @@ safe-outputs:
           description: "One short explanation of the proposal or why no field qualifies"
           required: true
           type: string
+      permissions:
+        contents: read
       steps:
         - name: Check out caller repository
           uses: actions/checkout@v7.0.1
