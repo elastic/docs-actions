@@ -1,0 +1,38 @@
+name: Project metadata
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue-url:
+        description: Full URL of the issue to process
+        required: true
+        type: string
+      profile-path:
+        description: Repository-relative metadata profile path
+        required: false
+        default: .github/project-metadata/default.yml
+        type: string
+      dry-run:
+        description: Validate and report without changing project fields
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  actions: read
+  contents: read
+  discussions: write
+  issues: read
+  pull-requests: read
+  copilot-requests: write
+
+jobs:
+  run:
+    uses: elastic/docs-actions/.github/workflows/gh-aw-project-metadata.lock.yml@v1
+    with:
+      issue-url: ${{ inputs.issue-url }}
+      profile-path: ${{ inputs.profile-path }}
+      dry-run: ${{ inputs.dry-run }}
+    secrets:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}

@@ -8,6 +8,7 @@ AI-powered workflows for Elastic documentation tasks. Each directory contains a 
 | [issue-scope](issue-scope/) | Scope docs impact and estimate cost/benefit for an issue in one comment | `/scope`, dispatch | `add-labels`, `add-comment` |
 | [issue-triage](issue-triage/) | Route and quality-check an issue on demand: classify it, check it against the quality bar, and apply labels | `/triage`, dispatch | `add-labels`, `remove-labels`, `react-green`, `add-comment` |
 | [issue-auto-triage](issue-auto-triage/) | Route and quality-check a new issue with per-project instructions | `issues: opened` | `add-labels`, `remove-labels`, `react-green`, `add-comment` |
+| [project-metadata](project-metadata/) | Fill configured empty fields for one selected GitHub Project issue | `workflow_dispatch` | `apply-project-fields` |
 | [docs-frontmatter-sweep](docs-frontmatter-sweep/) | Audit frontmatter on a rotating slice, or all markdown files under a selected subtree | `workflow_dispatch` | `create-issue` (label `docs-fix:frontmatter`) |
 | [docs-quality-sweep](docs-quality-sweep/) | Orchestrator that fans out to all quality sweeps in parallel | `workflow_dispatch` | (per sub-workflow) |
 | [docs-applies-to-sweep](docs-applies-to-sweep/) | Validate `applies_to` keys on a rotating slice, or all markdown files under a selected subtree | `workflow_dispatch` | `create-issue` (label `docs-fix:applies-to`) |

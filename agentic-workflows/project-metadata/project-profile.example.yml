@@ -1,0 +1,45 @@
+version: 1
+
+project:
+  owner: elastic
+  number: 1234
+  url: https://github.com/orgs/elastic/projects/1234
+
+eligibility:
+  repositories:
+    - elastic/example-public
+    - elastic/example-internal
+  required_labels:
+    - Team:Example
+
+fields:
+  Area:
+    type: single_select
+    enabled: true
+    excluded_options:
+      - Deprecated area
+    guidance: >-
+      Set Area only when the issue names one product, page, or repository path that maps cleanly
+      to one current project option. Leave it empty when two areas are plausible.
+
+  Release:
+    type: single_select
+    enabled: true
+    allowed_options:
+      - "9.4"
+      - "9.5"
+      - serverless
+    guidance: >-
+      Set Release only when the issue explicitly names one allowed version or says the work is
+      serverless-only. Do not infer a release from milestones or the current date.
+
+  Publish date:
+    type: date
+    enabled: true
+    guidance: >-
+      Set the date only when the issue explicitly states the publish date in YYYY-MM-DD form.
+
+  Requester:
+    type: single_select
+    enabled: false
+    guidance: Enable this field only after the team defines an explicit author or label mapping.
