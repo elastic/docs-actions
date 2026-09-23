@@ -132,7 +132,7 @@ steps:
         REPOSITORY_ALLOWED=false
       fi
 
-      read -r -d '' QUERY <<'GRAPHQL' || true
+      read -r -d '' BASE_QUERY <<'GRAPHQL' || true
       query($owner:String!,$repo:String!,$number:Int!,$org:String!,$project:Int!) {
         repository(owner:$owner,name:$repo) {
           issue(number:$number) {
@@ -142,27 +142,6 @@ steps:
             title
             body
             author { login }
-            labels(first:100) { nodes { name } }
-            comments(first:50) { nodes { author { login } body url } }
-            projectItems(first:100,includeArchived:false) {
-              nodes {
-                id
-                project { id number }
-                fieldValues(first:100) {
-                  nodes {
-                    __typename
-                    ... on ProjectV2ItemFieldSingleSelectValue {
-                      name
-                      field { ... on ProjectV2SingleSelectField { name } }
-                    }
-                    ... on ProjectV2ItemFieldDateValue {
-                      date
-                      field { ... on ProjectV2Field { name } }
-                    }
-                  }
-                }
-              }
-            }
           }
         }
         organization(login:$org) {
@@ -171,11 +150,77 @@ steps:
             number
             title
             url
-            fields(first:100) {
-              nodes {
-                __typename
-                ... on ProjectV2SingleSelectField { name options { name } }
-                ... on ProjectV2Field { name dataType }
+          }
+        }
+      }
+      GRAPHQL
+
+      read -r -d '' LABELS_QUERY <<'GRAPHQL' || true
+      query($owner:String!,$repo:String!,$number:Int!,$endCursor:String) {
+        repository(owner:$owner,name:$repo) {
+          issue(number:$number) {
+            labels(first:100,after:$endCursor) {
+              nodes { name }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+      }
+      GRAPHQL
+
+      read -r -d '' COMMENTS_QUERY <<'GRAPHQL' || true
+      query($owner:String!,$repo:String!,$number:Int!,$endCursor:String) {
+        repository(owner:$owner,name:$repo) {
+          issue(number:$number) {
+            comments(first:100,after:$endCursor) {
+              nodes { author { login } body url }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+      }
+      GRAPHQL
+
+      read -r -d '' PROJECT_ITEMS_QUERY <<'GRAPHQL' || true
+      query($owner:String!,$repo:String!,$number:Int!,$endCursor:String) {
+        repository(owner:$owner,name:$repo) {
+          issue(number:$number) {
+            projectItems(first:100,after:$endCursor,includeArchived:false) {
+              nodes { id project { id number } }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+      }
+      GRAPHQL
+
+      read -r -d '' PROJECT_FIELD_QUERY <<'GRAPHQL' || true
+      query($org:String!,$project:Int!,$field:String!) {
+        organization(login:$org) {
+          projectV2(number:$project) {
+            field(name:$field) {
+              __typename
+              ... on ProjectV2SingleSelectField { id name options { id name } }
+              ... on ProjectV2Field { id name dataType }
+            }
+          }
+        }
+      }
+      GRAPHQL
+
+      read -r -d '' ITEM_FIELD_VALUE_QUERY <<'GRAPHQL' || true
+      query($item:ID!,$field:String!) {
+        node(id:$item) {
+          ... on ProjectV2Item {
+            fieldValueByName(name:$field) {
+              __typename
+              ... on ProjectV2ItemFieldSingleSelectValue {
+                name
+                field { ... on ProjectV2SingleSelectField { id name } }
+              }
+              ... on ProjectV2ItemFieldDateValue {
+                date
+                field { ... on ProjectV2Field { id name dataType } }
               }
             }
           }
@@ -183,15 +228,87 @@ steps:
       }
       GRAPHQL
 
+      jq -n '[]' > /tmp/gh-aw/agent/project-metadata/labels.json
+      jq -n '[]' > /tmp/gh-aw/agent/project-metadata/comments.json
+      jq -n '[]' > /tmp/gh-aw/agent/project-metadata/project-items.json
+      jq -n '[]' > /tmp/gh-aw/agent/project-metadata/project-fields.json
+      jq -n '[]' > /tmp/gh-aw/agent/project-metadata/item-field-values.json
+
       if [ "$REPOSITORY_ALLOWED" = "true" ]; then
         gh api graphql \
-          -f query="$QUERY" \
+          -f query="$BASE_QUERY" \
           -F owner="$ISSUE_OWNER" \
           -F repo="$ISSUE_REPO" \
           -F number="$ISSUE_NUMBER" \
           -F org="$PROJECT_OWNER" \
           -F project="$PROJECT_NUMBER" \
           > /tmp/gh-aw/agent/project-metadata/graphql.json
+
+        ISSUE_ID=$(jq -r '.data.repository.issue.id // empty' /tmp/gh-aw/agent/project-metadata/graphql.json)
+        PROJECT_ID=$(jq -r '.data.organization.projectV2.id // empty' /tmp/gh-aw/agent/project-metadata/graphql.json)
+
+        if [ -n "$ISSUE_ID" ]; then
+          gh api graphql --paginate --slurp \
+            -f query="$LABELS_QUERY" \
+            -F owner="$ISSUE_OWNER" \
+            -F repo="$ISSUE_REPO" \
+            -F number="$ISSUE_NUMBER" \
+            > /tmp/gh-aw/agent/project-metadata/label-pages.json
+          jq '[.[].data.repository.issue.labels.nodes[]?]' \
+            /tmp/gh-aw/agent/project-metadata/label-pages.json \
+            > /tmp/gh-aw/agent/project-metadata/labels.json
+
+          gh api graphql --paginate --slurp \
+            -f query="$COMMENTS_QUERY" \
+            -F owner="$ISSUE_OWNER" \
+            -F repo="$ISSUE_REPO" \
+            -F number="$ISSUE_NUMBER" \
+            > /tmp/gh-aw/agent/project-metadata/comment-pages.json
+          jq '[.[].data.repository.issue.comments.nodes[]?]' \
+            /tmp/gh-aw/agent/project-metadata/comment-pages.json \
+            > /tmp/gh-aw/agent/project-metadata/comments.json
+
+          gh api graphql --paginate --slurp \
+            -f query="$PROJECT_ITEMS_QUERY" \
+            -F owner="$ISSUE_OWNER" \
+            -F repo="$ISSUE_REPO" \
+            -F number="$ISSUE_NUMBER" \
+            > /tmp/gh-aw/agent/project-metadata/project-item-pages.json
+          jq '[.[].data.repository.issue.projectItems.nodes[]?]' \
+            /tmp/gh-aw/agent/project-metadata/project-item-pages.json \
+            > /tmp/gh-aw/agent/project-metadata/project-items.json
+        fi
+
+        ITEM_ID=$(jq -r --arg project_id "$PROJECT_ID" \
+          '([.[] | select(.project.id == $project_id)] | first // null) | .id // empty' \
+          /tmp/gh-aw/agent/project-metadata/project-items.json)
+
+        : > /tmp/gh-aw/agent/project-metadata/project-fields.jsonl
+        : > /tmp/gh-aw/agent/project-metadata/item-field-values.jsonl
+        while IFS= read -r FIELD; do
+          [ -z "$FIELD" ] && continue
+          if [ -n "$PROJECT_ID" ]; then
+            gh api graphql \
+              -f query="$PROJECT_FIELD_QUERY" \
+              -F org="$PROJECT_OWNER" \
+              -F project="$PROJECT_NUMBER" \
+              -f field="$FIELD" \
+              | jq -c '.data.organization.projectV2.field // empty' \
+              >> /tmp/gh-aw/agent/project-metadata/project-fields.jsonl
+          fi
+          if [ -n "$ITEM_ID" ]; then
+            gh api graphql \
+              -f query="$ITEM_FIELD_VALUE_QUERY" \
+              -F item="$ITEM_ID" \
+              -f field="$FIELD" \
+              | jq -c '.data.node.fieldValueByName // empty' \
+              >> /tmp/gh-aw/agent/project-metadata/item-field-values.jsonl
+          fi
+        done < <(jq -r '.fields | to_entries[] | select(.value.enabled == true) | .key' "$PROFILE_JSON")
+        jq -s '.' /tmp/gh-aw/agent/project-metadata/project-fields.jsonl \
+          > /tmp/gh-aw/agent/project-metadata/project-fields.json
+        jq -s '.' /tmp/gh-aw/agent/project-metadata/item-field-values.jsonl \
+          > /tmp/gh-aw/agent/project-metadata/item-field-values.json
       else
         jq -n '{data:{repository:{issue:null},organization:{projectV2:null}}}' \
           > /tmp/gh-aw/agent/project-metadata/graphql.json
@@ -201,11 +318,20 @@ steps:
         --arg issue_url "$ISSUE_URL" \
         --arg issue_repository "$ISSUE_REPOSITORY" \
         --argjson repository_allowed "$REPOSITORY_ALLOWED" \
-        --slurpfile profile "$PROFILE_JSON" '
+        --slurpfile profile "$PROFILE_JSON" \
+        --slurpfile labels /tmp/gh-aw/agent/project-metadata/labels.json \
+        --slurpfile comments /tmp/gh-aw/agent/project-metadata/comments.json \
+        --slurpfile project_items /tmp/gh-aw/agent/project-metadata/project-items.json \
+        --slurpfile project_fields /tmp/gh-aw/agent/project-metadata/project-fields.json \
+        --slurpfile item_field_values /tmp/gh-aw/agent/project-metadata/item-field-values.json '
           .data as $data |
-          ($data.repository.issue // null) as $issue |
+          ($data.repository.issue // null) as $base_issue |
+          (if $base_issue == null then null else $base_issue + {
+            labels: {nodes: ($labels[0] // [])},
+            comments: {nodes: ($comments[0] // [])}
+          } end) as $issue |
           ($data.organization.projectV2 // null) as $project |
-          ([$issue.projectItems.nodes[]? | select(.project.id == $project.id)] | first // null) as $item |
+          ([$project_items[0][]? | select(.project.id == $project.id)] | first // null) as $item |
           ($profile[0].fields // {}) as $configured_fields |
           ($profile[0].eligibility.required_labels // []) as $required_labels |
           ([$issue.labels.nodes[]?.name] // []) as $labels |
@@ -223,7 +349,7 @@ steps:
             requested_issue_url: $issue_url,
             issue_repository: $issue_repository,
             profile: $profile[0],
-            issue: ($issue | if . == null then null else del(.projectItems) end),
+            issue: $issue,
             project: (
               if $project == null then null
               else {
@@ -231,7 +357,7 @@ steps:
                 title: $project.title,
                 url: $project.url,
                 fields: [
-                  $project.fields.nodes[]? |
+                  $project_fields[0][]? |
                   select((.name // "") as $name | ($configured_fields[$name].enabled // false)) |
                   if .__typename == "ProjectV2SingleSelectField" then
                     {name, type: "single_select", options: [.options[].name]}
@@ -247,7 +373,7 @@ steps:
               else {
                 id: $item.id,
                 populated_fields: [
-                  $item.fieldValues.nodes[]? |
+                  $item_field_values[0][]? |
                   select((.field.name // "") as $name | ($configured_fields[$name].enabled // false)) |
                   if .__typename == "ProjectV2ItemFieldSingleSelectValue" then
                     {field: .field.name, type: "single_select", value: .name}
@@ -380,27 +506,6 @@ safe-outputs:
                   id
                   url
                   state
-                  labels(first:100) { nodes { name } }
-                  projectItems(first:100,includeArchived:false) {
-                    nodes {
-                      id
-                      project { id number title url }
-                      fieldValues(first:100) {
-                        nodes {
-                          __typename
-                          ... on ProjectV2ItemFieldSingleSelectValue {
-                            name
-                            optionId
-                            field { ... on ProjectV2SingleSelectField { id name } }
-                          }
-                          ... on ProjectV2ItemFieldDateValue {
-                            date
-                            field { ... on ProjectV2Field { id name dataType } }
-                          }
-                        }
-                      }
-                    }
-                  }
                 }
               }
               organization(login:$org) {
@@ -409,13 +514,56 @@ safe-outputs:
                   number
                   title
                   url
-                  fields(first:100) {
-                    nodes {
-                      __typename
-                      ... on ProjectV2SingleSelectField { id name options { id name } }
-                      ... on ProjectV2Field { id name dataType }
-                    }
+                }
+              }
+            }
+            GRAPHQL
+
+            read -r -d '' LABELS_QUERY <<'GRAPHQL' || true
+            query($owner:String!,$repo:String!,$number:Int!,$endCursor:String) {
+              repository(owner:$owner,name:$repo) {
+                issue(number:$number) {
+                  labels(first:100,after:$endCursor) {
+                    nodes { name }
+                    pageInfo { hasNextPage endCursor }
                   }
+                }
+              }
+            }
+            GRAPHQL
+
+            read -r -d '' PROJECT_ITEMS_QUERY <<'GRAPHQL' || true
+            query($owner:String!,$repo:String!,$number:Int!,$endCursor:String) {
+              repository(owner:$owner,name:$repo) {
+                issue(number:$number) {
+                  projectItems(first:100,after:$endCursor,includeArchived:false) {
+                    nodes { id project { id number title url } }
+                    pageInfo { hasNextPage endCursor }
+                  }
+                }
+              }
+            }
+            GRAPHQL
+
+            read -r -d '' PROJECT_FIELD_QUERY <<'GRAPHQL' || true
+            query($org:String!,$project:Int!,$field:String!) {
+              organization(login:$org) {
+                projectV2(number:$project) {
+                  field(name:$field) {
+                    __typename
+                    ... on ProjectV2SingleSelectField { id name options { id name } }
+                    ... on ProjectV2Field { id name dataType }
+                  }
+                }
+              }
+            }
+            GRAPHQL
+
+            read -r -d '' ITEM_FIELD_VALUE_QUERY <<'GRAPHQL' || true
+            query($item:ID!,$field:String!) {
+              node(id:$item) {
+                ... on ProjectV2Item {
+                  fieldValueByName(name:$field) { __typename }
                 }
               }
             }
@@ -430,12 +578,37 @@ safe-outputs:
               -F project="$PROJECT_NUMBER" \
               > "$WORK_DIR/context.json"
 
-            ISSUE=$(jq -c '.data.repository.issue // null' "$WORK_DIR/context.json")
+            jq -n '[]' > "$WORK_DIR/labels.json"
+            jq -n '[]' > "$WORK_DIR/project-items.json"
+            if [ "$(jq -r '.data.repository.issue.id // empty' "$WORK_DIR/context.json")" != "" ]; then
+              gh api graphql --paginate --slurp \
+                -f query="$LABELS_QUERY" \
+                -F owner="$ISSUE_OWNER" \
+                -F repo="$ISSUE_REPO" \
+                -F number="$ISSUE_NUMBER" \
+                > "$WORK_DIR/label-pages.json"
+              jq '[.[].data.repository.issue.labels.nodes[]?]' "$WORK_DIR/label-pages.json" \
+                > "$WORK_DIR/labels.json"
+
+              gh api graphql --paginate --slurp \
+                -f query="$PROJECT_ITEMS_QUERY" \
+                -F owner="$ISSUE_OWNER" \
+                -F repo="$ISSUE_REPO" \
+                -F number="$ISSUE_NUMBER" \
+                > "$WORK_DIR/project-item-pages.json"
+              jq '[.[].data.repository.issue.projectItems.nodes[]?]' "$WORK_DIR/project-item-pages.json" \
+                > "$WORK_DIR/project-items.json"
+            fi
+
+            ISSUE=$(jq -c --slurpfile labels "$WORK_DIR/labels.json" \
+              '(.data.repository.issue // null) as $issue |
+               if $issue == null then null else $issue + {labels:{nodes:($labels[0] // [])}} end' \
+              "$WORK_DIR/context.json")
             PROJECT=$(jq -c '.data.organization.projectV2 // null' "$WORK_DIR/context.json")
             PROJECT_ID=$(jq -r '.id // empty' <<<"$PROJECT")
             ITEM=$(jq -c --arg project_id "$PROJECT_ID" \
-              '[.data.repository.issue.projectItems.nodes[]? | select(.project.id == $project_id)] | first // null' \
-              "$WORK_DIR/context.json")
+              '[.[] | select(.project.id == $project_id)] | first // null' \
+              "$WORK_DIR/project-items.json")
 
             REASONS=()
             if [ "$ISSUE" = "null" ]; then
@@ -485,18 +658,29 @@ safe-outputs:
                 exit 1
               fi
 
-              if jq -e --arg field "$FIELD" \
-                '.fieldValues.nodes[]? | select(.field.name == $field)' <<<"$ITEM" >/dev/null; then
+              gh api graphql \
+                -f query="$ITEM_FIELD_VALUE_QUERY" \
+                -F item="$ITEM_ID" \
+                -f field="$FIELD" \
+                > "$WORK_DIR/current-field-value.json"
+              if jq -e '.data.node.fieldValueByName != null' "$WORK_DIR/current-field-value.json" >/dev/null; then
                 echo "Agent proposed a field that already has a value: $FIELD" >&2
                 exit 1
               fi
 
+              gh api graphql \
+                -f query="$PROJECT_FIELD_QUERY" \
+                -F org="$PROJECT_OWNER" \
+                -F project="$PROJECT_NUMBER" \
+                -f field="$FIELD" \
+                > "$WORK_DIR/project-field.json"
+              FIELD_DEF=$(jq -c '.data.organization.projectV2.field // null' "$WORK_DIR/project-field.json")
               FIELD_TYPE=$(jq -r '.type' <<<"$FIELD_CONFIG")
               if [ "$FIELD_TYPE" = "single_select" ]; then
-                FIELD_DEF=$(jq -c --arg field "$FIELD" \
-                  '.fields.nodes[] | select(.__typename == "ProjectV2SingleSelectField" and .name == $field)' \
-                  <<<"$PROJECT")
-                [ -n "$FIELD_DEF" ] || { echo "Configured single-select field was not found: $FIELD" >&2; exit 1; }
+                [ "$(jq -r '.__typename // empty' <<<"$FIELD_DEF")" = "ProjectV2SingleSelectField" ] || {
+                  echo "Configured single-select field was not found: $FIELD" >&2
+                  exit 1
+                }
 
                 OPTION_ID=$(jq -r --arg value "$VALUE" '.options[] | select(.name == $value) | .id' <<<"$FIELD_DEF")
                 [ -n "$OPTION_ID" ] || { echo "Unknown option for $FIELD: $VALUE" >&2; exit 1; }
@@ -521,10 +705,11 @@ safe-outputs:
                   '{field:$field,value:$value,evidence:$evidence,type:"single_select",field_id:$field_id,option_id:$option_id}' \
                   >> "$WORK_DIR/validated.jsonl"
               elif [ "$FIELD_TYPE" = "date" ]; then
-                FIELD_DEF=$(jq -c --arg field "$FIELD" \
-                  '.fields.nodes[] | select(.__typename == "ProjectV2Field" and .name == $field and .dataType == "DATE")' \
-                  <<<"$PROJECT")
-                [ -n "$FIELD_DEF" ] || { echo "Configured date field was not found: $FIELD" >&2; exit 1; }
+                if [ "$(jq -r '.__typename // empty' <<<"$FIELD_DEF")" != "ProjectV2Field" ] || \
+                  [ "$(jq -r '.dataType // empty' <<<"$FIELD_DEF")" != "DATE" ]; then
+                  echo "Configured date field was not found: $FIELD" >&2
+                  exit 1
+                fi
                 if [[ ! "$VALUE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || [ "$(date -d "$VALUE" +%F 2>/dev/null || true)" != "$VALUE" ]; then
                   echo "Invalid date for $FIELD: $VALUE" >&2
                   exit 1
@@ -545,27 +730,6 @@ safe-outputs:
 
             echo "| Field | Proposed value | Evidence | Result |" >> "$GITHUB_STEP_SUMMARY"
             echo "|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
-
-            read -r -d '' CURRENT_VALUES_QUERY <<'GRAPHQL' || true
-            query($item:ID!) {
-              node(id:$item) {
-                ... on ProjectV2Item {
-                  fieldValues(first:100) {
-                    nodes {
-                      ... on ProjectV2ItemFieldSingleSelectValue {
-                        name
-                        field { ... on ProjectV2SingleSelectField { name } }
-                      }
-                      ... on ProjectV2ItemFieldDateValue {
-                        date
-                        field { ... on ProjectV2Field { name } }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            GRAPHQL
 
             read -r -d '' SELECT_MUTATION <<'GRAPHQL' || true
             mutation($project:ID!,$item:ID!,$field:ID!,$option:String!) {
@@ -596,10 +760,12 @@ safe-outputs:
               TYPE=$(jq -r '.type' <<<"$UPDATE")
               FIELD_ID=$(jq -r '.field_id' <<<"$UPDATE")
 
-              gh api graphql -f query="$CURRENT_VALUES_QUERY" -F item="$ITEM_ID" > "$WORK_DIR/current-values.json"
-              if jq -e --arg field "$FIELD" \
-                '.data.node.fieldValues.nodes[]? | select(.field.name == $field)' \
-                "$WORK_DIR/current-values.json" >/dev/null; then
+              gh api graphql \
+                -f query="$ITEM_FIELD_VALUE_QUERY" \
+                -F item="$ITEM_ID" \
+                -f field="$FIELD" \
+                > "$WORK_DIR/current-field-value.json"
+              if jq -e '.data.node.fieldValueByName != null' "$WORK_DIR/current-field-value.json" >/dev/null; then
                 RESULT="skipped; field gained a value"
               elif [ "$DRY_RUN" = "true" ]; then
                 RESULT="dry run"
