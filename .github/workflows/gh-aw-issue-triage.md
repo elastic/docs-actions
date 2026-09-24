@@ -109,12 +109,13 @@ safe-outputs:
     create-if-missing: false
     blocked:
       - "needs-team"
+      - "needs triage"
     max: 6
   remove-labels:
     target: "${{ github.event.issue.number }}"
     allowed:
       - "needs-team"
-      - "triaged"
+      - "needs triage"
     max: 2
   messages:
     footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
@@ -229,6 +230,9 @@ release, and similar — select the ones whose stated criteria the issue clearly
 if they are in the menu. If the instructions define none, select none; do not infer a board
 taxonomy from label names alone.
 
+**Pending-label cleanup.** If the issue currently has `needs triage`, plan to remove it only if
+the final outcome is routable. Preserve it if the final outcome is not routable. Never add it.
+
 **`needs-team` cleanup.** If you selected a team label and the issue currently has `needs-team`,
 plan to remove `needs-team`. Never add it.
 
@@ -251,8 +255,8 @@ treat the issue as routable.
 ## Step 5 — Refresh current team labels
 
 Immediately before your first safe-output call, fetch the issue's current labels again. This
-final read supersedes the labels fetched in Step 1 only for team ownership and `needs-team`
-cleanup.
+final read supersedes the labels fetched in Step 1 only for team ownership, `needs-team`
+cleanup, and `needs triage` cleanup.
 
 If the current labels contain a team or area label that the project or inline instructions
 identify as an active ownership label, preserve it. Discard any different team label that you
@@ -263,24 +267,20 @@ If an active ownership label is present and `needs-team` is still present, plan 
 `needs-team`. If no active ownership label is present, use the team selection and cleanup plan
 from Step 3.
 
-Determine whether the issue will have an active ownership label after this run. This is true when
-the final read found one or when you will add the team label selected in Step 3. If it is true and
-the current labels include `triaged`, plan to remove `triaged`. If it is false, preserve or add
-`triaged`.
+If `needs triage` is still present, plan to remove it only if the final outcome is routable.
 
 ## Outcome contract
 
-**Routable** — start with every label you selected in Step 3, after applying the final ownership
-check in Step 5. If the issue will have an active ownership label, do not include `triaged`. If it
-will not have an active ownership label, include `triaged`. The list must not contain
-`human-needed`. Call `add_labels` once when the final list is not empty. Then call `react_green`
-with `outcome: green` to add a 👍 reaction. If you planned a `needs-team` or `triaged` removal,
-call `remove_labels` once with exactly the planned labels.
+**Routable** — call `add_labels` once with `triaged` plus every label you selected in Step 3,
+after applying the final ownership check in Step 5. Always include `triaged`. The list must not
+contain `human-needed`. Then call `react_green` with `outcome: green` to add a 👍 reaction. If you
+planned a `needs-team` or `needs triage` removal, call `remove_labels` once with exactly the
+planned labels.
 
 **Not routable** — call `add_labels` once with exactly `["human-needed"]` and nothing else.
 Discard every label you selected in Step 3. Do not apply `triaged`. Do not call `react_green`.
-Do not remove `needs-team`. The absence of `triaged` is the signal that this issue still needs a
-human to route it.
+Do not remove `needs-team` or `needs triage`. The absence of `triaged` is the signal that this
+issue still needs a human to route it.
 
 In both cases: do not post a comment. Do not edit the issue body. Do not include a `suggest`
 field in any label call. If a contract label such as `triaged` or `human-needed` is missing from
