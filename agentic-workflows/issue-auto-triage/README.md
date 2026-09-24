@@ -7,6 +7,9 @@ The workflow treats public issue content as untrusted input. GitHub reads use
 `min-integrity: none` so community-authored issues can be analyzed, while all writes remain
 constrained by safe outputs. Issues opened by bots are skipped automatically.
 
+The workflow accepts issue authors at every repository permission level. It limits users without
+write access to 10 runs in 60 minutes.
+
 For quality assessment and scope estimation, see [issue-scope](../docs-issue-scope/).
 For the same routing logic triggered manually, see [issue-triage](../issue-triage/).
 
@@ -68,7 +71,7 @@ disable the file.
 | Output | Max | Description |
 |--------|-----|-------------|
 | `add-labels` | 6 | Routable: `triaged` plus selected labels. Not routable: `human-needed` only. |
-| `remove-labels` | 1 | Remove `needs-team` when a team label is applied. |
+| `remove-labels` | 2 | Remove `needs-team` when a team label is applied and remove `needs triage` after successful routing. |
 | `react-green` | 1 | Add 👍 to a routable issue after labeling. |
 
 Labels are selected from the target repository's existing label list, which the workflow resolves
@@ -77,7 +80,8 @@ fixed allowlist to extend, so board metadata such as `priority:*`, `area:*`, or 
 as soon as the repository defines it and the instructions say when to apply it. The one exception is team labels: when the instructions define a team mapping, team labels
 outside that mapping are never selected, even if they exist in the repository. Two guardrails
 hold regardless of instructions: `create-if-missing: false` refuses any label name that does not
-already exist, and `needs-team` is blocked from being added because it is a remove-only label.
+already exist, and `needs-team` and `needs triage` are blocked from being added because they are
+remove-only labels.
 
 ## How it works
 
@@ -99,6 +103,6 @@ A single agent performs the whole run; there are no sub-agents.
    names no specific page, feature, or surface. A missing team label never makes an issue
    not routable.
 5. **Apply the outcome.** Routable: `triaged` plus the selected labels, then a 👍 reaction, and
-   `needs-team` removed if a team label was applied. Not routable: `human-needed` only, with
-   `triaged` withheld so the issue stays visible in `-label:triaged` searches. No comment in
-   either case.
+   `needs-team` removed if a team label was applied and `needs triage` removed if present. Not
+   routable: `human-needed` only, with pending labels preserved and `triaged` withheld so the
+   issue stays visible in `-label:triaged` searches. No comment in either case.
