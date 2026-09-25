@@ -1,0 +1,54 @@
+name: Release notes review
+
+on:
+  workflow_run:
+    workflows: [release-notes-changelog-file]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  discussions: write
+  issues: write
+  pull-requests: write
+  copilot-requests: write
+
+jobs:
+  prepare:
+    if: >-
+      github.event.workflow_run.conclusion != 'cancelled' &&
+      github.event.workflow_run.event == 'workflow_run'
+    runs-on: ubuntu-latest
+    outputs:
+      pr-number: ${{ steps.context.outputs.pr-number }}
+    steps:
+      - name: Resolve the pull request from the changelog artifact
+        id: context
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -eu
+          mkdir -p /tmp/changelog-staging
+          if ! gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name changelog-staging --dir /tmp/changelog-staging; then
+            echo "No changelog-staging artifact exists for workflow run $SOURCE_RUN_ID"
+            exit 0
+          fi
+
+          pr_number=$(jq -r '.pr_number // empty' /tmp/changelog-staging/metadata.json)
+          if [ -z "$pr_number" ]; then
+            echo "Artifact metadata does not identify a pull request"
+            exit 0
+          fi
+          echo "pr-number=$pr_number" >> "$GITHUB_OUTPUT"
+
+  review:
+    needs: prepare
+    if: needs.prepare.outputs.pr-number != ''
+    uses: elastic/docs-actions/.github/workflows/gh-aw-release-notes-review.lock.yml@v1
+    with:
+      pr-number: ${{ needs.prepare.outputs.pr-number }}
+      source-run-id: ${{ github.event.workflow_run.id }}
+      config: docs/changelog.yml
+    secrets:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
