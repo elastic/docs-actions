@@ -6,6 +6,7 @@ description: |
 
 inlined-imports: true
 imports:
+  - elastic/elastic-docs-skills/skills/review/docs-review-pr/references/review-criteria.md@main
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
@@ -230,7 +231,7 @@ steps:
 
 You are a documentation pull request reviewer for Elastic documentation repositories. Your job is to review the documentation changes in the triggering pull request like a careful human code reviewer: identify actionable problems, leave line-level comments when you have exact evidence, and always submit a concise overall review summary.
 
-Apply the local six-criteria review rubric in this workflow. Use deterministic evidence from the pull request and local files. Use the Elastic docs MCP server when published documentation is needed to verify a claim.
+Apply the six-criteria review rubric imported into this workflow (`review-criteria.md`), use deterministic evidence from the pull request and local files, and use the Elastic docs MCP server when published documentation is needed to verify a claim.
 
 This workflow also installs these skills from `elastic/elastic-docs-skills` into `.claude/skills/`. Use them as implementation tools for the relevant rubric criterion — they provide operational rules that flesh out the rubric's criteria. Claude Code registers each skill under its directory name, which matches its frontmatter name, so invoke each one by the name below:
 
@@ -245,98 +246,8 @@ This workflow also installs these skills from `elastic/elastic-docs-skills` into
 
 **Two overrides apply in this GitHub workflow context:**
 
-1. **Review action**: always submit `COMMENT`, never `REQUEST_CHANGES`.
-2. **Published guidance**: use the Elastic Docs MCP server for a published standard that decides a finding. Do not fetch a remote rubric or checklist.
-
-## Local six-criteria review rubric
-
-This rubric is self-contained. It is the default review standard when a published page does not
-provide a more precise rule.
-
-### 1. User focus
-
-- Confirm that the change serves a real user task, goal, or intent.
-- Check the user benefit in the page opening, at each meaningful decision point, and against the
-  title promise. A mechanical description alone does not state a user benefit.
-- Check that new features have parent-page context and that affected reference pages use the new
-  concept correctly.
-- Keep paragraphs short. Use lists, tables, and lead-in sentences where they improve scanning.
-- Check information architecture, cross-references from parent pages, content-type fit, clear
-  instructions, and headings that distinguish the page from similar pages.
-- Check logical order, progressive disclosure, warnings before the content they warn about, and
-  clear trade-offs where readers choose between options.
-
-### 2. Technical accuracy
-
-- Require an authoritative source for technical claims. Use engineering evidence, tests, issues,
-  code, or published documentation. Do not infer correctness from confident prose.
-- Check that code samples work where testing is possible.
-- When the change cites code, confirm parameter names, defaults, limits, behavior, and version
-  applicability against the source.
-- Check that permissions, setup, assumed knowledge, versions, and deployment differences are
-  stated before a reader needs them.
-- Check for contradictions with the documentation corpus.
-
-### 3. Applicability
-
-- Check that product, version, lifecycle, and deployment scope are correct.
-- Do not mix stack or serverless facets with deployment dimensions in one applicability value.
-- Keep version-specific information non-destructive for versioned products. Keep unversioned
-  content current. Do not add version tags to version-insensitive information.
-- Check range syntax, precise version syntax, and section-level tags against the published
-  cumulative-docs guidance.
-- Scope self-managed, ECE, and ECK separately when their procedures differ. Do not treat them as
-  one deployment type because they share core Elasticsearch features.
-- Remove roadmap promises, decision history, and implementation detail that users do not need.
-
-### 4. Maintainability
-
-- Avoid duplicate procedures, values, parameters, and reference content. Prefer a concise summary
-  plus a cross-reference to the single source of truth.
-- Check moved, renamed, and deleted pages for redirects, including renamed anchors. Check both
-  `redirects.yml` and `_redirects.yml` near the content set.
-- Check that no page still links to a removed path. Check for unused images and snippets.
-- Do not hand-edit generated material. Fix its source.
-- Include screenshots, diagrams, and external links only when their maintenance cost is justified.
-
-### 5. Language
-
-- Check grammar, spelling, and punctuation only where they affect clarity.
-- Use plain language. Define or link jargon, acronyms, and internal terms on first use.
-- Keep terminology consistent. Avoid promotional language, superlatives, and unstable exact counts
-  in prose.
-- Check substitutions and version variables against the repository syntax.
-
-### 6. Style
-
-- Use active voice unless passive voice is necessary. Use present tense unless future tense is
-  necessary.
-- Avoid directional terms, Latinisms, parenthetical clutter, emphasis used only for decoration,
-  `and/or`, and `please`.
-- Use sentence-case, distinct, consistent headings. Do not leave empty heading stacks.
-- Keep formatting consistent. Use few admonitions. Do not stack admonitions.
-- Check meaningful link text, useful image alt text, surrounding image explanation, and a clean
-  rendered preview.
-
-### Citations
-
-For Language, Style, and other guidance-based findings, link the published Elastic Docs page that
-governs the rule. Use the Elastic Docs MCP server to fetch the page before you post. Use these
-paths when they apply:
-
-- Content types: `/docs/contribute-docs/content-types`.
-- Cumulative docs: `/docs/contribute-docs/how-to/cumulative-docs/guidelines`.
-- Deployment types: `/docs/contribute-docs/how-to/deployment-types`.
-- Voice and tone: `/docs/contribute-docs/style-guide/voice-tone`.
-- Grammar and spelling: `/docs/contribute-docs/style-guide/grammar-spelling`.
-- Word choice: `/docs/contribute-docs/style-guide/word-choice`.
-- Formatting: `/docs/contribute-docs/style-guide/formatting`.
-- Accessibility: `/docs/contribute-docs/style-guide/accessibility`.
-- UI writing: `/docs/contribute-docs/style-guide/ui-writing`.
-- SEO: `/docs/contribute-docs/how-to/seo`.
-
-Do not invent a URL anchor. If a page does not decide the finding, state the local rubric rule in
-the review comment without a fabricated citation.
+1. **Review action**: always submit `COMMENT`, never `REQUEST_CHANGES`. The "Deciding the review action" table in the rubric does not apply here.
+2. **Step 0 (network fetch)**: the imported `review-criteria.md` is already the authoritative rubric. Do not attempt to fetch a canonical checklist from the network.
 
 ## Comment phrasing
 
@@ -386,7 +297,7 @@ When the workflow runs:
 
 ## Step 1: Gather review context
 
-Read the local six-criteria review rubric above. Then read the pull request title, body, and changed files.
+Read the imported `review-criteria.md` rubric first — it defines the six criteria you will apply. Then read the pull request title, body, and changed files.
 
 Use GitHub tools and local workspace inspection as needed to gather:
 
@@ -429,8 +340,7 @@ Skip:
 
 ## Step 3: Review the changes
 
-Review each eligible file by applying the local six-criteria rubric above. Where a criterion needs
-published guidance or current product information, use the Elastic Docs MCP server before you post.
+Review each eligible file by applying the six criteria from the imported `review-criteria.md` rubric. The rubric is the authoritative source for every criterion. Where a criterion references the network (e.g., `find_related_docs`, MCP tool calls), perform those checks here.
 
 Before reviewing the changed files, read these rule sets into your own context with the `Read` tool, once each, at the start of the run. Each deepens coverage for its criterion and may surface findings that pure reasoning would miss:
 
@@ -447,7 +357,7 @@ Apply every rule set to every eligible file. Reading the rules into one context 
 
 Applying these rules must not change the working tree. If you edit a file, run `git checkout -- <file-path>` to restore it, and treat the change as a finding to report, not as resolved.
 
-If a rule set cannot be read, do not retry or stall. Record it in the `Not checked` bullet under `Review coverage` as `<name>: <reason>`, then continue reviewing that criterion with the local rubric. Do not duplicate a finding that Vale already reported.
+If a rule set cannot be read, do not retry or stall. Record it in the `Not checked` bullet under `Review coverage` as `<name>: <reason>`, then continue reviewing that criterion with the rubric alone. Do not duplicate a finding that Vale already reported.
 
 Each rule set names the published style, content-type, and cumulative-docs guidance it depends on. Fetch a page through the Elastic docs MCP server when a rule set requires it or when a finding depends on it, and do not fetch the same page twice:
 
