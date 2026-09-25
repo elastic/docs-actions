@@ -81,7 +81,9 @@ jobs:
       head-repo: ${{ steps.context.outputs.head-repo }}
       is-fork: ${{ steps.context.outputs.is-fork }}
       base-ref: ${{ steps.context.outputs.base-ref }}
-      stack-prs: ${{ steps.match.outputs.stack-parent-prs }}
+      stack-base-ref: ${{ steps.context.outputs.stack-base-ref }}
+      stack-position: ${{ steps.context.outputs.stack-position }}
+      stack-size: ${{ steps.context.outputs.stack-size }}
       is-org-member: ${{ steps.check-org-membership.outputs.is-member }}
       vale-files-match: ${{ steps.context.outputs.vale-files-match }}
       link-index-eligible: ${{ steps.link-index-branch.outputs.eligible }}
@@ -215,6 +217,16 @@ jobs:
             core.setOutput('base-ref', pr.base.ref);
             core.setOutput('pr-author', pr.user.login);
 
+            // A stacked PR targets its parent's branch, which is not a content source.
+            // GitHub exposes the branch the whole stack lands on as pr.stack.base.ref
+            // (null for a standalone PR); match against that instead.
+            if (pr.stack) {
+              core.info(`PR #${prNumber} is layer ${pr.stack.position} of ${pr.stack.size} in a stack targeting '${pr.stack.base.ref}'`);
+              core.setOutput('stack-base-ref', pr.stack.base.ref);
+              core.setOutput('stack-position', pr.stack.position);
+              core.setOutput('stack-size', pr.stack.size);
+            }
+
             // --- Changed-files check (docs-relevant files only) ---
             const files = await github.paginate(github.rest.pulls.listFiles, {
               owner, repo, pull_number: prNumber
@@ -242,18 +254,13 @@ jobs:
             }
             core.setOutput('vale-files-match', valeFilesMatch ? 'true' : 'false');
 
-      # github_token lets assembler-match resolve a stacked PR: when the base branch is
-      # not a content source, docs-builder walks the chain of open PRs to the branch
-      # the stack ultimately targets and matches that instead. The PR's own head SHA
-      # is still what gets built; stack-parent-prs feeds the preview comment.
       - name: Match content source
         id: match
         if: steps.context.outputs.has-changes == 'true'
         uses: elastic/docs-builder/actions/assembler-match@main
         with:
-          ref_name: ${{ steps.context.outputs.base-ref }}
+          ref_name: ${{ steps.context.outputs.stack-base-ref || steps.context.outputs.base-ref }}
           repository: ${{ github.repository }}
-          github_token: ${{ github.token }}
 
       - name: Fetch ephemeral GitHub token
         if: steps.context.outputs.is-fork == 'true' && steps.context.outputs.event == 'pull_request'
@@ -335,7 +342,9 @@ jobs:
         uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
-          STACK_PRS: ${{ needs.preflight.outputs.stack-prs }}
+          STACK_BASE_REF: ${{ needs.preflight.outputs.stack-base-ref }}
+          STACK_POSITION: ${{ needs.preflight.outputs.stack-position }}
+          STACK_SIZE: ${{ needs.preflight.outputs.stack-size }}
         with:
           # language=js
           script: |
@@ -343,9 +352,8 @@ jobs:
             const { owner, repo } = context.repo;
             const prNumber = parseInt(process.env.PR_NUMBER);
             const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
-            const stackPrs = (process.env.STACK_PRS || '').split(',').filter(Boolean);
-            const stackNote = stackPrs.length > 0
-              ? `This stack-aware preview will include changes from parent ${stackPrs.length === 1 ? 'PR' : 'PRs'} ${stackPrs.map(number => `[#${number}](https://github.com/${owner}/${repo}/pull/${number})`).join(', ')}.`
+            const stackNote = process.env.STACK_BASE_REF
+              ? `This PR is layer ${process.env.STACK_POSITION} of ${process.env.STACK_SIZE} in a stack targeting \`${process.env.STACK_BASE_REF}\`. The preview will include the layers below it.`
               : '';
 
             const body = [
@@ -670,16 +678,17 @@ jobs:
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
           DOCS_PATH: ${{ inputs.path }}
           PATH_PATTERN: ${{ inputs.path-pattern }}
-          STACK_PRS: ${{ needs.preflight.outputs.stack-prs }}
+          STACK_BASE_REF: ${{ needs.preflight.outputs.stack-base-ref }}
+          STACK_POSITION: ${{ needs.preflight.outputs.stack-position }}
+          STACK_SIZE: ${{ needs.preflight.outputs.stack-size }}
         with:
           # language=js
           script: |
             const title = '## 🔍 Preview links for changed docs'
             const { owner, repo } = context.repo;
             const prNumber = parseInt(process.env.PR_NUMBER);
-            const stackPrs = (process.env.STACK_PRS || '').split(',').filter(Boolean);
-            const stackNote = stackPrs.length > 0
-              ? `This stack-aware preview includes changes from parent ${stackPrs.length === 1 ? 'PR' : 'PRs'} ${stackPrs.map(number => `[#${number}](https://github.com/${owner}/${repo}/pull/${number})`).join(', ')}.`
+            const stackNote = process.env.STACK_BASE_REF
+              ? `This PR is layer ${process.env.STACK_POSITION} of ${process.env.STACK_SIZE} in a stack targeting \`${process.env.STACK_BASE_REF}\`. The preview includes the layers below it.`
               : '';
 
             const files = await github.paginate(github.rest.pulls.listFiles, {

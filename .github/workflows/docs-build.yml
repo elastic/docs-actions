@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: none
-      pull-requests: read
+      pull-requests: none
     outputs:
       content-source-match: ${{ format('{0}{1}{2}', steps.pr-check.outputs.content-source-match, steps.push-check.outputs.content-source-match, steps.merge-group-check.outputs.content-source-match) }}
     steps:
@@ -79,18 +79,17 @@ jobs:
         with:
           ref_name: ${{ steps.merge-group-base-branch.outputs.base_ref }}
           repository: ${{ github.repository }}
-      # github_token lets assembler-match resolve a stacked PR: when the base branch is
-      # not a content source, docs-builder walks the chain of open PRs to the branch
-      # the stack ultimately targets and matches that instead. The PR's own head SHA
-      # is still what gets built.
+      # A stacked PR targets its parent's branch, which is not a content source. GitHub
+      # exposes the branch the whole stack lands on as pull_request.stack.base.ref, so
+      # match against that. stack is null for a standalone PR. The PR's own head SHA is
+      # still what gets built.
       - name: Match for PR events
         id: pr-check
         if: github.event_name == 'pull_request'
         uses: elastic/docs-builder/actions/assembler-match@main
         with:
-          ref_name: ${{ github.base_ref }}
+          ref_name: ${{ github.event.pull_request.stack.base.ref || github.base_ref }}
           repository: ${{ github.repository }}
-          github_token: ${{ github.token }}
       - name: Match for push events
         id: push-check
         if: github.event_name == 'push'
