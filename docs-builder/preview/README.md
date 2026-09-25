@@ -8,9 +8,9 @@ https://docs-v3-preview.elastic.dev/<owner>/<repository>/pull/<number>
 
 ## Stacked pull requests
 
-A stacked pull request targets the head branch of its parent pull request instead of a configured content-source branch such as `main`. When the immediate base branch is not a content source, the preview workflows follow the chain of open pull requests until they reach the root branch, use the root branch to check content-source eligibility, and build the child pull request's head commit. Because the child commit contains its parent commits, the resulting preview includes the stack up to that pull request.
+A stacked pull request targets the head branch of its parent pull request instead of a configured content-source branch such as `main`. The preview workflows pass the pull request's base branch and a GitHub token to `docs-builder`'s `assembler content-source match`. When the base branch is not a content source, `docs-builder` follows the chain of open pull requests until it reaches a content-source branch, and reports that branch together with the parent pull requests it walked through. The workflows then build the child pull request's head commit. Because the child commit contains its parent commits, the resulting preview includes the stack up to that pull request.
 
-The chain walk only starts when the immediate base is not a content source, and it stops at the repository default branch or at a semver branch such as `9.4`. A pull request that targets `main` directly is never treated as stacked, even if another open pull request uses `main` as its head.
+Each hop is tested against the real content-source configuration, so a branch that is itself a content source is never walked past. A pull request that targets `main` directly is never treated as stacked, even if another open pull request uses `main` as its head. See the [`content-source match` reference](https://github.com/elastic/docs-builder/blob/main/docs/cli/assembler/content-source/cmd-match.md) for the stop conditions.
 
 The preview comment links to every parent pull request detected in the stack. Preview URLs, cleanup behavior, and artifact retention are unchanged. Each pull request still produces one build and one S3 prefix, so stack support does not add site builds or persistent storage.
 

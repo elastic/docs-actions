@@ -73,7 +73,7 @@ jobs:
       id-token: write
     outputs:
       should-deploy: ${{ steps.evaluate.outputs.should-deploy }}
-      content-source-match: ${{ (steps.match.outputs.content-source-match == 'true' || steps.match-stack.outputs.content-source-match == 'true') && 'true' || steps.match.outputs.content-source-match }}
+      content-source-match: ${{ steps.match.outputs.content-source-match }}
       event: ${{ steps.context.outputs.event }}
       pr-number: ${{ steps.context.outputs.pr-number }}
       head-sha: ${{ steps.context.outputs.head-sha }}
@@ -81,7 +81,7 @@ jobs:
       head-repo: ${{ steps.context.outputs.head-repo }}
       is-fork: ${{ steps.context.outputs.is-fork }}
       base-ref: ${{ steps.context.outputs.base-ref }}
-      stack-prs: ${{ steps.resolve-stack.outputs.stack-prs }}
+      stack-prs: ${{ steps.match.outputs.stack-parent-prs }}
       is-org-member: ${{ steps.check-org-membership.outputs.is-member }}
       vale-files-match: ${{ steps.context.outputs.vale-files-match }}
       link-index-eligible: ${{ steps.link-index-branch.outputs.eligible }}
@@ -242,6 +242,10 @@ jobs:
             }
             core.setOutput('vale-files-match', valeFilesMatch ? 'true' : 'false');
 
+      # github_token lets assembler-match resolve a stacked PR: when the base branch is
+      # not a content source, docs-builder walks the chain of open PRs to the branch
+      # the stack ultimately targets and matches that instead. The PR's own head SHA
+      # is still what gets built; stack-parent-prs feeds the preview comment.
       - name: Match content source
         id: match
         if: steps.context.outputs.has-changes == 'true'
@@ -249,86 +253,7 @@ jobs:
         with:
           ref_name: ${{ steps.context.outputs.base-ref }}
           repository: ${{ github.repository }}
-
-      # A stacked PR targets its parent PR's head branch, which is not a content
-      # source. Only when the immediate base misses, walk the chain of open PRs to
-      # the root branch. The walk stops at the default branch or a semver branch so
-      # an unrelated PR such as `main -> 9.4` can never redirect a normal PR. The
-      # build still uses this PR's head SHA; only eligibility comes from the root.
-      - name: Resolve stacked PR base branch
-        id: resolve-stack
-        if: >
-          steps.context.outputs.event == 'pull_request'
-          && steps.context.outputs.has-changes == 'true'
-          && steps.match.outputs.content-source-match != 'true'
-        uses: actions/github-script@v9
-        env:
-          BASE_REF: ${{ steps.context.outputs.base-ref }}
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-        with:
-          # language=js
-          script: |
-            const { owner, repo } = context.repo;
-            const repository = `${owner}/${repo}`;
-            const defaultBranch = process.env.DEFAULT_BRANCH;
-            const isTerminal = (branch) =>
-              branch === defaultBranch || /^[0-9]+\.[0-9]+(\.[0-9]+)?$/.test(branch);
-            let ref = process.env.BASE_REF;
-            const stack = [];
-            const visited = new Set();
-            const maxDepth = 50;
-
-            for (let depth = 0; depth < maxDepth; depth++) {
-              if (isTerminal(ref)) break;
-              if (visited.has(ref)) {
-                throw new Error(`Cycle detected while resolving stacked PR base branch '${ref}'`);
-              }
-              visited.add(ref);
-
-              const { data: candidates } = await github.rest.pulls.list({
-                owner,
-                repo,
-                state: 'open',
-                head: `${owner}:${ref}`,
-                per_page: 100,
-              });
-              const parents = candidates.filter(candidate =>
-                candidate.head.repo?.full_name === repository && candidate.head.ref === ref
-              );
-
-              if (parents.length === 0) break;
-              if (parents.length > 1) {
-                throw new Error(
-                  `Cannot resolve stacked PR base branch '${ref}': found ${parents.length} open PRs with that head`
-                );
-              }
-
-              const parent = parents[0];
-              stack.push(parent.number);
-              core.info(`Stack parent #${parent.number}: ${parent.head.ref} -> ${parent.base.ref}`);
-              ref = parent.base.ref;
-            }
-
-            if (stack.length === maxDepth) {
-              throw new Error(`Stack exceeds the maximum supported depth of ${maxDepth}`);
-            }
-
-            core.setOutput('stacked', stack.length > 0 ? 'true' : 'false');
-            core.setOutput('ref', ref);
-            core.setOutput('stack-prs', stack.join(','));
-            core.info(
-              stack.length > 0
-                ? `Resolved stack through PRs ${stack.map(number => `#${number}`).join(', ')} to '${ref}'`
-                : `PR is not stacked; immediate base '${ref}' is not a content source`
-            );
-
-      - name: Match stacked PR root branch
-        id: match-stack
-        if: steps.resolve-stack.outputs.stacked == 'true'
-        uses: elastic/docs-builder/actions/assembler-match@main
-        with:
-          ref_name: ${{ steps.resolve-stack.outputs.ref }}
-          repository: ${{ github.repository }}
+          github_token: ${{ github.token }}
 
       - name: Fetch ephemeral GitHub token
         if: steps.context.outputs.is-fork == 'true' && steps.context.outputs.event == 'pull_request'
@@ -350,7 +275,7 @@ jobs:
       - name: Evaluate
         id: evaluate
         env:
-          MATCH: ${{ (steps.match.outputs.content-source-match == 'true' || steps.match-stack.outputs.content-source-match == 'true') && 'true' || steps.match.outputs.content-source-match }}
+          MATCH: ${{ steps.match.outputs.content-source-match }}
           CHANGES: ${{ steps.context.outputs.has-changes }}
           IS_FORK: ${{ steps.context.outputs.is-fork }}
           EVENT: ${{ steps.context.outputs.event }}
