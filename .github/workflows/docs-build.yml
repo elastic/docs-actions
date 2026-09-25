@@ -62,10 +62,41 @@ jobs:
       contents: none
       pull-requests: read
     outputs:
-      content-source-match: ${{ format('{0}{1}{2}', steps.pr-check.outputs.content-source-match, steps.push-check.outputs.content-source-match, steps.merge-group-check.outputs.content-source-match) }}
+      # For PRs, the immediate base is matched first. Only when that misses does the
+      # stack resolver run and a second match is attempted on the resolved root branch.
+      content-source-match: ${{ format('{0}{1}{2}', (steps.pr-check.outputs.content-source-match == 'true' || steps.pr-stack-check.outputs.content-source-match == 'true') && 'true' || steps.pr-check.outputs.content-source-match, steps.push-check.outputs.content-source-match, steps.merge-group-check.outputs.content-source-match) }}
     steps:
-      - name: Resolve stacked PR base branch
+      - name: Find merge-group base branch
+        if: github.event_name == 'merge_group'
+        id: merge-group-base-branch
+        env:
+          MERGE_GROUP_BASE_REF: ${{ github.event.merge_group.base_ref }}
+        run: |
+          BASE_BRANCH=$(basename "$MERGE_GROUP_BASE_REF")
+          echo "base_ref=${BASE_BRANCH}" >> "$GITHUB_OUTPUT"
+      - name: Match for merge-group events
+        id: merge-group-check
+        if: github.event_name == 'merge_group'
+        uses: elastic/docs-builder/actions/assembler-match@main
+        with:
+          ref_name: ${{ steps.merge-group-base-branch.outputs.base_ref }}
+          repository: ${{ github.repository }}
+      - name: Match for PR events
+        id: pr-check
         if: github.event_name == 'pull_request'
+        uses: elastic/docs-builder/actions/assembler-match@main
+        with:
+          ref_name: ${{ github.base_ref }}
+          repository: ${{ github.repository }}
+
+      # A stacked PR targets its parent PR's head branch, which is not a content
+      # source. Only when the immediate base misses, walk the chain of open PRs to
+      # the root branch. The walk stops at the default branch or a semver branch so
+      # an unrelated PR such as `main -> 9.4` can never redirect a normal PR.
+      - name: Resolve stacked PR base branch
+        if: >
+          github.event_name == 'pull_request'
+          && steps.pr-check.outputs.content-source-match != 'true'
         id: resolve-pr-base
         uses: actions/github-script@v9
         with:
@@ -73,12 +104,16 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const repository = `${owner}/${repo}`;
+            const defaultBranch = context.payload.repository.default_branch;
+            const isTerminal = (branch) =>
+              branch === defaultBranch || /^[0-9]+\.[0-9]+(\.[0-9]+)?$/.test(branch);
             let ref = context.payload.pull_request.base.ref;
             const stack = [];
             const visited = new Set();
             const maxDepth = 50;
 
             for (let depth = 0; depth < maxDepth; depth++) {
+              if (isTerminal(ref)) break;
               if (visited.has(ref)) {
                 core.setFailed(`Cycle detected while resolving stacked PR base branch '${ref}'`);
                 return;
@@ -115,36 +150,25 @@ jobs:
               return;
             }
 
+            core.setOutput('stacked', stack.length > 0 ? 'true' : 'false');
             core.setOutput('ref', ref);
             core.setOutput('stack-prs', stack.join(','));
             core.info(
               stack.length > 0
                 ? `Resolved stack through PRs ${stack.map(number => `#${number}`).join(', ')} to '${ref}'`
-                : `PR is not stacked; using immediate base '${ref}'`
+                : `PR is not stacked; immediate base '${ref}' is not a content source`
             );
 
-      - name: Find merge-group base branch
-        if: github.event_name == 'merge_group'
-        id: merge-group-base-branch
-        env:
-          MERGE_GROUP_BASE_REF: ${{ github.event.merge_group.base_ref }}
-        run: |
-          BASE_BRANCH=$(basename "$MERGE_GROUP_BASE_REF")
-          echo "base_ref=${BASE_BRANCH}" >> "$GITHUB_OUTPUT"
-      - name: Match for merge-group events
-        id: merge-group-check
-        if: github.event_name == 'merge_group'
+      - name: Match for stacked PR root branch
+        id: pr-stack-check
+        if: >
+          github.event_name == 'pull_request'
+          && steps.resolve-pr-base.outputs.stacked == 'true'
         uses: elastic/docs-builder/actions/assembler-match@main
         with:
-          ref_name: ${{ steps.merge-group-base-branch.outputs.base_ref }}
+          ref_name: ${{ steps.resolve-pr-base.outputs.ref }}
           repository: ${{ github.repository }}
-      - name: Match for PR events
-        id: pr-check
-        if: github.event_name == 'pull_request'
-        uses: elastic/docs-builder/actions/assembler-match@main
-        with:
-          ref_name: ${{ steps.resolve-pr-base.outputs.ref || github.base_ref }}
-          repository: ${{ github.repository }}
+
       - name: Match for push events
         id: push-check
         if: github.event_name == 'push'
