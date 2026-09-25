@@ -39,10 +39,16 @@ The caller needs the following permissions:
 - `contents: read` to read the changelog configuration.
 - `issues: write` and `pull-requests: write` to post the pull request comment.
 - `discussions: write` for the gh-aw safe-output jobs.
-- `copilot-requests: write` for agentic workflow support.
+- `copilot-requests: write` for Copilot inference using the GitHub Actions token.
 
-Set the `OPENROUTER_API_KEY` repository or organization secret. The workflow uses the Claude
-engine through OpenRouter.
+The workflow uses the native Copilot engine with `gpt-5.6-luna` for the review and
+`gpt-5-mini` for threat detection. It does not require an API key, a custom HTTP header,
+or a bring-your-own-key (BYOK) configuration.
+
+The organization must have a Copilot subscription with centralized billing enabled. Both the
+caller and the reusable workflow grant `copilot-requests: write`. See the
+[GitHub Agentic Workflows authentication guide](https://github.github.com/gh-aw/reference/auth/#copilot-requests-write-permission).
+Model access depends on the organization's Copilot policies.
 
 ## Inputs
 
@@ -120,6 +126,4 @@ jobs:
       source-run-id: ${{ github.event.workflow_run.id }}
       additional-instructions: |
         Use the product terminology from this repository's changelog configuration.
-    secrets:
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 ```

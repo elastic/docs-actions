@@ -10,18 +10,9 @@ imports:
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/safe-output-add-comment.md
   - gh-aw-fragments/ste-100.md
-model: sonnet
+model: gpt-5.6-luna
 engine:
-  id: claude
-  permission-mode: bypassPermissions
-  args: ["--disallowed-tools", "Edit(./**)"]
-  env:
-    ANTHROPIC_BASE_URL: https://openrouter.ai/api
-    ANTHROPIC_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-    ANTHROPIC_CUSTOM_HEADERS: |-
-      HTTP-Referer: https://github.com/${{ github.repository }}
-      X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
-      X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
+  id: copilot
 
 on:
   roles: all
@@ -83,8 +74,6 @@ network:
   allowed:
     - defaults
     - github
-    - "openrouter.ai"
-    - "api.anthropic.com"
     - "www.elastic.co"
 
 steps:
@@ -124,7 +113,7 @@ safe-outputs:
   threat-detection:
     engine:
       id: copilot
-      model: sonnet
+      model: gpt-5-mini
   allowed-domains:
     - www.elastic.co
     - github.com

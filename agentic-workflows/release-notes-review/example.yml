@@ -55,5 +55,3 @@ jobs:
       pr-number: ${{ needs.prepare.outputs.pr-number }}
       source-run-id: ${{ github.event.workflow_run.id }}
       config: docs/changelog.yml
-    secrets:
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
