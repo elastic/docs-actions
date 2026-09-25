@@ -81,6 +81,8 @@ jobs:
       head-repo: ${{ steps.context.outputs.head-repo }}
       is-fork: ${{ steps.context.outputs.is-fork }}
       base-ref: ${{ steps.context.outputs.base-ref }}
+      content-source-ref: ${{ steps.context.outputs.content-source-ref }}
+      stack-prs: ${{ steps.context.outputs.stack-prs }}
       is-org-member: ${{ steps.check-org-membership.outputs.is-member }}
       vale-files-match: ${{ steps.context.outputs.vale-files-match }}
       link-index-eligible: ${{ steps.link-index-branch.outputs.eligible }}
@@ -214,6 +216,61 @@ jobs:
             core.setOutput('base-ref', pr.base.ref);
             core.setOutput('pr-author', pr.user.login);
 
+            // A stacked PR targets its parent PR's head branch, which is not an
+            // assembler content source. Walk the open PR chain to the configured
+            // root branch while continuing to build this PR's head SHA.
+            const repository = `${owner}/${repo}`;
+            let contentSourceRef = pr.base.ref;
+            const stack = [];
+            const visited = new Set();
+            const maxDepth = 50;
+
+            for (let depth = 0; depth < maxDepth; depth++) {
+              if (visited.has(contentSourceRef)) {
+                throw new Error(
+                  `Cycle detected while resolving stacked PR base branch '${contentSourceRef}'`
+                );
+              }
+              visited.add(contentSourceRef);
+
+              const { data: candidates } = await github.rest.pulls.list({
+                owner,
+                repo,
+                state: 'open',
+                head: `${owner}:${contentSourceRef}`,
+                per_page: 100,
+              });
+              const parents = candidates.filter(candidate =>
+                candidate.head.repo?.full_name === repository
+                && candidate.head.ref === contentSourceRef
+              );
+
+              if (parents.length === 0) break;
+              if (parents.length > 1) {
+                throw new Error(
+                  `Cannot resolve stacked PR base branch '${contentSourceRef}': `
+                  + `found ${parents.length} open PRs with that head`
+                );
+              }
+
+              const parent = parents[0];
+              stack.push(parent.number);
+              core.info(`Stack parent #${parent.number}: ${parent.head.ref} -> ${parent.base.ref}`);
+              contentSourceRef = parent.base.ref;
+            }
+
+            if (stack.length === maxDepth) {
+              throw new Error(`Stack exceeds the maximum supported depth of ${maxDepth}`);
+            }
+
+            core.setOutput('content-source-ref', contentSourceRef);
+            core.setOutput('stack-prs', stack.join(','));
+            core.info(
+              stack.length > 0
+                ? `Resolved stack through PRs ${stack.map(number => `#${number}`).join(', ')} to '${contentSourceRef}'`
+                : `PR is not stacked; using immediate base '${contentSourceRef}'`
+            );
+
             // --- Changed-files check (docs-relevant files only) ---
             const files = await github.paginate(github.rest.pulls.listFiles, {
               owner, repo, pull_number: prNumber
@@ -246,7 +303,7 @@ jobs:
         if: steps.context.outputs.has-changes == 'true'
         uses: elastic/docs-builder/actions/assembler-match@main
         with:
-          ref_name: ${{ steps.context.outputs.base-ref }}
+          ref_name: ${{ steps.context.outputs.content-source-ref || steps.context.outputs.base-ref }}
           repository: ${{ github.repository }}
 
       - name: Fetch ephemeral GitHub token
@@ -329,6 +386,7 @@ jobs:
         uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
+          STACK_PRS: ${{ needs.preflight.outputs.stack-prs }}
         with:
           # language=js
           script: |
@@ -336,11 +394,16 @@ jobs:
             const { owner, repo } = context.repo;
             const prNumber = parseInt(process.env.PR_NUMBER);
             const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+            const stackPrs = (process.env.STACK_PRS || '').split(',').filter(Boolean);
+            const stackNote = stackPrs.length > 0
+              ? `This stack-aware preview will include changes from parent ${stackPrs.length === 1 ? 'PR' : 'PRs'} ${stackPrs.map(number => `[#${number}](https://github.com/${owner}/${repo}/pull/${number})`).join(', ')}.`
+              : '';
 
             const body = [
               title,
               '',
               `⏳ Building and deploying preview... [View progress](${runUrl})`,
+              ...(stackNote ? ['', stackNote] : []),
               '',
               '_This comment will be updated with preview links when the build is complete._',
             ].join('\n');
@@ -658,12 +721,17 @@ jobs:
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
           DOCS_PATH: ${{ inputs.path }}
           PATH_PATTERN: ${{ inputs.path-pattern }}
+          STACK_PRS: ${{ needs.preflight.outputs.stack-prs }}
         with:
           # language=js
           script: |
             const title = '## 🔍 Preview links for changed docs'
             const { owner, repo } = context.repo;
             const prNumber = parseInt(process.env.PR_NUMBER);
+            const stackPrs = (process.env.STACK_PRS || '').split(',').filter(Boolean);
+            const stackNote = stackPrs.length > 0
+              ? `This stack-aware preview includes changes from parent ${stackPrs.length === 1 ? 'PR' : 'PRs'} ${stackPrs.map(number => `[#${number}](https://github.com/${owner}/${repo}/pull/${number})`).join(', ')}.`
+              : '';
 
             const files = await github.paginate(github.rest.pulls.listFiles, {
               owner, repo, pull_number: prNumber
@@ -684,6 +752,7 @@ jobs:
               const body = [
                 title,
                 '',
+                ...(stackNote ? [stackNote, ''] : []),
                 'This PR only changes snippets or data files. No direct page links are available.',
                 `[Browse the full preview](${previewUrl})`,
               ].join('\n');
@@ -736,6 +805,7 @@ jobs:
 
             const body = [
               title,
+              ...(stackNote ? ['', stackNote, ''] : []),
               ...links.slice(0, 10).map(i => `- ${i}`),
             ]
 

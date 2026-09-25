@@ -60,10 +60,69 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: none
-      pull-requests: none
+      pull-requests: read
     outputs:
       content-source-match: ${{ format('{0}{1}{2}', steps.pr-check.outputs.content-source-match, steps.push-check.outputs.content-source-match, steps.merge-group-check.outputs.content-source-match) }}
     steps:
+      - name: Resolve stacked PR base branch
+        if: github.event_name == 'pull_request'
+        id: resolve-pr-base
+        uses: actions/github-script@v9
+        with:
+          # language=js
+          script: |
+            const { owner, repo } = context.repo;
+            const repository = `${owner}/${repo}`;
+            let ref = context.payload.pull_request.base.ref;
+            const stack = [];
+            const visited = new Set();
+            const maxDepth = 50;
+
+            for (let depth = 0; depth < maxDepth; depth++) {
+              if (visited.has(ref)) {
+                core.setFailed(`Cycle detected while resolving stacked PR base branch '${ref}'`);
+                return;
+              }
+              visited.add(ref);
+
+              const { data: candidates } = await github.rest.pulls.list({
+                owner,
+                repo,
+                state: 'open',
+                head: `${owner}:${ref}`,
+                per_page: 100,
+              });
+              const parents = candidates.filter(pr =>
+                pr.head.repo?.full_name === repository && pr.head.ref === ref
+              );
+
+              if (parents.length === 0) break;
+              if (parents.length > 1) {
+                core.setFailed(
+                  `Cannot resolve stacked PR base branch '${ref}': found ${parents.length} open PRs with that head`
+                );
+                return;
+              }
+
+              const parent = parents[0];
+              stack.push(parent.number);
+              core.info(`Stack parent #${parent.number}: ${parent.head.ref} -> ${parent.base.ref}`);
+              ref = parent.base.ref;
+            }
+
+            if (stack.length === maxDepth) {
+              core.setFailed(`Stack exceeds the maximum supported depth of ${maxDepth}`);
+              return;
+            }
+
+            core.setOutput('ref', ref);
+            core.setOutput('stack-prs', stack.join(','));
+            core.info(
+              stack.length > 0
+                ? `Resolved stack through PRs ${stack.map(number => `#${number}`).join(', ')} to '${ref}'`
+                : `PR is not stacked; using immediate base '${ref}'`
+            );
+
       - name: Find merge-group base branch
         if: github.event_name == 'merge_group'
         id: merge-group-base-branch
@@ -84,7 +143,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: elastic/docs-builder/actions/assembler-match@main
         with:
-          ref_name: ${{ github.base_ref }}
+          ref_name: ${{ steps.resolve-pr-base.outputs.ref || github.base_ref }}
           repository: ${{ github.repository }}
       - name: Match for push events
         id: push-check
