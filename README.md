@@ -55,7 +55,8 @@ See [agentic-workflows/DEVELOPING.md](agentic-workflows/DEVELOPING.md) for agent
 ```bash
 make setup     # install gh-aw compiler + actionlint
 make compile   # compile workflow sources to lock files
-make lint      # validate trigger files
+make lint      # validate all files without changing the working tree
+make format    # run all pre-commit hooks and apply fixes
 ```
 
 ## License
