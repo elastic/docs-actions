@@ -139,6 +139,7 @@ steps:
             id
             url
             state
+            createdAt
             title
             body
             author { login }
@@ -840,7 +841,8 @@ For every proposal:
 
 - Copy the field name and option value exactly from the context.
 - Follow the field's `guidance`, `allowed_options`, and `excluded_options` rules.
-- Require one clear value. If two values are plausible, leave the field empty.
+- Require one clear best value. If two values are equally or comparably plausible, leave the
+  field empty.
 - Cite the exact issue phrase, label, author mapping, or linked source that supports the value.
 - Never infer a date or version from the current date, milestones, roadmaps, or release cadence.
 
