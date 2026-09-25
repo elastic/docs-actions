@@ -79,12 +79,16 @@ jobs:
         with:
           ref_name: ${{ steps.merge-group-base-branch.outputs.base_ref }}
           repository: ${{ github.repository }}
+      # A stacked PR targets its parent's branch, which is not a content source. GitHub
+      # exposes the branch the whole stack lands on as pull_request.stack.base.ref, so
+      # match against that. stack is null for a standalone PR. The PR's own head SHA is
+      # still what gets built.
       - name: Match for PR events
         id: pr-check
         if: github.event_name == 'pull_request'
         uses: elastic/docs-builder/actions/assembler-match@main
         with:
-          ref_name: ${{ github.base_ref }}
+          ref_name: ${{ github.event.pull_request.stack.base.ref || github.base_ref }}
           repository: ${{ github.repository }}
       - name: Match for push events
         id: push-check
