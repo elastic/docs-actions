@@ -35,6 +35,11 @@ jobs:
             exit 0
           fi
 
+          if [ ! -f /tmp/changelog-staging/metadata.json ]; then
+            echo "Artifact metadata file is missing"
+            exit 0
+          fi
+
           pr_number=$(jq -r '.pr_number // empty' /tmp/changelog-staging/metadata.json)
           if [ -z "$pr_number" ]; then
             echo "Artifact metadata does not identify a pull request"
