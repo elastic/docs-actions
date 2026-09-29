@@ -13,7 +13,9 @@ concurrency:
 
 jobs:
   comment:
-    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion != 'cancelled'
+    if: >
+      (github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'workflow_run')
+      && github.event.workflow_run.conclusion != 'cancelled'
     permissions:
       actions: read
       pull-requests: write
