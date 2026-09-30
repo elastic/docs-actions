@@ -79,6 +79,13 @@ class SkipAndLightTests(unittest.TestCase):
         # Content triggers stay limited to .md pages.
         self.assertEqual(decision["tier"], "light")
 
+    def test_vale_files_stay_within_the_changed_lines_cap(self):
+        files = [{"filename": f"p{i}.md", "status": "added"} for i in range(classify.MAX_CHANGED_LINE_FILES + 5)]
+        head = {f["filename"]: "Text.\n" for f in files}
+        decision, vale_files = run(files, head=head, config={"enabled": dict.fromkeys(classify.TRIGGER_IDS, False)})
+        self.assertEqual(len(decision["changed_lines"]), classify.MAX_CHANGED_LINE_FILES)
+        self.assertEqual(set(vale_files), set(decision["changed_lines"]))
+
     def test_generated_reference_files_are_not_skipped(self):
         base = {"reference/gen.md": page("# Ref\n\nText.", lines=20)}
         head = {"reference/gen.md": page("# Ref\n\nText two.", lines=20)}

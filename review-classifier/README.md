@@ -106,6 +106,8 @@ Labels are advisory. They do not change merge requirements or assign reviewers. 
 
 When `vale.enabled` is `true`, the comment includes a short Vale summary: counts by severity on changed lines, and the first `vale.max-findings` (10) errors and warnings. Errors map to the **Language** checklist item. Warnings and suggestions map to **Style**. Vale findings are advisory.
 
+Vale lints the first 300 changed Markdown files. The classification artifact holds changed-line data for 300 files only, so the comment never lists findings on lines that did not change.
+
 In a dry run started from `workflow_dispatch`, Vale lints all lines of the changed files. The comment workflow filters the findings to changed lines with the line ranges in the classification artifact.
 
 ## Backtest

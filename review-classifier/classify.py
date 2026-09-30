@@ -902,7 +902,9 @@ def classify(files, read_base, read_head, list_head_files, config, labels=(), la
     if tier != computed:
         override = config["full_label"] if tier == "full" else config["light_label"]
 
-    vale_files = [f["filename"] for f in files if f["status"] != "removed" and f["filename"].endswith((".md", ".mdx"))]
+    # Lint only files with changed-line data, so the comment never lists findings
+    # on unchanged lines. On very large PRs, files past the cap are not linted.
+    vale_files = [f["filename"] for f in files if f["filename"] in changed_lines]
     return {
         "tier": tier,
         "computed_tier": computed,
