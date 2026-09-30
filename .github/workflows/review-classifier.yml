@@ -1,0 +1,260 @@
+name: Review classification
+
+# Phase 1 of the review classifier. Runs with read-only permissions on
+# pull_request (including forks) or workflow_dispatch. It never runs code from
+# the pull request. It uploads a data-only decision artifact that the
+# review-classifier-comment.yml workflow validates and posts.
+
+on:
+  workflow_call:
+    inputs:
+      pr-number:
+        description: 'Pull request to classify. Leave empty to use the pull_request event.'
+        type: string
+        default: ''
+      dry-run:
+        description: 'Write a preview to the job summary only. The comment workflow posts nothing.'
+        type: boolean
+        default: false
+      include-vale:
+        description: 'Run Vale on the changed Markdown files and add a short summary to the comment.'
+        type: boolean
+        default: true
+      vale-paths:
+        description: 'Path patterns for Vale linting (multi-line). Passed to vale/lint.'
+        type: string
+        default: ''
+      skip-paths:
+        description: 'More paths to ignore, in addition to .github/** and **/*.csv (space- or newline-separated globs). If only ignored files change, the classifier posts nothing.'
+        type: string
+        default: ''
+      snippet-patterns:
+        description: 'Globs for shared snippet files.'
+        type: string
+        default: '**/_snippets/** **/snippets/**'
+      redirect-files:
+        description: 'Globs for redirect files.'
+        type: string
+        default: '**/redirects.yml **/_redirects'
+      max-files:
+        description: 'Full review when more than this number of files change.'
+        type: number
+        default: 5
+      min-images:
+        description: 'Full review when at least this number of images change.'
+        type: number
+        default: 3
+      size-thresholds:
+        description: 'Percent of changed lines for a substantial change, as MAX_LINES:PERCENT pairs and a fallback percent.'
+        type: string
+        default: '199:20,500:10,5'
+      allowed-link-hosts:
+        description: 'Link hosts that do not count as external. Use *.host for subdomains and host/path for a path prefix.'
+        type: string
+        default: 'elastic.co *.elastic.co github.com/elastic'
+      snippet-scope:
+        description: 'What "folder" means for shared snippets: top-level or directory.'
+        type: string
+        default: 'top-level'
+      pages-exclude-snippets:
+        description: 'Do not count snippet files as pages for the new page and page deleted triggers.'
+        type: boolean
+        default: true
+      light-label:
+        description: 'Label for light review.'
+        type: string
+        default: 'review: light'
+      full-label:
+        description: 'Label for full review.'
+        type: string
+        default: 'review: full'
+      light-checklist-url:
+        description: 'Link to the light review checklist.'
+        type: string
+        default: 'https://codex.elastic.dev/r/docs-content-internal/processes/docs-review-checklists#light-review-checklist'
+      full-checklist-url:
+        description: 'Link to the full review checklist.'
+        type: string
+        default: 'https://codex.elastic.dev/r/docs-content-internal/processes/docs-review-checklists#full-review-checklist'
+
+permissions: {}
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - name: Resolve pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          INPUT_PR_NUMBER: ${{ inputs.pr-number }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          pr="${INPUT_PR_NUMBER:-$EVENT_PR_NUMBER}"
+          if ! [[ "$pr" =~ ^[0-9]+$ ]]; then
+            echo "::error::Set the pr-number input or run on a pull_request event."
+            exit 1
+          fi
+          work="$RUNNER_TEMP/review-classifier"
+          mkdir -p "$work/out"
+          gh api "repos/$GH_REPO/pulls/$pr" > "$work/pr.json"
+          {
+            echo "number=$pr"
+            echo "head_sha=$(jq -r .head.sha "$work/pr.json")"
+            echo "base_sha=$(jq -r .base.sha "$work/pr.json")"
+            echo "work=$work"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Checkout pull request head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.pr.outputs.head_sha }}
+          fetch-depth: 1
+          filter: blob:none
+          persist-credentials: false
+
+      - name: Checkout docs-actions scripts
+        uses: actions/checkout@v6
+        with:
+          repository: elastic/docs-actions
+          # github.workflow_sha identifies the caller in a reusable workflow.
+          # The JSON round-trip works around actionlint#647 until actionlint supports this property.
+          ref: ${{ fromJSON(toJSON(job)).workflow_sha }}
+          sparse-checkout: |
+            review-classifier
+            vale/report
+          path: _docs-actions
+          persist-credentials: false
+
+      - name: Collect pull request data
+        id: collect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          BASE_SHA: ${{ steps.pr.outputs.base_sha }}
+          WORK: ${{ steps.pr.outputs.work }}
+        run: |
+          gh api --paginate "repos/$GH_REPO/pulls/$PR_NUMBER/files?per_page=100" \
+            --jq '.[] | {filename, status, previous_filename}' | jq -s . > "$WORK/files.json"
+          gh api --paginate "repos/$GH_REPO/issues/$PR_NUMBER/events?per_page=100" \
+            --jq '.[] | select(.event == "labeled" or .event == "unlabeled") | {event, label: .label.name, actor: .actor.login}' \
+            | jq -s . > "$WORK/label-events.json"
+          jq '[.labels[].name]' "$WORK/pr.json" > "$WORK/labels.json"
+          merge_base=$(gh api "repos/$GH_REPO/compare/${BASE_SHA}...${HEAD_SHA}" --jq .merge_base_commit.sha)
+          echo "merge_base=$merge_base" >> "$GITHUB_OUTPUT"
+          echo "Changed files: $(jq length "$WORK/files.json"), merge base: $merge_base"
+
+      - name: Fetch base versions of changed files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MERGE_BASE: ${{ steps.collect.outputs.merge_base }}
+          WORK: ${{ steps.pr.outputs.work }}
+        run: |
+          # Pass the read-only token through environment config, so it is never written to .git/config.
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
+          GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          export GIT_CONFIG_VALUE_0
+          git fetch --no-tags --depth=1 --filter=blob:none origin "$MERGE_BASE"
+          jq -r '.[] | select(.status != "added") | (.previous_filename // .filename)' "$WORK/files.json" \
+            | grep -E '(\.md|/?redirects\.yml|/?_redirects)$' > "$WORK/base-paths.txt" || true
+          if [ -s "$WORK/base-paths.txt" ]; then
+            # git diff downloads all missing base blobs for these paths in one batch.
+            git --literal-pathspecs diff --no-renames --stat "$MERGE_BASE" HEAD \
+              --pathspec-from-file="$WORK/base-paths.txt" > /dev/null
+          fi
+
+      - name: Classify
+        id: classify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          MERGE_BASE: ${{ steps.collect.outputs.merge_base }}
+          WORK: ${{ steps.pr.outputs.work }}
+          DRY_RUN: ${{ inputs.dry-run }}
+          SKIP_PATHS: ${{ inputs.skip-paths }}
+          SNIPPET_PATTERNS: ${{ inputs.snippet-patterns }}
+          REDIRECT_FILES: ${{ inputs.redirect-files }}
+          MAX_FILES: ${{ inputs.max-files }}
+          MIN_IMAGES: ${{ inputs.min-images }}
+          SIZE_THRESHOLDS: ${{ inputs.size-thresholds }}
+          ALLOWED_LINK_HOSTS: ${{ inputs.allowed-link-hosts }}
+          SNIPPET_SCOPE: ${{ inputs.snippet-scope }}
+          PAGES_EXCLUDE_SNIPPETS: ${{ inputs.pages-exclude-snippets }}
+          LIGHT_LABEL: ${{ inputs.light-label }}
+          FULL_LABEL: ${{ inputs.full-label }}
+        run: |
+          # Same environment-only credentials as above, in case git must download a blob that the prefetch missed.
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
+          GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          export GIT_CONFIG_VALUE_0
+          unset GH_TOKEN
+          dry_run_flag=()
+          if [ "$DRY_RUN" = "true" ]; then dry_run_flag=(--dry-run); fi
+          python3 _docs-actions/review-classifier/classify.py \
+            --repo-root . \
+            --base-rev "$MERGE_BASE" \
+            --head-rev HEAD \
+            --files "$WORK/files.json" \
+            --labels "$WORK/labels.json" \
+            --label-events "$WORK/label-events.json" \
+            --pr-number "$PR_NUMBER" \
+            --head-sha "$HEAD_SHA" \
+            "${dry_run_flag[@]}" \
+            --output "$WORK/out/decision.json" \
+            --vale-files "$WORK/vale-files.txt"
+          echo "tier=$(jq -r .tier "$WORK/out/decision.json")" >> "$GITHUB_OUTPUT"
+          if [ -s "$WORK/vale-files.txt" ]; then
+            echo "has_vale_files=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Write preview
+        env:
+          WORK: ${{ steps.pr.outputs.work }}
+          LIGHT_URL: ${{ inputs.light-checklist-url }}
+          FULL_URL: ${{ inputs.full-checklist-url }}
+          LIGHT_LABEL: ${{ inputs.light-label }}
+          FULL_LABEL: ${{ inputs.full-label }}
+        run: |
+          python3 _docs-actions/review-classifier/render.py \
+            --decision "$WORK/out/decision.json" \
+            --output "$WORK/preview.md" \
+            --preview \
+            --light-url "$LIGHT_URL" \
+            --full-url "$FULL_URL" \
+            --light-label "$LIGHT_LABEL" \
+            --full-label "$FULL_LABEL"
+          cat "$WORK/preview.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload classification
+        uses: actions/upload-artifact@v7
+        with:
+          name: review-classification
+          path: ${{ steps.pr.outputs.work }}/out/decision.json
+          retention-days: 1
+
+      - name: List files for Vale
+        id: vale-files
+        if: inputs.include-vale && steps.classify.outputs.has_vale_files == 'true' && steps.classify.outputs.tier != 'skip'
+        env:
+          WORK: ${{ steps.pr.outputs.work }}
+        run: |
+          echo "files=$(tr '\n' ' ' < "$WORK/vale-files.txt")" >> "$GITHUB_OUTPUT"
+
+      - name: Run Vale
+        if: steps.vale-files.outputs.files != ''
+        continue-on-error: true
+        uses: elastic/docs-actions/vale/lint@v1
+        with:
+          files: ${{ steps.vale-files.outputs.files }}
+          vale-paths: ${{ inputs.vale-paths }}
+          vale_version: 3.22.0
