@@ -140,8 +140,9 @@ jobs:
             | grep -E '(\.md|/?redirects\.yml|/?_redirects)$' > "$WORK/base-paths.txt" || true
           if [ -s "$WORK/base-paths.txt" ]; then
             # git diff downloads all missing base blobs for these paths in one batch.
-            git --literal-pathspecs diff --no-renames --stat "$MERGE_BASE" HEAD \
-              --pathspec-from-file="$WORK/base-paths.txt" > /dev/null
+            # git diff has no --pathspec-from-file option, so pass the paths through xargs.
+            tr '\n' '\0' < "$WORK/base-paths.txt" \
+              | xargs -0 git --literal-pathspecs diff --no-renames --stat "$MERGE_BASE" HEAD -- > /dev/null
           fi
 
       - name: Classify
