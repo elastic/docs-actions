@@ -30,6 +30,8 @@ Usage:
 
 Download-ready caller workflows for automated release notes are available in [`release-notes/`](release-notes/).
 
+Download-ready caller workflows for deterministic light or full review classification of docs pull requests are available in [`review-classifier/`](review-classifier/).
+
 ## Agentic workflows
 
 AI-powered [GitHub Agent Workflows](https://github.github.com/gh-aw/) for documentation tasks.

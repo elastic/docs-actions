@@ -1,0 +1,41 @@
+name: test-review-classifier
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'review-classifier/**'
+      - 'vale/report/**'
+      - '.github/workflows/review-classifier.yml'
+      - '.github/workflows/review-classifier-comment.yml'
+      - '.github/workflows/test-review-classifier.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'review-classifier/**'
+      - 'vale/report/**'
+      - '.github/workflows/review-classifier.yml'
+      - '.github/workflows/review-classifier-comment.yml'
+      - '.github/workflows/test-review-classifier.yml'
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run classify tests
+        working-directory: review-classifier
+        run: python3 -m unittest test_classify -v
+
+      - name: Run render tests
+        working-directory: review-classifier
+        run: python3 -m unittest test_render -v
+
+      - name: Run publish tests
+        run: node --test review-classifier/scripts/publish.test.js

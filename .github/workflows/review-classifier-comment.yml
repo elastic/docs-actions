@@ -1,0 +1,185 @@
+name: Review classification comment
+
+# Phase 2 of the review classifier. Runs on workflow_run after
+# review-classifier.yml. It treats the decision artifact as untrusted: it
+# validates the schema, renders the comment from fixed templates, and only
+# changes the two configured review labels.
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        description: 'Path to the rules file in the caller repository. Must match the classification workflow.'
+        type: string
+        default: '.github/review-classifier.yml'
+
+permissions: {}
+
+jobs:
+  comment:
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Find artifacts
+        id: artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          names=$(gh api --paginate "repos/$GH_REPO/actions/runs/$RUN_ID/artifacts" --jq '.artifacts[].name')
+          grep -qx 'review-classification' <<< "$names" && echo "classification=true" >> "$GITHUB_OUTPUT"
+          grep -qx 'vale-results' <<< "$names" && echo "vale=true" >> "$GITHUB_OUTPUT"
+          echo "work=$RUNNER_TEMP/review-classifier" >> "$GITHUB_OUTPUT"
+
+      - name: Download classification
+        if: steps.artifacts.outputs.classification == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: review-classification
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: ${{ steps.artifacts.outputs.work }}/classification
+
+      - name: Download Vale results
+        if: steps.artifacts.outputs.classification == 'true' && steps.artifacts.outputs.vale == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: vale-results
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: ${{ steps.artifacts.outputs.work }}/vale
+
+      - name: Check for unexpected files
+        if: steps.artifacts.outputs.classification == 'true'
+        env:
+          WORK: ${{ steps.artifacts.outputs.work }}
+        run: |
+          unexpected=$(find "$WORK" -mindepth 1 \
+            ! -path "$WORK/classification" ! -path "$WORK/classification/decision.json" \
+            ! -path "$WORK/vale" ! -path "$WORK/vale/vale_results.json" ! -path "$WORK/vale/issue_counts.txt")
+          if [ -n "$unexpected" ]; then
+            echo "::error::Unexpected files in artifacts: $unexpected"
+            exit 1
+          fi
+
+      - name: Checkout docs-actions scripts
+        if: steps.artifacts.outputs.classification == 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: elastic/docs-actions
+          # github.workflow_sha identifies the caller in a reusable workflow.
+          # The JSON round-trip works around actionlint#647 until actionlint supports this property.
+          ref: ${{ fromJSON(toJSON(job)).workflow_sha }}
+          sparse-checkout: |
+            review-classifier
+            vale/report
+          path: _docs-actions
+          persist-credentials: false
+
+      - name: Load config
+        if: steps.artifacts.outputs.classification == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CONFIG_PATH: ${{ inputs.config }}
+          # The same ref as the classification run: the dispatch commit, or the default branch.
+          CONFIG_REF: ${{ github.event.workflow_run.event == 'workflow_dispatch' && github.event.workflow_run.head_sha || github.event.repository.default_branch }}
+          WORK: ${{ steps.artifacts.outputs.work }}
+        run: |
+          mkdir -p "$WORK/config"
+          if gh api -H 'Accept: application/vnd.github.raw' \
+              "repos/$GH_REPO/contents/${CONFIG_PATH}?ref=${CONFIG_REF}" > "$WORK/config/config.yml" 2> "$WORK/config/config.err"; then
+            yq -o=json '.' "$WORK/config/config.yml" > "$WORK/config/config.json"
+          elif grep -q 'HTTP 404' "$WORK/config/config.err"; then
+            echo "::notice::No $CONFIG_PATH at $CONFIG_REF. Using the default labels and links."
+          else
+            cat "$WORK/config/config.err" >&2
+            exit 1
+          fi
+
+      - name: Validate and render comment
+        id: render
+        if: steps.artifacts.outputs.classification == 'true'
+        env:
+          WORK: ${{ steps.artifacts.outputs.work }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          python3 _docs-actions/review-classifier/render.py \
+            --decision "$WORK/classification/decision.json" \
+            --vale "$WORK/vale/vale_results.json" \
+            --config "$WORK/config/config.json" \
+            --output "$WORK/comment.md" \
+            --meta "$WORK/meta.json" \
+            --run-url "$RUN_URL"
+          echo "dry_run=$(jq -r .dry_run "$WORK/meta.json")" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve pull request
+        id: pr
+        if: steps.render.outputs.dry_run == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          WORK: ${{ steps.artifacts.outputs.work }}
+          RUN_EVENT: ${{ github.event.workflow_run.event }}
+          RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          PULL_REQUESTS_JSON: ${{ toJSON(github.event.workflow_run.pull_requests) }}
+        run: |
+          artifact_pr=$(jq -r .pr_number "$WORK/meta.json")
+          artifact_sha=$(jq -r .head_sha "$WORK/meta.json")
+          if [ "$RUN_EVENT" = "workflow_dispatch" ]; then
+            # Only users with write access can start a dispatch run, so its PR number is trusted.
+            pr="$artifact_pr"
+          else
+            # For pull_request runs, never trust the PR number in the artifact.
+            if [ "$artifact_sha" != "$RUN_HEAD_SHA" ]; then
+              echo "::error::The classification head SHA does not match the workflow run."
+              exit 1
+            fi
+            pr=$(jq -r '.[0].number // empty' <<< "$PULL_REQUESTS_JSON")
+            if [ -z "$pr" ]; then
+              pr=$(gh pr list --repo "$GH_REPO" --state open --json number,headRefOid \
+                --jq ".[] | select(.headRefOid == \"$RUN_HEAD_SHA\") | .number" | head -1)
+            fi
+            if [ -n "$pr" ] && [ "$pr" != "$artifact_pr" ]; then
+              echo "::error::The classification PR number ($artifact_pr) does not match PR #$pr."
+              exit 1
+            fi
+          fi
+          if ! [[ "$pr" =~ ^[0-9]+$ ]]; then
+            echo "::notice::No open pull request found for this run."
+            exit 0
+          fi
+          echo "number=$pr" >> "$GITHUB_OUTPUT"
+
+      - name: Post comment and labels
+        if: steps.pr.outputs.number != ''
+        uses: actions/github-script@v9
+        env:
+          WORK: ${{ steps.artifacts.outputs.work }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const { publish } = require(path.join(process.env.GITHUB_WORKSPACE, '_docs-actions/review-classifier/scripts/publish.js'));
+            const meta = JSON.parse(fs.readFileSync(path.join(process.env.WORK, 'meta.json'), 'utf8'));
+            const body = fs.readFileSync(path.join(process.env.WORK, 'comment.md'), 'utf8');
+            const result = await publish({
+              github, context, core,
+              prNumber: Number(process.env.PR_NUMBER),
+              decision: meta,
+              body,
+              // render.py copies the label names from the trusted config into meta.json.
+              lightLabel: meta.light_label,
+              fullLabel: meta.full_label,
+            });
+            core.info(`Review classification comment: ${result.status}`);
+
+      - name: Report dry run
+        if: steps.render.outputs.dry_run == 'true'
+        run: echo "::notice::Dry run. No comment or labels were posted."

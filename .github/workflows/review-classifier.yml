@@ -1,0 +1,210 @@
+name: Review classification
+
+# Phase 1 of the review classifier. Runs with read-only permissions on
+# pull_request (including forks) or workflow_dispatch. It never runs code from
+# the pull request. It uploads a data-only decision artifact that the
+# review-classifier-comment.yml workflow validates and posts.
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        description: 'Path to the rules file in the caller repository. The workflow reads it from the default branch, or from the branch of a workflow_dispatch run.'
+        type: string
+        default: '.github/review-classifier.yml'
+      pr-number:
+        description: 'Pull request to classify. Leave empty to use the pull_request event.'
+        type: string
+        default: ''
+      dry-run:
+        description: 'Write a preview to the job summary only. The comment workflow posts nothing.'
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - name: Resolve pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          INPUT_PR_NUMBER: ${{ inputs.pr-number }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          pr="${INPUT_PR_NUMBER:-$EVENT_PR_NUMBER}"
+          if ! [[ "$pr" =~ ^[0-9]+$ ]]; then
+            echo "::error::Set the pr-number input or run on a pull_request event."
+            exit 1
+          fi
+          work="$RUNNER_TEMP/review-classifier"
+          mkdir -p "$work/out"
+          gh api "repos/$GH_REPO/pulls/$pr" > "$work/pr.json"
+          {
+            echo "number=$pr"
+            echo "head_sha=$(jq -r .head.sha "$work/pr.json")"
+            echo "base_sha=$(jq -r .base.sha "$work/pr.json")"
+            echo "work=$work"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Checkout pull request head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.pr.outputs.head_sha }}
+          fetch-depth: 1
+          filter: blob:none
+          persist-credentials: false
+
+      - name: Checkout docs-actions scripts
+        uses: actions/checkout@v6
+        with:
+          repository: elastic/docs-actions
+          # github.workflow_sha identifies the caller in a reusable workflow.
+          # The JSON round-trip works around actionlint#647 until actionlint supports this property.
+          ref: ${{ fromJSON(toJSON(job)).workflow_sha }}
+          sparse-checkout: |
+            review-classifier
+            vale/lint
+            vale/report
+          path: _docs-actions
+          persist-credentials: false
+
+      - name: Load config
+        id: config
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CONFIG_PATH: ${{ inputs.config }}
+          # Never read rules from the PR head: a PR could change its own rules.
+          CONFIG_REF: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.repository.default_branch }}
+          WORK: ${{ steps.pr.outputs.work }}
+        run: |
+          if gh api -H 'Accept: application/vnd.github.raw' \
+              "repos/$GH_REPO/contents/${CONFIG_PATH}?ref=${CONFIG_REF}" > "$WORK/config.yml" 2> "$WORK/config.err"; then
+            yq -o=json '.' "$WORK/config.yml" > "$WORK/config.json"
+            echo "Using $CONFIG_PATH from $CONFIG_REF"
+          elif grep -q 'HTTP 404' "$WORK/config.err"; then
+            echo "::notice::No $CONFIG_PATH at $CONFIG_REF. Using the default rules."
+          else
+            cat "$WORK/config.err" >&2
+            exit 1
+          fi
+          settings=$(python3 _docs-actions/review-classifier/classify.py check-config "$WORK/config.json")
+          echo "vale_enabled=$(jq -r .vale_enabled <<< "$settings")" >> "$GITHUB_OUTPUT"
+          delimiter="EOF_$(openssl rand -hex 8)"
+          {
+            echo "vale_paths<<$delimiter"
+            jq -r '.vale_paths[]' <<< "$settings"
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Collect pull request data
+        id: collect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          BASE_SHA: ${{ steps.pr.outputs.base_sha }}
+          WORK: ${{ steps.pr.outputs.work }}
+        run: |
+          gh api --paginate "repos/$GH_REPO/pulls/$PR_NUMBER/files?per_page=100" \
+            --jq '.[] | {filename, status, previous_filename}' | jq -s . > "$WORK/files.json"
+          gh api --paginate "repos/$GH_REPO/issues/$PR_NUMBER/events?per_page=100" \
+            --jq '.[] | select(.event == "labeled" or .event == "unlabeled") | {event, label: .label.name, actor: .actor.login}' \
+            | jq -s . > "$WORK/label-events.json"
+          jq '[.labels[].name]' "$WORK/pr.json" > "$WORK/labels.json"
+          merge_base=$(gh api "repos/$GH_REPO/compare/${BASE_SHA}...${HEAD_SHA}" --jq .merge_base_commit.sha)
+          echo "merge_base=$merge_base" >> "$GITHUB_OUTPUT"
+          echo "Changed files: $(jq length "$WORK/files.json"), merge base: $merge_base"
+
+      - name: Fetch base versions of changed files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MERGE_BASE: ${{ steps.collect.outputs.merge_base }}
+          WORK: ${{ steps.pr.outputs.work }}
+        run: |
+          # Pass the read-only token through environment config, so it is never written to .git/config.
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
+          GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          export GIT_CONFIG_VALUE_0
+          git fetch --no-tags --depth=1 --filter=blob:none origin "$MERGE_BASE"
+          jq -r '.[] | select(.status != "added") | (.previous_filename // .filename)' "$WORK/files.json" \
+            | grep -E '(\.mdx?|/?redirects\.yml|/?_redirects)$' > "$WORK/base-paths.txt" || true
+          if [ -s "$WORK/base-paths.txt" ]; then
+            # git diff downloads all missing base blobs for these paths in one batch.
+            # git diff has no --pathspec-from-file option, so pass the paths through xargs.
+            tr '\n' '\0' < "$WORK/base-paths.txt" \
+              | xargs -0 git --literal-pathspecs diff --no-renames --stat "$MERGE_BASE" HEAD -- > /dev/null
+          fi
+
+      - name: Classify
+        id: classify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          MERGE_BASE: ${{ steps.collect.outputs.merge_base }}
+          WORK: ${{ steps.pr.outputs.work }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          # Same environment-only credentials as above, in case git must download a blob that the prefetch missed.
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
+          GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          export GIT_CONFIG_VALUE_0
+          unset GH_TOKEN
+          dry_run_flag=()
+          if [ "$DRY_RUN" = "true" ]; then dry_run_flag=(--dry-run); fi
+          python3 _docs-actions/review-classifier/classify.py \
+            --repo-root . \
+            --base-rev "$MERGE_BASE" \
+            --head-rev HEAD \
+            --files "$WORK/files.json" \
+            --labels "$WORK/labels.json" \
+            --label-events "$WORK/label-events.json" \
+            --pr-number "$PR_NUMBER" \
+            --head-sha "$HEAD_SHA" \
+            "${dry_run_flag[@]}" \
+            --output "$WORK/out/decision.json" \
+            --config "$WORK/config.json"
+          echo "tier=$(jq -r .tier "$WORK/out/decision.json")" >> "$GITHUB_OUTPUT"
+
+      - name: Write preview
+        env:
+          WORK: ${{ steps.pr.outputs.work }}
+        run: |
+          python3 _docs-actions/review-classifier/render.py \
+            --decision "$WORK/out/decision.json" \
+            --config "$WORK/config.json" \
+            --output "$WORK/preview.md" \
+            --preview
+          cat "$WORK/preview.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload classification
+        uses: actions/upload-artifact@v7
+        with:
+          name: review-classification
+          path: ${{ steps.pr.outputs.work }}/out/decision.json
+          retention-days: 1
+
+      - name: Run Vale
+        if: steps.config.outputs.vale_enabled == 'true' && steps.classify.outputs.tier != 'skip'
+        continue-on-error: true
+        # Same strategy as the standard Vale check: vale/lint gets the changed files
+        # and filters issues to changed lines itself, also for workflow_dispatch runs.
+        # Run it from the pinned docs-actions checkout, the same commit as the classifier.
+        # The self-repository form ($/) is not an option: actionlint 1.7.12 rejects it.
+        uses: ./_docs-actions/vale/lint # zizmor: ignore[self-repository]
+        with:
+          pr-number: ${{ steps.pr.outputs.number }}
+          vale-paths: ${{ steps.config.outputs.vale_paths }}
+          vale_version: 3.22.0

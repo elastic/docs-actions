@@ -6,21 +6,22 @@ Run Vale with Elastic style guide on documentation and user-facing metadata file
 
 ## Inputs
 <!--inputs-->
-| Name                | Description                                                                                                                                                                 | Required | Default        |
-|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|----------------|
-| `files`             | Files or directories to lint (space-separated). If not provided, lints changed Markdown, MDX, YAML, and YML files in PR.                                                    | `false`  | ` `            |
-| `vale-paths`        | Paths to include for linting. Supports glob patterns and ! negation to exclude paths. Can be space-separated or multi-line. Only files matching these paths will be linted. | `false`  | ` `            |
-| `include-paths`     | Deprecated: use vale-paths instead. Kept for backward compatibility.                                                                                                        | `false`  | ` `            |
-| `vale-overrides`    | Inline Vale overrides. Supports Elastic rule severity overrides and constrained YAML file-type opt-in.                                                                      | `false`  | ` `            |
-| `lint-yaml`         | Enable Elastic Vale linting for YAML and YML files.                                                                                                                         | `false`  | `false`        |
-| `fail_on_error`     | Fail the action if Vale finds error-level issues                                                                                                                            | `false`  | `false`        |
-| `vale_version`      | Vale version to install (default: latest via package manager)                                                                                                               | `false`  | `latest`       |
-| `debug`             | Enable debug output                                                                                                                                                         | `false`  | `false`        |
-| `use_local_styles`  | Use local styles directory instead of downloading from releases (for testing local changes)                                                                                 | `false`  | `false`        |
-| `styles_path`       | Path to a local vale-rules checkout containing .vale.ini and styles/ (required when use_local_styles is true).                                                              | `false`  | ` `            |
-| `disable_telemetry` | Disable telemetry logging (for testing)                                                                                                                                     | `false`  | `false`        |
-| `upload_artifact`   | Upload Vale results as artifact (default: true)                                                                                                                             | `false`  | `true`         |
-| `artifact_name`     | Name for the uploaded artifact (only used when upload_artifact is true)                                                                                                     | `false`  | `vale-results` |
+| Name                | Description                                                                                                                                                                             | Required | Default        |
+|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|----------------|
+| `files`             | Files or directories to lint (space-separated). If not provided, lints changed Markdown, MDX, YAML, and YML files in PR.                                                                | `false`  | ` `            |
+| `pr-number`         | Pull request to lint when the workflow does not run on a pull_request event, for example on workflow_dispatch. Vale then gets the changed files and changed lines of this pull request. | `false`  | ` `            |
+| `vale-paths`        | Paths to include for linting. Supports glob patterns and ! negation to exclude paths. Can be space-separated or multi-line. Only files matching these paths will be linted.             | `false`  | ` `            |
+| `include-paths`     | Deprecated: use vale-paths instead. Kept for backward compatibility.                                                                                                                    | `false`  | ` `            |
+| `vale-overrides`    | Inline Vale overrides. Supports Elastic rule severity overrides and constrained YAML file-type opt-in.                                                                                  | `false`  | ` `            |
+| `lint-yaml`         | Enable Elastic Vale linting for YAML and YML files.                                                                                                                                     | `false`  | `false`        |
+| `fail_on_error`     | Fail the action if Vale finds error-level issues                                                                                                                                        | `false`  | `false`        |
+| `vale_version`      | Vale version to install (default: latest via package manager)                                                                                                                           | `false`  | `latest`       |
+| `debug`             | Enable debug output                                                                                                                                                                     | `false`  | `false`        |
+| `use_local_styles`  | Use local styles directory instead of downloading from releases (for testing local changes)                                                                                             | `false`  | `false`        |
+| `styles_path`       | Path to a local vale-rules checkout containing .vale.ini and styles/ (required when use_local_styles is true).                                                                          | `false`  | ` `            |
+| `disable_telemetry` | Disable telemetry logging (for testing)                                                                                                                                                 | `false`  | `false`        |
+| `upload_artifact`   | Upload Vale results as artifact (default: true)                                                                                                                                         | `false`  | `true`         |
+| `artifact_name`     | Name for the uploaded artifact (only used when upload_artifact is true)                                                                                                                 | `false`  | `vale-results` |
 <!--/inputs-->
 
 ## Outputs
