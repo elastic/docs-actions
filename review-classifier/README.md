@@ -61,7 +61,7 @@ One trigger is enough for a full review. Files that match `skip-paths` do not co
 | `redirect-added` | A redirect file (`redirect-files`) has a new source path. Changes to existing redirects do not count. | |
 | `large-scope` | More than `max-files` files change. | `max-files` (5) |
 | `images-changed` | `min-images` or more image files are added, changed, or deleted. | `min-images` (3) |
-| `shared-snippet` | A changed snippet is included, directly or through other snippets, by pages in more than one folder. | `scope` (`top-level`) |
+| `shared-snippet` | A new or changed snippet is included, directly or through other snippets, by pages in more than one folder. | `scope` (`top-level`) |
 | `substantial-change` | A heading is added, removed, or renamed, or the changed lines reach the threshold percent of the base page: 20% up to 199 lines, 10% up to 500 lines, and 5% for larger pages. | `headings` (`true`), `thresholds` |
 | `applies-to-modified` | An existing `applies_to` value is changed or removed. New values do not count. | |
 | `external-link-added` | A new URL in prose points outside `allowed-hosts`. | `allowed-hosts` |

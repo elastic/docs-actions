@@ -70,6 +70,15 @@ class SkipAndLightTests(unittest.TestCase):
         self.assertEqual(vale_files, ["a/p.md"])
         self.assertEqual(decision["changed_lines"], {"a/p.md": [[3, 3]]})
 
+    def test_mdx_changed_lines_are_recorded_for_vale(self):
+        base = {"docs/page.mdx": "# Page\n\n## Section\n\nOld text.\n" + "Line.\n" * 20}
+        head = {"docs/page.mdx": "# Page\n\n## Renamed\n\nNew text.\n" + "Line.\n" * 20}
+        decision, vale_files = run([modified("docs/page.mdx")], base, head)
+        self.assertEqual(vale_files, ["docs/page.mdx"])
+        self.assertEqual(decision["changed_lines"], {"docs/page.mdx": [[3, 3], [5, 5]]})
+        # Content triggers stay limited to .md pages.
+        self.assertEqual(decision["tier"], "light")
+
     def test_generated_reference_files_are_not_skipped(self):
         base = {"reference/gen.md": page("# Ref\n\nText.", lines=20)}
         head = {"reference/gen.md": page("# Ref\n\nText two.", lines=20)}
@@ -174,6 +183,17 @@ class ContentTests(unittest.TestCase):
         head["b/_snippets/wrapper.md"] = ":::{include} /a/_snippets/s.md\n:::\n"
         head["b/four.md"] = ":::{include} _snippets/wrapper.md\n:::\n"
         decision, _ = run([modified("a/_snippets/s.md")], {"a/_snippets/s.md": "Old.\n"}, head)
+        self.assertEqual(ids(decision), ["shared-snippet"])
+
+    def test_new_snippet_used_across_folders_fires(self):
+        head = {
+            "a/_snippets/s.md": "New snippet.\n",
+            "a/one.md": page("# One\n\n:::{include} _snippets/s.md\n:::", lines=300),
+            "b/two.md": page("# Two\n\n:::{include} /a/_snippets/s.md\n:::", lines=300),
+        }
+        base = {"a/one.md": page("# One", lines=300), "b/two.md": page("# Two", lines=300)}
+        files = [{"filename": "a/_snippets/s.md", "status": "added"}, modified("a/one.md"), modified("b/two.md")]
+        decision, _ = run(files, base, head)
         self.assertEqual(ids(decision), ["shared-snippet"])
 
     def test_snippet_directory_scope(self):

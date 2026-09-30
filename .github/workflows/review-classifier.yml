@@ -137,7 +137,7 @@ jobs:
           export GIT_CONFIG_VALUE_0
           git fetch --no-tags --depth=1 --filter=blob:none origin "$MERGE_BASE"
           jq -r '.[] | select(.status != "added") | (.previous_filename // .filename)' "$WORK/files.json" \
-            | grep -E '(\.md|/?redirects\.yml|/?_redirects)$' > "$WORK/base-paths.txt" || true
+            | grep -E '(\.mdx?|/?redirects\.yml|/?_redirects)$' > "$WORK/base-paths.txt" || true
           if [ -s "$WORK/base-paths.txt" ]; then
             # git diff downloads all missing base blobs for these paths in one batch.
             # git diff has no --pathspec-from-file option, so pass the paths through xargs.

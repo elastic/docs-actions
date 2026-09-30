@@ -836,7 +836,9 @@ def classify(files, read_base, read_head, list_head_files, config, labels=(), la
     # 6: shared snippets used in more than one folder.
     changed_snippets = [
         f["filename"] for f in files
-        if enabled["shared-snippet"] and f["status"] in ("modified", "renamed") and f["filename"].endswith(".md") and is_snippet(f["filename"])
+        # A new snippet counts too: it has the same cross-folder effect as a changed one.
+        if enabled["shared-snippet"] and f["status"] in ("added", "modified", "renamed")
+        and f["filename"].endswith(".md") and is_snippet(f["filename"])
     ]
     if changed_snippets:
         reverse, docset_dirs = build_include_graph(list_head_files(), read_head)
@@ -845,10 +847,11 @@ def classify(files, read_base, read_head, list_head_files, config, labels=(), la
             if len(folders) > 1:
                 reasons.append(reason("shared-snippet", snippet, len(folders)))
 
-    # 7, 8, and 9: per-file content checks.
+    # 7, 8, and 9: per-file content checks. Vale also lints .mdx files, so
+    # record their changed lines, but run the content triggers on .md only.
     for f in files:
         path = f["filename"]
-        if not path.endswith(".md") or f["status"] == "removed":
+        if not path.endswith((".md", ".mdx")) or f["status"] == "removed":
             continue
         head = read_head(path) or ""
         base = ""
@@ -860,6 +863,8 @@ def classify(files, read_base, read_head, list_head_files, config, labels=(), la
         added, deleted, ranges = line_changes(base, head)
         if len(changed_lines) < MAX_CHANGED_LINE_FILES:
             changed_lines[path] = ranges[:MAX_RANGES_PER_FILE]
+        if not path.endswith(".md"):
+            continue
 
         if enabled["substantial-change"] and is_page(path) and f["status"] in ("modified", "renamed"):
             base_count = len(base.splitlines())
