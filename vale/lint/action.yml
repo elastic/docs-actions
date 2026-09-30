@@ -11,6 +11,10 @@ inputs:
     description: 'Files or directories to lint (space-separated). If not provided, lints changed Markdown, MDX, YAML, and YML files in PR.'
     required: false
     default: ''
+  pr-number:
+    description: 'Pull request to lint when the workflow does not run on a pull_request event, for example on workflow_dispatch. Vale then gets the changed files and changed lines of this pull request.'
+    required: false
+    default: ''
   vale-paths:
     description: 'Paths to include for linting. Supports glob patterns and ! negation to exclude paths. Can be space-separated or multi-line. Only files matching these paths will be linted.'
     required: false
@@ -394,8 +398,13 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
+        PR_NUMBER: ${{ inputs.pr-number || github.event.pull_request.number }}
       run: |
-        if [ -z "${{ github.event.pull_request.number }}" ]; then
+        if [ -n "$PR_NUMBER" ] && ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+          echo "::error::pr-number must be a pull request number"
+          exit 1
+        fi
+        if [ -z "$PR_NUMBER" ]; then
           echo "Not running in PR context, no files to check"
           echo "has_changes=false" >> $GITHUB_OUTPUT
         else
@@ -403,7 +412,7 @@ runs:
           # gh api uses GH_TOKEN automatically (authenticated = no rate limit issues).
           # --paginate handles PRs with more than 30 changed files.
           # jq -s 'add // []' merges paginated arrays into one before filtering.
-          gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
+          gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/files" \
             --paginate 2>/dev/null \
             | jq -rs 'add // [] | .[] | select(.status != "removed") | .filename' \
             | grep -E '\.(md|mdx|ya?ml)$' > changed_files.txt || true
@@ -489,17 +498,22 @@ runs:
 
     - name: Get modified line ranges
       id: modified-lines
-      if: steps.final-files-check.outputs.has_files == 'true' && github.event.pull_request.number != ''
+      if: steps.final-files-check.outputs.has_files == 'true' && (inputs.pr-number != '' || github.event.pull_request.number != '')
       shell: bash
       env:
         TEMP_DIR: ${{ steps.setup-temp.outputs.temp_dir }}
         GH_TOKEN: ${{ github.token }}
+        PR_NUMBER: ${{ inputs.pr-number || github.event.pull_request.number }}
       run: |
         echo "Fetching line ranges from GitHub API..."
 
         # Fetch all PR file patches in one authenticated call.
         # jq -s 'add // []' merges paginated arrays into one.
-        PR_PATCHES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
+        if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+          echo "::error::pr-number must be a pull request number"
+          exit 1
+        fi
+        PR_PATCHES=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/files" \
           --paginate 2>/dev/null | jq -s 'add // []') || PR_PATCHES=""
 
         if [ -z "$PR_PATCHES" ] || [ "$PR_PATCHES" = "null" ] || [ "$PR_PATCHES" = "[]" ]; then
@@ -560,7 +574,7 @@ runs:
       shell: bash
       env:
         GITHUB_REPOSITORY: ${{ github.repository }}
-        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_NUMBER: ${{ inputs.pr-number || github.event.pull_request.number }}
         DEBUG: ${{ inputs.debug }}
         DISABLE_TELEMETRY: ${{ inputs.disable_telemetry }}
       run: |
@@ -693,7 +707,7 @@ runs:
       if: always() && steps.final-files-check.outputs.has_files == 'true'
       shell: bash
       env:
-        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_NUMBER: ${{ inputs.pr-number || github.event.pull_request.number }}
       run: |
         # Render the summary from the JSON report with the shared renderer
         if [ -f vale_results.json ]; then

@@ -44,7 +44,6 @@ def decision(**overrides):
         "override": None,
         "reasons": [],
         "bot_labels": [],
-        "changed_lines": {},
     }
     base.update(overrides)
     return base
@@ -69,8 +68,7 @@ class ValidateTests(unittest.TestCase):
 
     def test_valid_decisions(self):
         self.assertEqual(self.valid(decision()), [])
-        full = decision(tier="full", computed_tier="full", reasons=FULL_REASONS,
-                        bot_labels=[LIGHT], changed_lines={"a/p.md": [[1, 3]]})
+        full = decision(tier="full", computed_tier="full", reasons=FULL_REASONS, bot_labels=[LIGHT])
         self.assertEqual(self.valid(full), [])
 
     def test_rejects_bad_shapes(self):
@@ -88,8 +86,7 @@ class ValidateTests(unittest.TestCase):
             decision(reasons=[reason("large-scope", "x.md", 3)]),
             decision(reasons=[reason("new-page", "x.md", detail="<b>")]),
             decision(reasons=[{"id": "new-page", "file": "x.md"}]),
-            decision(changed_lines={"x.md": [[1]]}),
-            decision(changed_lines={"x.md": "1-3"}),
+            decision(changed_lines={}),
             [],
         ]
         for data in bad:
@@ -168,41 +165,32 @@ class RenderTests(unittest.TestCase):
 
 
 class ValeTests(unittest.TestCase):
+    # vale/lint already filters issues to changed lines, so render.py lists them as they are.
     VALE = {
         "summary": {"errors": 1, "warnings": 2, "suggestions": 1},
         "issues": [
             {"path": "a/p.md", "line": 3, "rule": "Elastic.Latinisms", "severity": "error", "message": "Use 'for example'."},
-            {"path": "a/p.md", "line": 40, "rule": "Elastic.WordChoice", "severity": "warning", "message": "Old line."},
             {"path": "a/p.md", "line": 5, "rule": "Elastic.WordChoice", "severity": "warning", "message": "Avoid 'utilize'."},
+            {"path": "a/q.md", "line": 9, "rule": "Elastic.WordChoice", "severity": "warning", "message": "Avoid 'leverage'."},
             {"path": "a/p.md", "line": 5, "rule": "Elastic.Wordiness", "severity": "suggestion", "message": "Wordy."},
         ],
     }
 
-    def test_filters_to_changed_lines_and_lists_findings(self):
-        data = decision(changed_lines={"a/p.md": [[1, 10]]})
-        body = render.render_comment(data, CONFIG, vale=self.VALE, run_url="https://run")
-        self.assertIn("1 error (language), 1 warning and 1 suggestion (style)", body)
+    def test_lists_findings(self):
+        body = render.render_comment(decision(), CONFIG, vale=self.VALE, run_url="https://run")
+        self.assertIn("1 error (language), 2 warnings and 1 suggestion (style)", body)
         self.assertIn("- `a/p.md:3`: [error] Use 'for example'. (`Elastic.Latinisms`)", body)
-        self.assertNotIn("Old line", body)
+        self.assertIn("- `a/q.md:9`: [warning] Avoid 'leverage'. (`Elastic.WordChoice`)", body)
         self.assertIn("…and 1 more. See the [full Vale results](https://run).", body)
 
-    def test_dot_slash_paths_match_changed_lines(self):
-        vale = copy.deepcopy(self.VALE)
-        for issue in vale["issues"]:
-            issue["path"] = "./" + issue["path"]
-        data = decision(changed_lines={"a/p.md": [[1, 10]]})
-        body = render.render_comment(data, CONFIG, vale=vale)
-        self.assertNotIn("Old line", body)
-
     def test_cap(self):
-        data = decision(changed_lines={"a/p.md": [[1, 10]]})
-        body = render.render_comment(data, config_with(vale_max_findings=1), vale=self.VALE)
+        body = render.render_comment(decision(), config_with(vale_max_findings=1), vale=self.VALE)
         self.assertNotIn("utilize", body)
-        self.assertIn("…and 2 more.", body)
+        self.assertIn("…and 3 more.", body)
 
     def test_no_findings(self):
-        data = decision(changed_lines={"a/p.md": [[100, 110]]})
-        body = render.render_comment(data, CONFIG, vale=self.VALE)
+        empty = {"summary": {"errors": 0, "warnings": 0, "suggestions": 0}, "issues": []}
+        body = render.render_comment(decision(), CONFIG, vale=empty)
         self.assertIn("✓ Vale: no issues found on changed lines.", body)
 
 

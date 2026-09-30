@@ -32,7 +32,7 @@ def run(files, base=None, head=None, config=None, labels=(), events=()):
     head = head or {}
     cfg = dict(classify.DEFAULT_CONFIG)
     cfg.update(config or {})
-    decision, vale_files = classify.classify(
+    return classify.classify(
         files,
         read_base=base.get,
         read_head=head.get,
@@ -41,7 +41,6 @@ def run(files, base=None, head=None, config=None, labels=(), events=()):
         labels=labels,
         label_events=events,
     )
-    return decision, vale_files
 
 
 def ids(decision):
@@ -54,114 +53,96 @@ def modified(path):
 
 class SkipAndLightTests(unittest.TestCase):
     def test_only_automation_files_are_skipped(self):
-        decision, _ = run([modified(".github/workflows/ci.yml"), modified("explore/models.csv")])
+        decision = run([modified(".github/workflows/ci.yml"), modified("explore/models.csv")])
         self.assertEqual(decision["tier"], "skip")
         self.assertEqual(decision["reasons"], [])
 
     def test_extra_skip_paths(self):
-        decision, _ = run([modified("README.md")], config={"skip_paths": [".github/**", "README.md"]})
+        decision = run([modified("README.md")], config={"skip_paths": [".github/**", "README.md"]})
         self.assertEqual(decision["tier"], "skip")
 
     def test_small_edit_is_light(self):
         base = {"a/p.md": page("# Title\n\nSome text.", lines=20)}
         head = {"a/p.md": page("# Title\n\nSome better text.", lines=20)}
-        decision, vale_files = run([modified("a/p.md")], base, head)
+        decision = run([modified("a/p.md")], base, head)
         self.assertEqual(decision["tier"], "light")
-        self.assertEqual(vale_files, ["a/p.md"])
-        self.assertEqual(decision["changed_lines"], {"a/p.md": [[3, 3]]})
-
-    def test_mdx_changed_lines_are_recorded_for_vale(self):
-        base = {"docs/page.mdx": "# Page\n\n## Section\n\nOld text.\n" + "Line.\n" * 20}
-        head = {"docs/page.mdx": "# Page\n\n## Renamed\n\nNew text.\n" + "Line.\n" * 20}
-        decision, vale_files = run([modified("docs/page.mdx")], base, head)
-        self.assertEqual(vale_files, ["docs/page.mdx"])
-        self.assertEqual(decision["changed_lines"], {"docs/page.mdx": [[3, 3], [5, 5]]})
-        # Content triggers stay limited to .md pages.
-        self.assertEqual(decision["tier"], "light")
-
-    def test_vale_files_stay_within_the_changed_lines_cap(self):
-        files = [{"filename": f"p{i}.md", "status": "added"} for i in range(classify.MAX_CHANGED_LINE_FILES + 5)]
-        head = {f["filename"]: "Text.\n" for f in files}
-        decision, vale_files = run(files, head=head, config={"enabled": dict.fromkeys(classify.TRIGGER_IDS, False)})
-        self.assertEqual(len(decision["changed_lines"]), classify.MAX_CHANGED_LINE_FILES)
-        self.assertEqual(set(vale_files), set(decision["changed_lines"]))
 
     def test_generated_reference_files_are_not_skipped(self):
         base = {"reference/gen.md": page("# Ref\n\nText.", lines=20)}
         head = {"reference/gen.md": page("# Ref\n\nText two.", lines=20)}
-        decision, _ = run([modified("reference/gen.md")], base, head)
+        decision = run([modified("reference/gen.md")], base, head)
         self.assertEqual(decision["tier"], "light")
 
 
 class StructuralTests(unittest.TestCase):
     def test_new_page(self):
-        decision, _ = run([{"filename": "a/new.md", "status": "added"}], head={"a/new.md": "# New\n"})
+        decision = run([{"filename": "a/new.md", "status": "added"}], head={"a/new.md": "# New\n"})
         self.assertEqual(ids(decision), ["new-page"])
         self.assertEqual(decision["tier"], "full")
 
     def test_new_snippet_is_not_a_page_by_default(self):
         files = [{"filename": "a/_snippets/s.md", "status": "added"}]
-        decision, _ = run(files, head={"a/_snippets/s.md": "Text.\n"})
+        decision = run(files, head={"a/_snippets/s.md": "Text.\n"})
         self.assertEqual(decision["tier"], "light")
-        decision, _ = run(files, head={"a/_snippets/s.md": "Text.\n"}, config={"pages_exclude_snippets": False})
+        decision = run(files, head={"a/_snippets/s.md": "Text.\n"}, config={"pages_exclude_snippets": False})
         self.assertEqual(ids(decision), ["new-page"])
 
     def test_page_deleted(self):
-        decision, _ = run([{"filename": "a/old.md", "status": "removed"}], base={"a/old.md": "# Old\n"})
+        decision = run([{"filename": "a/old.md", "status": "removed"}], base={"a/old.md": "# Old\n"})
         self.assertEqual(ids(decision), ["page-deleted"])
 
     def test_pure_rename_is_light(self):
         text = page("# Title\n\nText.", lines=10)
         files = [{"filename": "b/p.md", "status": "renamed", "previous_filename": "a/p.md"}]
-        decision, _ = run(files, base={"a/p.md": text}, head={"b/p.md": text})
+        decision = run(files, base={"a/p.md": text}, head={"b/p.md": text})
         self.assertEqual(decision["tier"], "light")
 
     def test_rename_reads_base_from_previous_filename(self):
         files = [{"filename": "b/p.md", "status": "renamed", "previous_filename": "a/p.md"}]
         base = {"a/p.md": page("# Title\n\nText.", lines=10)}
         head = {"b/p.md": page("# Title\n\n## New section\n\nText.", lines=10)}
-        decision, _ = run(files, base, head)
+        decision = run(files, base, head)
         self.assertEqual(ids(decision), ["substantial-change"])
         self.assertEqual(decision["reasons"][0]["detail"], "headings")
 
     def test_redirect_added(self):
         base = {"redirects.yml": "redirects:\n  'a.md': 'b.md'\n"}
         head = {"redirects.yml": "redirects:\n  'a.md': 'b.md'\n  'c.md':\n    to: 'd.md'\n    anchors:\n      'x': 'y'\n"}
-        decision, _ = run([modified("redirects.yml")], base, head)
+        decision = run([modified("redirects.yml")], base, head)
         self.assertEqual(ids(decision), ["redirect-added"])
         self.assertEqual(decision["reasons"][0]["value"], 1)
 
     def test_redirect_target_change_does_not_fire(self):
         base = {"redirects.yml": "redirects:\n  'a.md': 'b.md'\n"}
         head = {"redirects.yml": "redirects:\n  'a.md':\n    to: 'c.md'\n    anchors:\n      'old': 'new'\n"}
-        decision, _ = run([modified("redirects.yml")], base, head)
+        decision = run([modified("redirects.yml")], base, head)
         self.assertEqual(decision["tier"], "light")
 
     def test_netlify_redirects_file(self):
         base = {"_redirects": "/a /b 301\n"}
         head = {"_redirects": "/a /b 301\n/c /d 301\n"}
-        decision, _ = run([modified("_redirects")], base, head)
+        decision = run([modified("_redirects")], base, head)
         self.assertEqual(ids(decision), ["redirect-added"])
 
     def test_large_scope_threshold(self):
         files = [{"filename": f"img/{i}.txt", "status": "modified"} for i in range(5)]
-        self.assertEqual(run(files)[0]["tier"], "light")
+        self.assertEqual(run(files)["tier"], "light")
         files.append({"filename": "img/5.txt", "status": "modified"})
-        decision, _ = run(files)
+        decision = run(files)
         self.assertEqual(ids(decision), ["large-scope"])
         self.assertEqual(decision["reasons"][0]["value"], 6)
 
     def test_skip_listed_files_do_not_count_for_scope(self):
         files = [modified(f".github/w{i}.yml") for i in range(5)] + [modified("a.txt")]
-        self.assertEqual(run(files)[0]["tier"], "light")
+        self.assertEqual(run(files)["tier"], "light")
 
 
 class ContentTests(unittest.TestCase):
     def test_images_threshold(self):
         files = [modified("images/a.png"), {"filename": "images/b.SVG", "status": "added"}]
-        self.assertEqual(run(files)[0]["tier"], "light")
+        self.assertEqual(run(files)["tier"], "light")
         files.append({"filename": "images/c.webp", "status": "removed"})
-        decision, _ = run(files)
+        decision = run(files)
         self.assertEqual(ids(decision), ["images-changed"])
 
     def snippet_tree(self, includer_b):
@@ -175,12 +156,12 @@ class ContentTests(unittest.TestCase):
 
     def test_snippet_used_in_one_folder_does_not_fire(self):
         head = self.snippet_tree("No include here.\n")
-        decision, _ = run([modified("a/_snippets/s.md")], {"a/_snippets/s.md": "Snippet text.\n"}, head)
+        decision = run([modified("a/_snippets/s.md")], {"a/_snippets/s.md": "Snippet text.\n"}, head)
         self.assertEqual(decision["tier"], "light")
 
     def test_snippet_used_across_top_level_folders_fires(self):
         head = self.snippet_tree("   ::::{include} ../a/_snippets/s.md\n   ::::\n")
-        decision, _ = run([modified("a/_snippets/s.md")], {"a/_snippets/s.md": "Snippet text.\n"}, head)
+        decision = run([modified("a/_snippets/s.md")], {"a/_snippets/s.md": "Snippet text.\n"}, head)
         self.assertEqual(ids(decision), ["shared-snippet"])
         self.assertEqual(decision["reasons"][0]["value"], 2)
 
@@ -189,7 +170,7 @@ class ContentTests(unittest.TestCase):
         head["a/_snippets/s.md"] = "New.\n"
         head["b/_snippets/wrapper.md"] = ":::{include} /a/_snippets/s.md\n:::\n"
         head["b/four.md"] = ":::{include} _snippets/wrapper.md\n:::\n"
-        decision, _ = run([modified("a/_snippets/s.md")], {"a/_snippets/s.md": "Old.\n"}, head)
+        decision = run([modified("a/_snippets/s.md")], {"a/_snippets/s.md": "Old.\n"}, head)
         self.assertEqual(ids(decision), ["shared-snippet"])
 
     def test_new_snippet_used_across_folders_fires(self):
@@ -200,7 +181,7 @@ class ContentTests(unittest.TestCase):
         }
         base = {"a/one.md": page("# One", lines=300), "b/two.md": page("# Two", lines=300)}
         files = [{"filename": "a/_snippets/s.md", "status": "added"}, modified("a/one.md"), modified("b/two.md")]
-        decision, _ = run(files, base, head)
+        decision = run(files, base, head)
         self.assertEqual(ids(decision), ["shared-snippet"])
 
     def test_snippet_directory_scope(self):
@@ -210,40 +191,40 @@ class ContentTests(unittest.TestCase):
             "a/y/two.md": ":::{include} /a/_snippets/s.md\n:::\n",
         }
         files = [modified("a/_snippets/s.md")]
-        self.assertEqual(run(files, {"a/_snippets/s.md": "Old.\n"}, head)[0]["tier"], "light")
-        decision, _ = run(files, {"a/_snippets/s.md": "Old.\n"}, head, config={"snippet_scope": "directory"})
+        self.assertEqual(run(files, {"a/_snippets/s.md": "Old.\n"}, head)["tier"], "light")
+        decision = run(files, {"a/_snippets/s.md": "Old.\n"}, head, config={"snippet_scope": "directory"})
         self.assertEqual(ids(decision), ["shared-snippet"])
 
     def test_heading_added_fires(self):
         base = {"p.md": page("# Title\n\nText.", lines=50)}
         head = {"p.md": page("# Title\n\n## Extra\n\nText.", lines=50)}
-        decision, _ = run([modified("p.md")], base, head)
+        decision = run([modified("p.md")], base, head)
         self.assertEqual(decision["reasons"][0]["detail"], "headings")
 
     def test_heading_rename_fires(self):
         base = {"p.md": page("# Title\n\n## Old name\n\nText.", lines=50)}
         head = {"p.md": page("# Title\n\n## New name\n\nText.", lines=50)}
-        decision, _ = run([modified("p.md")], base, head)
+        decision = run([modified("p.md")], base, head)
         self.assertEqual(ids(decision), ["substantial-change"])
 
     def test_hash_lines_in_code_and_frontmatter_are_not_headings(self):
         base = {"p.md": page("# Title\n\n```bash\necho hi\n```", frontmatter="title: x", lines=50)}
         head = {"p.md": page("# Title\n\n```bash\n# comment\necho hi\n```", frontmatter="# note\ntitle: x", lines=50)}
-        decision, _ = run([modified("p.md")], base, head)
+        decision = run([modified("p.md")], base, head)
         self.assertEqual(decision["tier"], "light")
 
     def test_headings_inside_directives_count(self):
         base = {"p.md": page("# Title\n\n```{note}\nText.\n```", lines=50)}
         head = {"p.md": page("# Title\n\n```{note}\n## Inside\nText.\n```", lines=50)}
-        self.assertEqual(ids(run([modified("p.md")], base, head)[0]), ["substantial-change"])
+        self.assertEqual(ids(run([modified("p.md")], base, head)), ["substantial-change"])
 
     def test_small_page_threshold(self):
         body = "# Title\n\n" + "".join(f"Line {i}.\n" for i in range(20))
         edited = body.replace("Line 1.\n", "Changed 1.\n").replace("Line 2.\n", "Changed 2.\n")
         # 4 of 22 lines changed = 18%: below 20%.
-        self.assertEqual(run([modified("p.md")], {"p.md": body}, {"p.md": edited})[0]["tier"], "light")
+        self.assertEqual(run([modified("p.md")], {"p.md": body}, {"p.md": edited})["tier"], "light")
         edited = edited.replace("Line 3.\n", "Changed 3.\n")
-        decision, _ = run([modified("p.md")], {"p.md": body}, {"p.md": edited})
+        decision = run([modified("p.md")], {"p.md": body}, {"p.md": edited})
         self.assertEqual(decision["reasons"][0]["detail"], "lines")
         self.assertEqual(decision["reasons"][0]["value"], 27)
 
@@ -253,27 +234,26 @@ class ContentTests(unittest.TestCase):
         for i in range(16):
             edited = edited.replace(f"Line {i}.\n", f"Changed {i}.\n")
         # 32 of 602 lines = 5.3%.
-        decision, _ = run([modified("p.md")], {"p.md": body}, {"p.md": edited})
+        decision = run([modified("p.md")], {"p.md": body}, {"p.md": edited})
         self.assertEqual(ids(decision), ["substantial-change"])
 
     def test_rewrap_and_whitespace_do_not_count(self):
         body = "# Title\n\nThis is a long sentence that\nwraps over two lines.\n\n  Indented.\n"
         edited = "# Title\n\nThis is a long sentence\nthat wraps over two lines.\n\nIndented.   \n"
-        added, deleted, ranges = classify.line_changes(body, edited)
-        self.assertEqual((added, deleted, ranges), (0, 0, []))
+        self.assertEqual(classify.line_changes(body, edited), (0, 0))
 
     def test_applies_to_frontmatter_modified(self):
         fm = "applies_to:\n  deployment:\n    ece: ga\n    ess: ga\n"
         base = {"p.md": page("# T", frontmatter=fm, lines=100)}
         head = {"p.md": page("# T", frontmatter=fm.replace("ece: ga", "ece: preview"), lines=100)}
-        self.assertEqual(ids(run([modified("p.md")], base, head)[0]), ["applies-to-modified"])
+        self.assertEqual(ids(run([modified("p.md")], base, head)), ["applies-to-modified"])
 
     def test_applies_to_added_or_reordered_does_not_fire(self):
         fm = "applies_to:\n  deployment:\n    ece: ga\n    ess: ga\n"
         reordered = "applies_to:\n    deployment:\n        ess: ga\n        ece: ga\n    serverless: ga\n"
         base = {"p.md": page("# T\n\nText.", frontmatter=fm, lines=100)}
         head = {"p.md": page("# T\n\nText {applies_to}`stack: ga 9.4+`.", frontmatter=reordered, lines=100)}
-        self.assertEqual(run([modified("p.md")], base, head)[0]["tier"], "light")
+        self.assertEqual(run([modified("p.md")], base, head)["tier"], "light")
 
     def test_applies_to_inline_directive_and_block_forms(self):
         cases = [
@@ -286,7 +266,7 @@ class ContentTests(unittest.TestCase):
             with self.subTest(before=before):
                 base = {"p.md": page("# T\n\n" + before, lines=100)}
                 head = {"p.md": page("# T\n\n" + after, lines=100)}
-                self.assertEqual(ids(run([modified("p.md")], base, head)[0]), ["applies-to-modified"])
+                self.assertEqual(ids(run([modified("p.md")], base, head)), ["applies-to-modified"])
 
     def test_external_links(self):
         cases = [
@@ -302,17 +282,17 @@ class ContentTests(unittest.TestCase):
             with self.subTest(text=text):
                 base = {"p.md": page("# T\n\nIntro.", lines=100)}
                 head = {"p.md": page("# T\n\nIntro.\n\n" + text, lines=100)}
-                decision, _ = run([modified("p.md")], base, head)
+                decision = run([modified("p.md")], base, head)
                 self.assertEqual("external-link-added" in ids(decision), fires)
 
     def test_existing_external_link_moved_does_not_fire(self):
         base = {"p.md": page("# T\n\nA [x](https://example.com).\n\nB.", lines=100)}
         head = {"p.md": page("# T\n\nB.\n\nA [x](https://example.com).", lines=100)}
-        self.assertEqual(run([modified("p.md")], base, head)[0]["tier"], "light")
+        self.assertEqual(run([modified("p.md")], base, head)["tier"], "light")
 
     def test_new_page_with_external_link_reports_both(self):
         files = [{"filename": "p.md", "status": "added"}]
-        decision, _ = run(files, head={"p.md": "# T\n\n[x](https://example.com)\n"})
+        decision = run(files, head={"p.md": "# T\n\n[x](https://example.com)\n"})
         self.assertEqual(ids(decision), ["new-page", "external-link-added"])
 
 
@@ -320,14 +300,14 @@ class ConfigTriggerTests(unittest.TestCase):
     def test_disabled_trigger_does_not_fire(self):
         files = [{"filename": "a/new.md", "status": "added"}]
         config = classify.load_config({"triggers": {"new-page": False}})
-        decision, _ = run(files, head={"a/new.md": "# New\n"}, config=config)
+        decision = run(files, head={"a/new.md": "# New\n"}, config=config)
         self.assertEqual(decision["tier"], "light")
 
     def test_headings_option(self):
         base = {"p.md": page("# Title\n\nText.", lines=50)}
         head = {"p.md": page("# Title\n\n## Extra\n\nText.", lines=50)}
         config = classify.load_config({"triggers": {"substantial-change": {"headings": False}}})
-        self.assertEqual(run([modified("p.md")], base, head, config=config)[0]["tier"], "light")
+        self.assertEqual(run([modified("p.md")], base, head, config=config)["tier"], "light")
 
     def test_custom_rule(self):
         config = classify.load_config({"custom": [
@@ -335,7 +315,7 @@ class ConfigTriggerTests(unittest.TestCase):
         ]})
         text = page("# T\n\nText.", lines=50)
         files = [modified("deploy-manage/security/a.md"), {"filename": "deploy-manage/security/b.md", "status": "removed"}]
-        decision, _ = run(files, {"deploy-manage/security/a.md": text}, {"deploy-manage/security/a.md": text + "More.\n"},
+        decision = run(files, {"deploy-manage/security/a.md": text}, {"deploy-manage/security/a.md": text + "More.\n"},
                           config=config)
         self.assertEqual(decision["reasons"][-1], {"id": "custom:security", "file": "deploy-manage/security/a.md",
                                                    "value": None, "detail": None})
@@ -351,7 +331,7 @@ class OverrideTests(unittest.TestCase):
     def test_human_light_label_overrides_full(self):
         files, base, head = self.NEW_PAGE
         events = self.events(("labeled", "review: light", "octocat"))
-        decision, _ = run(files, base, head, labels=["review: light"], events=events)
+        decision = run(files, base, head, labels=["review: light"], events=events)
         self.assertEqual((decision["tier"], decision["computed_tier"]), ("light", "full"))
         self.assertEqual(decision["override"], "review: light")
         self.assertEqual(ids(decision), ["new-page"])
@@ -359,7 +339,7 @@ class OverrideTests(unittest.TestCase):
     def test_bot_label_is_not_an_override(self):
         files, base, head = self.NEW_PAGE
         events = self.events(("labeled", "review: light", classify.BOT_LOGIN))
-        decision, _ = run(files, base, head, labels=["review: light"], events=events)
+        decision = run(files, base, head, labels=["review: light"], events=events)
         self.assertEqual(decision["tier"], "full")
         self.assertIsNone(decision["override"])
         self.assertEqual(decision["bot_labels"], ["review: light"])
@@ -371,16 +351,16 @@ class OverrideTests(unittest.TestCase):
             ("unlabeled", "review: light", "octocat"),
             ("labeled", "review: light", "octocat"),
         )
-        decision, _ = run(files, base, head, labels=["review: light"], events=events)
+        decision = run(files, base, head, labels=["review: light"], events=events)
         self.assertEqual(decision["tier"], "light")
 
     def test_both_human_labels_full_wins(self):
-        decision, _ = run([modified("a.txt")], labels=["review: light", "review: full"])
+        decision = run([modified("a.txt")], labels=["review: light", "review: full"])
         self.assertEqual((decision["tier"], decision["override"]), ("full", "review: full"))
 
     def test_same_tier_label_is_not_reported_as_override(self):
         files, base, head = self.NEW_PAGE
-        decision, _ = run(files, base, head, labels=["review: full"])
+        decision = run(files, base, head, labels=["review: full"])
         self.assertEqual(decision["tier"], "full")
         self.assertIsNone(decision["override"])
 
@@ -572,29 +552,6 @@ class GitReaderTests(unittest.TestCase):
                 "--repo-root", root, "--base-rev", "HEAD~1", "--files", files, "--config", config,
                 "--pr-number", "7", "--head-sha", "a" * 40, "--output", out,
             ]), 1)
-
-    def test_vale_file_list_drops_unsafe_names(self):
-        with tempfile.TemporaryDirectory() as root:
-            self.git(root, "init", "-q")
-            self.git(root, "config", "user.email", "t@example.com")
-            self.git(root, "config", "user.name", "t")
-            for name in ("ok.md", "x';touch pwned;'.md", "has space.md"):
-                with open(os.path.join(root, name), "w") as f:
-                    f.write("Text.\n")
-            self.git(root, "add", ".")
-            self.git(root, "commit", "-qm", "base")
-            files = os.path.join(root, "files.json")
-            with open(files, "w") as f:
-                import json
-                json.dump([{"filename": n, "status": "added"} for n in ("ok.md", "x';touch pwned;'.md", "has space.md")], f)
-            vale = os.path.join(root, "vale.txt")
-            classify.main([
-                "--repo-root", root, "--base-rev", "HEAD", "--files", files, "--pr-number", "1",
-                "--head-sha", "a" * 40, "--output", os.path.join(root, "d.json"), "--vale-files", vale,
-            ])
-            with open(vale) as f:
-                self.assertEqual(f.read(), "ok.md\n")
-
 
 if __name__ == "__main__":
     unittest.main()

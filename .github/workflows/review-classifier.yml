@@ -71,6 +71,7 @@ jobs:
           ref: ${{ fromJSON(toJSON(job)).workflow_sha }}
           sparse-checkout: |
             review-classifier
+            vale/lint
             vale/report
           path: _docs-actions
           persist-credentials: false
@@ -174,12 +175,8 @@ jobs:
             --head-sha "$HEAD_SHA" \
             "${dry_run_flag[@]}" \
             --output "$WORK/out/decision.json" \
-            --vale-files "$WORK/vale-files.txt" \
             --config "$WORK/config.json"
           echo "tier=$(jq -r .tier "$WORK/out/decision.json")" >> "$GITHUB_OUTPUT"
-          if [ -s "$WORK/vale-files.txt" ]; then
-            echo "has_vale_files=true" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Write preview
         env:
@@ -199,19 +196,15 @@ jobs:
           path: ${{ steps.pr.outputs.work }}/out/decision.json
           retention-days: 1
 
-      - name: List files for Vale
-        id: vale-files
-        if: steps.config.outputs.vale_enabled == 'true' && steps.classify.outputs.has_vale_files == 'true' && steps.classify.outputs.tier != 'skip'
-        env:
-          WORK: ${{ steps.pr.outputs.work }}
-        run: |
-          echo "files=$(tr '\n' ' ' < "$WORK/vale-files.txt")" >> "$GITHUB_OUTPUT"
-
       - name: Run Vale
-        if: steps.vale-files.outputs.files != ''
+        if: steps.config.outputs.vale_enabled == 'true' && steps.classify.outputs.tier != 'skip'
         continue-on-error: true
-        uses: elastic/docs-actions/vale/lint@v1
+        # Same strategy as the standard Vale check: vale/lint gets the changed files
+        # and filters issues to changed lines itself, also for workflow_dispatch runs.
+        # Run it from the pinned docs-actions checkout, the same commit as the classifier.
+        # The self-repository form ($/) is not an option: actionlint 1.7.12 rejects it.
+        uses: ./_docs-actions/vale/lint # zizmor: ignore[self-repository]
         with:
-          files: ${{ steps.vale-files.outputs.files }}
+          pr-number: ${{ steps.pr.outputs.number }}
           vale-paths: ${{ steps.config.outputs.vale_paths }}
           vale_version: 3.22.0

@@ -34,8 +34,6 @@ SCHEMA_VERSION = 1
 MAX_FILE_SIZE = 1024 * 1024
 MAX_REASONS = 500
 MAX_PATH_LEN = 256
-MAX_CHANGED_LINE_FILES = 300
-MAX_RANGES_PER_FILE = 500
 MAX_LISTED_REASONS = 20
 TIERS = frozenset({"skip", "light", "full"})
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -79,7 +77,7 @@ def validate_decision(data, config):
         return ["root must be an object"]
     expected = {
         "schema_version", "pr_number", "head_sha", "dry_run", "tier", "computed_tier",
-        "override", "reasons", "bot_labels", "changed_lines",
+        "override", "reasons", "bot_labels",
     }
     if set(data) != expected:
         return [f"keys must be exactly {sorted(expected)}, got {sorted(data)}"]
@@ -126,17 +124,6 @@ def validate_decision(data, config):
             if item["detail"] not in DETAILS:
                 errors.append(f"{prefix}.detail is not allowed")
 
-    changed = data["changed_lines"]
-    if not isinstance(changed, dict) or len(changed) > MAX_CHANGED_LINE_FILES:
-        errors.append("changed_lines must be an object with a bounded number of files")
-    else:
-        for path, ranges in changed.items():
-            if not _is_path(path) or not isinstance(ranges, list) or len(ranges) > MAX_RANGES_PER_FILE:
-                errors.append("changed_lines entries must map a path to a bounded list")
-                break
-            if any(not (isinstance(r, list) and len(r) == 2 and _is_int(r[0], 1) and _is_int(r[1], 1)) for r in ranges):
-                errors.append(f"changed_lines[{path!r}] must contain [start, end] pairs")
-                break
     return errors
 
 
@@ -183,25 +170,13 @@ def short_names(reasons, config):
     return ", ".join(names)
 
 
-def filter_vale_issues(vale, changed_lines):
-    """Keep Vale issues on changed lines. Files with no range data keep all issues."""
-    kept = []
-    for issue in vale["issues"]:
-        path = issue["path"]
-        while path.startswith("./"):
-            path = path[2:]
-        ranges = changed_lines.get(path)
-        if ranges is None or any(start <= issue["line"] <= end for start, end in ranges):
-            kept.append(issue)
-    return kept
-
-
 def _plural(count, word):
     return f"{count} {word}{'' if count == 1 else 's'}"
 
 
-def render_vale(vale, changed_lines, max_findings, run_url):
-    issues = filter_vale_issues(vale, changed_lines)
+def render_vale(vale, max_findings, run_url):
+    # vale/lint already keeps only the issues on changed lines.
+    issues = vale["issues"]
     counts = {s: sum(1 for i in issues if i["severity"] == s) for s in ("error", "warning", "suggestion")}
     if not issues:
         return ["✓ Vale: no issues found on changed lines. Language and style were checked automatically."]
@@ -264,7 +239,7 @@ def render_comment(decision, config, vale=None, run_url=""):
 
     if vale is not None:
         lines.append("")
-        lines.extend(render_vale(vale, decision["changed_lines"], config["vale_max_findings"], run_url))
+        lines.extend(render_vale(vale, config["vale_max_findings"], run_url))
     return "\n".join(lines) + "\n"
 
 

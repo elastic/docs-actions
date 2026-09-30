@@ -47,10 +47,6 @@ IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp")
 DOCSET_FILES = ("docset.yml", "_docset.yml")
 CODE_DIRECTIVES = frozenset({"code", "code-block", "sourcecode"})
 
-# Bound the artifact so that very large PRs do not produce huge decisions.
-MAX_CHANGED_LINE_FILES = 300
-MAX_RANGES_PER_FILE = 500
-
 DEFAULT_LIGHT_URL = "https://codex.elastic.dev/r/docs-content-internal/processes/docs-review-checklists#light-review-checklist"
 DEFAULT_FULL_URL = "https://codex.elastic.dev/r/docs-content-internal/processes/docs-review-checklists#full-review-checklist"
 
@@ -348,8 +344,6 @@ DIRECTIVE_APPLIES_RE = re.compile(r"^\s*:applies_to:\s*(.*)$")
 INCLUDE_RE = re.compile(r"^\s*(?::{3,}|`{3,})\{include\}\s+(\S+)")
 URL_RE = re.compile(r"https?://[^\s<>()\[\]\"'`]+")
 INLINE_CODE_RE = re.compile(r"`[^`]*`")
-# vale/lint inserts its file list into a shell script, so only pass plain paths.
-SAFE_PATH_RE = re.compile(r"^[A-Za-z0-9._/@+-]+$")
 
 
 class Scan:
@@ -642,14 +636,12 @@ def redirect_keys(text, filename):
 def line_changes(base, head):
     """Count changed lines, ignoring whitespace changes and rewrapped text.
 
-    Returns (added, deleted, head_ranges). head_ranges lists the head lines
-    that changed, as inclusive [start, end] pairs.
+    Returns (added, deleted).
     """
     base_lines = [normalize_ws(line) for line in base.splitlines()]
     head_lines = [normalize_ws(line) for line in head.splitlines()]
     matcher = difflib.SequenceMatcher(None, base_lines, head_lines, autojunk=False)
     added = deleted = 0
-    ranges = []
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
         if tag == "equal":
             continue
@@ -659,9 +651,7 @@ def line_changes(base, head):
             continue
         deleted += len(old)
         added += len(new)
-        if new:
-            ranges.append([j1 + 1, j2])
-    return added, deleted, ranges
+    return added, deleted
 
 
 def threshold_for(base_line_count, thresholds):
@@ -801,7 +791,6 @@ def classify(files, read_base, read_head, list_head_files, config, labels=(), la
     files = [f for f in normalize_files(files) if not skip(f["filename"])]
     enabled = config["enabled"]
     reasons = []
-    changed_lines = {}
 
     def is_page(path):
         return path.endswith(".md") and not (config["pages_exclude_snippets"] and is_snippet(path))
@@ -847,11 +836,10 @@ def classify(files, read_base, read_head, list_head_files, config, labels=(), la
             if len(folders) > 1:
                 reasons.append(reason("shared-snippet", snippet, len(folders)))
 
-    # 7, 8, and 9: per-file content checks. Vale also lints .mdx files, so
-    # record their changed lines, but run the content triggers on .md only.
+    # 7, 8, and 9: per-file content checks.
     for f in files:
         path = f["filename"]
-        if not path.endswith((".md", ".mdx")) or f["status"] == "removed":
+        if not path.endswith(".md") or f["status"] == "removed":
             continue
         head = read_head(path) or ""
         base = ""
@@ -860,11 +848,7 @@ def classify(files, read_base, read_head, list_head_files, config, labels=(), la
         head_scan = scan_markdown(head)
         base_scan = scan_markdown(base)
 
-        added, deleted, ranges = line_changes(base, head)
-        if len(changed_lines) < MAX_CHANGED_LINE_FILES:
-            changed_lines[path] = ranges[:MAX_RANGES_PER_FILE]
-        if not path.endswith(".md"):
-            continue
+        added, deleted = line_changes(base, head)
 
         if enabled["substantial-change"] and is_page(path) and f["status"] in ("modified", "renamed"):
             base_count = len(base.splitlines())
@@ -902,17 +886,13 @@ def classify(files, read_base, read_head, list_head_files, config, labels=(), la
     if tier != computed:
         override = config["full_label"] if tier == "full" else config["light_label"]
 
-    # Lint only files with changed-line data, so the comment never lists findings
-    # on unchanged lines. On very large PRs, files past the cap are not linted.
-    vale_files = [f["filename"] for f in files if f["filename"] in changed_lines]
     return {
         "tier": tier,
         "computed_tier": computed,
         "override": override,
         "reasons": reasons,
         "bot_labels": bot,
-        "changed_lines": changed_lines,
-    }, vale_files
+    }
 
 
 # --- CLI ---------------------------------------------------------------------
@@ -951,7 +931,6 @@ def main(argv=None):
     parser.add_argument("--head-sha", required=True)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--output", required=True)
-    parser.add_argument("--vale-files", help="Write the Markdown files to lint, one per line")
     parser.add_argument("--config", help="The caller's config file, converted to JSON. Defaults apply when it is missing.")
     args = parser.parse_args(argv)
 
@@ -962,7 +941,7 @@ def main(argv=None):
         return 1
     reader = GitReader(args.repo_root)
     try:
-        decision, vale_files = classify(
+        decision = classify(
             load_json(args.files, []),
             read_base=lambda p: reader.read(args.base_rev, p),
             read_head=lambda p: reader.read(args.head_rev, p),
@@ -985,9 +964,6 @@ def main(argv=None):
     with open(args.output, "w", encoding="utf-8") as handle:
         json.dump(output, handle, indent=2)
         handle.write("\n")
-    if args.vale_files:
-        with open(args.vale_files, "w", encoding="utf-8") as handle:
-            handle.write("".join(f"{p}\n" for p in vale_files if SAFE_PATH_RE.match(p)))
 
     print(f"Tier: {output['tier']} (computed: {output['computed_tier']}), {len(output['reasons'])} reason(s)")
     return 0

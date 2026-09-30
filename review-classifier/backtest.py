@@ -115,7 +115,7 @@ def main(argv=None):
             row = {"number": pr["number"]}
             for name, overrides in VARIANTS.items():
                 config = dict(base_config, **overrides)
-                decision, _ = classify.classify(
+                decision = classify.classify(
                     files,
                     read_base=lambda p: reader.read(base, p),
                     read_head=lambda p: reader.read(head, p),
