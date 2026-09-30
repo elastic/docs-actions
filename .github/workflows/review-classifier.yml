@@ -8,6 +8,10 @@ name: Review classification
 on:
   workflow_call:
     inputs:
+      config:
+        description: 'Path to the rules file in the caller repository. The workflow reads it from the default branch, or from the branch of a workflow_dispatch run.'
+        type: string
+        default: '.github/review-classifier.yml'
       pr-number:
         description: 'Pull request to classify. Leave empty to use the pull_request event.'
         type: string
@@ -16,66 +20,6 @@ on:
         description: 'Write a preview to the job summary only. The comment workflow posts nothing.'
         type: boolean
         default: false
-      include-vale:
-        description: 'Run Vale on the changed Markdown files and add a short summary to the comment.'
-        type: boolean
-        default: true
-      vale-paths:
-        description: 'Path patterns for Vale linting (multi-line). Passed to vale/lint.'
-        type: string
-        default: ''
-      skip-paths:
-        description: 'More paths to ignore, in addition to .github/** and **/*.csv (space- or newline-separated globs). If only ignored files change, the classifier posts nothing.'
-        type: string
-        default: ''
-      snippet-patterns:
-        description: 'Globs for shared snippet files.'
-        type: string
-        default: '**/_snippets/** **/snippets/**'
-      redirect-files:
-        description: 'Globs for redirect files.'
-        type: string
-        default: '**/redirects.yml **/_redirects'
-      max-files:
-        description: 'Full review when more than this number of files change.'
-        type: number
-        default: 5
-      min-images:
-        description: 'Full review when at least this number of images change.'
-        type: number
-        default: 3
-      size-thresholds:
-        description: 'Percent of changed lines for a substantial change, as MAX_LINES:PERCENT pairs and a fallback percent.'
-        type: string
-        default: '199:20,500:10,5'
-      allowed-link-hosts:
-        description: 'Link hosts that do not count as external. Use *.host for subdomains and host/path for a path prefix.'
-        type: string
-        default: 'elastic.co *.elastic.co github.com/elastic'
-      snippet-scope:
-        description: 'What "folder" means for shared snippets: top-level or directory.'
-        type: string
-        default: 'top-level'
-      pages-exclude-snippets:
-        description: 'Do not count snippet files as pages for the new page and page deleted triggers.'
-        type: boolean
-        default: true
-      light-label:
-        description: 'Label for light review.'
-        type: string
-        default: 'review: light'
-      full-label:
-        description: 'Label for full review.'
-        type: string
-        default: 'review: full'
-      light-checklist-url:
-        description: 'Link to the light review checklist.'
-        type: string
-        default: 'https://codex.elastic.dev/r/docs-content-internal/processes/docs-review-checklists#light-review-checklist'
-      full-checklist-url:
-        description: 'Link to the full review checklist.'
-        type: string
-        default: 'https://codex.elastic.dev/r/docs-content-internal/processes/docs-review-checklists#full-review-checklist'
 
 permissions: {}
 
@@ -131,6 +75,35 @@ jobs:
           path: _docs-actions
           persist-credentials: false
 
+      - name: Load config
+        id: config
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CONFIG_PATH: ${{ inputs.config }}
+          # Never read rules from the PR head: a PR could change its own rules.
+          CONFIG_REF: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.repository.default_branch }}
+          WORK: ${{ steps.pr.outputs.work }}
+        run: |
+          if gh api -H 'Accept: application/vnd.github.raw' \
+              "repos/$GH_REPO/contents/${CONFIG_PATH}?ref=${CONFIG_REF}" > "$WORK/config.yml" 2> "$WORK/config.err"; then
+            yq -o=json '.' "$WORK/config.yml" > "$WORK/config.json"
+            echo "Using $CONFIG_PATH from $CONFIG_REF"
+          elif grep -q 'HTTP 404' "$WORK/config.err"; then
+            echo "::notice::No $CONFIG_PATH at $CONFIG_REF. Using the default rules."
+          else
+            cat "$WORK/config.err" >&2
+            exit 1
+          fi
+          settings=$(python3 _docs-actions/review-classifier/classify.py check-config "$WORK/config.json")
+          echo "vale_enabled=$(jq -r .vale_enabled <<< "$settings")" >> "$GITHUB_OUTPUT"
+          delimiter="EOF_$(openssl rand -hex 8)"
+          {
+            echo "vale_paths<<$delimiter"
+            jq -r '.vale_paths[]' <<< "$settings"
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Collect pull request data
         id: collect
         env:
@@ -180,17 +153,6 @@ jobs:
           MERGE_BASE: ${{ steps.collect.outputs.merge_base }}
           WORK: ${{ steps.pr.outputs.work }}
           DRY_RUN: ${{ inputs.dry-run }}
-          SKIP_PATHS: ${{ inputs.skip-paths }}
-          SNIPPET_PATTERNS: ${{ inputs.snippet-patterns }}
-          REDIRECT_FILES: ${{ inputs.redirect-files }}
-          MAX_FILES: ${{ inputs.max-files }}
-          MIN_IMAGES: ${{ inputs.min-images }}
-          SIZE_THRESHOLDS: ${{ inputs.size-thresholds }}
-          ALLOWED_LINK_HOSTS: ${{ inputs.allowed-link-hosts }}
-          SNIPPET_SCOPE: ${{ inputs.snippet-scope }}
-          PAGES_EXCLUDE_SNIPPETS: ${{ inputs.pages-exclude-snippets }}
-          LIGHT_LABEL: ${{ inputs.light-label }}
-          FULL_LABEL: ${{ inputs.full-label }}
         run: |
           # Same environment-only credentials as above, in case git must download a blob that the prefetch missed.
           export GIT_CONFIG_COUNT=1
@@ -211,7 +173,8 @@ jobs:
             --head-sha "$HEAD_SHA" \
             "${dry_run_flag[@]}" \
             --output "$WORK/out/decision.json" \
-            --vale-files "$WORK/vale-files.txt"
+            --vale-files "$WORK/vale-files.txt" \
+            --config "$WORK/config.json"
           echo "tier=$(jq -r .tier "$WORK/out/decision.json")" >> "$GITHUB_OUTPUT"
           if [ -s "$WORK/vale-files.txt" ]; then
             echo "has_vale_files=true" >> "$GITHUB_OUTPUT"
@@ -220,19 +183,12 @@ jobs:
       - name: Write preview
         env:
           WORK: ${{ steps.pr.outputs.work }}
-          LIGHT_URL: ${{ inputs.light-checklist-url }}
-          FULL_URL: ${{ inputs.full-checklist-url }}
-          LIGHT_LABEL: ${{ inputs.light-label }}
-          FULL_LABEL: ${{ inputs.full-label }}
         run: |
           python3 _docs-actions/review-classifier/render.py \
             --decision "$WORK/out/decision.json" \
+            --config "$WORK/config.json" \
             --output "$WORK/preview.md" \
-            --preview \
-            --light-url "$LIGHT_URL" \
-            --full-url "$FULL_URL" \
-            --light-label "$LIGHT_LABEL" \
-            --full-label "$FULL_LABEL"
+            --preview
           cat "$WORK/preview.md" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload classification
@@ -244,7 +200,7 @@ jobs:
 
       - name: List files for Vale
         id: vale-files
-        if: inputs.include-vale && steps.classify.outputs.has_vale_files == 'true' && steps.classify.outputs.tier != 'skip'
+        if: steps.config.outputs.vale_enabled == 'true' && steps.classify.outputs.has_vale_files == 'true' && steps.classify.outputs.tier != 'skip'
         env:
           WORK: ${{ steps.pr.outputs.work }}
         run: |
@@ -256,5 +212,5 @@ jobs:
         uses: elastic/docs-actions/vale/lint@v1
         with:
           files: ${{ steps.vale-files.outputs.files }}
-          vale-paths: ${{ inputs.vale-paths }}
+          vale-paths: ${{ steps.config.outputs.vale_paths }}
           vale_version: 3.22.0

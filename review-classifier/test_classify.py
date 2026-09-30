@@ -289,6 +289,32 @@ class ContentTests(unittest.TestCase):
         self.assertEqual(ids(decision), ["new-page", "external-link-added"])
 
 
+class ConfigTriggerTests(unittest.TestCase):
+    def test_disabled_trigger_does_not_fire(self):
+        files = [{"filename": "a/new.md", "status": "added"}]
+        config = classify.load_config({"triggers": {"new-page": False}})
+        decision, _ = run(files, head={"a/new.md": "# New\n"}, config=config)
+        self.assertEqual(decision["tier"], "light")
+
+    def test_headings_option(self):
+        base = {"p.md": page("# Title\n\nText.", lines=50)}
+        head = {"p.md": page("# Title\n\n## Extra\n\nText.", lines=50)}
+        config = classify.load_config({"triggers": {"substantial-change": {"headings": False}}})
+        self.assertEqual(run([modified("p.md")], base, head, config=config)[0]["tier"], "light")
+
+    def test_custom_rule(self):
+        config = classify.load_config({"custom": [
+            {"id": "security", "label": "Security page", "paths": ["deploy-manage/security/**"], "statuses": ["modified"]},
+        ]})
+        text = page("# T\n\nText.", lines=50)
+        files = [modified("deploy-manage/security/a.md"), {"filename": "deploy-manage/security/b.md", "status": "removed"}]
+        decision, _ = run(files, {"deploy-manage/security/a.md": text}, {"deploy-manage/security/a.md": text + "More.\n"},
+                          config=config)
+        self.assertEqual(decision["reasons"][-1], {"id": "custom:security", "file": "deploy-manage/security/a.md",
+                                                   "value": None, "detail": None})
+        self.assertEqual(ids(decision), ["page-deleted", "custom:security"])
+
+
 class OverrideTests(unittest.TestCase):
     NEW_PAGE = ([{"filename": "p.md", "status": "added"}], {}, {"p.md": "# T\n"})
 
@@ -358,21 +384,98 @@ class HelperTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             classify.parse_size_thresholds("199:20")
 
-    def test_config_from_env(self):
-        config = classify.config_from_env({
-            "SKIP_PATHS": "README.md\nAGENTS.md",
-            "MAX_FILES": "8",
-            "SNIPPET_SCOPE": "directory",
-            "PAGES_EXCLUDE_SNIPPETS": "false",
-            "LIGHT_LABEL": "tier: light",
+    def test_load_config_defaults(self):
+        config = classify.load_config(None)
+        self.assertEqual(config, classify.load_config({}))
+        self.assertTrue(all(config["enabled"].values()))
+        self.assertEqual(config["light_label"], "review: light")
+
+    def test_load_config_values(self):
+        config = classify.load_config({
+            "labels": {"light": "tier: light"},
+            "checklists": {"full": "https://example.test/full"},
+            "skip-paths": ["README.md", "AGENTS.md"],
+            "vale": {"enabled": False, "max-findings": 3, "paths": ["docs/**"]},
+            "triggers": {
+                "new-page": False,
+                "large-scope": {"max-files": 8},
+                "shared-snippet": {"scope": "directory"},
+                "substantial-change": {"headings": False, "thresholds": ["99:30", 10]},
+                "external-link-added": {"enabled": False},
+            },
+            "custom": [{"id": "security", "label": "Security page", "paths": "deploy-manage/security/**",
+                        "statuses": ["added", "modified"]}],
         })
+        self.assertEqual(config["light_label"], "tier: light")
+        self.assertEqual(config["full_url"], "https://example.test/full")
         self.assertEqual(config["skip_paths"], [".github/**", "**/*.csv", "README.md", "AGENTS.md"])
+        self.assertEqual((config["vale_enabled"], config["vale_max_findings"], config["vale_paths"]),
+                         (False, 3, ["docs/**"]))
+        self.assertFalse(config["enabled"]["new-page"])
+        self.assertFalse(config["enabled"]["external-link-added"])
+        self.assertTrue(config["enabled"]["large-scope"])
         self.assertEqual(config["max_files"], 8)
         self.assertEqual(config["snippet_scope"], "directory")
-        self.assertFalse(config["pages_exclude_snippets"])
-        self.assertEqual(config["light_label"], "tier: light")
-        with self.assertRaises(ValueError):
-            classify.config_from_env({"SNIPPET_SCOPE": "repo"})
+        self.assertFalse(config["headings"])
+        self.assertEqual(config["size_thresholds"], [(99, 30.0), (None, 10.0)])
+        self.assertEqual(config["custom"][0]["paths"], ["deploy-manage/security/**"])
+        # The defaults are not changed by a load.
+        self.assertTrue(classify.DEFAULT_CONFIG["enabled"]["new-page"])
+
+    def test_example_config_matches_defaults(self):
+        import json
+        import shutil
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.yml")
+        if shutil.which("yq"):
+            data = json.loads(subprocess.run(["yq", "-o=json", ".", path], check=True, capture_output=True).stdout)
+        else:
+            try:
+                import yaml
+            except ImportError:
+                self.skipTest("needs yq or PyYAML")
+            with open(path) as f:
+                data = yaml.safe_load(f)
+        self.assertEqual(classify.load_config(data), classify.load_config(None))
+
+    def test_load_config_rejects_mistakes(self):
+        bad = [
+            [],
+            {"trigger": {}},
+            {"triggers": {"new-pages": True}},
+            {"triggers": {"large-scope": {"max_files": 3}}},
+            {"triggers": {"large-scope": {"max-files": "3"}}},
+            {"triggers": {"shared-snippet": {"scope": "repo"}}},
+            {"triggers": {"substantial-change": {"thresholds": ["199:20"]}}},
+            {"labels": {"light": "same", "full": "same"}},
+            {"checklists": {"light": "http://insecure"}},
+            {"vale": {"max-findings": 99}},
+            {"custom": [{"id": "Bad ID", "label": "x", "paths": ["a/**"]}]},
+            {"custom": [{"id": "a", "label": "x", "paths": ["a/**"]}, {"id": "a", "label": "y", "paths": ["b/**"]}]},
+            {"custom": [{"id": "a", "label": "x", "paths": ["a/**"], "statuses": ["edited"]}]},
+            {"custom": [{"id": "a", "paths": ["a/**"]}]},
+        ]
+        for data in bad:
+            with self.subTest(data=data):
+                with self.assertRaises(classify.ConfigError):
+                    classify.load_config(data)
+
+    def test_check_config_cli(self):
+        import contextlib
+        import io
+        import json
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "config.json")
+            with open(path, "w") as f:
+                f.write('{"vale": {"enabled": false, "paths": ["docs/**"]}}')
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(classify.main(["check-config", path]), 0)
+            self.assertEqual(json.loads(out.getvalue()), {"vale_enabled": False, "vale_paths": ["docs/**"]})
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(classify.main(["check-config", os.path.join(tmp, "missing.json")]), 0)
+            with open(path, "w") as f:
+                f.write('{"vale": {"on": true}}')
+            self.assertEqual(classify.main(["check-config", path]), 1)
 
     def test_flow_and_block_pairs(self):
         self.assertEqual(
@@ -426,6 +529,22 @@ class GitReaderTests(unittest.TestCase):
             self.assertEqual(decision["tier"], "full")
             self.assertTrue(decision["dry_run"])
             self.assertEqual(decision["pr_number"], 7)
+
+            config = os.path.join(root, "config.json")
+            with open(config, "w") as f:
+                f.write('{"triggers": {"substantial-change": false}}')
+            classify.main([
+                "--repo-root", root, "--base-rev", "HEAD~1", "--files", files, "--config", config,
+                "--pr-number", "7", "--head-sha", "a" * 40, "--output", out,
+            ])
+            with open(out) as f:
+                self.assertEqual(json.load(f)["tier"], "light")
+            with open(config, "w") as f:
+                f.write('{"triggers": {"bogus": true}}')
+            self.assertEqual(classify.main([
+                "--repo-root", root, "--base-rev", "HEAD~1", "--files", files, "--config", config,
+                "--pr-number", "7", "--head-sha", "a" * 40, "--output", out,
+            ]), 1)
 
     def test_vale_file_list_drops_unsafe_names(self):
         with tempfile.TemporaryDirectory() as root:

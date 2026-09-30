@@ -51,28 +51,53 @@ CODE_DIRECTIVES = frozenset({"code", "code-block", "sourcecode"})
 MAX_CHANGED_LINE_FILES = 300
 MAX_RANGES_PER_FILE = 500
 
+DEFAULT_LIGHT_URL = "https://codex.elastic.dev/r/docs-content-internal/processes/docs-review-checklists#light-review-checklist"
+DEFAULT_FULL_URL = "https://codex.elastic.dev/r/docs-content-internal/processes/docs-review-checklists#full-review-checklist"
+
+# The internal configuration. load_config() builds it from the caller's
+# .github/review-classifier.yml file, and uses these values for missing keys.
 DEFAULT_CONFIG = {
     "skip_paths": list(BUILTIN_SKIP_PATHS),
     "snippet_patterns": ["**/_snippets/**", "**/snippets/**"],
     "redirect_files": ["**/redirects.yml", "**/_redirects"],
+    "pages_exclude_snippets": True,
+    "enabled": {trigger: True for trigger in TRIGGER_IDS},
     "max_files": 5,
     "min_images": 3,
+    "snippet_scope": "top-level",
+    "headings": True,
     # (max base lines, percent). None is the fallback for larger pages.
     "size_thresholds": [(199, 20), (500, 10), (None, 5)],
     "allowed_link_hosts": ["elastic.co", "*.elastic.co", "github.com/elastic"],
-    "snippet_scope": "top-level",
-    "pages_exclude_snippets": True,
+    "custom": [],
     "light_label": "review: light",
     "full_label": "review: full",
+    "light_url": DEFAULT_LIGHT_URL,
+    "full_url": DEFAULT_FULL_URL,
+    "vale_enabled": True,
+    "vale_max_findings": 10,
+    "vale_paths": [],
 }
+
+# Trigger options that the config file accepts, mapped to internal keys.
+TRIGGER_OPTIONS = {
+    "large-scope": {"max-files": "max_files"},
+    "images-changed": {"min-images": "min_images"},
+    "shared-snippet": {"scope": "snippet_scope"},
+    "substantial-change": {"headings": "headings", "thresholds": "size_thresholds"},
+    "external-link-added": {"allowed-hosts": "allowed_link_hosts"},
+}
+CUSTOM_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,39}$")
+STATUSES = ("added", "modified", "removed", "renamed")
+MAX_CUSTOM_RULES = 50
+MAX_LABEL_LEN = 100
+
+
+class ConfigError(ValueError):
+    pass
 
 
 # --- configuration -----------------------------------------------------------
-
-
-def split_list(value):
-    """Split a space- or newline-separated input into a list."""
-    return [item for item in re.split(r"\s+", value or "") if item]
 
 
 def parse_size_thresholds(value):
@@ -85,37 +110,145 @@ def parse_size_thresholds(value):
         else:
             thresholds.append((None, float(part)))
     if not thresholds or thresholds[-1][0] is not None:
-        raise ValueError("size thresholds must end with a fallback percent, for example '199:20,500:10,5'")
+        raise ConfigError("size thresholds must end with a fallback percent, for example ['199:20', '500:10', '5']")
     return thresholds
 
 
-def config_from_env(env):
-    """Build the classifier configuration from workflow input environment variables."""
-    config = dict(DEFAULT_CONFIG)
-    config["skip_paths"] = list(BUILTIN_SKIP_PATHS) + split_list(env.get("SKIP_PATHS", ""))
-    if env.get("SNIPPET_PATTERNS", "").strip():
-        config["snippet_patterns"] = split_list(env["SNIPPET_PATTERNS"])
-    if env.get("REDIRECT_FILES", "").strip():
-        config["redirect_files"] = split_list(env["REDIRECT_FILES"])
-    if env.get("MAX_FILES", "").strip():
-        config["max_files"] = int(env["MAX_FILES"])
-    if env.get("MIN_IMAGES", "").strip():
-        config["min_images"] = int(env["MIN_IMAGES"])
-    if env.get("SIZE_THRESHOLDS", "").strip():
-        config["size_thresholds"] = parse_size_thresholds(env["SIZE_THRESHOLDS"])
-    if env.get("ALLOWED_LINK_HOSTS", "").strip():
-        config["allowed_link_hosts"] = split_list(env["ALLOWED_LINK_HOSTS"])
-    if env.get("SNIPPET_SCOPE", "").strip():
-        scope = env["SNIPPET_SCOPE"].strip()
-        if scope not in ("top-level", "directory"):
-            raise ValueError(f"snippet-scope must be 'top-level' or 'directory', got {scope!r}")
-        config["snippet_scope"] = scope
-    if env.get("PAGES_EXCLUDE_SNIPPETS", "").strip():
-        config["pages_exclude_snippets"] = env["PAGES_EXCLUDE_SNIPPETS"].strip().lower() == "true"
-    if env.get("LIGHT_LABEL", "").strip():
-        config["light_label"] = env["LIGHT_LABEL"].strip()
-    if env.get("FULL_LABEL", "").strip():
-        config["full_label"] = env["FULL_LABEL"].strip()
+def _check_keys(value, allowed, where):
+    if not isinstance(value, dict):
+        raise ConfigError(f"{where} must be a mapping")
+    unknown = sorted(set(value) - set(allowed))
+    if unknown:
+        raise ConfigError(f"unknown key(s) in {where}: {', '.join(unknown)}")
+
+
+def _string(value, where, max_len=500):
+    if not isinstance(value, str) or not value.strip() or len(value) > max_len:
+        raise ConfigError(f"{where} must be a non-empty string")
+    return value.strip()
+
+
+def _string_list(value, where):
+    if isinstance(value, str):
+        value = value.split()
+    if not isinstance(value, list) or not all(isinstance(v, str) and v.strip() for v in value):
+        raise ConfigError(f"{where} must be a list of strings")
+    return [v.strip() for v in value]
+
+
+def _bool(value, where):
+    if not isinstance(value, bool):
+        raise ConfigError(f"{where} must be true or false")
+    return value
+
+
+def _int(value, where, minimum=0, maximum=10**6):
+    if isinstance(value, bool) or not isinstance(value, int) or not minimum <= value <= maximum:
+        raise ConfigError(f"{where} must be an integer from {minimum} to {maximum}")
+    return value
+
+
+def _url(value, where):
+    value = _string(value, where)
+    if not value.startswith("https://") or any(c in value for c in " ()<>[]"):
+        raise ConfigError(f"{where} must be an https URL")
+    return value
+
+
+def _trigger_option(trigger, key, value):
+    where = f"triggers.{trigger}.{key}"
+    if key in ("max-files", "min-images"):
+        return _int(value, where)
+    if key == "scope":
+        if value not in ("top-level", "directory"):
+            raise ConfigError(f"{where} must be top-level or directory")
+        return value
+    if key == "headings":
+        return _bool(value, where)
+    if key == "thresholds":
+        items = value if isinstance(value, list) else [value]
+        return parse_size_thresholds(",".join(str(v) for v in items))
+    return _string_list(value, where)
+
+
+def load_config(data):
+    """Validate the caller's config file (parsed YAML) and return the internal config."""
+    config = {k: (dict(v) if isinstance(v, dict) else list(v) if isinstance(v, list) else v)
+              for k, v in DEFAULT_CONFIG.items()}
+    if data is None:
+        return config
+    _check_keys(data, {"labels", "checklists", "skip-paths", "snippet-patterns", "redirect-files",
+                       "pages-exclude-snippets", "vale", "triggers", "custom"}, "the config")
+
+    labels = data.get("labels", {})
+    _check_keys(labels, {"light", "full"}, "labels")
+    if "light" in labels:
+        config["light_label"] = _string(labels["light"], "labels.light", 50)
+    if "full" in labels:
+        config["full_label"] = _string(labels["full"], "labels.full", 50)
+    if config["light_label"] == config["full_label"]:
+        raise ConfigError("labels.light and labels.full must be different")
+
+    checklists = data.get("checklists", {})
+    _check_keys(checklists, {"light", "full"}, "checklists")
+    if "light" in checklists:
+        config["light_url"] = _url(checklists["light"], "checklists.light")
+    if "full" in checklists:
+        config["full_url"] = _url(checklists["full"], "checklists.full")
+
+    if "skip-paths" in data:
+        config["skip_paths"] = list(BUILTIN_SKIP_PATHS) + _string_list(data["skip-paths"], "skip-paths")
+    if "snippet-patterns" in data:
+        config["snippet_patterns"] = _string_list(data["snippet-patterns"], "snippet-patterns")
+    if "redirect-files" in data:
+        config["redirect_files"] = _string_list(data["redirect-files"], "redirect-files")
+    if "pages-exclude-snippets" in data:
+        config["pages_exclude_snippets"] = _bool(data["pages-exclude-snippets"], "pages-exclude-snippets")
+
+    vale = data.get("vale", {})
+    if isinstance(vale, bool):
+        vale = {"enabled": vale}
+    _check_keys(vale, {"enabled", "max-findings", "paths"}, "vale")
+    if "enabled" in vale:
+        config["vale_enabled"] = _bool(vale["enabled"], "vale.enabled")
+    if "max-findings" in vale:
+        config["vale_max_findings"] = _int(vale["max-findings"], "vale.max-findings", 0, 50)
+    if "paths" in vale:
+        config["vale_paths"] = _string_list(vale["paths"], "vale.paths")
+
+    triggers = data.get("triggers", {})
+    _check_keys(triggers, TRIGGER_IDS, "triggers")
+    for trigger, value in triggers.items():
+        if isinstance(value, bool):
+            config["enabled"][trigger] = value
+            continue
+        options = TRIGGER_OPTIONS.get(trigger, {})
+        _check_keys(value, set(options) | {"enabled"}, f"triggers.{trigger}")
+        config["enabled"][trigger] = _bool(value.get("enabled", True), f"triggers.{trigger}.enabled")
+        for key, internal in options.items():
+            if key in value:
+                config[internal] = _trigger_option(trigger, key, value[key])
+
+    custom = data.get("custom", [])
+    if not isinstance(custom, list) or len(custom) > MAX_CUSTOM_RULES:
+        raise ConfigError(f"custom must be a list of at most {MAX_CUSTOM_RULES} rules")
+    seen = set()
+    for i, rule in enumerate(custom):
+        where = f"custom[{i}]"
+        _check_keys(rule, {"id", "label", "paths", "statuses"}, where)
+        rule_id = rule.get("id")
+        if not isinstance(rule_id, str) or not CUSTOM_ID_RE.match(rule_id) or rule_id in seen:
+            raise ConfigError(f"{where}.id must be a unique lowercase id, for example security-pages")
+        seen.add(rule_id)
+        statuses = _string_list(rule.get("statuses", list(STATUSES)), f"{where}.statuses")
+        if any(s not in STATUSES for s in statuses):
+            raise ConfigError(f"{where}.statuses must only contain {', '.join(STATUSES)}")
+        config["custom"].append({
+            "id": rule_id,
+            "label": _string(rule.get("label"), f"{where}.label", MAX_LABEL_LEN),
+            "paths": _string_list(rule.get("paths"), f"{where}.paths"),
+            "statuses": statuses,
+        })
     return config
 
 
@@ -666,6 +799,7 @@ def classify(files, read_base, read_head, list_head_files, config, labels=(), la
     is_redirect_file = PathMatcher(config["redirect_files"])
 
     files = [f for f in normalize_files(files) if not skip(f["filename"])]
+    enabled = config["enabled"]
     reasons = []
     changed_lines = {}
 
@@ -674,15 +808,15 @@ def classify(files, read_base, read_head, list_head_files, config, labels=(), la
 
     # 1 and 2: pages added or deleted.
     for f in files:
-        if is_page(f["filename"]) and f["status"] == "added":
+        if enabled["new-page"] and is_page(f["filename"]) and f["status"] == "added":
             reasons.append(reason("new-page", f["filename"]))
     for f in files:
-        if is_page(f["filename"]) and f["status"] == "removed":
+        if enabled["page-deleted"] and is_page(f["filename"]) and f["status"] == "removed":
             reasons.append(reason("page-deleted", f["filename"]))
 
     # 3: new redirect keys.
     for f in files:
-        if f["status"] == "removed" or not is_redirect_file(f["filename"]):
+        if not enabled["redirect-added"] or f["status"] == "removed" or not is_redirect_file(f["filename"]):
             continue
         base_path = f["previous_filename"] or f["filename"]
         base_keys = redirect_keys(read_base(base_path) if f["status"] != "added" else "", base_path)
@@ -691,18 +825,18 @@ def classify(files, read_base, read_head, list_head_files, config, labels=(), la
             reasons.append(reason("redirect-added", f["filename"], len(head_keys - base_keys)))
 
     # 4: large scope.
-    if len(files) > config["max_files"]:
+    if enabled["large-scope"] and len(files) > config["max_files"]:
         reasons.append(reason("large-scope", None, len(files)))
 
     # 5: images.
     images = [f for f in files if f["filename"].lower().endswith(IMAGE_EXTENSIONS)]
-    if len(images) >= config["min_images"]:
+    if enabled["images-changed"] and len(images) >= config["min_images"]:
         reasons.append(reason("images-changed", None, len(images)))
 
     # 6: shared snippets used in more than one folder.
     changed_snippets = [
         f["filename"] for f in files
-        if f["status"] in ("modified", "renamed") and f["filename"].endswith(".md") and is_snippet(f["filename"])
+        if enabled["shared-snippet"] and f["status"] in ("modified", "renamed") and f["filename"].endswith(".md") and is_snippet(f["filename"])
     ]
     if changed_snippets:
         reverse, docset_dirs = build_include_graph(list_head_files(), read_head)
@@ -727,23 +861,31 @@ def classify(files, read_base, read_head, list_head_files, config, labels=(), la
         if len(changed_lines) < MAX_CHANGED_LINE_FILES:
             changed_lines[path] = ranges[:MAX_RANGES_PER_FILE]
 
-        if is_page(path) and f["status"] in ("modified", "renamed"):
+        if enabled["substantial-change"] and is_page(path) and f["status"] in ("modified", "renamed"):
             base_count = len(base.splitlines())
             percent = round(100 * (added + deleted) / max(base_count, 1))
-            if extract_headings(base_scan) != extract_headings(head_scan):
+            if config["headings"] and extract_headings(base_scan) != extract_headings(head_scan):
                 reasons.append(reason("substantial-change", path, percent, "headings"))
             elif (added + deleted) and 100 * (added + deleted) / max(base_count, 1) >= threshold_for(
                 base_count, config["size_thresholds"]
             ):
                 reasons.append(reason("substantial-change", path, percent, "lines"))
 
-        if extract_applies_to(base_scan) - extract_applies_to(head_scan):
+        if enabled["applies-to-modified"] and extract_applies_to(base_scan) - extract_applies_to(head_scan):
             reasons.append(reason("applies-to-modified", path))
 
-        new_urls = extract_urls(head_scan) - extract_urls(base_scan)
-        external = sorted(u for u in new_urls if not is_allowed_url(u, config["allowed_link_hosts"]))
-        if external:
-            reasons.append(reason("external-link-added", path, len(external)))
+        if enabled["external-link-added"]:
+            new_urls = extract_urls(head_scan) - extract_urls(base_scan)
+            external = sorted(u for u in new_urls if not is_allowed_url(u, config["allowed_link_hosts"]))
+            if external:
+                reasons.append(reason("external-link-added", path, len(external)))
+
+    # Custom path rules from the caller's config.
+    for rule in config["custom"]:
+        matches = PathMatcher(rule["paths"])
+        for f in files:
+            if f["status"] in rule["statuses"] and matches(f["filename"]):
+                reasons.append(reason(f"custom:{rule['id']}", f["filename"]))
 
     computed = "skip" if not files else ("full" if reasons else "light")
     human, bot = resolve_labels(set(labels), label_events, config)
@@ -776,7 +918,21 @@ def load_json(path, default):
         return json.load(handle)
 
 
+def check_config(path):
+    """Validate a config file and print the settings that the workflow needs, as JSON."""
+    try:
+        config = load_config(load_json(path, None) if path and os.path.exists(path) else None)
+    except (ConfigError, json.JSONDecodeError) as exc:
+        print(f"::error::Invalid review classifier config: {exc}", file=sys.stderr)
+        return 1
+    print(json.dumps({"vale_enabled": config["vale_enabled"], "vale_paths": config["vale_paths"]}))
+    return 0
+
+
 def main(argv=None):
+    argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["check-config"]:
+        return check_config(argv[1] if len(argv) > 1 else None)
     parser = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0])
     parser.add_argument("--repo-root", default=".")
     parser.add_argument("--base-rev", required=True)
@@ -789,9 +945,14 @@ def main(argv=None):
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--output", required=True)
     parser.add_argument("--vale-files", help="Write the Markdown files to lint, one per line")
+    parser.add_argument("--config", help="The caller's config file, converted to JSON. Defaults apply when it is missing.")
     args = parser.parse_args(argv)
 
-    config = config_from_env(os.environ)
+    try:
+        config = load_config(load_json(args.config, None) if args.config and os.path.exists(args.config) else None)
+    except ConfigError as exc:
+        print(f"::error::Invalid review classifier config: {exc}", file=sys.stderr)
+        return 1
     reader = GitReader(args.repo_root)
     try:
         decision, vale_files = classify(

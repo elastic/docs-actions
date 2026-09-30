@@ -8,26 +8,10 @@ name: Review classification comment
 on:
   workflow_call:
     inputs:
-      light-label:
-        description: 'Label for light review. Must match the classification workflow.'
+      config:
+        description: 'Path to the rules file in the caller repository. Must match the classification workflow.'
         type: string
-        default: 'review: light'
-      full-label:
-        description: 'Label for full review. Must match the classification workflow.'
-        type: string
-        default: 'review: full'
-      light-checklist-url:
-        description: 'Link to the light review checklist.'
-        type: string
-        default: 'https://codex.elastic.dev/r/docs-content-internal/processes/docs-review-checklists#light-review-checklist'
-      full-checklist-url:
-        description: 'Link to the full review checklist.'
-        type: string
-        default: 'https://codex.elastic.dev/r/docs-content-internal/processes/docs-review-checklists#full-review-checklist'
-      vale-max-findings:
-        description: 'Maximum number of Vale errors and warnings to list in the comment (0-50).'
-        type: number
-        default: 10
+        default: '.github/review-classifier.yml'
 
 permissions: {}
 
@@ -37,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       actions: read
+      contents: read
       pull-requests: write
     steps:
       - name: Find artifacts
@@ -96,28 +81,40 @@ jobs:
           path: _docs-actions
           persist-credentials: false
 
+      - name: Load config
+        if: steps.artifacts.outputs.classification == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CONFIG_PATH: ${{ inputs.config }}
+          # The same ref as the classification run: the dispatch commit, or the default branch.
+          CONFIG_REF: ${{ github.event.workflow_run.event == 'workflow_dispatch' && github.event.workflow_run.head_sha || github.event.repository.default_branch }}
+          WORK: ${{ steps.artifacts.outputs.work }}
+        run: |
+          mkdir -p "$WORK/config"
+          if gh api -H 'Accept: application/vnd.github.raw' \
+              "repos/$GH_REPO/contents/${CONFIG_PATH}?ref=${CONFIG_REF}" > "$WORK/config/config.yml" 2> "$WORK/config/config.err"; then
+            yq -o=json '.' "$WORK/config/config.yml" > "$WORK/config/config.json"
+          elif grep -q 'HTTP 404' "$WORK/config/config.err"; then
+            echo "::notice::No $CONFIG_PATH at $CONFIG_REF. Using the default labels and links."
+          else
+            cat "$WORK/config/config.err" >&2
+            exit 1
+          fi
+
       - name: Validate and render comment
         id: render
         if: steps.artifacts.outputs.classification == 'true'
         env:
           WORK: ${{ steps.artifacts.outputs.work }}
           RUN_URL: ${{ github.event.workflow_run.html_url }}
-          LIGHT_URL: ${{ inputs.light-checklist-url }}
-          FULL_URL: ${{ inputs.full-checklist-url }}
-          LIGHT_LABEL: ${{ inputs.light-label }}
-          FULL_LABEL: ${{ inputs.full-label }}
-          MAX_FINDINGS: ${{ inputs.vale-max-findings }}
         run: |
           python3 _docs-actions/review-classifier/render.py \
             --decision "$WORK/classification/decision.json" \
             --vale "$WORK/vale/vale_results.json" \
+            --config "$WORK/config/config.json" \
             --output "$WORK/comment.md" \
             --meta "$WORK/meta.json" \
-            --light-url "$LIGHT_URL" \
-            --full-url "$FULL_URL" \
-            --light-label "$LIGHT_LABEL" \
-            --full-label "$FULL_LABEL" \
-            --max-findings "$MAX_FINDINGS" \
             --run-url "$RUN_URL"
           echo "dry_run=$(jq -r .dry_run "$WORK/meta.json")" >> "$GITHUB_OUTPUT"
 
@@ -165,8 +162,6 @@ jobs:
         env:
           WORK: ${{ steps.artifacts.outputs.work }}
           PR_NUMBER: ${{ steps.pr.outputs.number }}
-          LIGHT_LABEL: ${{ inputs.light-label }}
-          FULL_LABEL: ${{ inputs.full-label }}
         with:
           script: |
             const fs = require('fs');
@@ -179,8 +174,9 @@ jobs:
               prNumber: Number(process.env.PR_NUMBER),
               decision: meta,
               body,
-              lightLabel: process.env.LIGHT_LABEL,
-              fullLabel: process.env.FULL_LABEL,
+              // render.py copies the label names from the trusted config into meta.json.
+              lightLabel: meta.light_label,
+              fullLabel: meta.full_label,
             });
             core.info(`Review classification comment: ${result.status}`);
 

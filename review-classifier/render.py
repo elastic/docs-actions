@@ -24,6 +24,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 from render_report import sanitize_path, sanitize_text, validate as validate_vale  # noqa: E402
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from classify import load_config  # noqa: E402
+
 
 MARKER = "<!-- docs-review-classifier -->"
 SCHEMA_VERSION = 1
@@ -63,8 +67,14 @@ def _is_path(value):
     return isinstance(value, str) and 0 < len(value) <= MAX_PATH_LEN and "\n" not in value
 
 
-def validate_decision(data, light_label, full_label):
+def custom_rules(config):
+    return {rule["id"]: rule for rule in config["custom"]}
+
+
+def validate_decision(data, config):
     """Return a list of schema errors. An empty list means the decision is valid."""
+    light_label, full_label = config["light_label"], config["full_label"]
+    custom = custom_rules(config)
     if not isinstance(data, dict):
         return ["root must be an object"]
     expected = {
@@ -99,12 +109,17 @@ def validate_decision(data, light_label, full_label):
             if not isinstance(item, dict) or set(item) != {"id", "file", "value", "detail"}:
                 errors.append(f"{prefix} must have exactly id, file, value, detail")
                 continue
-            if item["id"] not in TRIGGERS:
+            if not isinstance(item["id"], str):
+                errors.append(f"{prefix}.id must be a string")
+                continue
+            is_custom = item["id"].startswith("custom:")
+            if not (item["id"] in TRIGGERS or (is_custom and item["id"][len("custom:"):] in custom)):
                 errors.append(f"{prefix}.id is not a known trigger")
                 continue
-            if item["id"] in FILE_TRIGGERS and not _is_path(item["file"]):
+            takes_file = is_custom or item["id"] in FILE_TRIGGERS
+            if takes_file and not _is_path(item["file"]):
                 errors.append(f"{prefix}.file must be a path")
-            if item["id"] not in FILE_TRIGGERS and item["file"] is not None:
+            if not takes_file and item["file"] is not None:
                 errors.append(f"{prefix}.file must be null")
             if item["value"] is not None and not _is_int(item["value"]):
                 errors.append(f"{prefix}.value must be null or a non-negative integer")
@@ -141,7 +156,10 @@ def code_path(path):
     return "`" + sanitize_path(path).replace("`", "") + "`"
 
 
-def reason_text(item):
+def reason_text(item, config):
+    if item["id"].startswith("custom:"):
+        label = custom_rules(config)[item["id"][len("custom:"):]]["label"]
+        return f"{sanitize_text(label)}: {code_path(item['file'])}"
     template, _ = TRIGGERS[item["id"]]
     detail = ""
     if item["id"] == "substantial-change":
@@ -153,10 +171,13 @@ def reason_text(item):
     )
 
 
-def short_names(reasons):
+def short_names(reasons, config):
     names = []
     for item in reasons:
-        name = TRIGGERS[item["id"]][1]
+        if item["id"].startswith("custom:"):
+            name = sanitize_text(custom_rules(config)[item["id"][len("custom:"):]]["label"])
+        else:
+            name = TRIGGERS[item["id"]][1]
         if name not in names:
             names.append(name)
     return ", ".join(names)
@@ -205,13 +226,14 @@ def render_vale(vale, changed_lines, max_findings, run_url):
     return lines
 
 
-def render_comment(decision, light_url, full_url, vale=None, max_findings=10, run_url=""):
+def render_comment(decision, config, vale=None, run_url=""):
     tier, computed, reasons = decision["tier"], decision["computed_tier"], decision["reasons"]
+    light_url, full_url = config["light_url"], config["full_url"]
     lines = [MARKER]
     note = ""
     if decision["override"]:
         if tier == "light" and computed == "full":
-            note = f" *(manually overridden — full review was triggered by: {short_names(reasons)})*"
+            note = f" *(manually overridden — full review was triggered by: {short_names(reasons, config)})*"
         else:
             note = " *(manually overridden)*"
 
@@ -224,12 +246,12 @@ def render_comment(decision, light_url, full_url, vale=None, max_findings=10, ru
                 lines.append("")
                 lines.append("Triggered by:")
         shown = reasons[:MAX_LISTED_REASONS]
-        lines.extend(f"- {reason_text(item)}" for item in shown)
+        lines.extend(f"- {reason_text(item, config)}" for item in shown)
         if len(reasons) > MAX_LISTED_REASONS:
             lines.append("")
             lines.append("<details><summary>More triggers</summary>")
             lines.append("")
-            lines.extend(f"- {reason_text(item)}" for item in reasons[MAX_LISTED_REASONS:])
+            lines.extend(f"- {reason_text(item, config)}" for item in reasons[MAX_LISTED_REASONS:])
             lines.append("")
             lines.append("</details>")
         lines.append("")
@@ -242,12 +264,13 @@ def render_comment(decision, light_url, full_url, vale=None, max_findings=10, ru
 
     if vale is not None:
         lines.append("")
-        lines.extend(render_vale(vale, decision["changed_lines"], max_findings, run_url))
+        lines.extend(render_vale(vale, decision["changed_lines"], config["vale_max_findings"], run_url))
     return "\n".join(lines) + "\n"
 
 
-def label_plan(decision, light_label, full_label):
+def label_plan(decision, config):
     """Describe the label changes the comment workflow would make."""
+    light_label, full_label = config["light_label"], config["full_label"]
     if decision["tier"] == "skip":
         return [], list(decision["bot_labels"])
     want = full_label if decision["tier"] == "full" else light_label
@@ -255,8 +278,8 @@ def label_plan(decision, light_label, full_label):
     return [want], [other]
 
 
-def render_preview(decision, light_url, full_url, light_label, full_label):
-    add, remove = label_plan(decision, light_label, full_label)
+def render_preview(decision, config):
+    add, remove = label_plan(decision, config)
     mode = "dry run: no comment or labels are posted" if decision["dry_run"] else "the comment workflow posts this"
     lines = [
         f"## Review classification for #{decision['pr_number']}",
@@ -271,7 +294,7 @@ def render_preview(decision, light_url, full_url, light_label, full_label):
     else:
         lines.append("### Comment preview")
         lines.append("")
-        lines.append(render_comment(decision, light_url, full_url).replace(MARKER + "\n", ""))
+        lines.append(render_comment(decision, config).replace(MARKER + "\n", ""))
         lines.append("Vale findings appear in the Vale summary of this job, when Vale runs.")
     return "\n".join(lines) + "\n"
 
@@ -286,20 +309,23 @@ def main(argv=None):
     parser.add_argument("--output", required=True)
     parser.add_argument("--meta", help="Write validated routing fields to this JSON file")
     parser.add_argument("--preview", action="store_true", help="Render a job summary preview")
-    parser.add_argument("--light-url", required=True)
-    parser.add_argument("--full-url", required=True)
-    parser.add_argument("--light-label", default="review: light")
-    parser.add_argument("--full-label", default="review: full")
-    parser.add_argument("--max-findings", type=int, default=10)
+    parser.add_argument("--config", help="The caller's config file, converted to JSON. Defaults apply when it is missing.")
     parser.add_argument("--run-url", default="")
     args = parser.parse_args(argv)
+
+    try:
+        raw_config = load_json_file(args.config) if args.config and os.path.exists(args.config) else None
+        config = load_config(raw_config)
+    except (OSError, ValueError) as exc:
+        print(f"::error::Invalid review classifier config: {exc}", file=sys.stderr)
+        return 1
 
     try:
         decision = load_json_file(args.decision)
     except (OSError, ValueError) as exc:
         print(f"::error::Cannot read decision: {exc}", file=sys.stderr)
         return 1
-    errors = validate_decision(decision, args.light_label, args.full_label)
+    errors = validate_decision(decision, config)
     if errors:
         for error in errors:
             print(f"::error::Invalid decision: {error}", file=sys.stderr)
@@ -318,15 +344,16 @@ def main(argv=None):
                 vale = None
 
     if args.preview:
-        body = render_preview(decision, args.light_url, args.full_url, args.light_label, args.full_label)
+        body = render_preview(decision, config)
     else:
-        max_findings = max(0, min(args.max_findings, 50))
-        body = render_comment(decision, args.light_url, args.full_url, vale, max_findings, args.run_url)
+        body = render_comment(decision, config, vale, args.run_url)
 
     with open(args.output, "w", encoding="utf-8") as handle:
         handle.write(body)
     if args.meta:
         meta = {k: decision[k] for k in ("pr_number", "head_sha", "dry_run", "tier", "bot_labels")}
+        meta["light_label"] = config["light_label"]
+        meta["full_label"] = config["full_label"]
         with open(args.meta, "w", encoding="utf-8") as handle:
             json.dump(meta, handle)
     return 0

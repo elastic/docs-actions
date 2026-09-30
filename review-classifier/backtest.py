@@ -15,11 +15,13 @@ parent, so the diff matches the squashed change.
 Example:
 
     git -C ../docs-content fetch origin main
-    python3 backtest.py --repo elastic/docs-content --repo-root ../docs-content --limit 200
+    python3 backtest.py --repo elastic/docs-content --repo-root ../docs-content --limit 200 \
+      --config ../docs-content/.github/review-classifier.yml
 """
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 from collections import Counter
@@ -28,10 +30,26 @@ import classify
 
 
 VARIANTS = {
-    "default": {},
+    "config": {},
+    "headings=false": {"headings": False},
     "snippet-scope=directory": {"snippet_scope": "directory"},
     "pages-exclude-snippets=false": {"pages_exclude_snippets": False},
 }
+
+
+def read_config(path):
+    """Read the caller config with yq, the same tool that the workflow uses, or PyYAML."""
+    if not path:
+        return classify.load_config(None)
+    if path.endswith((".yml", ".yaml")):
+        if shutil.which("yq"):
+            out = subprocess.run(["yq", "-o=json", ".", path], check=True, stdout=subprocess.PIPE).stdout
+            return classify.load_config(json.loads(out))
+        import yaml  # Local fallback when yq is not installed.
+        with open(path, encoding="utf-8") as handle:
+            return classify.load_config(yaml.safe_load(handle))
+    with open(path, encoding="utf-8") as handle:
+        return classify.load_config(json.load(handle))
 
 
 def merged_prs(repo, limit, include_bots):
@@ -76,11 +94,11 @@ def main(argv=None):
     parser.add_argument("--repo-root", required=True, help="Local clone that contains the merge commits")
     parser.add_argument("--limit", type=int, default=200)
     parser.add_argument("--include-bots", action="store_true")
-    parser.add_argument("--skip-paths", default="", help="Extra skip paths, as for the workflow input")
+    parser.add_argument("--config", help="The caller's .github/review-classifier.yml, or the same content as JSON")
     parser.add_argument("--json", help="Write per-PR results to this file")
     args = parser.parse_args(argv)
 
-    base_config = classify.config_from_env({"SKIP_PATHS": args.skip_paths})
+    base_config = read_config(args.config)
     reader = classify.GitReader(args.repo_root)
     tiers = {name: Counter() for name in VARIANTS}
     triggers = {name: Counter() for name in VARIANTS}
