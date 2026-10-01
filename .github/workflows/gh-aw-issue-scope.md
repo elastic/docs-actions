@@ -108,6 +108,7 @@ steps:
       fi
 
 safe-outputs:
+  report-failure-as-issue: false
   threat-detection:
     engine:
       id: copilot
