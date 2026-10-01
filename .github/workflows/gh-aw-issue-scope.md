@@ -68,7 +68,7 @@ tools:
   github:
     min-integrity: none
     lockdown: false
-    toolsets: [issues, repos]
+    toolsets: [issues, repos, pull_requests]
   bash: false
   web-fetch:
 
@@ -108,6 +108,7 @@ steps:
       fi
 
 safe-outputs:
+  report-failure-as-issue: false
   threat-detection:
     engine:
       id: copilot
