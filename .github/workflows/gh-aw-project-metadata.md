@@ -24,6 +24,7 @@ engine:
     OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
 on:
+  bots: ["github-actions[bot]"]
   workflow_call:
     inputs:
       issue-url:
