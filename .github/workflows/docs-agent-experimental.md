@@ -105,6 +105,7 @@ steps:
         > /tmp/gh-aw/docs-agent/issue.json
 
 safe-outputs:
+  report-failure-as-issue: false
   staged: false
   messages:
     footer: "> Generated from [{workflow_name}]({run_url}){history_link}"

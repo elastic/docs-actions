@@ -395,6 +395,7 @@ steps:
         /tmp/gh-aw/agent/project-metadata/context.json
 
 safe-outputs:
+  report-failure-as-issue: false
   threat-detection:
     engine:
       id: copilot
