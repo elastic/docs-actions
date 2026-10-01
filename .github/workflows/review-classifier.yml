@@ -207,4 +207,4 @@ jobs:
         with:
           pr-number: ${{ steps.pr.outputs.number }}
           vale-paths: ${{ steps.config.outputs.vale_paths }}
-          vale_version: 3.22.0
+          vale_version: 3.23.0
