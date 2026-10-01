@@ -68,7 +68,7 @@ tools:
   github:
     min-integrity: none
     lockdown: false
-    toolsets: [issues, repos]
+    toolsets: [issues, repos, pull_requests]
   bash: false
   web-fetch:
 
