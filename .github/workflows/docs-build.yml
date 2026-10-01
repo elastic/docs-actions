@@ -57,7 +57,7 @@ concurrency:
 jobs:
   match:
     if: github.event.repository.fork == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: none
       pull-requests: none
@@ -95,7 +95,7 @@ jobs:
           repository: ${{ github.repository }}
 
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: read
@@ -242,7 +242,7 @@ jobs:
   # sources, so assembler-match would return false and the build would skip anyway.
   build:
     if: github.event.repository.fork == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     needs:
@@ -349,7 +349,7 @@ jobs:
       github.event_name == 'pull_request'
       && inputs.enable-vale-linting == true
       && needs.check.outputs.any_modified == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: check
     permissions:
       contents: read

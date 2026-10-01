@@ -6,6 +6,9 @@ description: >
   deeper. Applies human-needed only when the issue is not ready to scope. The issue body is never
   rewritten. Triggered by a /scope slash command, or via workflow_call from a consumer repository.
 
+# Keep the agent and detection jobs on the tested image during the latest migration.
+runs-on: ubuntu-24.04
+
 inlined-imports: true
 imports:
   - gh-aw-fragments/formatting.md
@@ -110,6 +113,7 @@ steps:
 safe-outputs:
   report-failure-as-issue: false
   threat-detection:
+    runs-on: ubuntu-24.04
     engine:
       id: copilot
       model: sonnet

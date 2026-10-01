@@ -4,6 +4,9 @@ description: |
   elastic/elastic-docs-skills six-criteria review rubric. Reports a concise
   summary and line-level review comments for actionable markdown issues.
 
+# Keep the agent and detection jobs on the tested image during the latest migration.
+runs-on: ubuntu-24.04
+
 inlined-imports: true
 imports:
   - elastic/elastic-docs-skills/skills/review/docs-review-pr/references/review-criteria.md@main
@@ -95,6 +98,7 @@ safe-outputs:
   messages:
     footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
   threat-detection:
+    runs-on: ubuntu-24.04
     engine:
       id: copilot
       model: sonnet

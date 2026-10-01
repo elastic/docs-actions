@@ -4,6 +4,9 @@ description: >
   the matching ones, applies them, and reacts with 👍. The issue body is never rewritten and no comment
   is posted. Invoked via workflow_call from a consumer repository that triggers on issues: opened.
 
+# Keep the agent and detection jobs on the tested image during the latest migration.
+runs-on: ubuntu-24.04
+
 inlined-imports: true
 imports:
   - gh-aw-fragments/formatting.md

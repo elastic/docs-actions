@@ -24,7 +24,7 @@ jobs:
       github.event.workflow_run.event == 'pull_request'
       && github.event.workflow_run.conclusion != 'cancelled'
       && github.event.repository.fork == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: none
       pull-requests: read
@@ -100,7 +100,7 @@ jobs:
   generate:
     needs: preflight
     if: needs.preflight.outputs.should-submit == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: read
@@ -122,7 +122,7 @@ jobs:
   apply:
     needs: [preflight, generate]
     if: needs.generate.outputs.proceed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       pull-requests: write
@@ -138,7 +138,7 @@ jobs:
     if: >
       needs.preflight.outputs.should-submit == 'false'
       && github.event.workflow_run.head_repository.full_name != github.repository
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: write
     steps:

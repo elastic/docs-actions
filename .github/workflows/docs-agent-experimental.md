@@ -6,6 +6,9 @@ description: >
   validation and review.
 emoji: 🧪
 
+# Keep the agent and detection jobs on the tested image during the latest migration.
+runs-on: ubuntu-24.04
+
 inlined-imports: true
 imports:
   - gh-aw-fragments/formatting.md
@@ -105,6 +108,8 @@ steps:
         > /tmp/gh-aw/docs-agent/issue.json
 
 safe-outputs:
+  threat-detection:
+    runs-on: ubuntu-24.04
   report-failure-as-issue: false
   staged: false
   messages:

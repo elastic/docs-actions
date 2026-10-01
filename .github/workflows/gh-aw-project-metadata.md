@@ -4,6 +4,9 @@ description: >
   a repository-owned profile, processes only empty allowlisted fields, and writes a run summary.
   It never adds an issue to a project or creates fields and options.
 
+# Keep the agent and detection jobs on the tested image during the latest migration.
+runs-on: ubuntu-24.04
+
 inlined-imports: true
 imports:
   - gh-aw-fragments/formatting.md
@@ -398,13 +401,14 @@ steps:
 safe-outputs:
   report-failure-as-issue: false
   threat-detection:
+    runs-on: ubuntu-24.04
     engine:
       id: copilot
       model: gpt-5-mini
   jobs:
     apply-project-fields:
       description: "Validate proposed project field values, preserve existing values, and apply or preview the changes"
-      runs-on: ubuntu-latest
+      runs-on: ubuntu-24.04
       output: "Validated the project metadata proposal and wrote the result to the workflow run summary."
       inputs:
         updates-json:
