@@ -98,6 +98,7 @@ steps:
       fi
 
 safe-outputs:
+  report-failure-as-issue: false
   messages:
     footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
   threat-detection:

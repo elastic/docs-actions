@@ -101,6 +101,7 @@ network:
     - "docs.bump.sh"
     - "search.elastic.co"
 safe-outputs:
+  report-failure-as-issue: false
   messages:
     footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
   noop:
