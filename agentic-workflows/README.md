@@ -5,6 +5,7 @@ AI-powered workflows for Elastic documentation tasks. Each directory contains a 
 | Workflow | Description | Trigger | Safe output |
 |----------|-------------|---------|-------------|
 | [docs-review](docs-review/) | Review changed markdown files in pull requests (`docs/` by default, or repo-wide with `review-scope`) | `/docs-review`, PR checkbox menu | `create-pull-request-review-comment`, `submit-pull-request-review` |
+| [release-notes-review](release-notes-review/) | Review one generated or edited changelog entry after the changelog-file workflow completes | `workflow_run` after changelog-file generation | `add-comment` |
 | [issue-scope](issue-scope/) | Scope docs impact and estimate cost/benefit for an issue in one comment | `/scope`, dispatch | `add-labels`, `add-comment` |
 | [issue-triage](issue-triage/) | Route and quality-check an issue on demand: classify it, check it against the quality bar, and apply labels | `/triage`, dispatch | `add-labels`, `remove-labels`, `react-green`, `add-comment` |
 | [issue-auto-triage](issue-auto-triage/) | Route and quality-check a new issue with per-project instructions | `issues: opened` | `add-labels`, `remove-labels`, `react-green`, `add-comment` |
