@@ -24,7 +24,7 @@ concurrency:
 jobs:
   validate:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: read
@@ -122,7 +122,7 @@ jobs:
 
   sync:
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write
@@ -144,7 +144,7 @@ jobs:
 
   bundle:
     if: github.event_name == 'release' && inputs.bundle-on-release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: read
@@ -168,7 +168,7 @@ jobs:
   bundle-publish:
     if: github.event_name == 'release' && inputs.bundle-on-release
     needs: bundle
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write

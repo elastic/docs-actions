@@ -66,7 +66,7 @@ jobs:
     if: >
       github.event.workflow_run.conclusion == 'success'
       && github.event.repository.fork == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: read
@@ -317,7 +317,7 @@ jobs:
           || needs.preflight.outputs.is-org-member == 'true')
       && needs.preflight.outputs.should-deploy == 'true'
       && inputs.disable-comments != true
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: none
       deployments: none
@@ -376,7 +376,7 @@ jobs:
   build:
     needs: preflight
     if: needs.preflight.outputs.should-deploy == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -535,7 +535,7 @@ jobs:
     if: >
       needs.build.outputs.build_outcome == 'success'
       && needs.build.outputs.skip != 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: none
       deployments: write
@@ -643,7 +643,7 @@ jobs:
       - build
       - deploy-preview
       - pre-comment
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: none
       deployments: none
@@ -843,7 +843,7 @@ jobs:
       && needs.preflight.outputs.vale-files-match == 'true'
     needs:
       - preflight
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: none
@@ -888,7 +888,7 @@ jobs:
     needs:
       - preflight
       - build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
     env:

@@ -6,6 +6,9 @@ description: |
   single labeled fix-issue with structured YAML findings consumable by a future
   fix-agent.
 
+# Keep the agent and detection jobs on the tested image during the latest migration.
+runs-on: ubuntu-24.04
+
 inlined-imports: true
 imports:
   - gh-aw-fragments/formatting.md
@@ -100,6 +103,8 @@ network:
     - "docs.bump.sh"
     - "search.elastic.co"
 safe-outputs:
+  threat-detection:
+    runs-on: ubuntu-24.04
   report-failure-as-issue: false
   messages:
     footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
