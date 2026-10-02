@@ -129,7 +129,7 @@ steps:
       fi
   - name: Install Vale and elastic/vale-rules
     env:
-      VALE_VERSION: "3.12.0"
+      VALE_VERSION: "3.24.0"
     run: |
       set -eu
       mkdir -p /tmp/gh-aw/bin

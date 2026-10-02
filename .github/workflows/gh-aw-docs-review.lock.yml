@@ -723,7 +723,7 @@ jobs:
           GITHUB_API_URL: https://localhost:18443/api/v3
           GITHUB_GRAPHQL_URL: https://localhost:18443/api/graphql
           NODE_EXTRA_CA_CERTS: /tmp/gh-aw/proxy-logs/proxy-tls/ca.crt
-          VALE_VERSION: 3.12.0
+          VALE_VERSION: 3.24.0
       - name: Run Vale on changed markdown
         run: |-
           set -euo pipefail
