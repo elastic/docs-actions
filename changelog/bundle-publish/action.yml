@@ -4,14 +4,14 @@ description: >
   bucket. A scrubber Lambda mirrors sanitized copies to the public CDN bucket.
   Uses OIDC for AWS authentication and docs-builder's incremental upload.
   Works with any create action that produces a single .yml bundle artifact
-  (bundle-create-version, release-serverless, or the legacy bundle-create).
+  (bundle-create-version, bundle-create-git-range, or the legacy bundle-create).
 
 inputs:
   bundle-path:
     description: >
       Path to the bundle .yml file, relative to the repo root. Must end in
       .yml or .yaml. Typically needs.<job>.outputs.bundle-path from
-      bundle-create-version or release-serverless.
+      bundle-create-version or bundle-create-git-range.
     required: true
   config:
     description: 'Path to changelog.yml configuration file'
@@ -19,12 +19,6 @@ inputs:
   artifact-name:
     description: 'Name of the artifact uploaded by the create action'
     default: 'changelog-bundle'
-  checkout:
-    description: >
-      Run actions/checkout of the calling repository before placing the bundle.
-      Set to 'false' when the caller has already prepared the workspace, for
-      example when it supplies docs/changelog.yml from another repository.
-    default: 'true'
   docs-builder-version:
     description: >
       docs-builder version to use (e.g. 0.1.100, latest, edge).
@@ -62,7 +56,6 @@ runs:
         validate_identifier "$ARTIFACT_NAME" "artifact-name" '^[a-zA-Z0-9._-]+$'
 
     - name: Checkout
-      if: inputs.checkout == 'true'
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
