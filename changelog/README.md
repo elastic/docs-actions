@@ -581,18 +581,17 @@ Use this when you know the release tag and want privilege separation between gen
 
 See [`bundle-create-version/README.md`](bundle-create-version/README.md) for inputs, outputs, and an example two-job workflow.
 
-### `changelog/bundle-create-git-range`
+### `changelog/release-serverless`
 
-Creates a changelog bundle for a profile and a git commit range
-(`docs-builder changelog bundle <profile> <version> --start-git-ref --end-git-ref`).
-Runs the native binary — no Docker, no plan step — supports `dry-run`, and emits `bundle-path` as a step output.
-Use this for date-promotion products where the release is a pair of published endpoint refs.
+Bundles a serverless promotion with `docs-builder release serverless bundle <service> <service-version>`.
+docs-builder resolves the commit range from `elastic/serverless-gitops` history and reads the service's config.
+Runs the native binary, supports `dry-run`, and emits `bundle-path`.
 
-See [`bundle-create-git-range/README.md`](bundle-create-git-range/README.md) for inputs, outputs, and an example two-job workflow.
+See [`release-serverless/README.md`](release-serverless/README.md) for inputs, outputs, and caller requirements.
 
 ### `changelog/bundle-publish`
 
-Downloads the bundle artifact produced by `bundle-create-version` (or `bundle-create-git-range`)
+Downloads the bundle artifact produced by `bundle-create-version` (or `release-serverless`)
 and uploads it to the private S3 bucket via OIDC. Holds `id-token: write` so the generate job
 does not need it.
 
