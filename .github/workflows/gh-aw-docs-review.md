@@ -130,8 +130,11 @@ safe-outputs:
       # stricter gate on detection_success would block every summary. Tighten both together
       # once detection works.
       if: needs.detection.result == 'success'
+      # The token needs pull-requests: write to comment on a pull request, even through the
+      # issues endpoint. Same permissions as the built-in safe_outputs job.
       permissions:
         issues: write
+        pull-requests: write
       output: "Summary recorded. It is posted after threat detection passes."
       inputs:
         content_type:
