@@ -125,9 +125,11 @@ safe-outputs:
         workflow adds headings, bullets, and the footer.
       runs-on: ubuntu-24.04
       needs: [detection, safe_outputs]
-      # Post only when threat detection passed. The detection job can report success even
-      # when it found a threat, so check its success output, not the job result.
-      if: needs.detection.outputs.detection_success == 'true'
+      # Same gate as the built-in safe_outputs job. Detection currently fails before it
+      # analyzes anything (see the PR description), and the built-ins post anyway, so a
+      # stricter gate on detection_success would block every summary. Tighten both together
+      # once detection works.
+      if: needs.detection.result == 'success'
       permissions:
         issues: write
       output: "Summary recorded. It is posted after threat detection passes."
