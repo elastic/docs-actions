@@ -113,10 +113,119 @@ safe-outputs:
     - docs-v3-preview.elastic.dev
     - github.com
   noop:
-  add-comment:
-    max: 1
-    target: "triggering"
-    discussions: false
+  # The agent fills in these fields and this job renders the summary from a fixed
+  # template, so the summary can't drift from it. The job posts agent text itself,
+  # outside the built-in handlers, so the renderer applies the same URL allowlist
+  # and neutralizes Markdown that could break the template or ping people.
+  jobs:
+    docs-review-summary:
+      description: >-
+        Post the docs review summary. Call this exactly once, as your last action, even when you
+        found nothing. Leave a field empty to omit its section. Use plain sentences: the
+        workflow adds headings, bullets, and the footer.
+      runs-on: ubuntu-24.04
+      needs: [detection, safe_outputs]
+      # Post only when threat detection passed. The detection job can report success even
+      # when it found a threat, so check its success output, not the job result.
+      if: needs.detection.outputs.detection_success == 'true'
+      permissions:
+        issues: write
+      output: "Summary recorded. It is posted after threat detection passes."
+      inputs:
+        content_type:
+          description: "Short content-type classification of the changed pages and whether it fits, in one sentence."
+          required: true
+          type: string
+        action_required:
+          description: "Cross-cutting findings that have no inline comment, one per line. Leave empty when there are none."
+          required: false
+          type: string
+        issue_satisfaction:
+          description: "One status sentence per linked issue: Satisfied, Partially satisfied, Not satisfied, or could not be read. Leave empty when the description links no issue."
+          required: false
+          type: string
+        follow_ups:
+          description: "Verified, actionable follow-ups for related pages outside the diff, one per line. Leave empty when there are none."
+          required: false
+          type: string
+        not_checked:
+          description: "Criteria you could not check, with the reason, in one sentence. Leave empty when all checks completed."
+          required: false
+          type: string
+      steps:
+        - name: Render and post the summary
+          env:
+            GH_TOKEN: ${{ github.token }}
+            PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+            RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          run: |
+            set -euo pipefail
+            python3 - <<'PY' > summary.md
+            import json, os, re, sys
+
+            path = os.environ.get("GH_AW_AGENT_OUTPUT", "")
+            items = []
+            if path and os.path.exists(path):
+                items = [i for i in json.load(open(path)).get("items", []) if i.get("type") == "docs_review_summary"]
+            if not items:
+                print("No docs_review_summary item in the agent output.", file=sys.stderr)
+                sys.exit(0)
+            item = items[-1]
+
+            ALLOWED = ("elastic.co", "docs-v3-preview.elastic.dev", "github.com")
+            PLACEHOLDER = re.compile(r"^(none|n/a|not applicable|nothing to report|no follow-ups?)$", re.I)
+
+            def allowed(url):
+                host = re.sub(r"^https?://", "", url).split("/")[0].split(":")[0].lower()
+                return any(host == d or host.endswith("." + d) for d in ALLOWED)
+
+            def clean(text):
+                text = (text or "")[:4000].replace("<", "&lt;").replace(">", "&gt;")
+                # Markdown links to other domains keep their text only. Bare URLs to other domains are removed.
+                text = re.sub(r"\[([^\]]*)\]\((https?://[^)\s]+)\)", lambda m: m.group(0) if allowed(m.group(2)) else m.group(1), text)
+                text = re.sub(r"https?://[^\s)\]]+", lambda m: m.group(0) if allowed(m.group(0)) else "(link removed)", text)
+                text = re.sub(r"(?<![\w`])@([A-Za-z0-9][\w-]*(?:/[\w.-]+)?)", r"`@\1`", text)
+                return text
+
+            def lines(text):
+                out = []
+                for line in clean(text).splitlines():
+                    line = re.sub(r"^\s*(?:[-*+]|\d+[.)])\s+", "", line).strip()
+                    line = re.sub(r"^(#+|-{3,}|\*{3,}|_{3,}|=+)", r"\\\1", line)
+                    if line and not PLACEHOLDER.match(line.strip("*_. ")):
+                        out.append(line)
+                return out
+
+            def paragraph(text):
+                return " ".join(lines(text))
+
+            parts = ["## Docs review summary"]
+            action, issue, follow = lines(item.get("action_required")), lines(item.get("issue_satisfaction")), lines(item.get("follow_ups"))
+            if action:
+                parts += ["", "### Action required"] + [f"- {l}" for l in action]
+            if issue:
+                parts += ["", "### Issue satisfaction"] + (issue if len(issue) == 1 else [f"- {l}" for l in issue])
+            if follow:
+                parts += ["", "### Follow-up outside this PR"] + [f"- {l}" for l in follow]
+            coverage = [f"- Content type: {paragraph(item.get('content_type')) or 'not classified.'}",
+                        "- Checked: user focus, technical accuracy, applicability, maintainability, language, and style."]
+            not_checked = paragraph(item.get("not_checked"))
+            if not_checked:
+                coverage.append(f"- Not checked: {not_checked}")
+            parts += ["", "<details>", "<summary>Review coverage</summary>", ""] + coverage + ["", "</details>",
+                      "", f"> Generated from [Docs review agent]({os.environ['RUN_URL']})"]
+            print("\n".join(parts))
+            PY
+            if [ ! -s summary.md ]; then
+              echo "The agent did not call docs_review_summary. Nothing to post."
+              exit 0
+            fi
+            cat summary.md
+            if [ "${GH_AW_SAFE_OUTPUTS_STAGED:-}" = "true" ]; then
+              echo "Staged mode: not posting."
+              exit 0
+            fi
+            gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" -F body=@summary.md --jq .html_url
   create-pull-request-review-comment:
     max: 20
   submit-pull-request-review:
@@ -239,7 +348,7 @@ steps:
 
 # Docs review agent
 
-You are a documentation pull request reviewer for Elastic documentation repositories. Your job is to review the documentation changes in the triggering pull request like a careful human code reviewer: identify actionable problems, leave line-level comments when you have exact evidence, and always submit a concise overall review summary.
+You are a documentation pull request reviewer for Elastic documentation repositories. Your job is to review the documentation changes in the triggering pull request like a careful human code reviewer: identify actionable problems, leave line-level comments when you have exact evidence, and always post a concise summary through `docs_review_summary`.
 
 Apply the six-criteria review rubric imported into this workflow (`review-criteria.md`), use deterministic evidence from the pull request and local files, and use the Elastic docs MCP server when published documentation is needed to verify a claim.
 
@@ -263,7 +372,7 @@ This workflow also installs these skills from `elastic/elastic-docs-skills` into
 
 The configured phrasing style for this run is: `${{ inputs.comment-phrasing }}`.
 
-Apply these rules to every inline comment and review body you write:
+Apply these rules to every inline comment and summary field you write:
 
 - Do not use "you should", "you must", or "it is recommended" in review comment prose.
 - Do not use passive constructions such as "It is recommended that..." or "X should be...".
@@ -367,7 +476,7 @@ Apply every rule set to every eligible file. Reading the rules into one context 
 
 Applying these rules must not change the working tree. If you edit a file, run `git checkout -- <file-path>` to restore it, and treat the change as a finding to report, not as resolved.
 
-If a rule set cannot be read, do not retry or stall. Record it in the `Not checked` bullet under `Review coverage` as `<name>: <reason>`, then continue reviewing that criterion with the rubric alone. Do not duplicate a finding that Vale already reported.
+If a rule set cannot be read, do not retry or stall. Record it in the `not_checked` summary field as `<name>: <reason>`, then continue reviewing that criterion with the rubric alone. Do not duplicate a finding that Vale already reported.
 
 Each rule set names the published style, content-type, and cumulative-docs guidance it depends on. Fetch a page through the Elastic docs MCP server when a rule set requires it or when a finding depends on it, and do not fetch the same page twice:
 
@@ -380,11 +489,11 @@ Apply the six criteria in order:
 
 2. **Technical accuracy** — Correctness, SME evidence, code sample validity, and precise prerequisites. Use the pre-fetched Vale output as one signal. When the change references a code PR or commit, check that parameter names, defaults, and behavior match.
 
-   **Verify before you post.** Before you post an inline comment under this criterion, call `elastic-docs.search_docs` for the claim you are challenging. Read the most on-topic hit with `elastic-docs.get_document_by_url` and `includeBody: true`. If you have no search result for the claim, do not post an inline comment for it: put the finding in the review body instead. An unverified technical claim is a suggestion, not a finding.
+   **Verify before you post.** Before you post an inline comment under this criterion, call `elastic-docs.search_docs` for the claim you are challenging. Read the most on-topic hit with `elastic-docs.get_document_by_url` and `includeBody: true`. If you have no search result for the claim, do not post an inline comment for it: put the finding in the `action_required` summary field instead. An unverified technical claim is a suggestion, not a finding.
 
    This applies to product names, API endpoints, default values, retention periods, port numbers, required privileges, and UI navigation paths. Your training data is out of date on all of them.
 
-   **Search to find conflicts, never to confirm.** Published docs can be wrong or out of date, most often for feature availability and deployment support. Never write that a claim is verified, confirmed, or accurate because a published page agrees with it, in an inline comment or in the review body. If you find no conflict, say nothing about the claim. If the PR and a published page disagree, do not decide which one is right: report the conflict with the `Verify both` direction from `docs-check-contradictions`, and note that an SME must confirm. Before you compare, check that both sources describe the same feature, deployment type, and tier. A statement about one feature, for example AutoOps, is not evidence about another, for example connecting clusters to AutoOps through Cloud Connect.
+   **Search to find conflicts, never to confirm.** Published docs can be wrong or out of date, most often for feature availability and deployment support. Never write that a claim is verified, confirmed, or accurate because a published page agrees with it, in an inline comment or in a summary field. If you find no conflict, say nothing about the claim. If the PR and a published page disagree, do not decide which one is right: report the conflict with the `Verify both` direction from `docs-check-contradictions`, and note that an SME must confirm. Before you compare, check that both sources describe the same feature, deployment type, and tier. A statement about one feature, for example AutoOps, is not evidence about another, for example connecting clusters to AutoOps through Cloud Connect.
 
 3. **Applicability** — `applies_to` tags, cumulative structure, markup correctness, and deployment types. For validity judgments, verify against the repository's checked-in schema or the published cumulative-docs guidance fetched during this run. Do not rely on training knowledge for valid keys or lifecycle values. If you cannot verify, do not report.
 
@@ -404,12 +513,12 @@ Treat this as a PR review, not a full repository audit:
 - Do not dump every possible style nit from a whole file solely because one paragraph changed.
 - Do not flag pre-existing unrelated problems in untouched sections unless the PR clearly makes that area worse.
 - Do not duplicate docs build failures, broken-link reports, existing Vale lint comments, or pre-fetched Vale findings with multiple inline review comments for the same underlying issue.
-- Treat a finding that Vale or another existing automated review already reported as fully reported. Do not repeat it in an inline comment or the review body. Do not add a statement such as "No additional issues beyond..." that names or summarizes the existing finding.
-- Do not repeat an inline review finding in the review body. Do not add a summary bullet that says a finding was reported inline or tells the reader to see an inline comment.
+- Treat a finding that Vale or another existing automated review already reported as fully reported. Do not repeat it in an inline comment or a summary field. Do not add a statement such as "No additional issues beyond..." that names or summarizes the existing finding.
+- Do not repeat an inline review finding in a summary field. Do not add a summary line that says a finding was reported inline or tells the reader to see an inline comment.
 - Treat content-type guidance as a reader-centered heuristic. Report content-type issues only when the mismatch materially makes the page harder to use, conflicts with the surrounding section's established pattern, or risks sending the author toward the wrong kind of documentation.
 - Allow mixed-purpose pages and reasonable structural exceptions. For example, do not object to a prerequisites section on a troubleshooting page solely because the troubleshooting content type does not require one; report it only when the requirements are inaccurate, unsupported, confusing, or disruptive to the troubleshooting flow.
 - If the pull request appears linked to a parent issue, assess whether the issue's documentation ask is fully satisfied, only partially satisfied, or still unsupported by the PR.
-- If the linked issue is not satisfied, explain the gap in the review summary and only leave inline comments where the gap maps to a specific changed file or hunk.
+- If the linked issue is not satisfied, explain the gap in the `issue_satisfaction` summary field and only leave inline comments where the gap maps to a specific changed file or hunk.
 
 ## Step 4: Check for contradictions
 
@@ -423,15 +532,15 @@ The skill searches for contradictions in two places. When the Elastic Docs MCP s
 - For the most on-topic hits, call `elastic-docs.get_document_by_url` with `includeBody: true` to read the actual content and compare it against the claims in the changed file.
 - Optionally call `elastic-docs.find_docs_inconsistencies` on the main topic to surface additional candidate pages. Treat its output as discovery only — every candidate still needs to be read and compared before reporting it as a contradiction.
 
-If the MCP server is unavailable, fall back to `WebFetch` on specific published doc URLs and note in the review body that the cross-repo check used WebFetch with narrower coverage.
+If the MCP server is unavailable, fall back to `WebFetch` on specific published doc URLs and note in the `not_checked` summary field that the cross-repo check used WebFetch with narrower coverage.
 
 Use the skill's findings as follows:
 
 - **High severity** contradictions: include as inline review comments using `create_pull_request_review_comment`, pointed at the relevant changed line or the nearest changed hunk. Use the skill's "Recommendation" field as the comment body.
-- **Medium and Low severity** contradictions: include a concise item under `Action required` only when the finding is actionable and material to this PR. Otherwise, omit it. Do not open inline comments for medium/low findings unless they overlap with an existing inline comment slot.
-- **Related docs outside this PR**: when the changed content is correct but your verification finds a directly related page that now contains stale or contradictory information, include only a specific, verified, actionable follow-up in the `Follow-up outside this PR` section. Name the page and the required change. Mark the follow-up as nonblocking. Do not include the verification narrative, search history, or a general cleanup suggestion.
+- **Medium and Low severity** contradictions: include a concise line in the `action_required` summary field only when the finding is actionable and material to this PR. Otherwise, omit it. Do not open inline comments for medium/low findings unless they overlap with an existing inline comment slot.
+- **Related docs outside this PR**: when the changed content is correct but your verification finds a directly related page that now contains stale or contradictory information, include only a specific, verified, actionable follow-up in the `follow_ups` summary field. Name the page and the required change. Mark the follow-up as nonblocking. Do not include the verification narrative, search history, or a general cleanup suggestion.
 
-Do not report contradictions the skill found in `release-notes/` directories or `_snippets/` directories. Do not report unrelated problems in files outside the configured review scope. The only exception is a directly related, verified contradiction that qualifies for `Follow-up outside this PR` above.
+Do not report contradictions the skill found in `release-notes/` directories or `_snippets/` directories. Do not report unrelated problems in files outside the configured review scope. The only exception is a directly related, verified contradiction that qualifies for the `follow_ups` field above.
 
 Report only findings that are:
 
@@ -449,7 +558,7 @@ Anchor every inline comment to a line number you derived mechanically. Never pas
 2. Run `grep -n` for that snippet in the target file to obtain the line number.
 3. Pass that number as the line, and quote the snippet in the comment body so a reader can confirm the anchor.
 
-If `grep -n` returns no match, or more than one, refine the snippet until it returns exactly one match. If you cannot reduce it to a single match, move the finding to the review body and post no inline comment for it. A comment attached to the wrong line is worse than no comment.
+If `grep -n` returns no match, or more than one, refine the snippet until it returns exactly one match. If you cannot reduce it to a single match, move the finding to the `action_required` summary field and post no inline comment for it. A comment attached to the wrong line is worse than no comment.
 
 The line number must come from the file the comment targets. Do not reuse a line number derived from a different file.
 
@@ -459,7 +568,7 @@ The review comment safe output allows a maximum of 20 inline comments. Use that 
 
 - prioritize the highest-signal issues first,
 - combine closely related findings into one inline comment when they affect the same hunk, and
-- keep broader issue-satisfaction observations in the final review body unless they clearly map to a specific line, and
+- keep broader issue-satisfaction observations in the `issue_satisfaction` summary field unless they clearly map to a specific line, and
 - reserve inline comments for higher-priority issues that deserve direct author attention during review.
 
 For inline comments with concrete replacements:
@@ -472,7 +581,7 @@ Treat low-priority nits differently:
 
 - avoid nits unless they are grounded in the pre-fetched Vale output or another explicit review rule in this workflow,
 - do not spend inline comment slots on lower-priority nits when higher-priority issues still need review comments, and
-- include a remaining actionable style-guide-based nit under `Action required` only when another automated review has not already reported it. Omit all other nits from the final review body.
+- include a remaining actionable style-guide-based nit in the `action_required` summary field only when another automated review has not already reported it. Omit all other nits from the summary.
 
 ## What to skip
 
@@ -480,7 +589,7 @@ Do not report:
 
 - speculative preferences,
 - repository-wide cleanup opportunities,
-- comments about markdown files outside the configured review scope, except a directly related and verified `Follow-up outside this PR`,
+- comments about markdown files outside the configured review scope, except a directly related and verified `follow_ups` entry,
 - broken links, missing anchors, missing image targets, or other link existence issues that the docs build already validates,
 - trailing spaces or trailing whitespace,
 - routine wording suggestions that are not grounded in Vale output, unless the wording creates ambiguity or changes the technical meaning,
@@ -493,51 +602,31 @@ Do not report:
 ## Quality gate
 
 If there are no eligible markdown files in the configured review scope, call `noop`.
-If you reviewed eligible files and found no actionable issues, post the review summary as a single PR comment using `add_comment`. Do not call `submit_pull_request_review` in this case: a body-only review with no inline comments cannot be submitted when the workflow is triggered from an `issue_comment` event.
 
-If you found one or more high-confidence actionable issues:
+Otherwise, post your results in this order:
 
-- create up to 20 focused inline review comments via `create_pull_request_review_comment`, and
-- submit one consolidated pull request review via `submit_pull_request_review`.
+1. If you found high-confidence actionable issues on specific lines, create up to 20 focused inline review comments via `create_pull_request_review_comment`.
+2. If you created at least one inline comment, submit one pull request review via `submit_pull_request_review` with event `COMMENT` and this exact body: `Inline comments from the docs review. The summary is in a separate comment.` If you created no inline comments, do not call `submit_pull_request_review`: a review with no inline comments cannot be submitted when the workflow is triggered from an `issue_comment` event.
+3. Call `docs_review_summary` exactly once, as your last action, even when you found nothing. Do not call `add_comment`, and do not write a summary in the review body.
 
-Always use `COMMENT` for the final review. This workflow is advisory and must not block merging through a `REQUEST_CHANGES` review state.
+Always use `COMMENT` for the review. This workflow is advisory and must not block merging through a `REQUEST_CHANGES` review state.
 
-## Review body format
+## Summary fields
 
-Submit one final review body in this shape:
+The workflow renders the summary from the fields of `docs_review_summary`. It adds the headings, the bullets, the collapsed coverage section, and the footer, so write only plain sentences. A field that you leave empty omits its section.
 
-```markdown
-## Docs review summary
+- `content_type` (required): a short classification of the changed pages and whether the content type fits, in one sentence.
+- `action_required`: cross-cutting, actionable findings that have no inline comment and no other automated report, one per line. Leave it empty when every finding has an inline comment.
+- `issue_satisfaction`: one status sentence per linked issue. Treat every GitHub issue linked in the PR description as a parent issue, including issues cited as a source. Links to pull requests are context, not parent issues. Leave the field empty only when the description links no issue.
+  - Start each sentence with Satisfied, Partially satisfied, or Not satisfied. For a partial or unsatisfied result, name each missing requirement.
+  - For each linked issue that you cannot read, for example because it is in a private repository, do not guess whether the PR satisfies it, and do not infer it from the PR description. Write one sentence that names the issue URL and says that you could not read it.
+- `follow_ups`: follow-ups for directly related pages outside the diff that meet the related-docs rule in Step 4, one per line.
+- `not_checked`: the criteria you could not check and why, in one sentence. Leave it empty when all checks completed.
 
-### Action required
-- <Optional actionable, cross-cutting finding that does not duplicate an inline comment or another automated review. Omit this section if there are no such findings.>
+Apply these rules to every field:
 
-### Issue satisfaction
-<Satisfied — short confirmation. | Partially satisfied — specific missing requirement. | Not satisfied — specific missing requirement.>
-
-### Follow-up outside this PR
-- <Optional verified, actionable, nonblocking follow-up for a directly related page outside the diff. Omit this section if there are no such follow-ups.>
-
-<details>
-<summary>Review coverage</summary>
-
-- Content type: <short classification and material fit assessment>.
-- Checked: user focus, technical accuracy, applicability, maintainability, language, and style.
-- Not checked: <optional criterion and reason; omit this bullet when all checks completed>.
-
-</details>
-```
-
-Apply these rules to the review body:
-
-- Omit `Action required` when every actionable finding has an inline comment or another automated report.
-- Treat every GitHub issue linked in the PR description as a parent issue, including issues cited as a source. Links to pull requests are context, not parent issues. Omit `Issue satisfaction` only when the description links no issue. Never print `Not applicable`.
-- Keep `Issue satisfaction` visible when a parent issue is linked. Use one short status sentence. For a partial or unsatisfied result, name each missing requirement.
-- For each linked issue that you cannot read, for example because it is in a private repository, do not guess whether the PR satisfies it, and do not infer it from the PR description. In `Issue satisfaction`, write one sentence that names the issue URL and says that you could not read it.
-- Omit `Follow-up outside this PR` unless the follow-up meets the related-docs rule in Step 4.
-- Keep `Review coverage` collapsed. Use it to record the content-type classification and which checks ran, not their zero-finding results.
-- Do not list a criterion merely to say that it passed, found nothing, or produced an inline comment.
-- Do not repeat Vale findings, other automated findings, or inline comments anywhere in the body.
-- Keep the review body concise. Put file-specific detail into inline comments, not into a long summary.
+- Do not report a criterion merely to say that it passed, found nothing, or produced an inline comment.
+- Do not repeat Vale findings, other automated findings, or inline comments.
+- Keep each field concise. Put file-specific detail into inline comments.
 
 ${{ inputs.additional-instructions }}
