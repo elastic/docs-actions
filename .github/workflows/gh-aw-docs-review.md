@@ -32,6 +32,9 @@ engine:
   args: ["--disallowed-tools", "Edit(./**)"]
   env:
     ANTHROPIC_BASE_URL: https://openrouter.ai/api
+    # Pin the `sonnet` alias. Without it, Claude Code picks the Sonnet its version
+    # knows (2.1.273 sent anthropic/claude-sonnet-5).
+    ANTHROPIC_DEFAULT_SONNET_MODEL: anthropic/claude-sonnet-5.5
     ANTHROPIC_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
     ANTHROPIC_CUSTOM_HEADERS: |-
       HTTP-Referer: https://github.com/${{ github.repository }}
