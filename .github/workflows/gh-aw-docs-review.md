@@ -32,6 +32,9 @@ engine:
   args: ["--disallowed-tools", "Edit(./**)"]
   env:
     ANTHROPIC_BASE_URL: https://openrouter.ai/api
+    # Pin the `sonnet` alias. Without it, Claude Code picks the Sonnet its version
+    # knows (2.1.273 sent anthropic/claude-sonnet-5).
+    ANTHROPIC_DEFAULT_SONNET_MODEL: anthropic/claude-sonnet-5.5
     ANTHROPIC_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
     ANTHROPIC_CUSTOM_HEADERS: |-
       HTTP-Referer: https://github.com/${{ github.repository }}
@@ -89,6 +92,8 @@ network:
     - "api.anthropic.com"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
+    # docs-builder syntax reference, used to confirm directive and markup claims
+    - "elastic.github.io"
     - "ela.st"
     - "docs.bump.sh"
     - "search.elastic.co"
@@ -379,11 +384,15 @@ Apply the six criteria in order:
 
    This applies to product names, API endpoints, default values, retention periods, port numbers, required privileges, and UI navigation paths. Your training data is out of date on all of them.
 
+   **Search to find conflicts, never to confirm.** Published docs can be wrong or out of date, most often for feature availability and deployment support. Never write that a claim is verified, confirmed, or accurate because a published page agrees with it, in an inline comment or in the review body. If you find no conflict, say nothing about the claim. If the PR and a published page disagree, do not decide which one is right: report the conflict with the `Verify both` direction from `docs-check-contradictions`, and note that an SME must confirm. Before you compare, check that both sources describe the same feature, deployment type, and tier. A statement about one feature, for example AutoOps, is not evidence about another, for example connecting clusters to AutoOps through Cloud Connect.
+
 3. **Applicability** — `applies_to` tags, cumulative structure, markup correctness, and deployment types. For validity judgments, verify against the repository's checked-in schema or the published cumulative-docs guidance fetched during this run. Do not rely on training knowledge for valid keys or lifecycle values. If you cannot verify, do not report.
 
 4. **Maintainability** — Single source of truth (use `elastic-docs.find_related_docs` or `elastic-docs.search_docs` to check for cross-page duplication when a section embeds reference material), repository hygiene (redirect entries for renamed or deleted pages), and high-maintenance content.
 
 5. **Language** — Grammar, spelling, plain language, jargon, and variables. Use the pre-fetched Vale output first. When Vale flags a rule (e.g., `Elastic.OxfordComma`), pass through the rule name in the comment. Avoid flagging exact counts in prose; prefer "the following formats are available:" over "there are N formats".
+
+   **Check product, feature, and offering names.** For each Elastic product, feature, or offering name in the changed lines, and in any replacement text you suggest, call `elastic-docs.search_docs` once. Compare the name with the page `title` and body of the most on-topic hit, not with the AI summaries, which can paraphrase names. When the published docs consistently use a different form or capitalization, flag it and suggest the published form, for example "Cloud Connect", not "Cloud connect", and "FedRAMP authorized Cloud offerings", not "Elastic FedRAMP Cloud". Do not flag a name that the published docs use in more than one form. Never introduce a name in a `suggestion` block that you have not checked this way. In replacement text, use the substitution the page already uses for a product name, for example `{{ecloud}}`, not the literal name, and write links to other docs pages in the repo-relative form, for example `/deploy-manage/cloud-connect.md`, not a full `https://www.elastic.co/docs/...` URL.
 
 6. **Style** — Voice and tense, flagged language, titles and headings, formatting and admonitions, links, accessibility, and preview cleanliness. After flagging individual admonitions, scan for consecutive pairs — two admonitions separated only by whitespace count as stacked even if each looks fine in isolation.
 
@@ -391,6 +400,7 @@ Treat this as a PR review, not a full repository audit:
 
 - Prioritize issues introduced by the diff.
 - You may report a file-level metadata issue such as missing or incorrect frontmatter when the PR edits that file and the issue is directly relevant to the changed page.
+- Do not ask the author to add a `type:` frontmatter field. Few pages declare it, so it is not yet a convention. Report `type:` only when the page already declares it and the value does not match the page's content type.
 - Do not dump every possible style nit from a whole file solely because one paragraph changed.
 - Do not flag pre-existing unrelated problems in untouched sections unless the PR clearly makes that area worse.
 - Do not duplicate docs build failures, broken-link reports, existing Vale lint comments, or pre-fetched Vale findings with multiple inline review comments for the same underlying issue.
@@ -521,8 +531,9 @@ Submit one final review body in this shape:
 Apply these rules to the review body:
 
 - Omit `Action required` when every actionable finding has an inline comment or another automated report.
-- Omit `Issue satisfaction` when no parent issue is linked. Never print `Not applicable`.
+- Treat every GitHub issue linked in the PR description as a parent issue, including issues cited as a source. Links to pull requests are context, not parent issues. Omit `Issue satisfaction` only when the description links no issue. Never print `Not applicable`.
 - Keep `Issue satisfaction` visible when a parent issue is linked. Use one short status sentence. For a partial or unsatisfied result, name each missing requirement.
+- For each linked issue that you cannot read, for example because it is in a private repository, do not guess whether the PR satisfies it, and do not infer it from the PR description. In `Issue satisfaction`, write one sentence that names the issue URL and says that you could not read it.
 - Omit `Follow-up outside this PR` unless the follow-up meets the related-docs rule in Step 4.
 - Keep `Review coverage` collapsed. Use it to record the content-type classification and which checks ran, not their zero-finding results.
 - Do not list a criterion merely to say that it passed, found nothing, or produced an inline comment.
