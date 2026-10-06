@@ -165,7 +165,7 @@ steps:
         function err(m) { print "ERROR: " m; bad = 1 }
         function close_section() {
           if (section != "" && section_lines == 0) err("section \"" section "\" is empty. Add its content or omit the section")
-          if (section != "" && section_lines == 1 && placeholder) err("section \"" section "\" only says there is nothing to report. Omit the section instead")
+          if (section != "" && section_lines > 0 && placeholder == section_lines) err("section \"" section "\" only says there is nothing to report. Omit the section instead")
           section = ""
         }
         { sub(/\r$/, "") }
@@ -191,7 +191,7 @@ steps:
         section != "" && !in_details && !/^[[:space:]]*$/ && $0 != "<details>" && $0 != "<details><summary>Review coverage</summary>" {
           section_lines++
           line = tolower($0); gsub(/^[-*_[:space:]]+|[-*_.[:space:]]+$/, "", line)
-          if (line == "none" || line == "n/a" || line == "nothing to report" || line == "no follow-ups") placeholder = 1
+          if (line == "none" || line == "n/a" || line == "nothing to report" || line == "no follow-ups") placeholder++
         }
         /Not applicable/ { err("do not print \"Not applicable\"; omit the section instead") }
         $0 == "<details><summary>Review coverage</summary>" { close_section(); if (seen_details) err("use one <details> block only"); in_details = 1; seen_details = 1; seen_summary = 1; next }
