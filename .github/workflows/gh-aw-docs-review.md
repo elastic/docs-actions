@@ -523,6 +523,7 @@ Apply these rules to the review body:
 - Omit `Action required` when every actionable finding has an inline comment or another automated report.
 - Omit `Issue satisfaction` when no parent issue is linked. Never print `Not applicable`.
 - Keep `Issue satisfaction` visible when a parent issue is linked. Use one short status sentence. For a partial or unsatisfied result, name each missing requirement.
+- If you cannot read a linked issue, for example because it is in a private repository, do not guess whether the PR satisfies it. Write one sentence that names the issue URL and says that you could not read it.
 - Omit `Follow-up outside this PR` unless the follow-up meets the related-docs rule in Step 4.
 - Keep `Review coverage` collapsed. Use it to record the content-type classification and which checks ran, not their zero-finding results.
 - Do not list a criterion merely to say that it passed, found nothing, or produced an inline comment.
