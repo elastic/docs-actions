@@ -19,6 +19,12 @@ inputs:
   artifact-name:
     description: 'Name of the artifact uploaded by the create action'
     default: 'changelog-bundle'
+  checkout:
+    description: >
+      Run actions/checkout of the calling repository before placing the bundle.
+      Set to 'false' when the caller has already prepared the workspace, for
+      example when it supplies docs/changelog.yml from another repository.
+    default: 'true'
   docs-builder-version:
     description: >
       docs-builder version to use (e.g. 0.1.100, latest, edge).
@@ -56,6 +62,7 @@ runs:
         validate_identifier "$ARTIFACT_NAME" "artifact-name" '^[a-zA-Z0-9._-]+$'
 
     - name: Checkout
+      if: inputs.checkout == 'true'
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false

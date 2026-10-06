@@ -581,6 +581,15 @@ Use this when you know the release tag and want privilege separation between gen
 
 See [`bundle-create-version/README.md`](bundle-create-version/README.md) for inputs, outputs, and an example two-job workflow.
 
+### `changelog/bundle-create-git-range`
+
+Creates a changelog bundle for a profile and a git commit range
+(`docs-builder changelog bundle <profile> <version> --start-git-ref --end-git-ref`).
+Runs the native binary — no Docker, no plan step — supports `dry-run`, and emits `bundle-path` as a step output.
+Use this for date-promotion products where the release is a pair of published endpoint refs.
+
+See [`bundle-create-git-range/README.md`](bundle-create-git-range/README.md) for inputs, outputs, and an example two-job workflow.
+
 ### `changelog/bundle-publish`
 
 Downloads the bundle artifact produced by `bundle-create-version` (or `bundle-create-git-range`)

@@ -39,6 +39,7 @@ in the tooling.
 | `bundle-path` | **Yes** | — | Repo-relative path to the bundle `.yml` file. Typically `${{ needs.<job>.outputs.bundle-path }}` |
 | `config` | No | `docs/changelog.yml` | Path to the changelog configuration file |
 | `artifact-name` | No | `changelog-bundle` | Artifact name — must match the create action's `artifact-name` |
+| `checkout` | No | `true` | Run `actions/checkout` of the calling repository. Set `false` when the caller has already prepared the workspace and `config` |
 | `docs-builder-version` | No | `edge` | docs-builder version to install |
 | `github-token` | No | `${{ github.token }}` | Token used by the docs-builder setup action |
 | `aws-account-id` | No | `197730964718` | AWS account ID. Override only when OIDC trust has been provisioned for the target account |
