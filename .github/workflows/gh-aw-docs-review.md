@@ -92,6 +92,8 @@ network:
     - "api.anthropic.com"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
+    # docs-builder syntax reference, used to confirm directive and markup claims
+    - "elastic.github.io"
     - "ela.st"
     - "docs.bump.sh"
     - "search.elastic.co"
@@ -147,6 +149,67 @@ steps:
 
       /tmp/gh-aw/bin/vale --version
       ls -la /tmp/gh-aw/vale-rules/.vale.ini
+  # The agent runs this checker on its review body before it posts the review.
+  # Checking structure with a script is more reliable than asking the model to
+  # remember the template.
+  - name: Write review body checker
+    run: |
+      set -eu
+      mkdir -p /tmp/gh-aw/docs-review-data
+      cat > /tmp/gh-aw/docs-review-data/check-review-body.sh <<'CHECKER'
+      #!/usr/bin/env bash
+      # Usage: check-review-body.sh FILE. Prints OK, or one error per line and exits 1.
+      f="${1:?usage: check-review-body.sh FILE}"
+      [ -s "$f" ] || { echo "ERROR: $f is missing or empty"; exit 1; }
+      awk '
+        function err(m) { print "ERROR: " m; bad = 1 }
+        { sub(/\r$/, "") }
+        !started && /^[[:space:]]*$/ { next }
+        !started {
+          started = 1
+          if ($0 != "## Docs review summary") err("the first line must be \"## Docs review summary\"")
+        }
+        /^## / && NR > 0 { h2++ }
+        /^### / {
+          if (in_details || after_details) { err("heading \"" $0 "\" must come before the Review coverage section"); next }
+          name = substr($0, 5)
+          if (name == "Action required") rank = 1
+          else if (name == "Issue satisfaction") rank = 2
+          else if (name == "Follow-up outside this PR") rank = 3
+          else { err("unknown section \"" name "\". Allowed: Action required, Issue satisfaction, Follow-up outside this PR"); next }
+          if (rank <= last_rank) err("section \"" name "\" is out of order or repeated")
+          last_rank = rank
+        }
+        /Not applicable/ { err("do not print \"Not applicable\"; omit the section instead") }
+        $0 == "<details><summary>Review coverage</summary>" { if (seen_details) err("use one <details> block only"); in_details = 1; seen_details = 1; seen_summary = 1; next }
+        $0 == "<details>" { if (seen_details) err("use one <details> block only"); in_details = 1; seen_details = 1; next }
+        in_details && $0 == "<summary>Review coverage</summary>" { seen_summary = 1; next }
+        in_details && $0 == "</details>" { in_details = 0; after_details = 1; next }
+        in_details && /^[[:space:]]*$/ { next }
+        in_details {
+          if ($0 ~ /^- (\*\*)?Content type:(\*\*)? /) { if (ct++) err("repeat of the Content type bullet") }
+          else if ($0 ~ /^- (\*\*)?Checked:(\*\*)? /) { if (ck++) err("repeat of the Checked bullet") }
+          else if ($0 ~ /^- (\*\*)?Not checked:(\*\*)? /) { if (nc++) err("repeat of the Not checked bullet") }
+          else err("Review coverage allows only the Content type, Checked, and Not checked bullets. Remove: " substr($0, 1, 80))
+          next
+        }
+        after_details && !/^[[:space:]]*$/ { err("nothing may follow the Review coverage section. Remove: " substr($0, 1, 80)) }
+        END {
+          if (!started) err("the body is empty")
+          if (h2 != 1) err("use exactly one \"##\" heading")
+          if (!seen_details) err("add the collapsed Review coverage section at the end")
+          else {
+            if (!seen_summary) err("the <details> block needs <summary>Review coverage</summary>")
+            if (in_details) err("close the <details> block")
+            if (!ct) err("Review coverage needs a Content type bullet")
+            if (!ck) err("Review coverage needs a Checked bullet")
+          }
+          if (!bad) print "OK"
+          exit bad
+        }
+      ' "$f"
+      CHECKER
+      chmod +x /tmp/gh-aw/docs-review-data/check-review-body.sh
   - name: Run Vale on changed markdown
     env:
       GH_TOKEN: ${{ github.token }}
@@ -537,5 +600,12 @@ Apply these rules to the review body:
 - Do not list a criterion merely to say that it passed, found nothing, or produced an inline comment.
 - Do not repeat Vale findings, other automated findings, or inline comments anywhere in the body.
 - Keep the review body concise. Put file-specific detail into inline comments, not into a long summary.
+
+Check the body before you post it, both for `submit_pull_request_review` and for `add_comment`:
+
+1. Write the body to `/tmp/gh-aw/docs-review-data/review-body.md`.
+2. Run `bash /tmp/gh-aw/docs-review-data/check-review-body.sh /tmp/gh-aw/docs-review-data/review-body.md`.
+3. If it prints errors, fix each one in the file and run the checker again. Repeat until it prints `OK`.
+4. Post the exact contents of the file. Do not edit the body after the checker passes.
 
 ${{ inputs.additional-instructions }}
