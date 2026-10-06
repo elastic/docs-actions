@@ -164,6 +164,7 @@ steps:
       awk '
         function err(m) { print "ERROR: " m; bad = 1 }
         function close_section() {
+          if (section != "" && section_lines == 0) err("section \"" section "\" is empty. Add its content or omit the section")
           if (section != "" && section_lines == 1 && placeholder) err("section \"" section "\" only says there is nothing to report. Omit the section instead")
           section = ""
         }
@@ -189,7 +190,7 @@ steps:
         }
         section != "" && !in_details && !/^[[:space:]]*$/ && $0 != "<details>" && $0 != "<details><summary>Review coverage</summary>" {
           section_lines++
-          line = tolower($0); gsub(/^[-*[:space:]]+|[.[:space:]]+$/, "", line)
+          line = tolower($0); gsub(/^[-*_[:space:]]+|[-*_.[:space:]]+$/, "", line)
           if (line == "none" || line == "n/a" || line == "nothing to report" || line == "no follow-ups") placeholder = 1
         }
         /Not applicable/ { err("do not print \"Not applicable\"; omit the section instead") }
