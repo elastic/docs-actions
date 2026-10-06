@@ -163,6 +163,10 @@ steps:
       [ -s "$f" ] || { echo "ERROR: $f is missing or empty"; exit 1; }
       awk '
         function err(m) { print "ERROR: " m; bad = 1 }
+        function close_section() {
+          if (section != "" && section_lines == 1 && placeholder) err("section \"" section "\" only says there is nothing to report. Omit the section instead")
+          section = ""
+        }
         { sub(/\r$/, "") }
         !started && /^[[:space:]]*$/ { next }
         !started {
@@ -172,6 +176,7 @@ steps:
         /^## / && NR > 0 { h2++ }
         /^### / {
           if (in_details || after_details) { err("heading \"" $0 "\" must come before the Review coverage section"); next }
+          close_section()
           name = substr($0, 5)
           if (name == "Action required") rank = 1
           else if (name == "Issue satisfaction") rank = 2
@@ -179,10 +184,17 @@ steps:
           else { err("unknown section \"" name "\". Allowed: Action required, Issue satisfaction, Follow-up outside this PR"); next }
           if (rank <= last_rank) err("section \"" name "\" is out of order or repeated")
           last_rank = rank
+          section = name; section_lines = 0; placeholder = 0
+          next
+        }
+        section != "" && !in_details && !/^[[:space:]]*$/ && $0 != "<details>" && $0 != "<details><summary>Review coverage</summary>" {
+          section_lines++
+          line = tolower($0); gsub(/^[-*[:space:]]+|[.[:space:]]+$/, "", line)
+          if (line == "none" || line == "n/a" || line == "nothing to report" || line == "no follow-ups") placeholder = 1
         }
         /Not applicable/ { err("do not print \"Not applicable\"; omit the section instead") }
-        $0 == "<details><summary>Review coverage</summary>" { if (seen_details) err("use one <details> block only"); in_details = 1; seen_details = 1; seen_summary = 1; next }
-        $0 == "<details>" { if (seen_details) err("use one <details> block only"); in_details = 1; seen_details = 1; next }
+        $0 == "<details><summary>Review coverage</summary>" { close_section(); if (seen_details) err("use one <details> block only"); in_details = 1; seen_details = 1; seen_summary = 1; next }
+        $0 == "<details>" { close_section(); if (seen_details) err("use one <details> block only"); in_details = 1; seen_details = 1; next }
         in_details && $0 == "<summary>Review coverage</summary>" { seen_summary = 1; next }
         in_details && $0 == "</details>" { in_details = 0; after_details = 1; next }
         in_details && /^[[:space:]]*$/ { next }
@@ -195,6 +207,7 @@ steps:
         }
         after_details && !/^[[:space:]]*$/ { err("nothing may follow the Review coverage section. Remove: " substr($0, 1, 80)) }
         END {
+          close_section()
           if (!started) err("the body is empty")
           if (h2 != 1) err("use exactly one \"##\" heading")
           if (!seen_details) err("add the collapsed Review coverage section at the end")
@@ -592,7 +605,7 @@ Submit one final review body in this shape:
 Apply these rules to the review body:
 
 - Omit `Action required` when every actionable finding has an inline comment or another automated report.
-- Treat every GitHub issue linked in the PR description as a parent issue, including issues cited as a source. Omit `Issue satisfaction` only when the description links no issue. Never print `Not applicable`.
+- Treat every GitHub issue linked in the PR description as a parent issue, including issues cited as a source. Links to pull requests are context, not parent issues. Omit `Issue satisfaction` only when the description links no issue. Never print `Not applicable`.
 - Keep `Issue satisfaction` visible when a parent issue is linked. Use one short status sentence. For a partial or unsatisfied result, name each missing requirement.
 - For each linked issue that you cannot read, for example because it is in a private repository, do not guess whether the PR satisfies it, and do not infer it from the PR description. In `Issue satisfaction`, write one sentence that names the issue URL and says that you could not read it.
 - Omit `Follow-up outside this PR` unless the follow-up meets the related-docs rule in Step 4.
