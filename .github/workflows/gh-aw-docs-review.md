@@ -107,6 +107,14 @@ safe-outputs:
     engine:
       id: copilot
       model: sonnet
+      # gh-aw copies the main engine's env into threat detection. These provider
+      # settings make Copilot's firewall health check fail before the scan starts,
+      # and detection fails open. Empty values turn off the inherited custom target.
+      env:
+        ANTHROPIC_BASE_URL: ""
+        ANTHROPIC_API_KEY: ""
+        ANTHROPIC_CUSTOM_HEADERS: ""
+        ANTHROPIC_DEFAULT_SONNET_MODEL: ""
   urls: allowed-or-code-region
   allowed-domains:
     - elastic.co
