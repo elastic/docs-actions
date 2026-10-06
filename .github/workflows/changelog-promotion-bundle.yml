@@ -1,7 +1,10 @@
 # Shared date-promotion release-notes bundle workflow (RFC S1).
 #
-# Covers any product that publishes release notes keyed by date rather than a
-# semver tag: serverless, Cloud ECE, Cloud Hosted, and similar cadences.
+# Covers any product whose release notes are cut from a promotion event rather
+# than a GitHub release: serverless, Cloud ECE, Cloud Hosted, and similar
+# cadences. Bundles default to date-keyed versions (UTC run date); products
+# whose published notes are version-keyed (e.g. ECE's V.R.M releases) pass an
+# explicit `version` input instead.
 #
 # Product quality-gate / promotion pipelines dispatch a product-owned GitHub
 # workflow, which calls this reusable workflow with the two commit hashes the
@@ -70,6 +73,15 @@ on:
           system or serverless-gitops history); it is never inferred here.
         type: string
         required: true
+      version:
+        description: >
+          Optional explicit bundle version for products whose release notes are
+          version-keyed rather than date-keyed (e.g. ECE's V.R.M releases: 4.2.0).
+          Accepts a semver-style version or an ISO date. When omitted, the UTC
+          run date (YYYY-MM-DD) is derived — the default for date-keyed products
+          (serverless, ECH).
+        type: string
+        required: false
       target-env:
         description: >
           Optional target environment from the quality gate (ENVIRONMENT),
@@ -139,12 +151,22 @@ jobs:
           DEPLOYMENT_SLICES: ${{ inputs.deployment-slices }}
           BUILD_URL: ${{ inputs.build-url }}
           DRY_RUN: ${{ inputs.dry-run }}
+          VERSION_INPUT: ${{ inputs.version }}
         run: |
           set -euo pipefail
 
-          # Date-promotion cuts are always date-versioned; derive here so callers
-          # cannot pass a mismatched stack-style semver.
-          version="$(date -u +%Y-%m-%d)"
+          # Date-promotion cuts default to the UTC run date. Version-keyed
+          # date-promotion products (e.g. ECE: 4.2.0) pass an explicit version;
+          # it is validated here so a caller cannot ship a malformed target.
+          if [ -n "${VERSION_INPUT:-}" ]; then
+            if ! printf '%s' "$VERSION_INPUT" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([\.+-][0-9A-Za-z.+-]+)?$|^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+              echo "::error::version '${VERSION_INPUT}' is neither a semver-style version (e.g. 4.2.0) nor an ISO date (YYYY-MM-DD)"
+              exit 1
+            fi
+            version="$VERSION_INPUT"
+          else
+            version="$(date -u +%Y-%m-%d)"
+          fi
 
           echo "profile=${PROFILE}"
           echo "version=${version}"
