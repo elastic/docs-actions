@@ -21,27 +21,41 @@ jobs:
     permissions:
       contents: read
       packages: read
-    outputs:
-      bundle-path: ${{ steps.create.outputs.bundle-path }}
     steps:
-      - id: create
-        uses: elastic/docs-actions/changelog/release-serverless@v1
+      - uses: elastic/docs-actions/changelog/release-serverless@v1
         with:
-          service: kibana
+          service: elasticsearch
           service-version: ${{ inputs.service-version }}
-          dry-run: true
           github-token: ${{ steps.token.outputs.token }}   # must read elastic/serverless-gitops
+
+  publish:
+    needs: bundle
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: changelog-bundle
+          path: bundles
+      # ... authenticate with AWS, then upload the whole directory:
+      - run: docs-builder changelog upload --artifact-type bundle --target s3 --s3-bucket-name <bucket> --directory bundles
 ```
 
+A service can produce several bundles, so publish the whole `bundles/` directory.
+[`changelog/bundle-publish`](../bundle-publish/) takes a single file and cannot publish them all.
+`changelog upload` scans the top level of the directory and keys each bundle by the products inside it.
+
 With `dry-run: true`, the run report (resolved PRs with their entry source) goes to the job
-summary, nothing is uploaded, and `bundle-path` is empty.
+summary, nothing is uploaded, and `bundle-paths` is empty.
 
 ## Inputs
 
 | Input | Required | Default | Description |
 |---|---|---|---|
 | `service` | **Yes** | — | Serverless service as emitted by gpctl, for example `kibana` |
-| `service-version` | **Yes** | — | Promoted endpoint ref (`SERVICE_VERSION`), 12 characters or a full SHA |
+| `service-version` | **Yes** | — | Promoted endpoint ref (`SERVICE_VERSION`): a 12-character hash or a full SHA (12 to 40 hex characters) |
 | `date` | No | *(UTC run date)* | Bundle version, `YYYY-MM-DD` |
 | `dry-run` | No | `false` | Write the run report to the job summary; build and upload nothing |
 | `docs-builder-version` | No | `edge` | docs-builder version to install. Needs a version with `release serverless` |
@@ -52,7 +66,6 @@ summary, nothing is uploaded, and `bundle-path` is empty.
 
 | Output | Description |
 |---|---|
-| `bundle-path` | Path to the first generated bundle `.yml` file. Empty in dry-run |
 | `bundle-paths` | Newline-separated paths of all generated bundles. Empty in dry-run |
 | `start-ref` | Resolved previous endpoint ref |
 

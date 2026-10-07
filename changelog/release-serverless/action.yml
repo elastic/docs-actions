@@ -6,7 +6,9 @@ description: >
   history, reads each repository's docs/changelog.yml at the promoted ref, and
   builds one bundle per repository from its commit range (Elasticsearch
   produces two: elasticsearch-serverless and the elasticsearch submodule).
-  Uploads the bundles as one artifact for the publish job. Does not run actions/checkout. With dry-run,
+  Uploads all bundles as one artifact holding the bundles directory. A service can produce
+  several bundles, so publish the whole directory (for example with
+  docs-builder changelog upload --directory); bundle-publish takes a single file. Does not run actions/checkout. With dry-run,
   only the run report is written to the job summary.
 inputs:
   service:
@@ -14,8 +16,8 @@ inputs:
     required: true
   service-version:
     description: >
-      Published endpoint ref of this promotion (SERVICE_VERSION). 12 characters
-      or a full SHA. End of the commit range.
+      Published endpoint ref of this promotion (SERVICE_VERSION): a 12-character
+      hash or a full SHA (12 to 40 hex characters). End of the commit range.
     required: true
   date:
     description: 'Bundle version, a date (YYYY-MM-DD). Defaults to the UTC date of the run.'
@@ -40,9 +42,6 @@ inputs:
       accept anonymous requests.
     required: true
 outputs:
-  bundle-path:
-    description: 'Path to the first generated bundle .yml file. Empty in dry-run.'
-    value: ${{ steps.generate.outputs.bundle_path }}
   bundle-paths:
     description: 'Newline-separated paths of all generated bundle files. Empty in dry-run.'
     value: ${{ steps.generate.outputs.bundle_paths }}
@@ -63,8 +62,8 @@ runs:
       run: |
         source "${GITHUB_ACTION_PATH}/../../scripts/validate-inputs.sh"
         validate_segment "$SERVICE" "service"
-        if [[ ! "$SERVICE_VERSION" =~ ^[0-9a-fA-F]{7,40}$ ]]; then
-          echo "::error::service-version must be a 7-40 character hex SHA: ${SERVICE_VERSION}"; exit 1
+        if [[ ! "$SERVICE_VERSION" =~ ^[0-9a-fA-F]{12,40}$ ]]; then
+          echo "::error::service-version must be 12 to 40 hex characters (a 12-character hash or a full SHA): ${SERVICE_VERSION}"; exit 1
         fi
         if [ -n "$DATE" ] && [[ ! "$DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
           echo "::error::date must be YYYY-MM-DD: ${DATE}"; exit 1
