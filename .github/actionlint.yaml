@@ -2,3 +2,10 @@ paths:
   .github/workflows/**/*.{yml,yaml}:
     ignore:
       - 'unknown permission scope "copilot-requests"'
+  .github/workflows/test-codex-build.yml:
+    ignore:
+      # actionlint v1.7.12 predates the hosted Ubuntu 26.04 image.
+      - 'label "ubuntu-26\.04" is unknown'
+  .github/workflows/test-docs-builder-setup.yml:
+    ignore:
+      - 'label "ubuntu-26\.04" is unknown'
