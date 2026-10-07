@@ -110,6 +110,8 @@ runs:
           echo "::error::docs-builder did not produce a bundle (bundle_paths is empty)"; exit 1
         fi
         while IFS= read -r path; do
+          # The multi-line output can end with a newline: skip empty records.
+          [ -z "$path" ] && continue
           [ -f "$path" ] || { echo "::error::bundle does not exist: ${path}"; exit 1; }
         done <<< "$BUNDLE_PATHS"
     - name: Upload bundle artifact

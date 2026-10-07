@@ -591,7 +591,7 @@ See [`release-serverless/README.md`](release-serverless/README.md) for inputs, o
 
 ### `changelog/bundle-publish`
 
-Downloads the bundle artifact produced by `bundle-create-version` (or `release-serverless`)
+Downloads the bundle artifact produced by `bundle-create-version`
 and uploads it to the private S3 bucket via OIDC. Holds `id-token: write` so the generate job
 does not need it.
 
