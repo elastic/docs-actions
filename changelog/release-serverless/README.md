@@ -6,7 +6,7 @@ docs-builder resolves the previous `production-noncanary-ds-5` version from
 `elastic/serverless-gitops` history, reads each repository's `docs/changelog.yml`
 at the promoted ref, and builds one bundle per repository from its commit range:
 Kibana produces one bundle, Elasticsearch two (`elasticsearch-serverless` and its
-`elasticsearch` submodule). The bundles are uploaded as one artifact, the `.bundles/`
+`elasticsearch` submodule). The bundles are uploaded as one artifact, the `bundles/`
 directory, for a separate publish job.
 
 Use this from a quality-gate-triggered promotion workflow. For release-driven bundling use
@@ -45,7 +45,7 @@ summary, nothing is uploaded, and `bundle-path` is empty.
 | `date` | No | *(UTC run date)* | Bundle version, `YYYY-MM-DD` |
 | `dry-run` | No | `false` | Write the run report to the job summary; build and upload nothing |
 | `docs-builder-version` | No | `edge` | docs-builder version to install. Needs a version with `release serverless` |
-| `artifact-name` | No | `changelog-bundle` | Artifact name; it holds the whole `.bundles/` directory |
+| `artifact-name` | No | `changelog-bundle` | Artifact name; it holds the whole `bundles/` directory |
 | `github-token` | **Yes** | — | Token that reads `elastic/serverless-gitops` and the service repository |
 
 ## Outputs

@@ -88,8 +88,8 @@ runs:
         DATE: ${{ inputs.date }}
         DRY_RUN: ${{ inputs.dry-run }}
       run: |
-        # All bundles go to .bundles, which the artifact step uploads as a whole.
-        ARGS=(release serverless bundle "$SERVICE" "$SERVICE_VERSION" --output-dir .bundles)
+        # All bundles go to bundles (not a hidden directory: docs-builder rejects those), which the artifact step uploads as a whole.
+        ARGS=(release serverless bundle "$SERVICE" "$SERVICE_VERSION" --output-dir bundles)
         [ -n "$DATE" ] && ARGS+=(--date "$DATE")
         if [ "$DRY_RUN" = "true" ]; then
           ARGS+=(--dry-run)
@@ -118,6 +118,6 @@ runs:
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}
-        path: .bundles/
+        path: bundles/
         if-no-files-found: error
         retention-days: 1
