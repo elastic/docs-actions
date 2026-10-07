@@ -1,7 +1,7 @@
 name: Changelog release serverless
 description: >
   Bundles the release notes of a serverless promotion by running
-  docs-builder release serverless bundle natively. docs-builder resolves the
+  docs-builder release serverless natively. docs-builder resolves the
   previous production-noncanary-ds-5 version from elastic/serverless-gitops
   history, reads each repository's docs/changelog.yml at the promoted ref, and
   builds one bundle per repository from its commit range (Elasticsearch
@@ -88,7 +88,7 @@ runs:
         DRY_RUN: ${{ inputs.dry-run }}
       run: |
         # All bundles go to bundles (not a hidden directory: docs-builder rejects those), which the artifact step uploads as a whole.
-        ARGS=(release serverless bundle "$SERVICE" "$SERVICE_VERSION" --output-dir bundles)
+        ARGS=(release serverless "$SERVICE" "$SERVICE_VERSION" --output-dir bundles)
         [ -n "$DATE" ] && ARGS+=(--date "$DATE")
         if [ "$DRY_RUN" = "true" ]; then
           ARGS+=(--dry-run)

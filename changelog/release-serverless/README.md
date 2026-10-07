@@ -1,7 +1,7 @@
 # `changelog/release-serverless`
 
 Bundles the release notes of a serverless promotion with
-`docs-builder release serverless bundle <service> <service-version>`.
+`docs-builder release serverless <service> <service-version>`.
 docs-builder resolves the previous `production-noncanary-ds-5` version from
 `elastic/serverless-gitops` history, reads each repository's `docs/changelog.yml`
 at the promoted ref, and builds one bundle per repository from its commit range:

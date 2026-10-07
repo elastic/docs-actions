@@ -583,7 +583,7 @@ See [`bundle-create-version/README.md`](bundle-create-version/README.md) for inp
 
 ### `changelog/release-serverless`
 
-Bundles a serverless promotion with `docs-builder release serverless bundle <service> <service-version>`.
+Bundles a serverless promotion with `docs-builder release serverless <service> <service-version>`.
 docs-builder resolves the commit range from `elastic/serverless-gitops` history and reads the service's config.
 Runs the native binary, supports `dry-run`, and writes all bundles to one artifact and emits `bundle-paths`.
 
