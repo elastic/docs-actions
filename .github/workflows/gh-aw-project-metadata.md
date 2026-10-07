@@ -405,6 +405,12 @@ safe-outputs:
     engine:
       id: copilot
       model: gpt-5-mini
+      # gh-aw copies the main engine's env into threat detection. These provider
+      # settings make Copilot's firewall health check fail before the scan starts,
+      # and detection fails open. Empty values turn off the inherited custom target.
+      env:
+        OPENAI_BASE_URL: ""
+        OPENAI_API_KEY: ""
   jobs:
     apply-project-fields:
       description: "Validate proposed project field values, preserve existing values, and apply or preview the changes"
