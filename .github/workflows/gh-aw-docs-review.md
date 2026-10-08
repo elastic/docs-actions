@@ -139,11 +139,10 @@ safe-outputs:
       # once detection works.
       if: needs.detection.result == 'success'
       # The token needs pull-requests: write to comment on a pull request, even through the
-      # issues endpoint. Same permissions as the built-in safe_outputs job.
+      # issues endpoint. The job posts nothing else, so it gets no issues: write.
       permissions:
-        issues: write
         pull-requests: write
-      output: "Summary recorded. It is posted after threat detection passes."
+      output: "Summary recorded. It is posted after the detection job succeeds."
       inputs:
         content_type:
           description: "Short content-type classification of the changed pages and whether it fits, in one sentence."
@@ -204,7 +203,7 @@ safe-outputs:
                 text = re.sub(r"!?\[([^\]]*)\]\(\s*([^)\s]*)[^)]*\)", lambda m: m.group(0) if allowed(m.group(2)) else m.group(1), text)
                 text = re.sub(r"(?m)^\s*\[[^\]]+\]:.*$", "", text)
                 # Bare URLs, www. hosts, and email addresses that GitHub would autolink are removed unless allowed.
-                text = re.sub(r"https?://[^\s)\]]+", lambda m: m.group(0) if allowed(m.group(0)) else "(link removed)", text)
+                text = re.sub(r"https?://[^\s)\]]+", lambda m: m.group(0) if allowed(m.group(0)) else "(link removed)", text, flags=re.I)
                 text = re.sub(r"(?i)(?<![\w/.])www\.[^\s)\]]+", "(link removed)", text)
                 text = re.sub(r"(?i)\b(?:mailto:)?[\w.+-]+@[\w-]+(?:\.[\w-]+)+", "(link removed)", text)
                 text = re.sub(r"(?<![\w`])@([A-Za-z0-9][\w-]*(?:/[\w.-]+)?)", r"`@\1`", text)

@@ -1,6 +1,6 @@
 # Docs review
 
-Reviews changed markdown files in pull requests using self-contained Elastic docs review rules. By default, the workflow reviews files under `docs/`, and repositories such as `docs-content` can set `review-scope: repo-wide-markdown` to review changed markdown across the repository. It publishes a pull request review with a concise summary plus inline comments for actionable findings.
+Reviews changed markdown files in pull requests using self-contained Elastic docs review rules. By default, the workflow reviews files under `docs/`, and repositories such as `docs-content` can set `review-scope: repo-wide-markdown` to review changed markdown across the repository. It publishes a pull request review with inline comments for actionable findings, plus a separate summary comment rendered from structured fields.
 
 ## Triggers
 
@@ -39,9 +39,10 @@ The workflow uses the Claude engine via OpenRouter for improved consistency and 
 |--------|-----|-------------|
 | `noop` | — | Used when the trigger is not a pull request, or the PR has no changed markdown files in the configured review scope |
 | `create-pull-request-review-comment` | 20 | Adds focused inline review comments on changed markdown lines |
-| `submit-pull-request-review` | 1 | Submits the overall pull request review summary as a non-blocking `COMMENT` |
+| `submit-pull-request-review` | 1 | Submits the inline comments as a non-blocking `COMMENT` review with a fixed one-line body that points to the summary comment. Not called when there are no inline comments |
+| `docs-review-summary` | 1 | Custom job. The agent fills in `content_type`, `action_required`, `issue_satisfaction`, `follow_ups`, and `not_checked`, and the job renders a fixed template and posts it as a pull request comment. Empty fields omit their section. The job keeps only links to `elastic.co`, `docs-v3-preview.elastic.dev`, and `github.com`, escapes HTML, headings, rules, and code fences, and wraps `@mentions` in code. It runs when the detection job succeeds and fails if no summary can be rendered |
 
-The inline review comment cap for this workflow is set to `20`, so the workflow prioritizes the highest-signal comments and keeps broader observations in the summary review. Lower-priority nits should only be reported when they are grounded in the Elastic style guide, and those nits should usually be summarized in the review body instead of consuming inline comment slots.
+The inline review comment cap for this workflow is set to `20`, so the workflow prioritizes the highest-signal comments and keeps broader observations in the summary comment. Lower-priority nits should only be reported when they are grounded in the Elastic style guide, and those nits should usually go in the summary comment instead of consuming inline comment slots.
 
 ## Review scope
 
@@ -57,7 +58,7 @@ Supported review scopes:
 
 It ignores markdown outside the configured review scope, non-markdown files, and unrelated pre-existing issues in untouched files.
 
-If the pull request is linked to a parent issue, the review also checks whether the PR appears to satisfy that issue's documentation ask and reports the result in the summary review.
+If the pull request is linked to a parent issue, the review also checks whether the PR appears to satisfy that issue's documentation ask and reports the result in the summary comment.
 
 ## Comment phrasing
 
