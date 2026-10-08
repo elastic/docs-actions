@@ -109,12 +109,12 @@ safe-outputs:
       model: sonnet
       # gh-aw copies the main engine's env into threat detection. These provider
       # settings make Copilot's firewall health check fail before the scan starts,
-      # and detection fails open. Deliberately unusable values override the inherited target.
+      # and detection fails open. Empty values turn off the inherited custom target.
       env:
-        ANTHROPIC_BASE_URL: http://127.0.0.1:1
-        ANTHROPIC_API_KEY: disabled
-        ANTHROPIC_CUSTOM_HEADERS: disabled
-        ANTHROPIC_DEFAULT_SONNET_MODEL: disabled
+        ANTHROPIC_BASE_URL: ""
+        ANTHROPIC_API_KEY: ""
+        ANTHROPIC_CUSTOM_HEADERS: ""
+        ANTHROPIC_DEFAULT_SONNET_MODEL: ""
   urls: allowed-or-code-region
   allowed-domains:
     - elastic.co
@@ -205,6 +205,8 @@ safe-outputs:
                 for line in clean(text).splitlines():
                     line = re.sub(r"^\s*(?:[-*+]|\d+[.)])\s+", "", line).strip()
                     line = re.sub(r"^(#+|-{3,}|\*{3,}|_{3,}|=+)", r"\\\1", line)
+                    # A leading code fence would swallow the rest of the summary. Escape every fence character.
+                    line = re.sub(r"^(?:`{3,}|~{3,})", lambda m: "".join("\\" + c for c in m.group(0)), line)
                     if line and not PLACEHOLDER.match(line.strip("*_. ")):
                         out.append(line)
                 return out

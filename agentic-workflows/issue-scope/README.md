@@ -8,7 +8,7 @@ never rewritten.
 
 ## Model
 
-The agent runs `openai/gpt-5.6-luna` through OpenRouter on the codex engine, authenticated with
+The agent runs `openai/gpt-6-luna` through OpenRouter on the codex engine, authenticated with
 the `OPENROUTER_API_KEY` secret. Threat detection runs separately on GitHub Copilot with the
 `sonnet` model alias. The agent must query the Elastic docs MCP server before reading any
 repository file, so expect higher per-issue cost than a classification-only workflow — roughly

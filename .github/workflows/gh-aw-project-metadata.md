@@ -12,7 +12,13 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-model: openai/gpt-5.6-luna
+model: openai/gpt-6-luna
+# The pinned AWF price table has no gpt-6-luna entry; without a fallback the API proxy rejects
+# every request with HTTP 400. Rates match OpenRouter ($/1M tokens).
+models:
+  default-ai-credits-pricing:
+    input: 0.10
+    output: 0.50
 engine:
   id: codex
   # Use CLI overrides because gh-aw emits engine.config into both the converted and final Codex
@@ -407,10 +413,10 @@ safe-outputs:
       model: gpt-5-mini
       # gh-aw copies the main engine's env into threat detection. These provider
       # settings make Copilot's firewall health check fail before the scan starts,
-      # and detection fails open. Deliberately unusable values override the inherited target.
+      # and detection fails open. Empty values turn off the inherited custom target.
       env:
-        OPENAI_BASE_URL: http://127.0.0.1:1
-        OPENAI_API_KEY: disabled
+        OPENAI_BASE_URL: ""
+        OPENAI_API_KEY: ""
   jobs:
     apply-project-fields:
       description: "Validate proposed project field values, preserve existing values, and apply or preview the changes"
