@@ -181,8 +181,8 @@ safe-outputs:
             if path and os.path.exists(path):
                 items = [i for i in json.load(open(path)).get("items", []) if i.get("type") == "docs_review_summary"]
             if not items:
-                print("No docs_review_summary item in the agent output.", file=sys.stderr)
-                sys.exit(0)
+                print("::error::No docs_review_summary item in the agent output, so no summary was posted.", file=sys.stderr)
+                sys.exit(1)
             item = items[-1]
 
             ALLOWED = ("elastic.co", "docs-v3-preview.elastic.dev", "github.com")
@@ -242,8 +242,8 @@ safe-outputs:
             print("\n".join(parts))
             PY
             if [ ! -s summary.md ]; then
-              echo "The agent did not call docs_review_summary. Nothing to post."
-              exit 0
+              echo "::error::The summary renderer produced no output, so no summary was posted."
+              exit 1
             fi
             cat summary.md
             if [ "${GH_AW_SAFE_OUTPUTS_STAGED:-}" = "true" ]; then
