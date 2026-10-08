@@ -107,6 +107,14 @@ safe-outputs:
     engine:
       id: copilot
       model: sonnet
+      # gh-aw copies the main engine's env into threat detection. These provider
+      # settings make Copilot's firewall health check fail before the scan starts,
+      # and detection fails open. Deliberately unusable values override the inherited target.
+      env:
+        ANTHROPIC_BASE_URL: http://127.0.0.1:1
+        ANTHROPIC_API_KEY: disabled
+        ANTHROPIC_CUSTOM_HEADERS: disabled
+        ANTHROPIC_DEFAULT_SONNET_MODEL: disabled
   urls: allowed-or-code-region
   allowed-domains:
     - elastic.co
@@ -124,7 +132,7 @@ safe-outputs:
         found nothing. Leave a field empty to omit its section. Use plain sentences: the
         workflow adds headings, bullets, and the footer.
       runs-on: ubuntu-24.04
-      needs: [detection, safe_outputs]
+      needs: [safe_outputs]
       # Same gate as the built-in safe_outputs job. Detection currently fails before it
       # analyzes anything (see the PR description), and the built-ins post anyway, so a
       # stricter gate on detection_success would block every summary. Tighten both together

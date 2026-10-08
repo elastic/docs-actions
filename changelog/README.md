@@ -581,9 +581,17 @@ Use this when you know the release tag and want privilege separation between gen
 
 See [`bundle-create-version/README.md`](bundle-create-version/README.md) for inputs, outputs, and an example two-job workflow.
 
+### `changelog/release-serverless`
+
+Bundles a serverless promotion with `docs-builder release serverless <service> <service-version>`.
+docs-builder resolves the commit range from `elastic/serverless-gitops` history and reads the service's config.
+Runs the native binary, supports `dry-run`, and writes all bundles to one artifact and emits `bundle-paths`.
+
+See [`release-serverless/README.md`](release-serverless/README.md) for inputs, outputs, and caller requirements.
+
 ### `changelog/bundle-publish`
 
-Downloads the bundle artifact produced by `bundle-create-version` (or `bundle-create-git-range`)
+Downloads the bundle artifact produced by `bundle-create-version`
 and uploads it to the private S3 bucket via OIDC. Holds `id-token: write` so the generate job
 does not need it.
 
