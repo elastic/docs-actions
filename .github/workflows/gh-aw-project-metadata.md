@@ -12,7 +12,7 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-model: openai/gpt-5.6-luna
+model: openai/gpt-6-luna
 engine:
   id: codex
   # Use CLI overrides because gh-aw emits engine.config into both the converted and final Codex

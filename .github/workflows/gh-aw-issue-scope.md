@@ -16,7 +16,7 @@ imports:
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/safe-output-add-comment.md
   - gh-aw-fragments/quality-bar.md
-model: openai/gpt-5.6-luna
+model: openai/gpt-6-luna
 engine:
   id: codex
   # Codex sends no OpenRouter attribution of its own. gh-aw writes the provider block as
