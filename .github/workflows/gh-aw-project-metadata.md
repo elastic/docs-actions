@@ -13,6 +13,12 @@ imports:
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
 model: openai/gpt-6-luna
+# The pinned AWF price table has no gpt-6-luna entry; without a fallback the API proxy rejects
+# every request with HTTP 400. Rates match OpenRouter ($/1M tokens).
+models:
+  default-ai-credits-pricing:
+    input: 0.10
+    output: 0.50
 engine:
   id: codex
   # Use CLI overrides because gh-aw emits engine.config into both the converted and final Codex

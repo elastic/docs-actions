@@ -17,6 +17,12 @@ imports:
   - gh-aw-fragments/safe-output-add-comment.md
   - gh-aw-fragments/quality-bar.md
 model: openai/gpt-6-luna
+# The pinned AWF price table has no gpt-6-luna entry; without a fallback the API proxy rejects
+# every request with HTTP 400. Rates match OpenRouter ($/1M tokens).
+models:
+  default-ai-credits-pricing:
+    input: 0.10
+    output: 0.50
 engine:
   id: codex
   # Codex sends no OpenRouter attribution of its own. gh-aw writes the provider block as
