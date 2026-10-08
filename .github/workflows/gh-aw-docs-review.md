@@ -189,14 +189,24 @@ safe-outputs:
             PLACEHOLDER = re.compile(r"^(none|n/a|not applicable|nothing to report|no follow-ups?)$", re.I)
 
             def allowed(url):
-                host = re.sub(r"^https?://", "", url).split("/")[0].split(":")[0].lower()
+                # Only absolute http(s) URLs on an allowed host. A backslash or userinfo ("@") can make a
+                # browser read a different host than the one parsed here, so reject both.
+                m = re.match(r"^https?://([^/?#]*)", url, re.I)
+                if not m or "\\" in url or "@" in m.group(1):
+                    return False
+                host = m.group(1).split(":")[0].lower()
                 return any(host == d or host.endswith("." + d) for d in ALLOWED)
 
             def clean(text):
                 text = (text or "")[:4000].replace("<", "&lt;").replace(">", "&gt;")
-                # Markdown links to other domains keep their text only. Bare URLs to other domains are removed.
-                text = re.sub(r"\[([^\]]*)\]\((https?://[^)\s]+)\)", lambda m: m.group(0) if allowed(m.group(2)) else m.group(1), text)
+                # Every Markdown link or image target must pass allowed(). Relative, protocol-relative,
+                # mailto:, and other-scheme targets keep their text only. Reference definitions are dropped.
+                text = re.sub(r"!?\[([^\]]*)\]\(\s*([^)\s]*)[^)]*\)", lambda m: m.group(0) if allowed(m.group(2)) else m.group(1), text)
+                text = re.sub(r"(?m)^\s*\[[^\]]+\]:.*$", "", text)
+                # Bare URLs, www. hosts, and email addresses that GitHub would autolink are removed unless allowed.
                 text = re.sub(r"https?://[^\s)\]]+", lambda m: m.group(0) if allowed(m.group(0)) else "(link removed)", text)
+                text = re.sub(r"(?i)(?<![\w/.])www\.[^\s)\]]+", "(link removed)", text)
+                text = re.sub(r"(?i)\b(?:mailto:)?[\w.+-]+@[\w-]+(?:\.[\w-]+)+", "(link removed)", text)
                 text = re.sub(r"(?<![\w`])@([A-Za-z0-9][\w-]*(?:/[\w.-]+)?)", r"`@\1`", text)
                 return text
 
