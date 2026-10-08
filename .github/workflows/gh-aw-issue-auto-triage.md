@@ -13,6 +13,12 @@ imports:
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
 model: haiku
+# AWF's built-in AI-credit price table does not list Haiku 5.5 yet; without a fallback
+# the sidecar rejects every request with HTTP 400. Rates match OpenRouter ($/1M tokens).
+models:
+  default-ai-credits-pricing:
+    input: 0.10
+    output: 0.50
 engine:
   id: claude
   env:
