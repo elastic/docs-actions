@@ -21,7 +21,7 @@ engine:
       HTTP-Referer: https://github.com/${{ github.repository }}
       X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
       X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
-    ANTHROPIC_DEFAULT_HAIKU_MODEL: anthropic/claude-haiku-4.5
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: anthropic/claude-haiku-5.5
 
 on:
   roles: all
