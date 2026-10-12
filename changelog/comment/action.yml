@@ -3,6 +3,8 @@ description: >
   Downloads the changelog-decision artifact from the triggering workflow run
   and posts or updates the sticky changelog PR comment. Safe to call even
   when no artifact was uploaded — the command succeeds with no action taken.
+  Also does nothing when a newer run of the triggering workflow exists for the
+  same commit, so a stale decision cannot overwrite a newer one.
 
 inputs:
   github-token:
@@ -18,10 +20,24 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.github-token }}
         RUN_ID: ${{ github.event.workflow_run.id }}
+        WORKFLOW_ID: ${{ github.event.workflow_run.workflow_id }}
+        HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
       run: |
         count=$(gh api \
           "repos/${{ github.repository }}/actions/runs/${RUN_ID}/artifacts" \
           --jq '[.artifacts[] | select(.name == "changelog-decision")] | length')
+
+        # Label events start parallel runs for the same commit. The comment jobs they
+        # trigger race, and the older run's stale decision can land last and overwrite
+        # the newer one. Only the newest non-cancelled run may comment.
+        newer=$(gh api \
+          "repos/${{ github.repository }}/actions/workflows/${WORKFLOW_ID}/runs?head_sha=${HEAD_SHA}&event=pull_request&per_page=100" \
+          --jq "[.workflow_runs[] | select(.id > ${RUN_ID} and .conclusion != \"cancelled\")] | length")
+        if [ "$newer" -gt 0 ]; then
+          echo "Run ${RUN_ID} is superseded by a newer run for ${HEAD_SHA}; skipping."
+          count=0
+        fi
+
         echo "exists=$([ "$count" -gt 0 ] && echo 'true' || echo 'false')" >> "$GITHUB_OUTPUT"
 
     - name: Download decision artifact
