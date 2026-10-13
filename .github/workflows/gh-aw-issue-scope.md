@@ -158,7 +158,7 @@ safe-outputs:
   messages:
     footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
     run-started: "👀 ScopeBot is scoping issue #${{ github.event.issue.number }}… [{run_url}]({run_url})"
-    run-success: "✅ ScopeBot finished, @${{ github.actor }}. [{run_url}]({run_url})"
+    run-success: "✅ ScopeBot finished. [{run_url}]({run_url})"
     run-failure: "❌ ScopeBot failed. [{run_url}]({run_url}) — check the logs."
 
 timeout-minutes: 30
@@ -268,15 +268,19 @@ If none of these signals is present, skip this step. Do not search, and do not m
 
 When a signal is present:
 
-1. Sibling issues: read the parent or tracking issue with `issue_read`. Read the sibling issues
-   it lists or that the issue references, and note the pull requests they link.
+1. Sibling issues: call `issue_read` with the `get_parent` method, then with `get_sub_issues` on
+   the parent, or read the parent or tracking issue that the issue names. Note the pull requests
+   that the sibling issues link.
 2. Search: call `search_pull_requests` with `is:open` in the consumer repository, using the
    feature or component name or the candidate page titles from Step 4 as keywords.
 
-Limits: make at most three search calls in total and read at most five pull requests. For each
-candidate, read the title, description, and changed-files list with `pull_request_read`. Keep only
-pull requests that change, or plan to change, the same pages or claims as this issue. Treat what
-you find as evidence, not proof, and never name a pull request author.
+Limits: make at most three search calls in total. Choose candidates from the search results and
+the sibling links by title and description, and call `pull_request_read` on at most five pull
+requests in total, counting every repository. Skip any pull request that its title already
+excludes. For each pull request you read, check the title, description, and changed-files list.
+Keep only pull requests that change, or plan to change, the same pages or claims as this issue.
+Treat what you find as evidence, not proof, and never name a pull request author. Name a pull
+request in another repository as `owner/repo#number`, never as a bare `#number`.
 
 If an open pull request already covers a target, do not recommend that work as new. Set the
 target's action to "Review only" or "No action", name the pull request in the "Why this page?"

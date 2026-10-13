@@ -75,7 +75,7 @@ the workflow never creates labels.
    with the information available, states the scope boundary, and lists questions to go deeper.
    For find-and-replace issues it searches the repository for the phrase and reports the match
    count instead of listing a sample.
-7. Posts one comment. The run-success message mentions the person who triggered the run.
+7. Posts one comment.
 
 ## Outcomes
 
