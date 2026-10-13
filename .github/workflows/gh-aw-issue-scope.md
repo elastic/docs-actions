@@ -252,6 +252,14 @@ If linked code exists, reconcile the issue request with the linked changes and p
 If no linked code exists, verify the premise against the published pages found in Step 4 and
 report **Not verifiable against code**. This does not lower the rating on its own.
 
+When the issue concerns a procedure, a UI label, navigation, or a privilege, check the current UI
+before you size the work. Call `search_code` for the labels, menu names, and privilege names that
+the affected page uses, in the product repository that the issue or the linked code names (for
+Kibana, `repo:elastic/kibana`). If the labels or steps no longer match, size the work as a
+rewrite of the procedure, not as a one-paragraph clarification, and do not put the neighboring
+steps out of scope. If the search fails or is rate limited, write "UI not verified against
+source" in the Summary, and do not describe the existing steps as current.
+
 ## Step 5b — Check for related work in flight
 
 Run this step only when the issue gives a reason to expect an open pull request for the same
@@ -325,6 +333,10 @@ sentence on what does not appear to need changes.
 List two to five questions whose answers would change the targets or the approach — what a
 maintainer needs to pin down before or while doing the work. Address them to the team, not to
 the author. Do not mention the issue author's login anywhere in the comment.
+
+Treat the issue comments as evidence. Do not ask a question that the issue body or a comment
+already answers. When a comment answers it, state the answer as fact in the Summary or the plan
+instead, and keep only the questions that remain open.
 
 ## Outcome contract
 
@@ -404,6 +416,8 @@ running `/scope` again:
 
 ### Questions to go deeper
 - <2–5 team-facing questions whose answers would change the targets or the approach>
+
+_This scope reflects the issue as of this run. Comment `/scope` to run it again after the issue changes._
 ```
 
 **🟠 Partial scope:**
@@ -417,4 +431,6 @@ boundary. Omit a section entirely rather than leaving placeholder text.>
 
 ### Questions to resolve before rerunning `/scope`
 - <one bullet per gap from the quality check and per open question that blocks a fuller scope>
+
+_This scope reflects the issue as of this run. Comment `/scope` to run it again after the issue changes._
 ```
