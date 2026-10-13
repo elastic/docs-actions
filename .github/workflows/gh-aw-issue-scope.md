@@ -292,7 +292,9 @@ request in another repository as `owner/repo#number`, never as a bare `#number`.
 
 If an open pull request already covers a target, do not recommend that work as new. Set the
 target's action to "Review only" or "No action", name the pull request in the "Why this page?"
-cell, and make "Coordinate with #<number> before starting" the first step of how to tackle this.
+cell, and make "Coordinate with <reference> before starting" the first step of how to tackle this.
+Write `<reference>` as `#<number>` for a pull request in the consumer repository, and as
+`owner/repo#<number>` for a pull request in any other repository.
 Add one sentence about the pull request to the Summary. If no candidate matches, say nothing
 about this step.
 
@@ -322,7 +324,9 @@ instead of a final count.
 
 Write replacement instructions with both the old and the new value in inline code, exactly as
 they appear in the source, including link targets with a non-`https` scheme such as
-`opentelemetry://`.
+`opentelemetry://`. This workflow sets `urls: allowed-or-code-region`, so the add-comment URL
+limitation above applies to prose only: a URL or link target inside inline code or a fenced
+block is kept, and the same target in plain text is still redacted.
 
 Then write **how to tackle this**: numbered, concrete steps a writer could start on today with
 the information available, smallest viable change first. State the **scope boundary**: one
