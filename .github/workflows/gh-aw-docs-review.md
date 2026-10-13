@@ -321,6 +321,7 @@ Use GitHub tools and local workspace inspection as needed to gather:
 
 - the pull request's linked issue context, if any, including closing keywords and directly referenced issues,
 - existing automated review comments or check summaries that could duplicate this review, especially docs build failures and Vale lint comments,
+- the human review threads and the pull request conversation, read with `pull_request_read` (`get_review_comments` and `get_comments`), so that you know which points a reviewer or the author already settled,
 - the list of changed files,
 - the diff hunks for each eligible markdown file,
 - the final contents of each eligible markdown file in the PR branch, and
@@ -419,6 +420,9 @@ Treat this as a PR review, not a full repository audit:
 - Treat a finding that Vale or another existing automated review already reported as fully reported. Do not repeat it in an inline comment or the review body. Do not add a statement such as "No additional issues beyond..." that names or summarizes the existing finding.
 - Do not repeat an inline review finding in the review body. Do not add a summary bullet that says a finding was reported inline or tells the reader to see an inline comment.
 - Treat a dependency, blocker, or prerequisite pull request that the PR description already names as known, for example "depends on elastic/opentelemetry#668". Do not report an unresolved cross-repository anchor, link, or dependency that the description states. Do not mention it anywhere in the review, including the `Not checked` bullet under `Review coverage`. Report one only when the description does not mention it.
+- Treat a point that a human reviewer or the PR author has rejected, resolved, or called deliberate as settled. Do not raise it again, even in different words, and do not ask for content that a reviewer asked the author to remove.
+- Do not suggest adding content to a page when the PR, in its changed lines or description, links to another page that covers that content. The link is the author's decision about where the content lives.
+- Do not ask for an inline `applies_to` tag on content that is already covered by the page-level tag. For unversioned products such as Serverless, the cumulative-docs guidance says to label GA content at the page level only. The docs start at 9.0, so a page-level `stack: ga` tag already covers 9.0 and later: do not ask the author to change it to `stack: ga 9.0`.
 - Treat content-type guidance as a reader-centered heuristic. Report content-type issues only when the mismatch materially makes the page harder to use, conflicts with the surrounding section's established pattern, or risks sending the author toward the wrong kind of documentation.
 - Allow mixed-purpose pages and reasonable structural exceptions. For example, do not object to a prerequisites section on a troubleshooting page solely because the troubleshooting content type does not require one; report it only when the requirements are inaccurate, unsupported, confusing, or disruptive to the troubleshooting flow.
 - If the pull request appears linked to a parent issue, assess whether the issue's documentation ask is fully satisfied, only partially satisfied, or still unsupported by the PR.
@@ -537,7 +541,7 @@ Submit one final review body in this shape:
 - Content type: <short classification and material fit assessment>.
 - Checked: user focus, technical accuracy, applicability, maintainability, language, and style.
 - Not checked: <optional criterion and reason; omit this bullet when all checks completed>.
-  When the changed lines name a UI label that you did not verify against product source, include `UI labels: not verified against product source` in this bullet.
+  When the changed lines name a UI label that you did not verify against product source, include `UI labels: not verified against product source` in this bullet. Also list every check that a rate limit or a tool error stopped, with the tool and the reason, for example `code search: rate limited`.
 
 </details>
 ```
