@@ -68,9 +68,14 @@ the workflow never creates labels.
    `get_document_by_url`) and only then reads repository files to confirm details.
 4. Verifies the request against the linked code when there is any, otherwise against the
    published pages it found.
-5. Recommends documentation targets with a confidence level, describes how to tackle the work
+5. When the issue points to a parent, sibling, or follow-up, checks sibling issues and open pull
+   requests for work already in flight, within a fixed search budget. It skips this step when
+   nothing suggests an open pull request exists.
+6. Recommends documentation targets with a confidence level, describes how to tackle the work
    with the information available, states the scope boundary, and lists questions to go deeper.
-6. Posts one comment.
+   For find-and-replace issues it searches the repository for the phrase and reports the match
+   count instead of listing a sample.
+7. Posts one comment. The run-success message mentions the person who triggered the run.
 
 ## Outcomes
 
