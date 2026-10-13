@@ -321,7 +321,7 @@ Use GitHub tools and local workspace inspection as needed to gather:
 
 - the pull request's linked issue context, if any, including closing keywords and directly referenced issues,
 - existing automated review comments or check summaries that could duplicate this review, especially docs build failures and Vale lint comments,
-- the human review threads and the pull request conversation, read with `pull_request_read` (`get_review_comments` and `get_comments`), so that you know which points a reviewer or the author already settled,
+- the human review threads, the review summaries, and the pull request conversation, read with `pull_request_read` (`get_review_comments`, `get_reviews`, and `get_comments`), so that you know which points a reviewer or the author already settled,
 - the list of changed files,
 - the diff hunks for each eligible markdown file,
 - the final contents of each eligible markdown file in the PR branch, and
