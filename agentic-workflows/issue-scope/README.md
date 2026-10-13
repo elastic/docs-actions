@@ -82,9 +82,10 @@ the workflow never creates labels.
 6. Recommends documentation targets with a confidence level, describes how to tackle the work
    with the information available, states the scope boundary, and lists questions to go deeper.
    For find-and-replace issues it searches the consumer repository, and any other public
-   repository that the issue names, for the phrase and reports the match count instead of listing
-   a sample. For issues about procedures, UI labels, or privileges it
-   checks product source for the current labels and says when it could not. It treats issue
+   repository that the issue names, for the phrase. It reports the total match count and lists up
+   to 15 matching files, and writes "at least N files" when the results are partial or rate
+   limited. For issues about procedures, UI labels, or privileges it checks product source for the
+   current labels and says when it could not. It treats issue
    comments as evidence and does not ask questions that they already answer.
 7. Posts one comment. The 🟢 and 🟠 comments end with a line that says the scope reflects the
    issue as of the run and that `/scope` runs it again.
