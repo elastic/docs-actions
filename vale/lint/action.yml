@@ -555,6 +555,12 @@ runs:
                 # distinguish a delete-only diff from unavailable patch data.
                 echo "$file|0|0" >> "$TEMP_DIR/line_ranges.txt"
               fi
+            elif [ "$(echo "$PR_PATCHES" | jq -r --arg f "$file" \
+              '[.[] | select(.filename == $f)] | first | if . != null and .changes == 0 then "unchanged" else "" end')" = "unchanged" ]; then
+              # A pure rename or mode change has no patch because no line changed.
+              # Record an empty range, as for a delete-only diff, so the PR keeps
+              # line-range filtering for its other files.
+              echo "$file|0|0" >> "$TEMP_DIR/line_ranges.txt"
             else
               patches_complete=false
               echo "::warning::Patch unavailable for $file; line-range filtering will be skipped (Vale will lint entire files)"
