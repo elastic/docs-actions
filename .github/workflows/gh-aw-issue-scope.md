@@ -279,8 +279,10 @@ When a signal is present:
 1. Sibling issues: call `issue_read` with the `get_parent` method, then with `get_sub_issues` on
    the parent, or read the parent or tracking issue that the issue names. Note the pull requests
    that the sibling issues link.
-2. Search: call `search_pull_requests` with `is:open` in the consumer repository, using the
-   feature or component name or the candidate page titles from Step 4 as keywords.
+2. Search: call `search_pull_requests` with `is:open`, using the feature or component name or
+   the candidate page titles from Step 4 as keywords. Search the consumer repository, and also
+   search any other public repository that the issue, its parent, or its siblings name or link
+   to, with `repo:owner/repo` in the query.
 
 Limits: make at most three search calls in total. Choose candidates from the search results and
 the sibling links by title and description, and call `pull_request_read` on at most five pull
