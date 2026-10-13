@@ -395,7 +395,7 @@ Apply the six criteria in order:
 
    **Search to find conflicts, never to confirm.** Published docs can be wrong or out of date, most often for feature availability and deployment support. Never write that a claim is verified, confirmed, or accurate because a published page agrees with it, in an inline comment or in the review body. If you find no conflict, say nothing about the claim. If the PR and a published page disagree, do not decide which one is right: report the conflict with the `Verify both` direction from `docs-check-contradictions`, and note that an SME must confirm. Before you compare, check that both sources describe the same feature, deployment type, and tier. A statement about one feature, for example AutoOps, is not evidence about another, for example connecting clusters to AutoOps through Cloud Connect.
 
-   **Read a code PR's state before you describe it.** Before you write that a linked code pull request or commit is unmerged, open, closed, or unreleased, read its state with `pull_request_read`. If you cannot read it, for example because it is in another repository, do not state its state. Do not use the training data or the PR title to infer it.
+   **Read a code change's state before you describe it.** Before you write that a linked code pull request is unmerged, open, closed, or unreleased, read its state with `pull_request_read`. Before you write that a linked commit is unmerged or unreleased, read it with `get_commit`. If you cannot read it, for example because it is in a repository that the tools cannot reach, do not state its state. Do not use the training data or the PR title to infer it.
 
 3. **Applicability** — `applies_to` tags, cumulative structure, markup correctness, and deployment types. For validity judgments, verify against the repository's checked-in schema or the published cumulative-docs guidance fetched during this run. Do not rely on training knowledge for valid keys or lifecycle values. If you cannot verify, do not report.
 
@@ -541,7 +541,7 @@ Submit one final review body in this shape:
 - Content type: <short classification and material fit assessment>.
 - Checked: user focus, technical accuracy, applicability, maintainability, language, and style.
 - Not checked: <optional criterion and reason; omit this bullet when all checks completed>.
-  When the changed lines name a UI label that you did not verify against product source, include `UI labels: not verified against product source` in this bullet. Also list every check that a rate limit or a tool error stopped, with the tool and the reason, for example `code search: rate limited`.
+  When the changed lines name a UI label that you could not verify, neither in product source nor in consistent published docs, include `UI labels: not verified` in this bullet. Do not include it for a label that either source verified. Also list every check that a rate limit or a tool error stopped, with the tool and the reason, for example `code search: rate limited`.
 
 </details>
 ```

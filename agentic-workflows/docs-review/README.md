@@ -105,7 +105,9 @@ The skills are pinned to `elastic-docs-skills@main` at compile time; the weekly 
 
 The workflow uses the Elastic docs MCP server for targeted verification, such as cross-page duplication checks, published cumulative-docs guidance, and sibling-page context. It noops or skips a finding when it cannot verify the evidence.
 
-The workflow reads a linked code pull request's state before it describes the pull request, and it does not report a dependency or blocker that the PR description already names. It flags a UI label only after it finds the label in product source or in consistent published docs. When it cannot verify a label, it leaves the label alone and lists `UI labels: not verified against product source` under `Review coverage`.
+The workflow reads a linked code pull request's state (or a linked commit, with `get_commit`) before it describes it, and it does not report a dependency or blocker that the PR description already names. It flags a UI label only after it finds the label in product source or in consistent published docs. When it cannot verify a label either way, it leaves the label alone and lists `UI labels: not verified` under `Review coverage`. It also lists any check that a rate limit or a tool error stopped.
+
+It reads the PR conversation and review threads, and it treats a point that a reviewer or the author rejected as settled. It does not suggest content for a page that the PR links to another page for, and it follows the cumulative-docs rule that GA content in an unversioned product is labeled at the page level only.
 
 When an inline comment can be expressed as a small, exact replacement for the reviewed line or hunk, the workflow should prefer an apply-ready GitHub suggestion block over prose-only guidance.
 
