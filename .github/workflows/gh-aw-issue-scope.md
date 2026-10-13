@@ -289,9 +289,11 @@ source" in the Summary, and do not describe the existing steps as current.
 ## Step 5b — Check for related work in flight
 
 Run this step only when the issue gives a reason to expect an open pull request for the same
-work. Look for one of these signals in the issue body, comments, or linked items:
+work. First call `issue_read` with the `get_parent` method once: a parent in the issue metadata
+is a signal, even when the issue text never mentions it. Then look for one of these signals in the
+issue body, comments, or linked items:
 
-- The issue names a parent, epic, or tracking issue, or it is a sub-issue of one.
+- The issue names a parent, epic, or tracking issue, or the issue metadata shows a parent.
 - The issue calls itself a follow-up, part of a series, or a sibling of another issue, or says it
   depends on or is blocked by other work.
 - The issue links a merged pull request for the same feature or release, which often has an open
