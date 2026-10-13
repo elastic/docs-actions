@@ -68,13 +68,17 @@ the workflow never creates labels.
    `get_document_by_url`) and only then reads repository files to confirm details.
 4. Verifies the request against the linked code when there is any, otherwise against the
    published pages it found.
-5. When the issue points to a parent, sibling, or follow-up, checks sibling issues and open pull
-   requests for work already in flight, within a fixed search budget. It skips this step when
-   nothing suggests an open pull request exists.
+5. When something suggests an open pull request exists, checks sibling issues and open pull
+   requests for work already in flight, within a fixed search budget of three searches and five
+   pull request reads. The signals are a parent or tracking issue, a follow-up or sibling
+   relationship, a linked merged PR for the same feature, or a mentioned assignee, branch, or
+   draft PR. It searches the consumer repository and any other public repository that the issue,
+   its parent, or its siblings name or link to. It skips this step when no signal is present.
 6. Recommends documentation targets with a confidence level, describes how to tackle the work
    with the information available, states the scope boundary, and lists questions to go deeper.
-   For find-and-replace issues it searches the repository for the phrase and reports the match
-   count instead of listing a sample. For issues about procedures, UI labels, or privileges it
+   For find-and-replace issues it searches the consumer repository, and any other public
+   repository that the issue names, for the phrase and reports the match count instead of listing
+   a sample. For issues about procedures, UI labels, or privileges it
    checks product source for the current labels and says when it could not. It treats issue
    comments as evidence and does not ask questions that they already answer.
 7. Posts one comment. The 🟢 and 🟠 comments end with a line that says the scope reflects the
