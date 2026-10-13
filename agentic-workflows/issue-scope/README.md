@@ -59,8 +59,13 @@ the workflow never creates labels.
 
 ## How it works
 
-1. Reads the issue title, body, comments, `CODEOWNERS` (for path vocabulary), and any linked
-   public PRs or commits. Linked code is evidence, not a prerequisite.
+1. Reads the issue title, body, comments, `CODEOWNERS` (for path vocabulary), any linked public
+   PRs or commits, and up to three linked public issues (one hop). Linked code is evidence, not a
+   prerequisite. When sources disagree it ranks them: linked code and PRs first, then comments
+   from Elastic members (`author_association` of `MEMBER`, `OWNER`, or `COLLABORATOR`), then other
+   comments and linked issues, then the issue description. Within a rank the newer source wins.
+   When it cannot read a source that the issue depends on, it says what it could not read, caps
+   dependent targets at Low, and returns 🟠 Partial scope if nothing else supports a target.
 2. Scores the issue against the five-criterion quality bar. A red score (0–1) stops the run:
    the workflow applies `human-needed` and posts a team-facing list of what to resolve before
    rerunning `/scope`.
