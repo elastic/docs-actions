@@ -665,6 +665,7 @@ safe-outputs:
 
             ITEM_ID=$(jq -r '.id' <<<"$ITEM")
             : > "$WORK_DIR/validated.jsonl"
+            : > "$WORK_DIR/skipped.md"
 
             while IFS= read -r UPDATE; do
               FIELD=$(jq -r '.field' <<<"$UPDATE")
@@ -683,8 +684,11 @@ safe-outputs:
                 -f field="$FIELD" \
                 > "$WORK_DIR/current-field-value.json"
               if jq -e '.data.node.fieldValueByName != null' "$WORK_DIR/current-field-value.json" >/dev/null; then
-                echo "Agent proposed a field that already has a value: $FIELD" >&2
-                exit 1
+                # Never overwrite a value a person set. Skip it instead of failing the job.
+                echo "::notice::Skipping $FIELD: the agent proposed a value but the field already has one"
+                SKIP_EVIDENCE=${EVIDENCE//$'\n'/ }
+                echo "| ${FIELD//|/\\|} | ${VALUE//|/\\|} | ${SKIP_EVIDENCE//|/\\|} | skipped; field already has a value |" >> "$WORK_DIR/skipped.md"
+                continue
               fi
 
               gh api graphql \
@@ -749,6 +753,7 @@ safe-outputs:
 
             echo "| Field | Proposed value | Evidence | Result |" >> "$GITHUB_STEP_SUMMARY"
             echo "|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+            cat "$WORK_DIR/skipped.md" >> "$GITHUB_STEP_SUMMARY"
 
             read -r -d '' SELECT_MUTATION <<'GRAPHQL' || true
             mutation($project:ID!,$item:ID!,$field:ID!,$option:String!) {
