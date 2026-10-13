@@ -43,6 +43,8 @@ The workflow uses the Claude engine via OpenRouter for improved consistency and 
 
 The inline review comment cap for this workflow is set to `20`, so the workflow prioritizes the highest-signal comments and keeps broader observations in the summary review. Lower-priority nits should only be reported when they are grounded in the Elastic style guide, and those nits should usually be summarized in the review body instead of consuming inline comment slots.
 
+The review summary ends with a footer that asks the writer to add the label `ai-review:helpful` or `ai-review:unhelpful` to the PR when it closes. The footer is the `messages.footer` setting, so it appears on the summary and not on inline comments. The workflow does not read or apply the labels.
+
 ## Review scope
 
 The workflow reviews only files that both:

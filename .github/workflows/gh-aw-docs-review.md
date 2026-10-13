@@ -101,7 +101,7 @@ strict: false
 safe-outputs:
   report-failure-as-issue: false
   messages:
-    footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
+    footer: "> Generated from [{workflow_name}]({run_url}){history_link}\n>\n> Was this review helpful? When the PR closes, add the label `ai-review:helpful` or `ai-review:unhelpful` to it."
   threat-detection:
     runs-on: ubuntu-24.04
     engine:
