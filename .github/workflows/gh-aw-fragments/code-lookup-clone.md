@@ -2,7 +2,7 @@
 
 When a check needs source code from a public repository, such as a UI label, a setting name, an event name, or a behavior claim, clone the repository with a sparse checkout and read it locally. Use `search_code` only as a fallback. A local `grep` covers every file in the directory, and `search_code` returns a few hits at a time.
 
-1. Find the repository from the page's `products` front matter, the links in the pull request, and the pull request description. Public repositories only.
+1. Find the repository from the page's `products` front matter, the links and the description in the pull request or issue, and the repository the linked code is in. Public repositories only.
 2. Clone it outside the workspace, with no file contents yet:
    `mkdir -p /tmp/code-refs && git clone --depth 1 --filter=blob:none --sparse --no-tags https://github.com/<owner>/<repo>.git /tmp/code-refs/<repo>`
 3. Find the directory without downloading files. The clone already holds the full list of paths, so searching it is fast and free:

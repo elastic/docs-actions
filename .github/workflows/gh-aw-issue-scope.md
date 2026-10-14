@@ -14,6 +14,7 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
+  - gh-aw-fragments/code-lookup-clone.md
   - gh-aw-fragments/safe-output-add-comment.md
   - gh-aw-fragments/quality-bar.md
 model: openai/gpt-6-luna
@@ -78,7 +79,10 @@ tools:
     min-integrity: none
     lockdown: false
     toolsets: [issues, repos, pull_requests]
-  bash: false
+  # Shell access for reading code in a sparse clone (see code-lookup-clone.md). The Codex engine
+  # cannot restrict bash to a command list: gh-aw rejects an allowlist for it at compile time.
+  # The job has read-only permissions, and the network firewall limits what `git clone` can reach.
+  bash: ["*"]
   web-fetch:
 
 mcp-servers:
@@ -279,11 +283,11 @@ If no linked code exists, verify the premise against the published pages found i
 report **Not verifiable against code**. This does not lower the rating on its own.
 
 When the issue concerns a procedure, a UI label, navigation, or a privilege, check the current UI
-before you size the work. Call `search_code` for the labels, menu names, and privilege names that
-the affected page uses, in the product repository that the issue or the linked code names (for
-Kibana, `repo:elastic/kibana`). If the labels or steps no longer match, size the work as a
+before you size the work. Look up the labels, menu names, and privilege names that the affected
+page uses in a sparse clone of the product repository that the issue or the linked code names (for
+Kibana, `elastic/kibana`), as the code-reading rules above describe. If the labels or steps no longer match, size the work as a
 rewrite of the procedure, not as a one-paragraph clarification, and do not put the neighboring
-steps out of scope. If the search fails or is rate limited, write "UI not verified against
+steps out of scope. If the clone fails and `search_code` fails too, write "UI not verified against
 source" in the Summary, and do not describe the existing steps as current.
 
 ## Step 5b — Check for related work in flight
@@ -346,8 +350,10 @@ Never restate unverified terminology as established fact. When a term comes only
 or PR author, attribute it and mark that target Low.
 
 When the issue asks to find or replace a term, phrase, or pattern across the docs, do not scope
-from a hand-picked sample. Call `search_code` with the exact phrase and `repo:` set to the
-consumer repository, and to any other public repository the issue names. Report the total number
+from a hand-picked sample. Search for the exact phrase with `grep -rn` in the consumer repository
+workspace, and in a sparse clone of any other public repository the issue names, as the
+code-reading rules above describe. Check out the directories that hold the docs, not the whole
+repository. Report the total number
 of matching files and list them, up to 15, saying how many more there are. If the search fails,
 returns truncated results, or covers only part of the corpus, say so and write "at least N files"
 instead of a final count.
