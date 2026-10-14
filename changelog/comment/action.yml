@@ -35,17 +35,47 @@ runs:
         #     run and leave nobody to post it.
         # So every job comments on the newest completed run for this PR branch, whichever run triggered it.
         # A newest run that is still in progress is skipped here, because its own completion triggers a job.
-        latest=$(gh api -X GET "repos/${REPO}/actions/workflows/${WORKFLOW_ID}/runs" \
-            -f branch="${HEAD_BRANCH}" -f event="${EVENT}" -F per_page=100 \
-          | jq -r --arg repo "${HEAD_REPO}" \
-              '[.workflow_runs[] | select(.head_repository.full_name == $repo and .conclusion != "cancelled")]
-               | sort_by(.id) | last // empty | "\(.id) \(.status)"') || latest=""
+        # A failed query must never read as "nothing found": that would let an older triggering run post a stale
+        # decision, or silently skip the comment. Retry transient failures, then fail the step.
+        retry() { # retry <command...>: print the output of the first successful attempt
+          local attempt out
+          for attempt in 1 2 3; do
+            if out=$("$@"); then
+              printf '%s' "${out}"
+              return 0
+            fi
+            echo "Attempt ${attempt} of 3 failed: $1" >&2
+            sleep $((attempt * 2))
+          done
+          return 1
+        }
 
+        newest_run() {
+          gh api -X GET "repos/${REPO}/actions/workflows/${WORKFLOW_ID}/runs" \
+              -f branch="${HEAD_BRANCH}" -f event="${EVENT}" -F per_page=100 \
+            | jq -r --arg repo "${HEAD_REPO}" \
+                '[.workflow_runs[] | select(.head_repository.full_name == $repo and .conclusion != "cancelled")]
+                 | sort_by(.id) | last // empty | "\(.id) \(.status)"'
+        }
+
+        decision_artifacts() {
+          gh api "repos/${REPO}/actions/runs/${1}/artifacts" \
+            --jq '[.artifacts[] | select(.name == "changelog-decision")] | length'
+        }
+
+        latest=$(retry newest_run) || {
+          echo "::error::Could not list the runs of workflow ${WORKFLOW_ID} for ${HEAD_REPO}:${HEAD_BRANCH}. Not commenting, because the triggering run ${RUN_ID} may be stale."
+          exit 1
+        }
+
+        # An empty listing is a valid answer (for example a deleted fork); the triggering run is then the only candidate.
         target="${RUN_ID}"
         status="completed"
         if [ -n "${latest}" ]; then
           target="${latest% *}"
           status="${latest#* }"
+        else
+          echo "::notice::No runs were listed for ${HEAD_REPO}:${HEAD_BRANCH}; using the triggering run ${RUN_ID}."
         fi
 
         count=0
@@ -55,8 +85,10 @@ runs:
           if [ "${target}" != "${RUN_ID}" ]; then
             echo "Commenting on the newest run ${target} instead of the triggering run ${RUN_ID}."
           fi
-          count=$(gh api "repos/${REPO}/actions/runs/${target}/artifacts" \
-            --jq '[.artifacts[] | select(.name == "changelog-decision")] | length') || count=0
+          count=$(retry decision_artifacts "${target}") || {
+            echo "::error::Could not list the artifacts of run ${target}, so the changelog comment was not updated."
+            exit 1
+          }
         fi
 
         echo "run-id=${target}" >> "$GITHUB_OUTPUT"
