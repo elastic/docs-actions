@@ -109,6 +109,8 @@ The workflow uses the Elastic docs MCP server for targeted verification, such as
 
 The workflow reads a linked code pull request's state before it describes it. It states that a linked commit is merged only with evidence for the target branch, such as a merged pull request that contains it, and that it is released only with a release or tag that contains it. It does not report a dependency or blocker that the PR description already names. It flags a UI label only after it finds the label in product source or in consistent published docs. When it cannot verify a label either way, it leaves the label alone and lists `UI labels: not verified` under `Review coverage`. It also lists any check that a rate limit or a tool error stopped.
 
+To check code in another public repository, such as a UI label in `elastic/kibana`, the workflow makes a shallow, sparse clone of one directory and searches it with `grep`, up to two clones per run. `search_code` is the fallback when a clone fails or the path list does not show where to look. A failed clone appears in the Review coverage list.
+
 It reads the PR conversation and review threads, and it treats a point that a reviewer or the author rejected as settled. It does not suggest content for a page that the PR links to another page for, and it follows the cumulative-docs rule that GA content in an unversioned product is labeled at the page level only.
 
 When an inline comment can be expressed as a small, exact replacement for the reviewed line or hunk, the workflow should prefer an apply-ready GitHub suggestion block over prose-only guidance.

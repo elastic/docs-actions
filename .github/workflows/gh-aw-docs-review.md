@@ -13,7 +13,7 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-  - gh-aw-fragments/code-search-limits.md
+  - gh-aw-fragments/code-lookup-clone.md
 skills:
   - elastic/elastic-docs-skills/skills/review/docs-check-style@main
   - elastic/elastic-docs-skills/skills/review/docs-flag-jargon-skill@main
@@ -406,7 +406,7 @@ Apply the six criteria in order:
 
    **Check product, feature, and offering names.** For each Elastic product, feature, or offering name in the changed lines, and in any replacement text you suggest, call `elastic-docs.search_docs` once. Compare the name with the page `title` and body of the most on-topic hit, not with the AI summaries, which can paraphrase names. When the published docs consistently use a different form or capitalization, flag it and suggest the published form, for example "Cloud Connect", not "Cloud connect", and "FedRAMP authorized Cloud offerings", not "Elastic FedRAMP Cloud". Do not flag a name that the published docs use in more than one form. Never introduce a name in a `suggestion` block that you have not checked this way. In replacement text, use the substitution the page already uses for a product name, for example `{{ecloud}}`, not the literal name, and write links to other docs pages in the repo-relative form, for example `/deploy-manage/cloud-connect.md`, not a full `https://www.elastic.co/docs/...` URL.
 
-   **Check UI labels before you correct them.** Do not suggest changing the capitalization, spelling, or wording of a UI label, such as a button, menu item, panel, or setting name, unless you verified the label. To verify it, call `search_code` for the exact label string in the product repository the page documents, for example `elastic/kibana`, or find that the published docs consistently use a different form. Make one search per label and at most five in a review. If the search returns nothing, fails, or is rate limited, leave the label as the author wrote it and do not flag it. This overrides the rule above that moves an unverified finding into the review body: do not report an unverified UI label or UI navigation label anywhere, in an inline comment or in the review body. Only the `UI labels: not verified` note under `Review coverage` is allowed.
+   **Check UI labels before you correct them.** Do not suggest changing the capitalization, spelling, or wording of a UI label, such as a button, menu item, panel, or setting name, unless you verified the label. To verify it, search for the exact label string in a sparse clone of the product repository the page documents, for example `elastic/kibana`, as the code-reading rules above describe, or find that the published docs consistently use a different form. Use `search_code` for a label only when the clone failed. If the search returns nothing, fails, or is rate limited, leave the label as the author wrote it and do not flag it. This overrides the rule above that moves an unverified finding into the review body: do not report an unverified UI label or UI navigation label anywhere, in an inline comment or in the review body. Only the `UI labels: not verified` note under `Review coverage` is allowed.
 
 6. **Style** — Voice and tense, flagged language, titles and headings, formatting and admonitions, links, accessibility, and preview cleanliness. After flagging individual admonitions, scan for consecutive pairs — two admonitions separated only by whitespace count as stacked even if each looks fine in isolation.
 
@@ -542,7 +542,7 @@ Submit one final review body in this shape:
 - Content type: <short classification and material fit assessment>.
 - Checked: user focus, technical accuracy, applicability, maintainability, language, and style.
 - Not checked: <optional criterion and reason; omit this bullet when all checks completed>.
-  When the changed lines name a UI label that you could not verify, neither in product source nor in consistent published docs, include `UI labels: not verified` in this bullet. Do not include it for a label that either source verified. Also list every check that a rate limit or a tool error stopped, with the tool and the reason, for example `code search: rate limited`.
+  When the changed lines name a UI label that you could not verify, neither in product source nor in consistent published docs, include `UI labels: not verified` in this bullet. Do not include it for a label that either source verified. Also list every check that a rate limit or a tool error stopped, with the tool and the reason, for example `code search: rate limited` or `clone failed: repository not found`.
 
 </details>
 ```

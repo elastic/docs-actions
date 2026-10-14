@@ -157,7 +157,7 @@ repository. Its precedence is the immutable workflow contract, then the caller's
 | `gh-aw-fragments/formatting.md` | Response formatting rules |
 | `gh-aw-fragments/rigor.md` | Accuracy & evidence standards |
 | `gh-aw-fragments/mcp-pagination.md` | MCP token limit guidance and pagination patterns |
-| `gh-aw-fragments/code-search-limits.md` | Call budget, batching, and backoff for GitHub code search, which allows 10 requests per minute |
+| `gh-aw-fragments/code-lookup-clone.md` | Sparse shallow clone and local `grep` for reading code in other public repositories, with `search_code` as the fallback |
 | `gh-aw-fragments/safe-output-add-comment.md` | Limitations for `add-comment` |
 | `gh-aw-fragments/ste-100.md` | Simplified Technical English (STE-100) writing standard |
 
