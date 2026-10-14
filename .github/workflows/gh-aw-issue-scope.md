@@ -86,7 +86,7 @@ tools:
 # public repositories in the elastic organization, a fixed set of commands, fixed-string
 # matching, a limit of 2 clones per run, and file-count and size limits on the checked-out directory.
 mcp-scripts:
-  code-paths:
+  code_paths:
     description: "List the file paths in a public elastic repository that contain a name, case-insensitive. Use it to find the directory to search."
     inputs:
       repo:
@@ -109,8 +109,8 @@ mcp-scripts:
       [[ -z "$ref" || "$ref" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]{0,99}$ ]] || fail "invalid ref."
       (( ${#name} >= 2 && ${#name} <= 100 )) || fail "name must be 2 to 100 characters."
       root="${RUNNER_TEMP:-/tmp}/code-refs"
-      if [[ -z "$ref" && "$(printf '%s' "$repo" | tr '[:upper:]' '[:lower:]')" == "$(printf '%s' "${GITHUB_REPOSITORY:-}" | tr '[:upper:]' '[:lower:]')" ]]; then
-        src="$GITHUB_WORKSPACE"; mode=workspace
+      if [[ "$(printf '%s' "$repo" | tr '[:upper:]' '[:lower:]')" == "$(printf '%s' "${GITHUB_REPOSITORY:-}" | tr '[:upper:]' '[:lower:]')" ]]; then
+        src="$GITHUB_WORKSPACE"; mode=workspace; ref=""
       else
         src="$root/${repo/\//__}__${ref//\//_}"; mode=clone
         if [[ ! -d "$src/.git" ]]; then
@@ -125,9 +125,9 @@ mcp-scripts:
       matches=$(printf '%s\n' "$list" | grep -iF -- "$name" || true)
       total=$(printf '%s\n' "$matches" | grep -c . || true)
       echo "$repo@$(git -C "$src" rev-parse --short HEAD)${ref:+ ($ref)}: $total paths contain '$name' (showing up to 100)"
-      printf '%s\n' "$matches" | head -100 | cut -c1-200
+      printf '%s\n' "$matches" | sed -n '1,100p' | cut -c1-200
     timeout: 120
-  code-grep:
+  code_grep:
     description: "Search a directory of a public elastic repository for an exact phrase, matched literally and case-sensitive. Returns the match counts, the files, and the first matches, with the commit hash."
     inputs:
       repo:
@@ -155,8 +155,8 @@ mcp-scripts:
       [[ "$directory" =~ ^(\.|[A-Za-z0-9_][A-Za-z0-9._/-]*|\.[A-Za-z0-9_][A-Za-z0-9._/-]*)$ && "$directory" != *..* && "$directory" != .git && "$directory" != .git/* ]] || fail "invalid directory."
       (( ${#phrase} >= 1 && ${#phrase} <= 200 )) || fail "phrase must be 1 to 200 characters."
       root="${RUNNER_TEMP:-/tmp}/code-refs"
-      if [[ -z "$ref" && "$(printf '%s' "$repo" | tr '[:upper:]' '[:lower:]')" == "$(printf '%s' "${GITHUB_REPOSITORY:-}" | tr '[:upper:]' '[:lower:]')" ]]; then
-        src="$GITHUB_WORKSPACE"; mode=workspace
+      if [[ "$(printf '%s' "$repo" | tr '[:upper:]' '[:lower:]')" == "$(printf '%s' "${GITHUB_REPOSITORY:-}" | tr '[:upper:]' '[:lower:]')" ]]; then
+        src="$GITHUB_WORKSPACE"; mode=workspace; ref=""
       else
         [[ "$directory" != . ]] || fail "name a directory that holds the code, not the repository root."
         src="$root/${repo/\//__}__${ref//\//_}"; mode=clone
@@ -180,8 +180,8 @@ mcp-scripts:
       files=$(printf '%s\n' "$matches" | cut -d: -f1 | sort -u | grep . || true)
       nfiles=$(printf '%s\n' "$files" | grep -c . || true)
       echo "$repo@$(git -C "$src" rev-parse --short HEAD)${ref:+ ($ref)}: $lines matches in $nfiles files for the exact phrase (case-sensitive)"
-      echo "Files (up to 100):"; printf '%s\n' "$files" | head -100
-      echo "First matches (up to 20):"; printf '%s\n' "$matches" | head -20 | cut -c1-250
+      echo "Files (up to 100):"; printf '%s\n' "$files" | sed -n '1,100p'
+      echo "First matches (up to 20):"; printf '%s\n' "$matches" | sed -n '1,20p' | cut -c1-250
     timeout: 120
 
 mcp-servers:
@@ -273,17 +273,18 @@ workflow that calls this reusable workflow.
 
 ## Reading code in other repositories
 
-When a step needs source code, use the `code-paths` and `code-grep` tools. They read public
+When a step needs source code, use the `code_paths` and `code_grep` tools. They read public
 repositories in the `elastic` organization from a local copy, and they match text literally.
 
-- `code-paths` takes `repo` (as `elastic/<name>`) and `name`. It lists the file paths that
+- `code_paths` takes `repo` (as `elastic/<name>`) and `name`. It lists the file paths that
   contain `name`. Use it to find the directory that holds the code, for example a plugin
   directory.
-- `code-grep` takes `repo`, `directory`, and `phrase`. It returns the number of matches, the files,
+- `code_grep` takes `repo`, `directory`, and `phrase`. It returns the number of matches, the files,
   and the first matches, with the short commit hash. Name a directory that holds the code, not a
   whole repository. The one exception is the repository that this issue is in, where `.` is
   allowed. Pass `ref` for a claim about a specific version, for example `9.2`. Without `ref`, the
-  tools read the default branch, so say so when you cite it.
+  tools read the default branch, so say so when you cite it. For the repository that this issue
+  is in, the tools read the workspace and ignore `ref`.
 - The tools clone at most 2 repositories in a run. For a repository outside the `elastic`
   organization, or when a tool returns an error, use `search_code` as the fallback.
 - Cite the repository, the file path, the line, and the commit hash.
@@ -401,7 +402,7 @@ report **Not verifiable against code**. This does not lower the rating on its ow
 When the issue concerns a procedure, a UI label, navigation, or a privilege, check the current UI
 before you size the work. Look up the labels, menu names, and privilege names that the affected
 page uses in the product repository that the issue or the linked code names (for Kibana,
-`elastic/kibana`), with `code-paths` and `code-grep`. If the labels or steps no longer match, size
+`elastic/kibana`), with `code_paths` and `code_grep`. If the labels or steps no longer match, size
 the work as a
 rewrite of the procedure, not as a one-paragraph clarification, and do not put the neighboring
 steps out of scope. If the tools fail and `search_code` fails too, write "UI not verified against
@@ -467,7 +468,7 @@ Never restate unverified terminology as established fact. When a term comes only
 or PR author, attribute it and mark that target Low.
 
 When the issue asks to find or replace a term, phrase, or pattern across the docs, do not scope
-from a hand-picked sample. Search for the exact phrase with `code-grep` in the consumer repository (directory `.`), and in
+from a hand-picked sample. Search for the exact phrase with `code_grep` in the consumer repository (directory `.`), and in
 any other `elastic` repository the issue names, in the directories that hold the docs. Report the
 total number
 of matching files and list them, up to 15, saying how many more there are. If the search fails,
