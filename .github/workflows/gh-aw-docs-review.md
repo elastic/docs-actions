@@ -101,7 +101,7 @@ strict: false
 safe-outputs:
   report-failure-as-issue: false
   messages:
-    footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
+    footer: "> Generated from [{workflow_name}]({run_url}){history_link}\n>\n> Was this review helpful? When the PR closes, add the label `ai-review:helpful` or `ai-review:unhelpful` to it."
   threat-detection:
     runs-on: ubuntu-24.04
     engine:
@@ -321,6 +321,7 @@ Use GitHub tools and local workspace inspection as needed to gather:
 
 - the pull request's linked issue context, if any, including closing keywords and directly referenced issues,
 - existing automated review comments or check summaries that could duplicate this review, especially docs build failures and Vale lint comments,
+- the human review threads, the review summaries, and the pull request conversation, read with `pull_request_read` (`get_review_comments`, `get_reviews`, and `get_comments`), so that you know which points a reviewer or the author already settled,
 - the list of changed files,
 - the diff hunks for each eligible markdown file,
 - the final contents of each eligible markdown file in the PR branch, and
@@ -394,6 +395,8 @@ Apply the six criteria in order:
 
    **Search to find conflicts, never to confirm.** Published docs can be wrong or out of date, most often for feature availability and deployment support. Never write that a claim is verified, confirmed, or accurate because a published page agrees with it, in an inline comment or in the review body. If you find no conflict, say nothing about the claim. If the PR and a published page disagree, do not decide which one is right: report the conflict with the `Verify both` direction from `docs-check-contradictions`, and note that an SME must confirm. Before you compare, check that both sources describe the same feature, deployment type, and tier. A statement about one feature, for example AutoOps, is not evidence about another, for example connecting clusters to AutoOps through Cloud Connect.
 
+   **Read a code change's state before you describe it.** Before you write that a linked code pull request is merged, unmerged, open, closed, or unreleased, read its state with `pull_request_read`. A linked commit that `get_commit` can read exists, but that does not show that it is merged or released, because it can sit on a feature branch. State that a linked commit is merged only when you found evidence for the target branch, for example a merged pull request that contains it, read with `pull_request_read`. State that it is released only when you found a release or tag that contains it. Without that evidence, say nothing about the commit's state. If you cannot read a pull request or commit, for example because it is in a repository that the tools cannot reach, do not state its state. Do not use the training data or the PR title to infer it.
+
 3. **Applicability** — `applies_to` tags, cumulative structure, markup correctness, and deployment types. For validity judgments, verify against the repository's checked-in schema or the published cumulative-docs guidance fetched during this run. Do not rely on training knowledge for valid keys or lifecycle values. If you cannot verify, do not report.
 
 4. **Maintainability** — Single source of truth (use `elastic-docs.find_related_docs` or `elastic-docs.search_docs` to check for cross-page duplication when a section embeds reference material), repository hygiene (redirect entries for renamed or deleted pages), and high-maintenance content.
@@ -401,6 +404,8 @@ Apply the six criteria in order:
 5. **Language** — Grammar, spelling, plain language, jargon, and variables. Use the pre-fetched Vale output first. When Vale flags a rule (e.g., `Elastic.OxfordComma`), pass through the rule name in the comment. Avoid flagging exact counts in prose; prefer "the following formats are available:" over "there are N formats".
 
    **Check product, feature, and offering names.** For each Elastic product, feature, or offering name in the changed lines, and in any replacement text you suggest, call `elastic-docs.search_docs` once. Compare the name with the page `title` and body of the most on-topic hit, not with the AI summaries, which can paraphrase names. When the published docs consistently use a different form or capitalization, flag it and suggest the published form, for example "Cloud Connect", not "Cloud connect", and "FedRAMP authorized Cloud offerings", not "Elastic FedRAMP Cloud". Do not flag a name that the published docs use in more than one form. Never introduce a name in a `suggestion` block that you have not checked this way. In replacement text, use the substitution the page already uses for a product name, for example `{{ecloud}}`, not the literal name, and write links to other docs pages in the repo-relative form, for example `/deploy-manage/cloud-connect.md`, not a full `https://www.elastic.co/docs/...` URL.
+
+   **Check UI labels before you correct them.** Do not suggest changing the capitalization, spelling, or wording of a UI label, such as a button, menu item, panel, or setting name, unless you verified the label. To verify it, call `search_code` for the exact label string in the product repository the page documents, for example `elastic/kibana`, or find that the published docs consistently use a different form. Make one search per label and at most five in a review. If the search returns nothing, fails, or is rate limited, leave the label as the author wrote it and do not flag it. This overrides the rule above that moves an unverified finding into the review body: do not report an unverified UI label or UI navigation label anywhere, in an inline comment or in the review body. Only the `UI labels: not verified` note under `Review coverage` is allowed.
 
 6. **Style** — Voice and tense, flagged language, titles and headings, formatting and admonitions, links, accessibility, and preview cleanliness. After flagging individual admonitions, scan for consecutive pairs — two admonitions separated only by whitespace count as stacked even if each looks fine in isolation.
 
@@ -414,6 +419,10 @@ Treat this as a PR review, not a full repository audit:
 - Do not duplicate docs build failures, broken-link reports, existing Vale lint comments, or pre-fetched Vale findings with multiple inline review comments for the same underlying issue.
 - Treat a finding that Vale or another existing automated review already reported as fully reported. Do not repeat it in an inline comment or the review body. Do not add a statement such as "No additional issues beyond..." that names or summarizes the existing finding.
 - Do not repeat an inline review finding in the review body. Do not add a summary bullet that says a finding was reported inline or tells the reader to see an inline comment.
+- Treat a dependency, blocker, or prerequisite pull request that the PR description already names as known, for example "depends on elastic/opentelemetry#668". Do not report an unresolved cross-repository anchor, link, or dependency that the description states. Do not mention it anywhere in the review, including the `Not checked` bullet under `Review coverage`. Report one only when the description does not mention it.
+- Treat a point that a human reviewer or the PR author has rejected, resolved, or called deliberate as settled. Do not raise it again, even in different words, and do not ask for content that a reviewer asked the author to remove.
+- Do not suggest adding content to a page when the PR, in its changed lines or description, links to another page that covers that content. The link is the author's decision about where the content lives.
+- Do not ask for an inline `applies_to` tag on content that is already covered by the page-level tag. For unversioned products such as Serverless, the cumulative-docs guidance says to label GA content at the page level only. The docs start at 9.0, so a page-level `stack: ga` tag already covers 9.0 and later: do not ask the author to change it to `stack: ga 9.0`.
 - Treat content-type guidance as a reader-centered heuristic. Report content-type issues only when the mismatch materially makes the page harder to use, conflicts with the surrounding section's established pattern, or risks sending the author toward the wrong kind of documentation.
 - Allow mixed-purpose pages and reasonable structural exceptions. For example, do not object to a prerequisites section on a troubleshooting page solely because the troubleshooting content type does not require one; report it only when the requirements are inaccurate, unsupported, confusing, or disruptive to the troubleshooting flow.
 - If the pull request appears linked to a parent issue, assess whether the issue's documentation ask is fully satisfied, only partially satisfied, or still unsupported by the PR.
@@ -532,6 +541,7 @@ Submit one final review body in this shape:
 - Content type: <short classification and material fit assessment>.
 - Checked: user focus, technical accuracy, applicability, maintainability, language, and style.
 - Not checked: <optional criterion and reason; omit this bullet when all checks completed>.
+  When the changed lines name a UI label that you could not verify, neither in product source nor in consistent published docs, include `UI labels: not verified` in this bullet. Do not include it for a label that either source verified. Also list every check that a rate limit or a tool error stopped, with the tool and the reason, for example `code search: rate limited`.
 
 </details>
 ```
