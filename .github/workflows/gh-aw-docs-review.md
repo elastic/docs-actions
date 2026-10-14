@@ -13,6 +13,7 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
+  - gh-aw-fragments/code-search-limits.md
 skills:
   - elastic/elastic-docs-skills/skills/review/docs-check-style@main
   - elastic/elastic-docs-skills/skills/review/docs-flag-jargon-skill@main
