@@ -6,19 +6,21 @@ on:
       - main
     paths:
       - 'codex/build/**'
+      - 'docs-builder/setup/**'
       - '.github/workflows/test-codex-build.yml'
   push:
     branches:
       - main
     paths:
       - 'codex/build/**'
+      - 'docs-builder/setup/**'
       - '.github/workflows/test-codex-build.yml'
 permissions:
   contents: read
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
         with:
@@ -50,3 +52,40 @@ jobs:
 
       - uses: ./codex/build
         id: codex-build
+
+  compatibility:
+    name: docs-builder build / ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-26.04]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./docs-builder/setup
+        with:
+          version: edge
+      - name: Create documentation fixture
+        shell: bash
+        run: |
+          mkdir -p docs
+          cat > docs/docset.yml <<'EOF'
+          toc:
+            - file: index.md
+          EOF
+          cat > docs/index.md <<'EOF'
+          ---
+          description: Tests docs-builder on supported Ubuntu runner images.
+          ---
+          # Runner compatibility
+
+          This page checks documentation builds on Ubuntu.
+          EOF
+      - name: Build and check output
+        shell: bash
+        run: |
+          docs-builder --path docs --output .artifacts/compatibility
+          test -s .artifacts/compatibility/index.html
+          test -s .artifacts/compatibility/links.json
