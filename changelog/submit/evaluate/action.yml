@@ -201,6 +201,10 @@ runs:
         CHANGELOG_PR_NUMBER: ${{ steps.pr.outputs.number }}
         CHANGELOG_TITLE: ${{ steps.evaluate.outputs.title }}
         CHANGELOG_DESCRIPTION: ${{ steps.evaluate.outputs.description }}
+        CHANGELOG_IMPACT: ${{ steps.evaluate.outputs.impact }}
+        CHANGELOG_ACTION: ${{ steps.evaluate.outputs.action }}
+        CHANGELOG_ENTRY_IMPACT: ${{ steps.evaluate.outputs.entry-impact }}
+        CHANGELOG_ENTRY_ACTION: ${{ steps.evaluate.outputs.entry-action }}
         CHANGELOG_TYPE: ${{ steps.evaluate.outputs.type }}
         CHANGELOG_OWNER: ${{ github.repository_owner }}
         CHANGELOG_REPO: ${{ github.event.repository.name }}
