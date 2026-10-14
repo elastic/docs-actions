@@ -89,9 +89,11 @@ the workflow never creates labels.
    comments as evidence and does not ask questions that they already answer.
 7. Posts one comment. The 🟢 and 🟠 comments end with a line that says the scope reflects the
    issue as of the run and that `/scope` runs it again. The comment also carries a footer that
-   asks the writer to add the label `ai-scope:helpful` or `ai-scope:unhelpful` to the issue when
-   the work closes. It is the `body-footer` setting, so it appears on the scope comment and not on
-   the "finished" status comment. The workflow does not read or apply the labels.
+   mentions the person who requested the scope, so that GitHub notifies them when the result
+   arrives, and asks them to add the label `ai-scope:helpful` or `ai-scope:unhelpful` to the issue
+   when the work closes. It is the `body-footer` setting, so it appears on the scope comment and
+   not on the "finished" status comment. A mention in the status message is escaped by gh-aw, so
+   the footer carries it. The workflow does not read or apply the labels.
 
 ## Outcomes
 
