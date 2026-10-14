@@ -37,3 +37,17 @@ The release notes and changelog file callers use the default `docs/changelog.yml
 - [`release-notes.yml`](../.github/workflows/release-notes.yml)
 - [`release-notes-comments.yml`](../.github/workflows/release-notes-comments.yml)
 - [`release-notes-changelog-file.yml`](../.github/workflows/release-notes-changelog-file.yml)
+
+## Require Impact and Action on breaking changes
+
+Set `require-impact-action` on the `release-notes` job to fail pull requests that carry a `breaking-change` type label but whose description lacks an `Impact` or `Action` section. Use a heading (`## Impact`, `## Action`) or a label (`Impact: …`).
+
+```yaml
+jobs:
+  release-notes:
+    uses: elastic/docs-actions/.github/workflows/release-notes.yml@v1
+    with:
+      require-impact-action: true
+```
+
+The pull request comment names the missing sections. When both are present, the comment stays on breaking-change pull requests and shows the captured text, so authors can check it before bundling. The caller already runs on `edited` events, so adding the sections to the description clears the check.

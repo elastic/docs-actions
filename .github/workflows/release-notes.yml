@@ -15,6 +15,10 @@ on:
         description: 'Require a changelog file to be present in the PR (evaluate-pr gate)'
         type: boolean
         default: false
+      require-impact-action:
+        description: 'Require breaking-change PRs to have Impact and Action sections in the description (evaluate-pr gate)'
+        type: boolean
+        default: false
 permissions: {}
 
 concurrency:
@@ -83,10 +87,16 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
 
-      # Changelog-file gate — only runs when the input is enabled
+      # Changelog-file and Impact/Action gates — only run when an input is enabled
       - name: Evaluate PR
-        if: inputs.require-changelog-file
+        if: inputs.require-changelog-file || inputs.require-impact-action
         run: |
+          GATE_FLAGS=()
+          if [ "$REQUIRE_CHANGELOG_FILE" = "true" ]; then GATE_FLAGS+=(--require-changelog-file); fi
+          if [ "$REQUIRE_IMPACT_ACTION" = "true" ]; then GATE_FLAGS+=(--require-impact-action); fi
+          # Without these flags evaluate-pr skips an "edited" event, so adding the missing sections would never clear the gate.
+          if [ "$TITLE_CHANGED" = "true" ]; then GATE_FLAGS+=(--title-changed); fi
+          if [ "$BODY_CHANGED" = "true" ]; then GATE_FLAGS+=(--body-changed); fi
           docs-builder changelog evaluate-pr \
             --config "$CONFIG" \
             --owner "$REPO_OWNER" \
@@ -98,7 +108,7 @@ jobs:
             --head-sha "$HEAD_SHA" \
             --event-action "$EVENT_ACTION" \
             --strip-title-prefix \
-            --require-changelog-file
+            "${GATE_FLAGS[@]}"
         env:
           GITHUB_TOKEN: ${{ github.token }}
           CONFIG: ${{ inputs.config }}
@@ -110,6 +120,12 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           EVENT_ACTION: ${{ github.event.action }}
+          # The PR body is untrusted: pass it through the environment, never interpolate it into the script.
+          PR_BODY: ${{ github.event.pull_request.body }}
+          REQUIRE_CHANGELOG_FILE: ${{ inputs.require-changelog-file }}
+          REQUIRE_IMPACT_ACTION: ${{ inputs.require-impact-action }}
+          TITLE_CHANGED: ${{ github.event.changes.title != null }}
+          BODY_CHANGED: ${{ github.event.changes.body != null }}
 
       - name: Upload decision artifact
         if: always()

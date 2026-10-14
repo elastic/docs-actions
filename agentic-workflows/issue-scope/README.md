@@ -59,8 +59,13 @@ the workflow never creates labels.
 
 ## How it works
 
-1. Reads the issue title, body, comments, `CODEOWNERS` (for path vocabulary), and any linked
-   public PRs or commits. Linked code is evidence, not a prerequisite.
+1. Reads the issue title, body, comments, `CODEOWNERS` (for path vocabulary), any linked public
+   PRs or commits, and up to three linked public issues (one hop). Linked code is evidence, not a
+   prerequisite. When sources disagree it ranks them: linked code and PRs first, then comments
+   from Elastic members (`author_association` of `MEMBER`, `OWNER`, or `COLLABORATOR`), then other
+   comments and linked issues, then the issue description. Within a rank the newer source wins.
+   When it cannot read a source that the issue depends on, it says what it could not read, caps
+   dependent targets at Low, and returns 🟠 Partial scope if nothing else supports a target.
 2. Scores the issue against the five-criterion quality bar. A red score (0–1) stops the run:
    the workflow applies `human-needed` and posts a team-facing list of what to resolve before
    rerunning `/scope`.
@@ -68,9 +73,25 @@ the workflow never creates labels.
    `get_document_by_url`) and only then reads repository files to confirm details.
 4. Verifies the request against the linked code when there is any, otherwise against the
    published pages it found.
-5. Recommends documentation targets with a confidence level, describes how to tackle the work
+5. When something suggests an open pull request exists, checks sibling issues and open pull
+   requests for work already in flight, within a fixed search budget of three searches and five
+   pull request reads. The signals are a parent or tracking issue, a follow-up or sibling
+   relationship, a linked merged PR for the same feature, or a mentioned assignee, branch, or
+   draft PR. It searches the consumer repository and any other public repository that the issue,
+   its parent, or its siblings name or link to. It skips this step when no signal is present.
+6. Recommends documentation targets with a confidence level, describes how to tackle the work
    with the information available, states the scope boundary, and lists questions to go deeper.
-6. Posts one comment.
+   For find-and-replace issues it searches the consumer repository, and any other public
+   repository that the issue names, for the phrase. It reports the total match count and lists up
+   to 15 matching files, and writes "at least N files" when the results are partial or rate
+   limited. For issues about procedures, UI labels, or privileges it checks product source for the
+   current labels and says when it could not. It treats issue
+   comments as evidence and does not ask questions that they already answer.
+7. Posts one comment. The 🟢 and 🟠 comments end with a line that says the scope reflects the
+   issue as of the run and that `/scope` runs it again. The comment also carries a footer that
+   asks the writer to add the label `ai-scope:helpful` or `ai-scope:unhelpful` to the issue when
+   the work closes. It is the `body-footer` setting, so it appears on the scope comment and not on
+   the "finished" status comment. The workflow does not read or apply the labels.
 
 ## Outcomes
 
