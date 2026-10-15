@@ -32,15 +32,11 @@ engine:
   permission-mode: bypassPermissions
   args: ["--disallowed-tools", "Edit(./**)"]
   env:
-    ANTHROPIC_BASE_URL: https://openrouter.ai/api
+    ANTHROPIC_BASE_URL: https://llm.idea.elastichosting.ai
     # Pin the `sonnet` alias. Without it, Claude Code picks the Sonnet its version
     # knows (2.1.273 sent anthropic/claude-sonnet-5).
-    ANTHROPIC_DEFAULT_SONNET_MODEL: anthropic/claude-sonnet-5.5
-    ANTHROPIC_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-    ANTHROPIC_CUSTOM_HEADERS: |-
-      HTTP-Referer: https://github.com/${{ github.repository }}
-      X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
-      X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
+    ANTHROPIC_DEFAULT_SONNET_MODEL: claude-sonnet-5-5
+    ANTHROPIC_API_KEY: ${{ steps.agent-router-auth.outputs.id_token }}
 on:
   roles: [admin, maintainer, write]
   workflow_call:
@@ -65,6 +61,10 @@ on:
         type: string
         required: false
         default: "describe-recommended"
+    secrets:
+      OPENROUTER_API_KEY:
+        description: "Deprecated and unused. The workflow authenticates to Agent Router with a Google ID token. Kept so callers that still pass it do not fail at startup."
+        required: false
 concurrency:
   group: gh-aw-docs-review-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
@@ -74,6 +74,7 @@ permissions:
   issues: read
   pull-requests: read
   copilot-requests: write
+  id-token: write
 tools:
   github:
     lockdown: false
@@ -89,7 +90,7 @@ network:
   allowed:
     - defaults
     - github
-    - "openrouter.ai"
+    - "llm.idea.elastichosting.ai"
     - "api.anthropic.com"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
@@ -134,6 +135,15 @@ safe-outputs:
     allowed-events: [COMMENT]
 timeout-minutes: 30
 steps:
+  - name: Authenticate to Agent Router
+    id: agent-router-auth
+    uses: google-github-actions/auth@v3
+    with:
+      workload_identity_provider: ${{ vars.AGENT_ROUTER_WIF_PROVIDER }}
+      service_account: ${{ vars.AGENT_ROUTER_SERVICE_ACCOUNT }}
+      token_format: id_token
+      id_token_audience: https://llm.idea.elastichosting.ai
+      id_token_include_email: true
   - name: Repo-specific setup
     env:
       SETUP_COMMANDS: ${{ inputs.setup-commands }}
