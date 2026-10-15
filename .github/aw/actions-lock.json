@@ -59,6 +59,11 @@
       "repo": "github/gh-aw-actions/setup",
       "version": "v0.89.17",
       "sha": "f3b81cdb3070066a47faa9bdf440f4f1dc78b1f0"
+    },
+    "google-github-actions/auth@v3": {
+      "repo": "google-github-actions/auth",
+      "version": "v3",
+      "sha": "7c6bc770dae815cd3e89ee6cdf493a5fab2cc093"
     }
   }
 }

@@ -16,7 +16,11 @@ For the same routing logic running automatically when an issue is opened, see
 
 ## Model
 
-The workflow uses a fast, low-cost model (Haiku via OpenRouter). This keeps per-issue cost low.
+The workflow uses a fast, low-cost model (Haiku) through the Agent Router gateway. This keeps per-issue cost low.
+
+Add `id-token: write` to the caller job's permissions. The workflow authenticates to Agent Router with a Google ID
+token, so the organization needs two repository variables: `AGENT_ROUTER_WIF_PROVIDER` (the Workload Identity
+provider) and `AGENT_ROUTER_SERVICE_ACCOUNT` (the allowlisted service account). No model API key is needed.
 Factor the model tier into cost estimates before enabling at scale.
 
 ## Triggers

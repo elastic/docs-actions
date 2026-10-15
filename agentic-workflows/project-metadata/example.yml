@@ -25,6 +25,7 @@ permissions:
   issues: read
   pull-requests: read
   copilot-requests: write
+  id-token: write
 
 jobs:
   run:
@@ -34,5 +35,4 @@ jobs:
       profile-path: ${{ inputs.profile-path }}
       dry-run: ${{ inputs.dry-run }}
     secrets:
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
