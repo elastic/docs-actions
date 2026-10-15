@@ -12,7 +12,7 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-model: gpt-5-mini
+model: claude-haiku-4.5
 engine:
   id: copilot
 

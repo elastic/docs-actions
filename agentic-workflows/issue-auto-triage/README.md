@@ -15,7 +15,7 @@ For the same routing logic triggered manually, see [issue-triage](../issue-triag
 
 ## Model
 
-The workflow runs on GitHub Copilot with the `gpt-5-mini` model, which keeps per-issue cost low.
+The workflow runs on GitHub Copilot with the `claude-haiku-4.5` model, which keeps per-issue cost low.
 It needs no model API key. Add `copilot-requests: write` to the caller job's permissions.
 Factor the model tier into cost estimates before enabling at scale.
 
