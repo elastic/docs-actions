@@ -12,25 +12,9 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-model: openai/gpt-6-luna
-# The pinned AWF price table has no gpt-6-luna entry; without a fallback the API proxy rejects
-# every request with HTTP 400. Rates match OpenRouter ($/1M tokens).
-models:
-  default-ai-credits-pricing:
-    input: 0.10
-    output: 0.50
+model: claude-sonnet-5
 engine:
-  id: codex
-  # Use CLI overrides because gh-aw emits engine.config into both the converted and final Codex
-  # configuration. Escape the TOML values so each override remains one shell argument.
-  args:
-    - "-c"
-    - 'model_reasoning_effort=\"high\"'
-    - "-c"
-    - 'model_providers.openai-proxy.http_headers=\{\"HTTP-Referer\"=\"https://github.com/${GITHUB_REPOSITORY}\",\"X-OpenRouter-Title\"=\"${GITHUB_REPOSITORY}/${GITHUB_WORKFLOW// /-}\",\"X-Session-ID\"=\"${GITHUB_REPOSITORY}/${GITHUB_WORKFLOW// /-}/${GITHUB_RUN_ID}\"\}'
-  env:
-    OPENAI_BASE_URL: https://openrouter.ai/api/v1
-    OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+  id: copilot
 
 on:
   bots: ["github-actions[bot]"]
@@ -56,6 +40,10 @@ on:
         required: false
         default: ""
 
+    secrets:
+      OPENROUTER_API_KEY:
+        description: "Deprecated and unused. The workflow runs on Copilot. Kept so callers that still pass it do not fail at startup."
+        required: false
 concurrency:
   group: gh-aw-project-metadata-${{ inputs.issue-url }}
   cancel-in-progress: false
@@ -83,8 +71,6 @@ network:
   allowed:
     - defaults
     - github
-    - "openrouter.ai"
-    - "api.anthropic.com"
 
 steps:
   - name: Prepare issue and project context
@@ -410,13 +396,7 @@ safe-outputs:
     runs-on: ubuntu-24.04
     engine:
       id: copilot
-      model: gpt-5-mini
-      # gh-aw copies the main engine's env into threat detection. These provider
-      # settings make Copilot's firewall health check fail before the scan starts,
-      # and detection fails open. Empty values turn off the inherited custom target.
-      env:
-        OPENAI_BASE_URL: ""
-        OPENAI_API_KEY: ""
+      model: claude-haiku-4.5
   jobs:
     apply-project-fields:
       description: "Validate proposed project field values, preserve existing values, and apply or preview the changes"

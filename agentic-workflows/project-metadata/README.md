@@ -45,7 +45,7 @@ Edit the profile before the first run. Keep the first runs in dry-run mode.
 
 | Secret | Required | Description |
 |--------|----------|-------------|
-| `OPENROUTER_API_KEY` | Yes | Model credential used by the Codex engine. |
+| `OPENROUTER_API_KEY` | No | Deprecated and unused. The workflow runs on GitHub Copilot with `claude-sonnet-5`. Callers that still pass it keep working. |
 | `PROJECT_TOKEN` | Yes | GitHub App installation token or PAT with project read/write access and issue read access for every eligible repository. |
 
 The normal `GITHUB_TOKEN` cannot read or update organization project fields. Prefer a GitHub App
