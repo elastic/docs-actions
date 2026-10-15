@@ -16,27 +16,9 @@ imports:
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/safe-output-add-comment.md
   - gh-aw-fragments/quality-bar.md
-model: openai/gpt-6-luna
-# The pinned AWF price table has no gpt-6-luna entry; without a fallback the API proxy rejects
-# every request with HTTP 400. Rates match OpenRouter ($/1M tokens).
-models:
-  default-ai-credits-pricing:
-    input: 0.10
-    output: 0.50
+model: claude-sonnet-5
 engine:
-  id: codex
-  # Codex sends no OpenRouter attribution of its own. gh-aw writes the provider block as
-  # `[model_providers.openai-proxy]` and strips any user copy of that exact heading, but the
-  # `.http_headers` sub-table is a different literal line, so it survives the filter and TOML
-  # allows defining a sub-table after its parent.
-  # gh-aw injects engine.config into the lock's `run:` block at column 0, which terminates the
-  # YAML block scalar (the run body is indented 10). A `|` block cannot emit leading whitespace
-  # on its first line, so this is a double-quoted scalar with each TOML line padded to 10
-  # spaces; YAML strips those 10 again when the step runs, leaving valid column-0 TOML.
-  config: "          [model_providers.openai-proxy.http_headers]\n          \"HTTP-Referer\" = \"https://github.com/${{ github.repository }}\"\n          \"X-OpenRouter-Title\" = \"${{ github.repository }}/${{ github.workflow }}\"\n          \"X-Session-ID\" = \"${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}\"\n"
-  env:
-    OPENAI_BASE_URL: https://openrouter.ai/api/v1
-    OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+  id: copilot
 
 on:
   roles: [admin, maintainer, write]
@@ -198,8 +180,6 @@ network:
   allowed:
     - defaults
     - github
-    - "openrouter.ai"
-    - "ab.chatgpt.com"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
     - "figma.com"
@@ -226,8 +206,6 @@ safe-outputs:
     engine:
       id: copilot
       model: sonnet
-      env:
-        OPENAI_BASE_URL: ""
     prompt: |
       IMPORTANT context for this workflow: the prompt includes gh-aw
       framework scaffolding wrapped in <system> and <safe-outputs> tags.

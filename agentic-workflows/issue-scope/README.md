@@ -8,9 +8,8 @@ never rewritten.
 
 ## Model
 
-The agent runs `openai/gpt-6-luna` through OpenRouter on the codex engine, authenticated with
-the `OPENROUTER_API_KEY` secret. Threat detection runs separately on GitHub Copilot with the
-`sonnet` model alias. The agent must query the Elastic docs MCP server before reading any
+The agent and threat detection both run on GitHub Copilot, with the `claude-sonnet-5` model for
+the agent and the `sonnet` model alias for detection. No model API key is needed. The agent must query the Elastic docs MCP server before reading any
 repository file, so expect higher per-issue cost than a classification-only workflow — roughly
 7–10 AIC for a full assessment, about 7 for a partial one, and under 4 when the quality gate stops
 early (sandbox battery, 2026-09-15).
@@ -35,9 +34,8 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-scope.yml
 ```
 
-The caller job needs `copilot-requests: write` in its `permissions:` block (threat detection
-runs on Copilot) and must make `OPENROUTER_API_KEY` available to the workflow — `secrets: inherit`
-is the simplest way, as in the example below.
+The caller job needs `copilot-requests: write` in its `permissions:` block, because the agent and
+threat detection run on Copilot.
 
 ## Inputs
 

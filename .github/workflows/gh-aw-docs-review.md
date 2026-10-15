@@ -21,26 +21,9 @@ skills:
   - elastic/elastic-docs-skills/skills/review/docs-check-contradictions@main
   - elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker@main
   - elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging@main
-model: sonnet
+model: claude-sonnet-5
 engine:
-  id: claude
-  # The six rule sets are Read into this agent's context rather than invoked through the Skill
-  # tool. Claude Code runs forked skills in the foreground in non-interactive mode, so one fork
-  # per skill per file serialises: a six-file PR needed 36 forks at ~52s each and hit the
-  # 30-minute cap with nothing posted. Reading them keeps the wall clock near-flat in file
-  # count. The catalog keeps `context: fork`, which is still the right default locally.
-  permission-mode: bypassPermissions
-  args: ["--disallowed-tools", "Edit(./**)"]
-  env:
-    ANTHROPIC_BASE_URL: https://openrouter.ai/api
-    # Pin the `sonnet` alias. Without it, Claude Code picks the Sonnet its version
-    # knows (2.1.273 sent anthropic/claude-sonnet-5).
-    ANTHROPIC_DEFAULT_SONNET_MODEL: anthropic/claude-sonnet-5.5
-    ANTHROPIC_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-    ANTHROPIC_CUSTOM_HEADERS: |-
-      HTTP-Referer: https://github.com/${{ github.repository }}
-      X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
-      X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
+  id: copilot
 on:
   roles: [admin, maintainer, write]
   workflow_call:
@@ -65,6 +48,10 @@ on:
         type: string
         required: false
         default: "describe-recommended"
+    secrets:
+      OPENROUTER_API_KEY:
+        description: "Deprecated and unused. The workflow runs on Copilot. Kept so callers that still pass it do not fail at startup."
+        required: false
 concurrency:
   group: gh-aw-docs-review-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
@@ -79,6 +66,7 @@ tools:
     lockdown: false
     min-integrity: none
   bash: true
+  edit: false
   web-fetch:
 mcp-servers:
   elastic-docs:
@@ -89,8 +77,6 @@ network:
   allowed:
     - defaults
     - github
-    - "openrouter.ai"
-    - "api.anthropic.com"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
     # docs-builder syntax reference, used to confirm directive and markup claims
@@ -108,14 +94,6 @@ safe-outputs:
     engine:
       id: copilot
       model: sonnet
-      # gh-aw copies the main engine's env into threat detection. These provider
-      # settings make Copilot's firewall health check fail before the scan starts,
-      # and detection fails open. Empty values turn off the inherited custom target.
-      env:
-        ANTHROPIC_BASE_URL: ""
-        ANTHROPIC_API_KEY: ""
-        ANTHROPIC_CUSTOM_HEADERS: ""
-        ANTHROPIC_DEFAULT_SONNET_MODEL: ""
   urls: allowed-or-code-region
   allowed-domains:
     - elastic.co
@@ -252,7 +230,7 @@ You are a documentation pull request reviewer for Elastic documentation reposito
 
 Apply the six-criteria review rubric imported into this workflow (`review-criteria.md`), use deterministic evidence from the pull request and local files, and use the Elastic docs MCP server when published documentation is needed to verify a claim.
 
-This workflow also installs these skills from `elastic/elastic-docs-skills` into `.claude/skills/`. Use them as implementation tools for the relevant rubric criterion — they provide operational rules that flesh out the rubric's criteria. Claude Code registers each skill under its directory name, which matches its frontmatter name, so invoke each one by the name below:
+This workflow also installs these skills from `elastic/elastic-docs-skills` into `.github/skills/`. Use them as implementation tools for the relevant rubric criterion — they provide operational rules that flesh out the rubric's criteria. Claude Code registers each skill under its directory name, which matches its frontmatter name, so invoke each one by the name below:
 
 | Skill | Criterion |
 |---|---|
@@ -364,12 +342,12 @@ Review each eligible file by applying the six criteria from the imported `review
 
 Before reviewing the changed files, read these rule sets into your own context with the `Read` tool, once each, at the start of the run. Each deepens coverage for its criterion and may surface findings that pure reasoning would miss:
 
-- `.claude/skills/docs-check-style/SKILL.md` (Language and Style). Do not run vale: its JSON output is already at `/tmp/gh-aw/docs-review-data/vale.json`, keyed by `/tmp/gh-aw/docs-review-data/scope/<file-path>`.
-- `.claude/skills/docs-flag-jargon-skill/SKILL.md` (Language): jargon, outdated terms, and unexplained acronyms.
-- `.claude/skills/docs-frontmatter-audit/SKILL.md` (Applicability): frontmatter quality.
-- `.claude/skills/docs-content-type-checker/SKILL.md` (User Focus): content-type fit and page structure.
-- `.claude/skills/docs-applies-to-tagging/SKILL.md` (Applicability): `applies_to` validity and lifecycle scope.
-- `.claude/skills/docs-check-contradictions/SKILL.md` (Technical accuracy): also used in Step 4.
+- `.github/skills/docs-check-style/SKILL.md` (Language and Style). Do not run vale: its JSON output is already at `/tmp/gh-aw/docs-review-data/vale.json`, keyed by `/tmp/gh-aw/docs-review-data/scope/<file-path>`.
+- `.github/skills/docs-flag-jargon-skill/SKILL.md` (Language): jargon, outdated terms, and unexplained acronyms.
+- `.github/skills/docs-frontmatter-audit/SKILL.md` (Applicability): frontmatter quality.
+- `.github/skills/docs-content-type-checker/SKILL.md` (User Focus): content-type fit and page structure.
+- `.github/skills/docs-applies-to-tagging/SKILL.md` (Applicability): `applies_to` validity and lifecycle scope.
+- `.github/skills/docs-check-contradictions/SKILL.md` (Technical accuracy): also used in Step 4.
 
 **Do not use the `Skill` tool in this workflow.** Read each `SKILL.md` as a file and apply its rules yourself, across every eligible file. Read each one once for the whole run, not once per file: the rules do not change between files.
 

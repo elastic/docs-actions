@@ -12,22 +12,9 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-model: haiku
-# AWF's built-in AI-credit price table does not list Haiku 5.5 yet; without a fallback
-# the sidecar rejects every request with HTTP 400. Rates match OpenRouter ($/1M tokens).
-models:
-  default-ai-credits-pricing:
-    input: 0.10
-    output: 0.50
+model: gpt-5-mini
 engine:
-  id: claude
-  env:
-    ANTHROPIC_BASE_URL: https://openrouter.ai/api
-    ANTHROPIC_CUSTOM_HEADERS: |-
-      HTTP-Referer: https://github.com/${{ github.repository }}
-      X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
-      X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
-    ANTHROPIC_DEFAULT_HAIKU_MODEL: anthropic/claude-haiku-5.5
+  id: copilot
 
 on:
   roles: all
@@ -49,6 +36,10 @@ on:
         required: false
         default: ""
 
+    secrets:
+      ANTHROPIC_API_KEY:
+        description: "Deprecated and unused. The workflow runs on Copilot. Kept so callers that still pass it do not fail at startup."
+        required: false
 user-rate-limit:
   max-runs-per-window: 10
   window: 60
@@ -78,8 +69,6 @@ network:
   allowed:
     - defaults
     - github
-    - "openrouter.ai"
-    - "api.anthropic.com"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
     - "figma.com"

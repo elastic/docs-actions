@@ -20,9 +20,8 @@ mkdir -p .github/workflows && curl -sL \
 Add the following to the caller workflow before running this workflow:
 
 - `permissions.copilot-requests: write`
-- A repo or organization secret named `OPENROUTER_API_KEY` containing your OpenRouter API key. Pass it with `secrets: inherit`, or explicitly as `OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}` in the `uses:` call. The workflow maps it to `ANTHROPIC_API_KEY` internally.
 
-The workflow uses the Claude engine via OpenRouter for improved consistency and to use your own API key rather than shared Copilot credits.
+The workflow runs on GitHub Copilot with the `claude-sonnet-5` model and needs no model API key. Callers that still pass `OPENROUTER_API_KEY` keep working: the workflow still declares it, and ignores it.
 
 ## Inputs
 
@@ -141,8 +140,6 @@ jobs:
       additional-instructions: |
         This repository stores product documentation in `docs/`.
         Prefer concise review comments with exact replacement text when possible.
-    secrets:
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 ```
 
 ## PR checkbox menus
