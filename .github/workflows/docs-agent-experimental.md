@@ -111,7 +111,6 @@ safe-outputs:
   threat-detection:
     runs-on: ubuntu-24.04
   report-failure-as-issue: false
-  staged: false
   messages:
     footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
     run-started: "🧪 [docs-agent-experimental]({run_url}) is analyzing this issue. This comment will be updated when the run finishes."
