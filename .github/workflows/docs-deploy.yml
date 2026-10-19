@@ -302,7 +302,7 @@ jobs:
           eligible=false
           # Pull requests publish previews only; the link index is fed from pushes to branches in this repository.
           if [[ "$EVENT" == "pull_request" ]]; then
-            :
+            eligible=false
           elif [[ "$HEAD_BRANCH" == "$DEFAULT_BRANCH" ]]; then
             eligible=true
           elif [[ "${USE_RELEASE}" == "true" ]] && [[ "$HEAD_BRANCH" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
