@@ -22,6 +22,13 @@ skills:
   - elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker@main
   - elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging@main
 model: sonnet
+# gh-aw v0.92.5's AWF price table does not match the `claude-sonnet-5.5` id that the OpenRouter
+# route sends: without a fallback the API proxy rejects every request with HTTP 400. Rates match
+# OpenRouter ($/1M tokens).
+models:
+  default-ai-credits-pricing:
+    input: 2.00
+    output: 10.00
 engine:
   id: claude
   # The six rule sets are Read into this agent's context rather than invoked through the Skill

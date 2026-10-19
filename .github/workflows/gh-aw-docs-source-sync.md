@@ -93,7 +93,6 @@ tools:
     - "find *"
     - "jq *"
     - "yq *"
-  web-fetch:
 network:
   allowed:
     - defaults
