@@ -297,9 +297,13 @@ jobs:
           HEAD_BRANCH: ${{ steps.context.outputs.head-branch }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           USE_RELEASE: ${{ inputs.use-release-branches }}
+          EVENT: ${{ steps.context.outputs.event }}
         run: |
           eligible=false
-          if [[ "$HEAD_BRANCH" == "$DEFAULT_BRANCH" ]]; then
+          # Pull requests publish previews only; the link index is fed from pushes to branches in this repository.
+          if [[ "$EVENT" == "pull_request" ]]; then
+            :
+          elif [[ "$HEAD_BRANCH" == "$DEFAULT_BRANCH" ]]; then
             eligible=true
           elif [[ "${USE_RELEASE}" == "true" ]] && [[ "$HEAD_BRANCH" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
             eligible=true
