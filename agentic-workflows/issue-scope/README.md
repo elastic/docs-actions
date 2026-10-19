@@ -83,7 +83,7 @@ the workflow never creates labels.
    with the information available, states the scope boundary, and lists questions to go deeper.
    For find-and-replace issues it searches the consumer repository, and any other public
    repository that the issue names, for the phrase. It reads code with two read-only tools,
-   `code-paths` and `code-grep`, which search a local copy, so it does not depend on GitHub code
+   `code_paths` and `code_grep`, which search a local copy, so it does not depend on GitHub code
    search; `search_code` is the fallback. It reports the total match count and lists up
    to 15 matching files, and writes "at least N files" when the results are partial. For issues about procedures, UI labels, or privileges it checks product source for the
    current labels and says when it could not. It treats issue
@@ -102,8 +102,8 @@ The workflow has no shell. It defines two read-only tools with `mcp-scripts`, wh
 
 | Tool | Inputs | What it does |
 | --- | --- | --- |
-| `code-paths` | `repo`, `name`, optional `ref` | Lists the file paths of a repository that contain `name`, from a shallow, blobless clone. |
-| `code-grep` | `repo`, `directory`, `phrase`, optional `ref` | Searches one directory for the exact phrase, matched literally and case-sensitive. It returns the match counts, the files, the first matches, and the commit hash. |
+| `code_paths` | `repo`, `name`, optional `ref` | Lists the file paths of a repository that contain `name`, from a shallow, blobless clone. |
+| `code_grep` | `repo`, `directory`, `phrase`, optional `ref` | Searches one directory for the exact phrase, matched literally and case-sensitive. It returns the match counts, the files, the first matches, and the commit hash. |
 
 Both tools accept only public repositories in the `elastic` organization, validate every input, and match text literally, so a phrase such as `foo[` is not a regular expression. They clone at most 2 repositories per run, refuse a directory with more than 8,000 files or 150 MB, and read the consumer repository from the workspace when the issue is in it. The Codex engine cannot restrict shell commands to a list, so these tools replace shell access.
 
