@@ -76,7 +76,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    runs-on: ${{ needs.check.outputs.any_modified == 'true' && 'ubuntu-latest' || 'ubuntu-slim' }}
+    runs-on: ${{ needs.check.outputs.any_modified == 'true' && 'ubuntu-24.04' || 'ubuntu-slim' }}
     steps:
       - name: Checkout code
         if: needs.check.outputs.any_modified == 'true'
@@ -114,7 +114,7 @@ jobs:
     needs:
       - check
       - build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Create Deployment
         uses: actions/github-script@v9
@@ -200,7 +200,7 @@ jobs:
       - check
       - build
       - deploy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: write

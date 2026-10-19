@@ -4,8 +4,8 @@ description: >
   to generate a bundle file from a GitHub release, and uploads the result as
   an artifact. No Docker, no plan step. Reads the output path from the
   bundle_path step output emitted by docs-builder itself. Use this action for
-  release-driven changelog bundling; for profile + commit-range bundling see
-  changelog/bundle-create-git-range.
+  release-driven changelog bundling; for serverless promotions see
+  changelog/release-serverless.
 
 inputs:
   config:

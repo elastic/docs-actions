@@ -5,8 +5,8 @@ Uploads the result as an artifact so a separate `bundle-publish` job can upload 
 with OIDC credentials that never touch the generate step.
 
 Use this action when you know the exact GitHub release tag and want the bundle created from
-the release's merged PR set. For profile + commit-range bundling, use
-[`changelog/bundle-create-git-range`](../bundle-create-git-range/).
+the release's merged PR set. For serverless promotions, use
+[`changelog/release-serverless`](../release-serverless/).
 
 ## Usage
 

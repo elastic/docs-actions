@@ -4,12 +4,21 @@ description: >
   a repository-owned profile, processes only empty allowlisted fields, and writes a run summary.
   It never adds an issue to a project or creates fields and options.
 
+# Keep the agent and detection jobs on the tested image during the latest migration.
+runs-on: ubuntu-24.04
+
 inlined-imports: true
 imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-model: openai/gpt-5.6-luna
+model: openai/gpt-6-luna
+# The pinned AWF price table has no gpt-6-luna entry; without a fallback the API proxy rejects
+# every request with HTTP 400. Rates match OpenRouter ($/1M tokens).
+models:
+  default-ai-credits-pricing:
+    input: 0.10
+    output: 0.50
 engine:
   id: codex
   # Use CLI overrides because gh-aw emits engine.config into both the converted and final Codex
@@ -24,6 +33,7 @@ engine:
     OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
 on:
+  bots: ["github-actions[bot]"]
   workflow_call:
     inputs:
       issue-url:
@@ -395,14 +405,22 @@ steps:
         /tmp/gh-aw/agent/project-metadata/context.json
 
 safe-outputs:
+  report-failure-as-issue: false
   threat-detection:
+    runs-on: ubuntu-24.04
     engine:
       id: copilot
       model: gpt-5-mini
+      # gh-aw copies the main engine's env into threat detection. These provider
+      # settings make Copilot's firewall health check fail before the scan starts,
+      # and detection fails open. Empty values turn off the inherited custom target.
+      env:
+        OPENAI_BASE_URL: ""
+        OPENAI_API_KEY: ""
   jobs:
     apply-project-fields:
       description: "Validate proposed project field values, preserve existing values, and apply or preview the changes"
-      runs-on: ubuntu-latest
+      runs-on: ubuntu-24.04
       output: "Validated the project metadata proposal and wrote the result to the workflow run summary."
       inputs:
         updates-json:
@@ -647,6 +665,7 @@ safe-outputs:
 
             ITEM_ID=$(jq -r '.id' <<<"$ITEM")
             : > "$WORK_DIR/validated.jsonl"
+            : > "$WORK_DIR/skipped.md"
 
             while IFS= read -r UPDATE; do
               FIELD=$(jq -r '.field' <<<"$UPDATE")
@@ -665,8 +684,11 @@ safe-outputs:
                 -f field="$FIELD" \
                 > "$WORK_DIR/current-field-value.json"
               if jq -e '.data.node.fieldValueByName != null' "$WORK_DIR/current-field-value.json" >/dev/null; then
-                echo "Agent proposed a field that already has a value: $FIELD" >&2
-                exit 1
+                # Never overwrite a value a person set. Skip it instead of failing the job.
+                echo "::notice::Skipping $FIELD: the agent proposed a value but the field already has one"
+                SKIP_EVIDENCE=${EVIDENCE//$'\n'/ }
+                echo "| ${FIELD//|/\\|} | ${VALUE//|/\\|} | ${SKIP_EVIDENCE//|/\\|} | skipped; field already has a value |" >> "$WORK_DIR/skipped.md"
+                continue
               fi
 
               gh api graphql \
@@ -731,6 +753,7 @@ safe-outputs:
 
             echo "| Field | Proposed value | Evidence | Result |" >> "$GITHUB_STEP_SUMMARY"
             echo "|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+            cat "$WORK_DIR/skipped.md" >> "$GITHUB_STEP_SUMMARY"
 
             read -r -d '' SELECT_MUTATION <<'GRAPHQL' || true
             mutation($project:ID!,$item:ID!,$field:ID!,$option:String!) {

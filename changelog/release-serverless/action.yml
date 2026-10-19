@@ -1,0 +1,124 @@
+name: Changelog release serverless
+description: >
+  Bundles the release notes of a serverless promotion by running
+  docs-builder release serverless natively. docs-builder resolves the
+  previous production-noncanary-ds-5 version from elastic/serverless-gitops
+  history, reads each repository's docs/changelog.yml at the promoted ref, and
+  builds one bundle per repository from its commit range (Elasticsearch
+  produces two: elasticsearch-serverless and the elasticsearch submodule).
+  Uploads all bundles as one artifact holding the bundles directory. A service can produce
+  several bundles, so publish the whole directory (for example with
+  docs-builder changelog upload --directory); bundle-publish takes a single file. Does not run actions/checkout. With dry-run,
+  only the run report is written to the job summary.
+inputs:
+  service:
+    description: 'Serverless service as emitted by gpctl (for example kibana).'
+    required: true
+  service-version:
+    description: >
+      Published endpoint ref of this promotion (SERVICE_VERSION): a 12-character
+      hash or a full SHA (12 to 40 hex characters). End of the commit range.
+    required: true
+  date:
+    description: 'Bundle version, a date (YYYY-MM-DD). Defaults to the UTC date of the run.'
+    default: ''
+  dry-run:
+    description: >
+      Resolve the commit range and write the run report to the job summary,
+      without writing a bundle or uploading an artifact.
+    default: 'false'
+  docs-builder-version:
+    description: >
+      docs-builder version to use (e.g. 0.1.100, latest, edge).
+      Non-edge versions are attestation-verified by the setup action.
+    default: 'edge'
+  artifact-name:
+    description: 'Name for the uploaded artifact holding the bundle directory'
+    default: 'changelog-bundle'
+  github-token:
+    description: >
+      GitHub token. Must read elastic/serverless-gitops (private) and the service
+      repository; the GraphQL API used for commit-to-PR association does not
+      accept anonymous requests.
+    required: true
+outputs:
+  bundle-paths:
+    description: 'Newline-separated paths of all generated bundle files. Empty in dry-run.'
+    value: ${{ steps.generate.outputs.bundle_paths }}
+  start-ref:
+    description: 'Resolved previous endpoint ref (start of the commit range).'
+    value: ${{ steps.generate.outputs.start_ref }}
+runs:
+  using: composite
+  steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        SERVICE: ${{ inputs.service }}
+        SERVICE_VERSION: ${{ inputs.service-version }}
+        DATE: ${{ inputs.date }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        ARTIFACT_NAME: ${{ inputs.artifact-name }}
+      run: |
+        source "${GITHUB_ACTION_PATH}/../../scripts/validate-inputs.sh"
+        validate_segment "$SERVICE" "service"
+        if [[ ! "$SERVICE_VERSION" =~ ^[0-9a-fA-F]{12,40}$ ]]; then
+          echo "::error::service-version must be 12 to 40 hex characters (a 12-character hash or a full SHA): ${SERVICE_VERSION}"; exit 1
+        fi
+        if [ -n "$DATE" ] && [[ ! "$DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+          echo "::error::date must be YYYY-MM-DD: ${DATE}"; exit 1
+        fi
+        if [ "$DRY_RUN" != "true" ] && [ "$DRY_RUN" != "false" ]; then
+          echo "::error::dry-run must be 'true' or 'false': ${DRY_RUN}"; exit 1
+        fi
+        validate_segment "$ARTIFACT_NAME" "artifact-name"
+    - name: Setup docs-builder
+      uses: elastic/docs-actions/docs-builder/setup@v1
+      with:
+        version: ${{ inputs.docs-builder-version }}
+        github-token: ${{ inputs.github-token }}
+    - name: Bundle serverless release notes
+      id: generate
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        SERVICE: ${{ inputs.service }}
+        SERVICE_VERSION: ${{ inputs.service-version }}
+        DATE: ${{ inputs.date }}
+        DRY_RUN: ${{ inputs.dry-run }}
+      run: |
+        # All bundles go to bundles (not a hidden directory: docs-builder rejects those), which the artifact step uploads as a whole.
+        ARGS=(release serverless "$SERVICE" "$SERVICE_VERSION" --output-dir bundles)
+        [ -n "$DATE" ] && ARGS+=(--date "$DATE")
+        if [ "$DRY_RUN" = "true" ]; then
+          ARGS+=(--dry-run)
+          # docs-builder prints the report twice and follows it with per-PR diagnostics;
+          # keep the first report block and stop at the first log line.
+          docs-builder "${ARGS[@]}" | tee .bundle-dry-run.log
+          awk '/^### Changelog bundle for/{n++; if (n == 2) exit} n >= 1 && /^(info|warn|error|fail) *::/{exit} n >= 1' .bundle-dry-run.log >> "$GITHUB_STEP_SUMMARY"
+          rm -f .bundle-dry-run.log
+        else
+          docs-builder "${ARGS[@]}"
+        fi
+    - name: Verify bundle path
+      if: inputs.dry-run != 'true'
+      shell: bash
+      env:
+        BUNDLE_PATHS: ${{ steps.generate.outputs.bundle_paths }}
+      run: |
+        if [ -z "$BUNDLE_PATHS" ]; then
+          echo "::error::docs-builder did not produce a bundle (bundle_paths is empty)"; exit 1
+        fi
+        while IFS= read -r path; do
+          # The multi-line output can end with a newline: skip empty records.
+          [ -z "$path" ] && continue
+          [ -f "$path" ] || { echo "::error::bundle does not exist: ${path}"; exit 1; }
+        done <<< "$BUNDLE_PATHS"
+    - name: Upload bundle artifact
+      if: inputs.dry-run != 'true'
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: bundles/
+        if-no-files-found: error
+        retention-days: 1

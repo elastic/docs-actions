@@ -4,6 +4,9 @@ description: >
   the matching ones, applies them, and reacts with 👍. The issue body is never rewritten and no comment
   is posted. Invoked via workflow_call from a consumer repository that triggers on issues: opened.
 
+# Keep the agent and detection jobs on the tested image during the latest migration.
+runs-on: ubuntu-24.04
+
 inlined-imports: true
 imports:
   - gh-aw-fragments/formatting.md
@@ -18,7 +21,7 @@ engine:
       HTTP-Referer: https://github.com/${{ github.repository }}
       X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
       X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
-    ANTHROPIC_DEFAULT_HAIKU_MODEL: anthropic/claude-haiku-4.5
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: anthropic/claude-haiku-5.5
 
 on:
   roles: all
@@ -98,6 +101,7 @@ steps:
       fi
 
 safe-outputs:
+  report-failure-as-issue: false
   messages:
     footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
   threat-detection:

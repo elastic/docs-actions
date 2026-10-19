@@ -3,6 +3,9 @@ description: >
   Downloads the changelog-decision artifact from the triggering workflow run
   and posts or updates the sticky changelog PR comment. Safe to call even
   when no artifact was uploaded — the command succeeds with no action taken.
+  Always comments on the newest completed run of the triggering workflow for the
+  same PR branch, whichever run triggered the job, so a stale decision cannot
+  overwrite a newer one and a cancelled job cannot leave the newest one unposted.
 
 inputs:
   github-token:
@@ -12,16 +15,83 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Check for decision artifact
+    - name: Resolve the run to comment on
       id: check-artifact
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
+        REPO: ${{ github.repository }}
         RUN_ID: ${{ github.event.workflow_run.id }}
+        WORKFLOW_ID: ${{ github.event.workflow_run.workflow_id }}
+        HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        HEAD_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
+        EVENT: ${{ github.event.workflow_run.event }}
       run: |
-        count=$(gh api \
-          "repos/${{ github.repository }}/actions/runs/${RUN_ID}/artifacts" \
-          --jq '[.artifacts[] | select(.name == "changelog-decision")] | length')
+        # Several runs can start close together: label events, or a push right after the PR opens. Their comment
+        # jobs race, and two things go wrong when each job reads its own run's artifact:
+        #   - an older run's stale decision can land last and overwrite the newer one, including a run for an
+        #     older commit of the same branch;
+        #   - the caller's concurrency group keeps only one pending job, so it can cancel the job of the newest
+        #     run and leave nobody to post it.
+        # So every job comments on the newest completed run for this PR branch, whichever run triggered it.
+        # A newest run that is still in progress is skipped here, because its own completion triggers a job.
+        # A failed query must never read as "nothing found": that would let an older triggering run post a stale
+        # decision, or silently skip the comment. Retry transient failures, then fail the step.
+        retry() { # retry <command...>: print the output of the first successful attempt
+          local attempt out
+          for attempt in 1 2 3; do
+            if out=$("$@"); then
+              printf '%s' "${out}"
+              return 0
+            fi
+            echo "Attempt ${attempt} of 3 failed: $1" >&2
+            sleep $((attempt * 2))
+          done
+          return 1
+        }
+
+        newest_run() {
+          gh api -X GET "repos/${REPO}/actions/workflows/${WORKFLOW_ID}/runs" \
+              -f branch="${HEAD_BRANCH}" -f event="${EVENT}" -F per_page=100 \
+            | jq -r --arg repo "${HEAD_REPO}" \
+                '[.workflow_runs[] | select(.head_repository.full_name == $repo and .conclusion != "cancelled")]
+                 | sort_by(.id) | last // empty | "\(.id) \(.status)"'
+        }
+
+        decision_artifacts() {
+          gh api "repos/${REPO}/actions/runs/${1}/artifacts" \
+            --jq '[.artifacts[] | select(.name == "changelog-decision")] | length'
+        }
+
+        latest=$(retry newest_run) || {
+          echo "::error::Could not list the runs of workflow ${WORKFLOW_ID} for ${HEAD_REPO}:${HEAD_BRANCH}. Not commenting, because the triggering run ${RUN_ID} may be stale."
+          exit 1
+        }
+
+        # An empty listing is a valid answer (for example a deleted fork); the triggering run is then the only candidate.
+        target="${RUN_ID}"
+        status="completed"
+        if [ -n "${latest}" ]; then
+          target="${latest% *}"
+          status="${latest#* }"
+        else
+          echo "::notice::No runs were listed for ${HEAD_REPO}:${HEAD_BRANCH}; using the triggering run ${RUN_ID}."
+        fi
+
+        count=0
+        if [ "${status}" != "completed" ]; then
+          echo "Run ${target} is the newest for ${HEAD_REPO}:${HEAD_BRANCH} and is still running; its own completion will comment."
+        else
+          if [ "${target}" != "${RUN_ID}" ]; then
+            echo "Commenting on the newest run ${target} instead of the triggering run ${RUN_ID}."
+          fi
+          count=$(retry decision_artifacts "${target}") || {
+            echo "::error::Could not list the artifacts of run ${target}, so the changelog comment was not updated."
+            exit 1
+          }
+        fi
+
+        echo "run-id=${target}" >> "$GITHUB_OUTPUT"
         echo "exists=$([ "$count" -gt 0 ] && echo 'true' || echo 'false')" >> "$GITHUB_OUTPUT"
 
     - name: Download decision artifact
@@ -30,7 +100,7 @@ runs:
       with:
         name: changelog-decision
         github-token: ${{ inputs.github-token }}
-        run-id: ${{ github.event.workflow_run.id }}
+        run-id: ${{ steps.check-artifact.outputs.run-id }}
         path: /tmp/changelog-decision
 
     - name: Setup docs-builder

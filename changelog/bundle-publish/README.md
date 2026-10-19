@@ -4,14 +4,16 @@ Downloads a changelog bundle artifact and uploads it to the private S3 bucket.
 A scrubber Lambda mirrors sanitized copies to the public CDN bucket.
 
 Works with any create action that produces a `changelog-bundle` artifact containing
-a single `.yml` file: `bundle-create-version`, `bundle-create-git-range`, or the
-legacy `bundle-create`.
+a single `.yml` file: `bundle-create-version`, or the legacy `bundle-create`.
+It publishes one bundle per call. An action that produces several bundles (for example
+[`release-serverless`](../release-serverless/), which writes a `bundles/` directory) cannot use it:
+download that artifact and run `docs-builder changelog upload --directory` instead.
 
 ## Usage
 
 ```yaml
   bundle-publish:
-    needs: bundle            # job that ran bundle-create-version or bundle-create-git-range
+    needs: bundle            # job that ran bundle-create-version
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -54,7 +56,7 @@ in the tooling.
 
 `bundle-publish` is the successor to `bundle-upload@v1` for new callers. `bundle-upload@v1`
 is frozen. Key difference: `bundle-publish` accepts `bundle-path` only (no `output` alias)
-and is designed to pair with the new `bundle-create-version` / `bundle-create-git-range` actions.
+and is designed to pair with the new `bundle-create-version` action.
 
 ## Risk
 

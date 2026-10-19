@@ -1,0 +1,56 @@
+# Rules for the docs-actions review classifier.
+# Copy this file to .github/review-classifier.yml in your repository.
+# The classifier reads it from the default branch, so rule changes apply after merge.
+# A workflow_dispatch run reads it from the branch it runs on, to test changes in a dry run.
+# Every key is optional. The values below are the defaults.
+
+labels:
+  light: 'review: light'
+  full: 'review: full'
+
+checklists:
+  light: https://codex.elastic.dev/r/docs-content-internal/processes/docs-review-checklists#light-review-checklist
+  full: https://codex.elastic.dev/r/docs-content-internal/processes/docs-review-checklists#full-review-checklist
+
+# Files to ignore, in addition to .github/** and **/*.csv.
+# If only ignored files change, the classifier posts nothing.
+# A pattern without a slash matches the file name in any directory.
+skip-paths: []
+
+snippet-patterns: ['**/_snippets/**', '**/snippets/**']
+redirect-files: ['**/redirects.yml', '**/_redirects']
+
+# Do not count snippet files as pages for new-page and page-deleted.
+pages-exclude-snippets: true
+
+vale:
+  enabled: true
+  max-findings: 10   # Errors and warnings listed in the comment (0-50).
+  paths: []          # Passed to vale/lint as vale-paths.
+
+# Set a trigger to false to turn it off. One trigger is enough for a full review.
+triggers:
+  new-page: true
+  page-deleted: true
+  redirect-added: true
+  large-scope:
+    max-files: 5            # Full review when more files than this change.
+  images-changed:
+    min-images: 3           # Full review when at least this number of images change.
+  shared-snippet:
+    scope: top-level        # top-level or directory.
+  substantial-change:
+    headings: true          # Any added, removed, or renamed heading counts.
+    # MAX_LINES:PERCENT pairs for the base page size, then a fallback percent.
+    thresholds: ['199:20', '500:10', '5']
+  applies-to-modified: true
+  external-link-added:
+    allowed-hosts: [elastic.co, '*.elastic.co', github.com/elastic]
+
+# Custom rules: full review when a changed file matches one of the paths.
+# statuses is optional: added, modified, removed, renamed (default: all).
+custom: []
+#  - id: security-pages
+#    label: Security page changed
+#    paths: ['deploy-manage/security/**']
+#    statuses: [added, modified]

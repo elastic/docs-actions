@@ -6,6 +6,9 @@ description: >
   validation and review.
 emoji: 🧪
 
+# Keep the agent and detection jobs on the tested image during the latest migration.
+runs-on: ubuntu-24.04
+
 inlined-imports: true
 imports:
   - gh-aw-fragments/formatting.md
@@ -105,7 +108,9 @@ steps:
         > /tmp/gh-aw/docs-agent/issue.json
 
 safe-outputs:
-  staged: false
+  threat-detection:
+    runs-on: ubuntu-24.04
+  report-failure-as-issue: false
   messages:
     footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
     run-started: "🧪 [docs-agent-experimental]({run_url}) is analyzing this issue. This comment will be updated when the run finishes."
