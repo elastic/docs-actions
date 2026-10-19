@@ -20,12 +20,13 @@ jobs:
   test:
     permissions:
       contents: read
-    name: version=${{ matrix.version || 'default' }}
-    runs-on: ubuntu-latest
+    name: ${{ matrix.runner }} / version=${{ matrix.version || 'default' }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         version: [edge, latest, '0.100.0', null]
+        runner: [ubuntu-24.04, ubuntu-26.04]
     steps:
       - uses: actions/checkout@v6
         with:
