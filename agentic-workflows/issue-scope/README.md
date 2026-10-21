@@ -35,9 +35,8 @@ mkdir -p .github/workflows && curl -sL \
 ```
 
 The caller job needs `copilot-requests: write` in its `permissions:` block (threat detection
-runs on Copilot) and `id-token: write`. The organization needs two repository variables:
-`AGENT_ROUTER_WIF_PROVIDER` (the Workload Identity provider) and `AGENT_ROUTER_SERVICE_ACCOUNT` (the
-allowlisted service account).
+runs on Copilot) and `id-token: write`. The repo must be on the allowlist of the Docs agentic workflows service
+account in `elastic/centralized-it-infra`. The workflow supplies the Workload Identity provider and the service account itself.
 
 ## Inputs
 

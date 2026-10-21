@@ -21,7 +21,7 @@ Add the following to the caller workflow before running this workflow:
 
 - `permissions.copilot-requests: write`
 - `permissions.id-token: write`
-- The organization variables `AGENT_ROUTER_WIF_PROVIDER` (the Workload Identity provider) and `AGENT_ROUTER_SERVICE_ACCOUNT` (the allowlisted service account).
+- Your repo on the allowlist of the Docs agentic workflows service account in `elastic/centralized-it-infra`. The workflow supplies the Workload Identity provider and the service account itself.
 
 The workflow uses the Claude engine through the Agent Router gateway and authenticates with a Google ID token, so it needs no model API key. Threat detection still runs on Copilot, so keep `permissions.copilot-requests: write`.
 

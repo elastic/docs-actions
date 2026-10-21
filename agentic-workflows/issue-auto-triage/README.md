@@ -18,8 +18,9 @@ For the same routing logic triggered manually, see [issue-triage](../issue-triag
 The workflow uses a fast, low-cost model (Haiku) through the Agent Router gateway. This keeps per-issue cost low.
 
 Add `id-token: write` to the caller job's permissions. The workflow authenticates to Agent Router with a Google ID
-token, so the organization needs two repository variables: `AGENT_ROUTER_WIF_PROVIDER` (the Workload Identity
-provider) and `AGENT_ROUTER_SERVICE_ACCOUNT` (the allowlisted service account). No model API key is needed.
+token from the Docs agentic workflows service account, through the `docs-agentic-ci-oidc` Workload Identity provider.
+No model API key and no repository variable is needed. The repo must be on the service account's allowlist
+in `elastic/centralized-it-infra`.
 Factor the model tier into cost estimates before enabling at scale.
 
 ## Triggers

@@ -146,8 +146,8 @@ steps:
     id: agent-router-auth
     uses: google-github-actions/auth@v3
     with:
-      workload_identity_provider: ${{ vars.AGENT_ROUTER_WIF_PROVIDER }}
-      service_account: ${{ vars.AGENT_ROUTER_SERVICE_ACCOUNT }}
+      workload_identity_provider: ${{ vars.AGENT_ROUTER_WIF_PROVIDER || 'projects/117436331624/locations/global/workloadIdentityPools/docs-agentic-ci-oidc/providers/docs-agentic-ci-oidc' }}
+      service_account: ${{ vars.AGENT_ROUTER_SERVICE_ACCOUNT || 'agentic-workflows-docs-runner@elastic-edm.iam.gserviceaccount.com' }}
       token_format: id_token
       id_token_audience: https://llm.idea.elastichosting.ai
       id_token_include_email: true
