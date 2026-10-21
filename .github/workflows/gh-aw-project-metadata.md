@@ -24,9 +24,11 @@ engine:
   args:
     - "-c"
     - 'model_reasoning_effort=\"high\"'
+  # gh-aw checks this key in the activation job, where the auth step does not exist. The fallback
+  # literal keeps that check from failing there. The agent job always gets the minted token.
   env:
     OPENAI_BASE_URL: https://llm.idea.elastichosting.ai/v1
-    OPENAI_API_KEY: ${{ steps.agent-router-auth.outputs.id_token }}
+    OPENAI_API_KEY: ${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}
 
 on:
   bots: ["github-actions[bot]"]

@@ -15,10 +15,12 @@ imports:
 model: haiku
 engine:
   id: claude
+  # gh-aw checks this key in the activation job, where the auth step does not exist. The fallback
+  # literal keeps that check from failing there. The agent job always gets the minted token.
   env:
     ANTHROPIC_BASE_URL: https://llm.idea.elastichosting.ai/anthropic
-    ANTHROPIC_API_KEY: ${{ steps.agent-router-auth.outputs.id_token }}
-    ANTHROPIC_DEFAULT_HAIKU_MODEL: claude-haiku-5-5
+    ANTHROPIC_API_KEY: ${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: claude-haiku-4-5
 
 on:
   roles: [admin, maintainer, write]

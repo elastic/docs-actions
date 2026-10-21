@@ -38,12 +38,14 @@ engine:
   # count. The catalog keeps `context: fork`, which is still the right default locally.
   permission-mode: bypassPermissions
   args: ["--disallowed-tools", "Edit(./**)"]
+  # gh-aw checks this key in the activation job, where the auth step does not exist. The fallback
+  # literal keeps that check from failing there. The agent job always gets the minted token.
   env:
     ANTHROPIC_BASE_URL: https://llm.idea.elastichosting.ai/anthropic
     # Pin the `sonnet` alias. Without it, Claude Code picks the Sonnet its version
     # knows (2.1.273 sent anthropic/claude-sonnet-5).
-    ANTHROPIC_DEFAULT_SONNET_MODEL: claude-sonnet-5-5
-    ANTHROPIC_API_KEY: ${{ steps.agent-router-auth.outputs.id_token }}
+    ANTHROPIC_DEFAULT_SONNET_MODEL: claude-sonnet-5
+    ANTHROPIC_API_KEY: ${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}
 on:
   roles: [admin, maintainer, write]
   workflow_call:
