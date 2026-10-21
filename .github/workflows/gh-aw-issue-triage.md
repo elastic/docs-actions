@@ -19,7 +19,10 @@ engine:
   # literal keeps that check from failing there. The agent job always gets the minted token.
   env:
     ANTHROPIC_BASE_URL: https://llm.idea.elastichosting.ai/anthropic
-    ANTHROPIC_API_KEY: ${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}
+    # The AWF sidecar sends this value as-is in the header named below, so it carries the Bearer scheme.
+    # The gateway reads Authorization: Bearer, and the sidecar sends x-api-key by default.
+    ANTHROPIC_API_KEY: Bearer ${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}
+    AWF_ANTHROPIC_AUTH_HEADER: Authorization
     ANTHROPIC_DEFAULT_HAIKU_MODEL: claude-haiku-4-5
 
 on:
