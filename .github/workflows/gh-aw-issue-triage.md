@@ -23,7 +23,7 @@ engine:
     # The gateway reads Authorization: Bearer, and the sidecar sends x-api-key by default.
     ANTHROPIC_API_KEY: Bearer ${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}
     AWF_ANTHROPIC_AUTH_HEADER: Authorization
-    ANTHROPIC_DEFAULT_HAIKU_MODEL: claude-haiku-4-5
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: claude-haiku-5-5
 
 on:
   roles: [admin, maintainer, write]

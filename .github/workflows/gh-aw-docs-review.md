@@ -44,7 +44,7 @@ engine:
     ANTHROPIC_BASE_URL: https://llm.idea.elastichosting.ai/anthropic
     # Pin the `sonnet` alias. Without it, Claude Code picks the Sonnet its version
     # knows (2.1.273 sent anthropic/claude-sonnet-5).
-    ANTHROPIC_DEFAULT_SONNET_MODEL: claude-sonnet-5
+    ANTHROPIC_DEFAULT_SONNET_MODEL: claude-sonnet-5-5
     # The AWF sidecar sends this value as-is in the header named below, so it carries the Bearer scheme.
     # The gateway reads Authorization: Bearer, and the sidecar sends x-api-key by default.
     ANTHROPIC_API_KEY: Bearer ${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}
