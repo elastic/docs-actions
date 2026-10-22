@@ -15,13 +15,15 @@ imports:
 model: haiku
 engine:
   id: claude
+  # gh-aw checks this key in the activation job, where the auth step does not exist. The fallback
+  # literal keeps that check from failing there. The agent job always gets the minted token.
   env:
-    ANTHROPIC_BASE_URL: https://openrouter.ai/api
-    ANTHROPIC_CUSTOM_HEADERS: |-
-      HTTP-Referer: https://github.com/${{ github.repository }}
-      X-OpenRouter-Title: ${{ github.repository }}/${{ github.workflow }}
-      X-Session-ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
-    ANTHROPIC_DEFAULT_HAIKU_MODEL: anthropic/claude-haiku-5.5
+    ANTHROPIC_BASE_URL: https://llm.idea.elastichosting.ai/anthropic
+    # The AWF sidecar sends this value as-is in the header named below, so it carries the Bearer scheme.
+    # The gateway reads Authorization: Bearer, and the sidecar sends x-api-key by default.
+    ANTHROPIC_API_KEY: Bearer ${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}
+    AWF_ANTHROPIC_AUTH_HEADER: Authorization
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: claude-haiku-5-5
 
 on:
   roles: all
@@ -43,6 +45,10 @@ on:
         required: false
         default: ""
 
+    secrets:
+      ANTHROPIC_API_KEY:
+        description: "Deprecated and unused. The workflow authenticates to Agent Router with a Google ID token. Kept so callers that still pass it do not fail at startup."
+        required: false
 user-rate-limit:
   max-runs-per-window: 10
   window: 60
@@ -57,6 +63,7 @@ permissions:
   actions: read
   contents: read
   copilot-requests: write
+  id-token: write
   issues: read
   pull-requests: read
 
@@ -72,7 +79,7 @@ network:
   allowed:
     - defaults
     - github
-    - "openrouter.ai"
+    - "llm.idea.elastichosting.ai"
     - "api.anthropic.com"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
@@ -85,6 +92,15 @@ network:
     - "search.elastic.co"
 
 steps:
+  - name: Authenticate to Agent Router
+    id: agent-router-auth
+    uses: google-github-actions/auth@v3
+    with:
+      workload_identity_provider: ${{ vars.AGENT_ROUTER_WIF_PROVIDER || 'projects/117436331624/locations/global/workloadIdentityPools/docs-agentic-ci-oidc/providers/docs-agentic-ci-oidc' }}
+      service_account: ${{ vars.AGENT_ROUTER_SERVICE_ACCOUNT || 'agentic-workflows-docs-runner@elastic-edm.iam.gserviceaccount.com' }}
+      token_format: id_token
+      id_token_audience: https://llm.idea.elastichosting.ai
+      id_token_include_email: true
   - name: Resolve label menu
     env:
       GH_TOKEN: ${{ github.token }}

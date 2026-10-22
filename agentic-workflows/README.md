@@ -29,9 +29,11 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-scope.yml
 ```
 
-These workflows use the built-in `github.token` with `copilot-requests: write` permission for
-authentication — no separate secret passthrough needed. The quality-sweep orchestrator is the
-exception — it dispatches sibling workflows via `gh workflow run`.
+The sweeps and `docs-source-sync` use the built-in `github.token` with `copilot-requests: write` permission for
+authentication, so no secret passthrough is needed. The quality-sweep orchestrator is the
+exception: it dispatches sibling workflows via `gh workflow run`.
+
+`docs-review`, `issue-triage`, `issue-auto-triage`, `issue-scope` and `project-metadata` call the Agent Router gateway as a service account. Their callers need `id-token: write` (and `copilot-requests: write` for threat detection), and the calling repo must be on the service account's allowlist. See [Developing agentic workflows](DEVELOPING.md#agent-router-workflows).
 
 Skill imports are workflow-specific. Some workflows install APM skills from `elastic/elastic-docs-skills`, while others intentionally rely only on embedded rules and deterministic pre-steps.
 
