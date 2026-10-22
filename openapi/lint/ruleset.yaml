@@ -13,6 +13,10 @@
 #     as-is; flip a consumer's `fail-on-warn` input to `true` to enforce.
 extends: [["spectral:oas", off]]
 
+functionsDir: ./functions
+functions:
+  - uniqueOperationSummaries
+
 # Swagger 2.0 forbids braces in `host`, but self-hosted products publish a
 # placeholder host on purpose (Elastic Cloud Enterprise: `{{hostname}}`, the
 # coordinator the reader installs). Bump.sh accepts it; so do we. Only `host`
@@ -37,7 +41,16 @@ rules:
 
   # ---- Convention tier (warn) — custom Elastic rules ----
   #
-  # None enabled yet. The rules below are examples sketched from the
+  # elastic-operation-summary-unique: a summary is the operation's page title in the API docs.
+  elastic-operation-summary-unique:
+    description: 'Operation summaries must be unique across paths (they are page titles)'
+    given: '$.paths'
+    message: '{{error}}'
+    severity: warn
+    then:
+      function: uniqueOperationSummaries
+
+  # The rules below are examples sketched from the
   # conventions analysis in elastic/docs-eng-team#639, but those conventions
   # (operationId casing, security scheme naming, the x-state shape) aren't
   # agreed yet across consumer teams. Uncomment and land via PR once a
