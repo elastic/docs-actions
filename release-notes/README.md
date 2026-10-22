@@ -65,4 +65,3 @@ jobs:
 ```
 
 The comment says either that the pull request will be part of the release notes, with its type, products and areas, or that it will not be, with the reason (for example the label that excludes it). It is the same comment as the others, so a pull request never gets two: for a breaking change the captured Impact and Action are shown in it too.
-
