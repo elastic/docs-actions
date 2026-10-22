@@ -448,6 +448,7 @@ Manual checklist for non-Vale findings:
 - Formatting: Lists need at least two items, parallel structure, and periods only for complete sentences.
 - Formatting: Dates should use `Month DD, YYYY`; times should use uppercase `AM`/`PM`; avoid relative dates such as "recently" when they become stale.
 - Formatting: Do not stack admonitions or use an admonition when a requirements section would be clearer.
+- Formatting: Use no more than one admonition per section. Content that readers need to understand or complete the task belongs in the body. Reserve warning and important admonitions for real risk such as data loss, security issues, irreversible actions, or impact on performance or stability.
 - Accessibility: Images need useful alt text without backticks; link text must be descriptive; avoid directional-only references such as "above" or "below".
 - UI writing: Use "Click **Save**" for action buttons and icons, "Select **Logs**" for tabs, checkboxes, radio buttons, dropdown options, and choices, and "In the **Name** field, enter `value`" for text fields.
 - UI writing: Use "Turn on **Feature**" and "Turn off **Feature**" for toggles; use "toggle" as a noun, not a verb.
