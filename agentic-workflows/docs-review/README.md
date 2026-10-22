@@ -23,7 +23,7 @@ Add the following to the caller workflow before running this workflow:
 - `permissions.id-token: write`
 - Your repo on the allowlist of the Docs agentic workflows service account in `elastic/centralized-it-infra`. The workflow supplies the Workload Identity provider and the service account itself.
 
-The workflow uses the Claude engine through the Agent Router gateway and authenticates with a Google ID token, so it needs no model API key. Threat detection still runs on Copilot, so keep `permissions.copilot-requests: write`.
+The workflow uses the Claude engine with Claude Sonnet 5.5 (`claude-sonnet-5-5`) through the Agent Router gateway (`/anthropic` route) and authenticates with a Google ID token, so it needs no model API key. A review of one page counted about 380,000 tokens against the service account's shared hourly limit (measured on Oct 22, 2026, cached tokens included). See [Developing agentic workflows](../DEVELOPING.md#agent-router-workflows) for the setup, the limit and troubleshooting. Threat detection still runs on Copilot, so keep `permissions.copilot-requests: write`.
 
 ## Inputs
 

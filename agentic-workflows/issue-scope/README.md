@@ -8,8 +8,8 @@ never rewritten.
 
 ## Model
 
-The agent runs `gpt-5.6-luna` through the Agent Router gateway on the codex engine, authenticated
-with a Google ID token. Threat detection runs separately on GitHub Copilot with the `sonnet` model alias. The agent must query the Elastic docs MCP server before reading any
+The agent runs `gpt-5.6-luna` through the Agent Router gateway (`/v1/responses`) on the codex engine, authenticated
+with a Google ID token. A run counts about 95,000 to 180,000 tokens against the service account's shared hourly limit (measured on Oct 21, 2026). See [Developing agentic workflows](../DEVELOPING.md#agent-router-workflows) for the setup, the limit and troubleshooting. Threat detection runs separately on GitHub Copilot with the `sonnet` model alias. The agent must query the Elastic docs MCP server before reading any
 repository file, so expect higher per-issue cost than a classification-only workflow — roughly
 7–10 AIC for a full assessment, about 7 for a partial one, and under 4 when the quality gate stops
 early (sandbox battery, 2026-09-15).

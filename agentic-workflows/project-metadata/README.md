@@ -41,6 +41,10 @@ Edit the profile before the first run. Keep the first runs in dry-run mode.
 | `dry-run` | boolean | No | `true` | Validate and report proposals without changing project fields. |
 | `additional-instructions` | string | No | `""` | Extra analysis guidance. It cannot override the profile or write safeguards. |
 
+## Model
+
+The agent runs `gpt-5.6-luna` with high reasoning effort through the Agent Router gateway (`/v1/responses`) on the codex engine, authenticated with a Google ID token from the Docs agentic workflows service account. The caller job needs `id-token: write`, and the repo must be on the service account's allowlist. See [Developing agentic workflows](../DEVELOPING.md#agent-router-workflows).
+
 ## Secrets
 
 | Secret | Required | Description |
