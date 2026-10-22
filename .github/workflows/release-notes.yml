@@ -19,6 +19,10 @@ on:
         description: 'Require breaking-change PRs to have Impact and Action sections in the description (evaluate-pr gate)'
         type: boolean
         default: false
+      comment-on-success:
+        description: 'Also comment when the checks pass, saying whether the PR will be part of the release notes and why'
+        type: boolean
+        default: false
 permissions: {}
 
 concurrency:
@@ -55,6 +59,8 @@ jobs:
           if [ "${{ github.event.pull_request.maintainer_can_modify }}" = "true" ]; then
             MAINTAINER_FLAG="--maintainer-can-modify"
           fi
+          COMMENT_FLAG=""
+          if [ "$COMMENT_ON_SUCCESS" = "true" ]; then COMMENT_FLAG="--comment-on-success"; fi
           docs-builder changelog validate-labels \
             --config "$CONFIG" \
             --pr-labels "$PR_LABELS" \
@@ -62,8 +68,9 @@ jobs:
             --head-ref "$HEAD_REF" \
             --head-sha "$HEAD_SHA" \
             --head-repo "$HEAD_REPO" \
-            $FORK_FLAG $CAN_COMMIT_FLAG $MAINTAINER_FLAG
+            $FORK_FLAG $CAN_COMMIT_FLAG $MAINTAINER_FLAG $COMMENT_FLAG
         env:
+          COMMENT_ON_SUCCESS: ${{ inputs.comment-on-success }}
           CONFIG: ${{ inputs.config }}
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -74,12 +81,16 @@ jobs:
       # Entry-file gate — validates any changelog/*.yml files the PR added or modified
       - name: Validate changelog entry files
         run: |
+          COMMENT_FLAG=""
+          if [ "$COMMENT_ON_SUCCESS" = "true" ]; then COMMENT_FLAG="--comment-on-success"; fi
           docs-builder changelog validate "$PR_NUMBER" \
             --config "$CONFIG" \
             --owner "$REPO_OWNER" \
             --repo "$REPO_NAME" \
-            --pr-labels "$PR_LABELS"
+            --pr-labels "$PR_LABELS" \
+            $COMMENT_FLAG
         env:
+          COMMENT_ON_SUCCESS: ${{ inputs.comment-on-success }}
           GITHUB_TOKEN: ${{ github.token }}
           CONFIG: ${{ inputs.config }}
           REPO_OWNER: ${{ github.repository_owner }}
@@ -97,6 +108,7 @@ jobs:
           # Without these flags evaluate-pr skips an "edited" event, so adding the missing sections would never clear the gate.
           if [ "$TITLE_CHANGED" = "true" ]; then GATE_FLAGS+=(--title-changed); fi
           if [ "$BODY_CHANGED" = "true" ]; then GATE_FLAGS+=(--body-changed); fi
+          if [ "$COMMENT_ON_SUCCESS" = "true" ]; then GATE_FLAGS+=(--comment-on-success); fi
           docs-builder changelog evaluate-pr \
             --config "$CONFIG" \
             --owner "$REPO_OWNER" \
@@ -122,6 +134,7 @@ jobs:
           EVENT_ACTION: ${{ github.event.action }}
           # The PR body is untrusted: pass it through the environment, never interpolate it into the script.
           PR_BODY: ${{ github.event.pull_request.body }}
+          COMMENT_ON_SUCCESS: ${{ inputs.comment-on-success }}
           REQUIRE_CHANGELOG_FILE: ${{ inputs.require-changelog-file }}
           REQUIRE_IMPACT_ACTION: ${{ inputs.require-impact-action }}
           TITLE_CHANGED: ${{ github.event.changes.title != null }}
