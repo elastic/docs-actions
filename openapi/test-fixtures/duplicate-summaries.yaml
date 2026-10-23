@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Test API
   version: "1.0.0"
-  description: Two different APIs share a summary; GET and POST on one path may share one.
+  description: Two different APIs share a summary that differs only by case and a trailing period; GET and POST on one path may share one.
 servers:
   - url: https://api.example.com
 paths:
@@ -18,7 +18,7 @@ paths:
   /cluster/health:
     get:
       operationId: clusterHealth
-      summary: Get the cluster health status
+      summary: get the cluster health status
       description: Detailed health.
       tags: [things]
       responses:
