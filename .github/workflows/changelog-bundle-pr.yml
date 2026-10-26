@@ -35,7 +35,8 @@ on:
       output:
         description: >
           Output file path for the bundle (e.g. docs/releases/v9.2.0.yaml).
-          Optional. When not provided, the path is determined by the config.
+          Optional. When omitted in profile mode, --plan uses the profile's
+          output_directory if set, otherwise bundle.output_directory.
         type: string
       repo:
         description: 'GitHub repository name; falls back to bundle.repo in changelog.yml'
@@ -61,7 +62,7 @@ concurrency:
 
 jobs:
   fetch:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: read
@@ -87,7 +88,7 @@ jobs:
 
   create-pr:
     needs: fetch
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       pull-requests: write

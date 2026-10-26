@@ -18,9 +18,10 @@ inputs:
       all paths and filters come from the config.
   version:
     description: >
-      Version string for profile mode (e.g. 9.2.0, 2026-03).
-      Used for {version} substitution in profile patterns.
-      Only valid with profile.
+      Version string for profile mode (e.g. 9.2.0, 2026-03) or, when no
+      profile is set, a GitHub release tag treated as release-version
+      (e.g. v9.2.0). In profile mode used for {version} substitution;
+      in option mode equivalent to release-version.
   release-version:
     description: >
       GitHub release tag used as the PR filter source (e.g. v9.2.0).
@@ -39,12 +40,14 @@ inputs:
   output:
     description: >
       Output file path for the bundle, relative to the repo root.
-      Optional. When not provided, docs-builder writes to the path
-      determined by the config (bundle.output_directory) and the plan
-      resolves the generated file path automatically.
+      Optional in both modes. When omitted in profile mode, docs-builder
+      writes `{repo}-{product}-{version}.yaml` under the profile's
+      output_directory if set, otherwise bundle.output_directory.
   repo:
     description: >
-      GitHub repository name. Falls back to bundle.repo in changelog.yml.
+      GitHub repository name. Used in the profile-mode bundle filename
+      (`{repo}-{product}-{version}.yaml`). Falls back to bundle.repo in
+      changelog.yml, then git remote origin.
   owner:
     description: >
       GitHub repository owner. Falls back to bundle.owner in changelog.yml,
@@ -117,8 +120,8 @@ runs:
             echo "::error::start-git-ref and end-git-ref must be provided together; the start ref is never inferred"
             exit 1
           fi
-          if [[ "$MODE" != "bundle" || -z "$PROFILE" ]]; then
-            echo "::error::start-git-ref/end-git-ref require bundle mode with a profile"
+          if [ -z "$PROFILE" ]; then
+            echo "::error::start-git-ref/end-git-ref require a profile"
             exit 1
           fi
           if [ -n "$RELEASE_VERSION" ] || [ -n "$REPORT" ] || [ -n "$PRS" ]; then
@@ -178,6 +181,11 @@ runs:
         START_GIT_REF: ${{ inputs.start-git-ref }}
         END_GIT_REF: ${{ inputs.end-git-ref }}
       run: |
+        # version without a profile is equivalent to release-version (convenient for release workflows).
+        if [ -z "$PROFILE" ] && [ -n "$VERSION" ] && [ -z "$RELEASE_VERSION" ]; then
+          RELEASE_VERSION="$VERSION"
+        fi
+
         ARGS=()
         ARGS+=(changelog bundle --plan)
         if [ -n "$PROFILE" ]; then
@@ -191,9 +199,11 @@ runs:
           [ -n "$REPORT" ] && ARGS+=(--report "$REPORT")
           [ -n "$PRS" ] && ARGS+=(--prs "$PRS")
           [ -n "$OUTPUT" ] && ARGS+=(--output "$OUTPUT")
-          [ -n "$REPO" ] && ARGS+=(--repo "$REPO")
-          [ -n "$OWNER" ] && ARGS+=(--owner "$OWNER")
         fi
+        # Forward in profile mode too: docs-builder uses --repo for the
+        # {repo}-{product}-{version}.yaml filename when bundle.repo is unset.
+        [ -n "$REPO" ] && ARGS+=(--repo "$REPO")
+        [ -n "$OWNER" ] && ARGS+=(--owner "$OWNER")
 
         docs-builder "${ARGS[@]}"
 
@@ -277,9 +287,9 @@ runs:
           [ -n "$REPORT" ] && BUNDLE_ARGS+=(--report "$(resolve_report "$REPORT")")
           [ -n "$PRS" ] && BUNDLE_ARGS+=(--prs "$PRS")
           [ -n "$OUTPUT" ] && BUNDLE_ARGS+=(--output "$OUTPUT")
-          [ -n "$REPO" ] && BUNDLE_ARGS+=(--repo "$REPO")
-          [ -n "$OWNER" ] && BUNDLE_ARGS+=(--owner "$OWNER")
         fi
+        [ -n "$REPO" ] && BUNDLE_ARGS+=(--repo "$REPO")
+        [ -n "$OWNER" ] && BUNDLE_ARGS+=(--owner "$OWNER")
 
         if [ "$DRY_RUN" = "true" ]; then
           # Surface the commit-range run report (resolved PR list with per-PR source) in the
@@ -307,6 +317,13 @@ runs:
         DOCKER_ARGS=(--rm -v "${PWD}:/github/workspace" -w /github/workspace -e GITHUB_TOKEN)
 
         GH_RELEASE_ARGS=(changelog gh-release)
+
+        # Fall back to GITHUB_REPOSITORY when the repo input is not supplied.
+        # GITHUB_REPOSITORY is 'owner/repo' and is set by the runner in every Actions context.
+        if [ -z "$REPO" ] && [ -n "${GITHUB_REPOSITORY:-}" ]; then
+          REPO="${GITHUB_REPOSITORY##*/}"
+          [ -z "$OWNER" ] && OWNER="${GITHUB_REPOSITORY%%/*}"
+        fi
 
         REPO_ARG="$REPO"
         if [ -n "$OWNER" ]; then

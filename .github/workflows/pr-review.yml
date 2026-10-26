@@ -30,7 +30,11 @@ jobs:
         Compiled outputs live in `.github/workflows/gh-aw-*.lock.yml` (generated via `make compile`).
         NEVER suggest editing `.lock.yml` files directly — all edits go in the `.md` source,
         then `make compile` regenerates the lock file.
-        Flag any PR that modifies a `.lock.yml` without a matching change to its `.md` source.
+        Flag a `.lock.yml` change only when the PR has no source change that explains the
+        regeneration. Valid sources include the corresponding `.md` workflow, an imported
+        fragment, and the pinned compiler version in `.gh-aw-version`. When `.gh-aw-version`
+        changes, regenerated lock files are expected without matching `.md` edits. Verify that
+        the generated metadata uses the pinned version; never request placeholder `.md` changes.
 
         ## inlined-imports frontmatter
         Reusable workflows consumed by other repos MUST have `inlined-imports: true` in their

@@ -9,6 +9,7 @@ permissions:
   discussions: write
   pull-requests: write
   copilot-requests: write
+  id-token: write
 
 jobs:
   run:

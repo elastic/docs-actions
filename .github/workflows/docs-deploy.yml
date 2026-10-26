@@ -66,7 +66,7 @@ jobs:
     if: >
       github.event.workflow_run.conclusion == 'success'
       && github.event.repository.fork == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: read
@@ -297,9 +297,13 @@ jobs:
           HEAD_BRANCH: ${{ steps.context.outputs.head-branch }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           USE_RELEASE: ${{ inputs.use-release-branches }}
+          EVENT: ${{ steps.context.outputs.event }}
         run: |
           eligible=false
-          if [[ "$HEAD_BRANCH" == "$DEFAULT_BRANCH" ]]; then
+          # Pull requests publish previews only; the link index is fed from pushes to branches in this repository.
+          if [[ "$EVENT" == "pull_request" ]]; then
+            eligible=false
+          elif [[ "$HEAD_BRANCH" == "$DEFAULT_BRANCH" ]]; then
             eligible=true
           elif [[ "${USE_RELEASE}" == "true" ]] && [[ "$HEAD_BRANCH" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
             eligible=true
@@ -317,7 +321,7 @@ jobs:
           || needs.preflight.outputs.is-org-member == 'true')
       && needs.preflight.outputs.should-deploy == 'true'
       && inputs.disable-comments != true
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: none
       deployments: none
@@ -376,7 +380,7 @@ jobs:
   build:
     needs: preflight
     if: needs.preflight.outputs.should-deploy == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -535,7 +539,7 @@ jobs:
     if: >
       needs.build.outputs.build_outcome == 'success'
       && needs.build.outputs.skip != 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: none
       deployments: write
@@ -643,7 +647,7 @@ jobs:
       - build
       - deploy-preview
       - pre-comment
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: none
       deployments: none
@@ -843,7 +847,7 @@ jobs:
       && needs.preflight.outputs.vale-files-match == 'true'
     needs:
       - preflight
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: none
@@ -888,7 +892,7 @@ jobs:
     needs:
       - preflight
       - build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
     env:

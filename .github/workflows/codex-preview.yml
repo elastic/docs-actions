@@ -76,7 +76,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    runs-on: ${{ needs.check.outputs.any_modified == 'true' && 'ubuntu-latest' || 'ubuntu-slim' }}
+    runs-on: ${{ needs.check.outputs.any_modified == 'true' && 'ubuntu-24.04' || 'ubuntu-slim' }}
     steps:
       - name: Checkout code
         if: needs.check.outputs.any_modified == 'true'
@@ -114,7 +114,7 @@ jobs:
     needs:
       - check
       - build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Create Deployment
         uses: actions/github-script@v9
@@ -200,10 +200,21 @@ jobs:
       - check
       - build
       - deploy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
+      contents: read
       pull-requests: write
     steps:
+      - name: Checkout docs-actions scripts
+        uses: actions/checkout@v6
+        with:
+          repository: elastic/docs-actions
+          # github.workflow_sha identifies the caller in a reusable workflow.
+          # The JSON round-trip works around actionlint#647 until actionlint supports this property.
+          ref: ${{ fromJSON(toJSON(job)).workflow_sha }}
+          sparse-checkout: codex/preview/scripts
+          path: _docs-actions
+          persist-credentials: false
       - name: Comment preview links on PR
         continue-on-error: true
         uses: actions/github-script@v9
@@ -252,10 +263,14 @@ jobs:
               return;
             }
 
-            const docsRoot = (process.env.DOCS_PATH || 'docs')
+            const nodePath = require('path');
+            const { detectDocsRoot } = require(nodePath.join(process.env.GITHUB_WORKSPACE, '_docs-actions/codex/preview/scripts/detect-docs-root.js'));
+            const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            const configuredRoot = (process.env.DOCS_PATH || 'docs')
               .replace(/^\.\//, '')
               .replace(/\/+$/, '');
-            const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const docsRoot = detectDocsRoot(changedMdFiles, configuredRoot);
             const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
 
             const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');

@@ -53,6 +53,18 @@ jobs:
           - fixture: convention-warnings.yaml
             fail-on-warn: 'true'
             expect: failure
+          - fixture: duplicate-summaries.yaml
+            fail-on-warn: 'false'
+            expect: success
+          - fixture: duplicate-summaries.yaml
+            fail-on-warn: 'true'
+            expect: failure
+          - fixture: placeholder-host-2.0.yaml
+            fail-on-warn: 'false'
+            expect: success
+          - fixture: placeholder-host-2.0.yaml
+            fail-on-warn: 'true'
+            expect: failure
 
     steps:
       - name: Checkout repository
@@ -94,3 +106,24 @@ jobs:
             exit 1
           fi
           echo "Output counts verified: errors=${ERROR_COUNT} warnings=${WARNING_COUNT}"
+
+      - name: Verify duplicate summaries are reported
+        if: matrix.fixture == 'duplicate-summaries.yaml' && matrix.fail-on-warn == 'false'
+        env:
+          WARNING_COUNT: ${{ steps.lint.outputs.warning-count }}
+          ERROR_COUNT: ${{ steps.lint.outputs.error-count }}
+          RESULTS_FILE: ${{ steps.lint.outputs.results-file }}
+        run: |
+          if [ "${ERROR_COUNT}" != "0" ] || [ "${WARNING_COUNT}" != "2" ]; then
+            echo "::error::Expected 0 errors and 2 warnings, got errors=${ERROR_COUNT} warnings=${WARNING_COUNT}"
+            exit 1
+          fi
+          # The two cross-path duplicates must be the ones reported; GET and POST on /things share a summary
+          # on one path and must not be.
+          FLAGGED=$(jq -r '[.[] | select(.code == "elastic-operation-summary-unique") | .path | join(" ")] | sort | join(",")' "${RESULTS_FILE}")
+          EXPECTED="paths /cat/health get summary,paths /cluster/health get summary"
+          if [ "${FLAGGED}" != "${EXPECTED}" ]; then
+            echo "::error::Expected warnings for '${EXPECTED}', got '${FLAGGED}'"
+            exit 1
+          fi
+          echo "Flagged operations verified: ${FLAGGED}"

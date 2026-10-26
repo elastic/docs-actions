@@ -26,6 +26,12 @@ Usage:
 - run: docs-builder --version
 ```
 
+## Caller workflow templates
+
+Download-ready caller workflows for automated release notes are available in [`release-notes/`](release-notes/).
+
+Download-ready caller workflows for deterministic light or full review classification of docs pull requests are available in [`review-classifier/`](review-classifier/).
+
 ## Agentic workflows
 
 AI-powered [GitHub Agent Workflows](https://github.github.com/gh-aw/) for documentation tasks.
@@ -55,7 +61,8 @@ See [agentic-workflows/DEVELOPING.md](agentic-workflows/DEVELOPING.md) for agent
 ```bash
 make setup     # install gh-aw compiler + actionlint
 make compile   # compile workflow sources to lock files
-make lint      # validate trigger files
+make lint      # validate all files without changing the working tree
+make format    # run all pre-commit hooks and apply fixes
 ```
 
 ## License

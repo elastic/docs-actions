@@ -1,0 +1,45 @@
+openapi: 3.0.3
+info:
+  title: Test API
+  version: "1.0.0"
+  description: Two different APIs share a summary that differs only by case and a trailing period; GET and POST on one path may share one.
+servers:
+  - url: https://api.example.com
+paths:
+  /cat/health:
+    get:
+      operationId: catHealth
+      summary: Get the cluster health status.
+      description: Compact health.
+      tags: [things]
+      responses:
+        '200':
+          description: OK
+  /cluster/health:
+    get:
+      operationId: clusterHealth
+      summary: get the cluster health status
+      description: Detailed health.
+      tags: [things]
+      responses:
+        '200':
+          description: OK
+  /things:
+    get:
+      operationId: getThings
+      summary: Work with things
+      description: Returns things.
+      tags: [things]
+      responses:
+        '200':
+          description: OK
+    post:
+      operationId: postThings
+      summary: Work with things
+      description: Creates things.
+      tags: [things]
+      responses:
+        '200':
+          description: OK
+tags:
+  - name: things

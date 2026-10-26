@@ -26,9 +26,15 @@ repos:
 
   - repo: local
     hooks:
+      - id: check-symlink-targets
+        name: check symlink targets
+        language: system
+        entry: ./scripts/check-symlink-targets.sh
+        pass_filenames: false
+        always_run: true
       - id: compile-workflows
         name: compile gh-aw workflows
         language: system
         entry: ./scripts/run-gh-aw-compile.sh
-        files: '^\.gh-aw-version$|\.github/workflows/gh-aw-.*\.md$|\.github/workflows/gh-aw-fragments/'
+        files: '^\.github/workflows/aw\.json$|^\.gh-aw-version$|\.github/workflows/gh-aw-.*\.md$|\.github/workflows/gh-aw-fragments/'
         pass_filenames: false

@@ -98,10 +98,19 @@ The repo pins the `gh-aw` compiler version in `.gh-aw-version` so local compilat
 
 ### Engine and authentication
 
-All workflows use the `copilot` engine with GitHub's built-in Copilot token — no external API key or secret required. Add `permissions.copilot-requests: write` to the reusable-workflow source:
+Two groups of workflows use two different setups:
+
+| Group | Workflows | Engine and model | Authentication |
+| ----- | --------- | ---------------- | -------------- |
+| Copilot | The docs sweeps, `docs-source-sync`, `docs-agent-experimental` | `copilot` engine, `claude-sonnet-5` | GitHub's built-in Copilot token. No secret is needed. |
+| Agent Router | `docs-review`, `issue-triage`, `issue-auto-triage`, `issue-scope`, `project-metadata` | `claude` engine (Haiku 5.5, Sonnet 5.5) or `codex` engine (`gpt-5.6-luna`) | A Google ID token from the Docs agentic workflows service account. No API key is needed. |
+
+#### Copilot workflows
+
+Add `permissions.copilot-requests: write` to the reusable-workflow source:
 
 ```yaml
-model: claude-sonnet-5   # or gpt-5-mini for lightweight triage/size workflows
+model: claude-sonnet-5
 engine:
   id: copilot
 
@@ -111,7 +120,7 @@ permissions:
   copilot-requests: write
 ```
 
-Consumer repos calling these reusable workflows also need `copilot-requests: write` in their caller job `permissions:` block — no `secrets:` passthrough is needed:
+Consumer repos calling these reusable workflows also need `copilot-requests: write` in their caller job `permissions:` block. No `secrets:` passthrough is needed:
 
 ```yaml
 jobs:
@@ -124,6 +133,62 @@ jobs:
       copilot-requests: write
     uses: elastic/docs-actions/.github/workflows/gh-aw-<name>.lock.yml@v1
 ```
+
+GPT models fail on the Copilot Responses path (`400 Bad Request` from `api.githubcopilot.com`), so use a Claude model on the Copilot engine.
+
+#### Agent Router workflows
+
+Agent Router is the Elastic LLM gateway (`https://llm.idea.elastichosting.ai`). These workflows call it as a service account, not with an API key.
+
+**How authentication works.** The first custom step of the agent job runs `google-github-actions/auth`. It exchanges the job's GitHub OIDC token for a Google ID token, using the `docs-agentic-ci-oidc` Workload Identity provider and the `agentic-workflows-docs-runner@elastic-edm.iam.gserviceaccount.com` service account. The ID token has the gateway URL as its audience (with no `/v1`) and includes the account's email. The engine then uses the token as its API key.
+
+```yaml
+steps:
+  - name: Authenticate to Agent Router
+    id: agent-router-auth
+    uses: google-github-actions/auth@v3
+    with:
+      workload_identity_provider: ${{ vars.AGENT_ROUTER_WIF_PROVIDER || 'projects/117436331624/locations/global/workloadIdentityPools/docs-agentic-ci-oidc/providers/docs-agentic-ci-oidc' }}
+      service_account: ${{ vars.AGENT_ROUTER_SERVICE_ACCOUNT || 'agentic-workflows-docs-runner@elastic-edm.iam.gserviceaccount.com' }}
+      token_format: id_token
+      id_token_audience: https://llm.idea.elastichosting.ai
+      id_token_include_email: true
+```
+
+Both identifiers are public and the same for every caller, so the workflow carries them as defaults. A repository variable can override them. The token lasts about an hour and is minted per job, right before the agent starts. Our jobs time out in 30 minutes or less, so no refresh is needed.
+
+**Engine settings.**
+
+| Engine | Base URL | Key | Notes |
+| ------ | -------- | --- | ----- |
+| `claude` | `https://llm.idea.elastichosting.ai/anthropic` | `ANTHROPIC_API_KEY: Bearer <token>` | Set `AWF_ANTHROPIC_AUTH_HEADER: Authorization`. The AWF sidecar sends the Anthropic key in `x-api-key`, and the gateway only reads `Authorization: Bearer`. The sidecar adds no prefix, so the key value carries the `Bearer ` scheme itself. |
+| `codex` | `https://llm.idea.elastichosting.ai/v1` | `OPENAI_API_KEY: <token>` | The Codex engine calls `/v1/responses`. The sidecar sends the key as `Authorization: Bearer` with no extra setting. |
+
+Keep the key's fallback literal, for example `${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}`. gh-aw checks the key in the `activation` job, where the auth step does not exist. Without the fallback, activation fails with `Validate ANTHROPIC_API_KEY secret`. The agent job always gets the real token.
+
+Also add `llm.idea.elastichosting.ai` to `network.allowed`, and `id-token: write` to the workflow's `permissions:`. Threat detection runs on Copilot, so keep `copilot-requests: write` too. Detection inherits the main engine's environment, so blank the Agent Router variables in the `threat-detection` engine block.
+
+**Models.** Use the exact, case-sensitive IDs from the gateway: `claude-haiku-5-5`, `claude-sonnet-5-5`, `gpt-5.6-luna`. An unknown ID returns `404 No matching route found`. Check the routes in `kustomize/llm_gateway/overlays/prod/us` in `elastic/centralized-it-infra`. The AWF price table may not list a new model. In that case the sidecar rejects every request with a `400`, and you add `models.default-ai-credits-pricing` to the frontmatter.
+
+**Caller requirements.** The caller job needs `id-token: write` and `copilot-requests: write`. The calling repo must be on the service account's allowlist. To add a repo, open a change to the repo list in `terraform/workspaces/gcp/elastic-edm-admin/service_accounts/agentic-workflows-docs-runner.tf` in `elastic/centralized-it-infra`. The Workload Identity provider only accepts tokens from the `elastic` organization whose `job_workflow_ref` starts with `elastic/docs-actions/.github/workflows/gh-aw-`, so a repo can only mint tokens through these reusable workflows.
+
+**Rate limit.** All callers share one bucket for the service account, and the gateway counts total tokens, including cached tokens. A run reads the same context many times, so one run counts about 300,000 to 400,000 tokens. The current cap is 1,000,000 tokens per hour (as of Oct 22, 2026), and a few runs in one hour can use it up. The gateway then answers `429` with `x-envoy-ratelimited: true`. The CLI retries a few times over about 40 seconds, but the bucket does not refill, so the run fails. See `elastic/centralized-it-infra#1639` for the request to remove the cap.
+
+**Usage data.** The gateway records every request, with the caller, model and token counts, in IT's Elasticsearch. We have no access yet (`elastic/centralized-it-infra#1638`). Each run also records its own token counts and an AI credit estimate in the `agent_usage.json` file of the run artifact. The estimate is not a billed cost.
+
+**Troubleshooting.**
+
+| Symptom | Cause | Fix |
+| ------- | ----- | --- |
+| `activation` fails on `Validate ANTHROPIC_API_KEY secret` | The key expression has no fallback in the activation job | Add `|| 'agent-router'` to the key expression |
+| `401 Jwt is missing` | The Anthropic key went out in `x-api-key` | Set `AWF_ANTHROPIC_AUTH_HEADER: Authorization` and start the key with `Bearer ` |
+| `401` or `403` with a valid token | The repo is not on the service account's allowlist, or the audience has a `/v1` or a path | Check the repo list, and use the gateway origin as the audience |
+| The `Authenticate to Agent Router` step fails | The workflow file name does not start with `gh-aw-`, the repo is not on the allowlist, or the caller lacks `id-token: write` | Check the workflow file name, the repo list and the caller permissions |
+| `429` with `x-ratelimit-remaining: 0` | The hourly bucket is empty | Wait for `x-ratelimit-reset` seconds, or ask IT to change the cap |
+| `404 No matching route found` | The model ID is wrong or not onboarded | Copy the ID from the prod routes |
+| `400` from the sidecar about AI credits pricing | The model is missing from the AWF price table | Add `models.default-ai-credits-pricing` |
+
+**Testing in the sandbox.** Point a caller in `elastic/docs-actions-sandbox` at your branch (`uses: elastic/docs-actions/.github/workflows/gh-aw-<name>.lock.yml@<branch>`), give it `id-token: write`, and run it on a fresh issue or pull request. Read the proxy logs in the `*-agent` artifact: `sandbox/firewall/logs/api-proxy-logs/token-usage.jsonl` for the model and tokens, and `upstream-errors.jsonl` for the gateway's rate-limit headers. Run the heavy workflows one at a time, because they share the hourly bucket.
 
 ### workflow_call Convention
 
@@ -157,6 +222,7 @@ repository. Its precedence is the immutable workflow contract, then the caller's
 | `gh-aw-fragments/formatting.md` | Response formatting rules |
 | `gh-aw-fragments/rigor.md` | Accuracy & evidence standards |
 | `gh-aw-fragments/mcp-pagination.md` | MCP token limit guidance and pagination patterns |
+| `gh-aw-fragments/code-lookup-clone.md` | Sparse shallow clone and local `grep` for reading code in other public repositories, with `search_code` as the fallback |
 | `gh-aw-fragments/safe-output-add-comment.md` | Limitations for `add-comment` |
 | `gh-aw-fragments/ste-100.md` | Simplified Technical English (STE-100) writing standard |
 

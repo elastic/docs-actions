@@ -1,4 +1,4 @@
-.PHONY: help setup compile lint
+.PHONY: help setup compile lint format
 
 GH_AW_VERSION ?= $(shell cat .gh-aw-version)
 
@@ -8,7 +8,8 @@ help:
 	@echo "Agentic workflow targets:"
 	@echo "  setup              - Install gh-aw extension ($(GH_AW_VERSION))"
 	@echo "  compile            - Compile workflow .md sources to .lock.yml files"
-	@echo "  lint               - Run all pre-commit hooks"
+	@echo "  lint               - Check all files without changing the working tree"
+	@echo "  format             - Run all pre-commit hooks and apply fixes"
 	@echo ""
 	@echo "Workflow sources live in .github/workflows/gh-aw-*.md. Edit those, then run 'make compile'."
 
@@ -25,4 +26,7 @@ compile: setup
 	@gh aw compile
 
 lint:
+	@./scripts/run-pre-commit-check.sh
+
+format:
 	@pre-commit run --all-files

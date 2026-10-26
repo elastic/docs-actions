@@ -337,7 +337,6 @@ bundle:
   profiles:
     my-release:
       products: "my-product {version} {lifecycle}"
-      output: "{version}.yaml"
 ```
 
 **`.github/workflows/changelog-bundle.yml`**
@@ -363,7 +362,19 @@ jobs:
       version: ${{ github.event.release.tag_name }}
 ```
 
-The `output` input is not needed — the action resolves the output path from `bundle.output_directory` and the profile's `output` pattern via the `--plan` step.
+The `output` input is not needed — `--plan` writes `{repo}-{product}-{version}.yaml` under the profile's `output_directory` if set, otherwise `bundle.output_directory`.
+Repo comes from `bundle.repo`, the `repo` workflow input (`--repo`), or git remote `origin`.
+If none of those resolve, docs-builder warns and uses the legacy `{product}-{version}.yaml` name (cross-repo overwrite is still possible).
+
+To keep bundles in their separate folders, set `output_directory` on each profile.
+It replaces the global directory for that profile only; the conventional filename is unchanged:
+
+```yaml
+    serverless-release:
+      output_products: "cloud-serverless {version}"
+      output_directory: docs/releases/cloud-serverless
+      # → docs/releases/cloud-serverless/my-repo-cloud-serverless-{version}.yaml
+```
 
 #### GitHub release mode (`mode: gh-release`)
 
@@ -469,7 +480,7 @@ If your changelog configuration is not at `docs/changelog.yml`, pass the path ex
 
 The primary workflow (`changelog-bundle.yml`) uploads the bundle to the `elastic-docs-v3-changelog-bundles` S3 bucket under `bundle/{product}/{filename}`. The bundle is available to downstream rendering workflows immediately after upload.
 
-> **Note:** Bundles are keyed by product, so a shared product (e.g. `cloud-serverless`) bundled by more than one repository shares the `bundle/{product}/` prefix. To avoid one repo's bundle overwriting another's, give each bundle a repo-qualified filename such as `{repo}-{dateOrVersion}.yaml` (e.g. `my-repo-2026-03.yaml`).
+> **Note:** Bundles are keyed by product, so a shared product (e.g. `cloud-serverless`) bundled by more than one repository shares the `bundle/{product}/` prefix. Profile mode writes `{repo}-{product}-{version}.yaml` (for example `kibana-cloud-serverless-2026-08-27.yaml`) so those objects do not overwrite each other. Set `bundle.repo` (or pass `repo:`) so the prefix is stable; the CDN `:cdn:` listing includes every object under `bundle/{product}/`.
 
 ### Bundle PR workflow (opt-in)
 
@@ -552,7 +563,43 @@ Notes:
 
 - **Both refs are always required.** The start ref is never inferred from previous bundles or deployment history; the caller resolves it (for example, elastic/cloud's argocd-driven promotion exposes the promoted commit pair, and serverless quality gates read the previous ref from `serverless-gitops` history).
 - The bundle **version is the UTC date** (`YYYY-MM-DD`) derived at run time — callers cannot pass a semver.
-- The profile in `docs/changelog.yml` contributes output metadata only (`output_products`, `repo`/`owner`, `rules`); it must not set a `products` pattern or `source: github_release`. Without an explicit `output` pattern the bundle is named `{product}-{version}.yaml` by convention.
+- The profile in `docs/changelog.yml` contributes output metadata only (`output_products`, `repo`/`owner`, `rules`); it must not set a `products` pattern or `source: github_release`.
+- Profile mode names the bundle `{repo}-{product}-{version}.yaml` (repo from `bundle.repo`, `--repo`, or git `origin`) under the profile's `output_directory` if set, otherwise `bundle.output_directory`.
 - Pass `dry-run: true` to resolve the range and publish the run report — the resolved PR list with each PR's entry source (pool / inferred / missing) plus commits without an associated PR — to the job summary without building or uploading anything. Useful for wiring and for pre-flight checks.
 - The upload goes to the private S3 bucket; the scrubber Lambda mirrors a sanitized copy to the public CDN, same as `changelog-bundle.yml`. The same OIDC prerequisite applies (your repository must have the changelog IAM role provisioned).
 - A `GITHUB_TOKEN` is required at bundle time: the GraphQL API used for commit→PR association does not accept anonymous requests. The workflow passes the ambient `github.token`.
+
+## Composite actions: create and publish
+
+The reusable workflows above call composite actions internally. You can call these directly when you need finer control over permissions, job naming, or when you are composing your own release pipeline.
+
+### `changelog/bundle-create-version`
+
+Creates a changelog bundle from a GitHub release (`docs-builder changelog gh-release`).
+Runs the native binary — no Docker, no plan step — and emits `bundle-path` as a step output.
+Use this when you know the release tag and want privilege separation between generate and publish.
+
+See [`bundle-create-version/README.md`](bundle-create-version/README.md) for inputs, outputs, and an example two-job workflow.
+
+### `changelog/release-serverless`
+
+Bundles a serverless promotion with `docs-builder release serverless <service> <service-version>`.
+docs-builder resolves the commit range from `elastic/serverless-gitops` history and reads the service's config.
+Runs the native binary, supports `dry-run`, and writes all bundles to one artifact and emits `bundle-paths`.
+
+See [`release-serverless/README.md`](release-serverless/README.md) for inputs, outputs, and caller requirements.
+
+### `changelog/bundle-publish`
+
+Downloads the bundle artifact produced by `bundle-create-version`
+and uploads it to the private S3 bucket via OIDC. Holds `id-token: write` so the generate job
+does not need it.
+
+See [`bundle-publish/README.md`](bundle-publish/README.md) for inputs and caller requirements.
+
+### Frozen actions: `bundle-create` and `bundle-upload`
+
+`changelog/bundle-create` and `changelog/bundle-upload` are frozen — no new features are added.
+They remain in use by the `changelog-bundle.yml` reusable workflow and by
+`elastic/docs-internal-workflows`. New release-driven consumers should use
+`bundle-create-version` + `bundle-publish` instead.

@@ -8,6 +8,7 @@ AI-powered workflows for Elastic documentation tasks. Each directory contains a 
 | [issue-scope](issue-scope/) | Scope docs impact and estimate cost/benefit for an issue in one comment | `/scope`, dispatch | `add-labels`, `add-comment` |
 | [issue-triage](issue-triage/) | Route and quality-check an issue on demand: classify it, check it against the quality bar, and apply labels | `/triage`, dispatch | `add-labels`, `remove-labels`, `react-green`, `add-comment` |
 | [issue-auto-triage](issue-auto-triage/) | Route and quality-check a new issue with per-project instructions | `issues: opened` | `add-labels`, `remove-labels`, `react-green`, `add-comment` |
+| [project-metadata](project-metadata/) | Fill configured empty fields for one selected GitHub Project issue | `workflow_dispatch` | `apply-project-fields` |
 | [docs-frontmatter-sweep](docs-frontmatter-sweep/) | Audit frontmatter on a rotating slice, or all markdown files under a selected subtree | `workflow_dispatch` | `create-issue` (label `docs-fix:frontmatter`) |
 | [docs-quality-sweep](docs-quality-sweep/) | Orchestrator that fans out to all quality sweeps in parallel | `workflow_dispatch` | (per sub-workflow) |
 | [docs-applies-to-sweep](docs-applies-to-sweep/) | Validate `applies_to` keys on a rotating slice, or all markdown files under a selected subtree | `workflow_dispatch` | `create-issue` (label `docs-fix:applies-to`) |
@@ -28,9 +29,11 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-scope.yml
 ```
 
-These workflows use the built-in `github.token` with `copilot-requests: write` permission for
-authentication — no separate secret passthrough needed. The quality-sweep orchestrator is the
-exception — it dispatches sibling workflows via `gh workflow run`.
+The sweeps and `docs-source-sync` use the built-in `github.token` with `copilot-requests: write` permission for
+authentication, so no secret passthrough is needed. The quality-sweep orchestrator is the
+exception: it dispatches sibling workflows via `gh workflow run`.
+
+`docs-review`, `issue-triage`, `issue-auto-triage`, `issue-scope` and `project-metadata` call the Agent Router gateway as a service account. Their callers need `id-token: write` (and `copilot-requests: write` for threat detection), and the calling repo must be on the service account's allowlist. See [Developing agentic workflows](DEVELOPING.md#agent-router-workflows).
 
 Skill imports are workflow-specific. Some workflows install APM skills from `elastic/elastic-docs-skills`, while others intentionally rely only on embedded rules and deterministic pre-steps.
 

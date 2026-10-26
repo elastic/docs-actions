@@ -17,7 +17,13 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-review.yml
 ```
 
-Add `permissions.copilot-requests: write` to the caller workflow before running this workflow. You do not need to pass `COPILOT_GITHUB_TOKEN` for the default built-in auth path.
+Add the following to the caller workflow before running this workflow:
+
+- `permissions.copilot-requests: write`
+- `permissions.id-token: write`
+- Your repo on the allowlist of the Docs agentic workflows service account in `elastic/centralized-it-infra`. The workflow supplies the Workload Identity provider and the service account itself.
+
+The workflow uses the Claude engine with Claude Sonnet 5.5 (`claude-sonnet-5-5`) through the Agent Router gateway (`/anthropic` route) and authenticates with a Google ID token, so it needs no model API key. A review of one page counted about 380,000 tokens against the service account's shared hourly limit (measured on Oct 22, 2026, cached tokens included). See [Developing agentic workflows](../DEVELOPING.md#agent-router-workflows) for the setup, the limit and troubleshooting. Threat detection still runs on Copilot, so keep `permissions.copilot-requests: write`.
 
 ## Inputs
 
@@ -37,6 +43,8 @@ Add `permissions.copilot-requests: write` to the caller workflow before running 
 | `submit-pull-request-review` | 1 | Submits the overall pull request review summary as a non-blocking `COMMENT` |
 
 The inline review comment cap for this workflow is set to `20`, so the workflow prioritizes the highest-signal comments and keeps broader observations in the summary review. Lower-priority nits should only be reported when they are grounded in the Elastic style guide, and those nits should usually be summarized in the review body instead of consuming inline comment slots.
+
+The review summary ends with a footer that asks the writer to add the label `ai-review:helpful` or `ai-review:unhelpful` to the PR when it closes. The footer is the `messages.footer` setting, so it appears on the summary and not on inline comments. The workflow does not read or apply the labels.
 
 ## Review scope
 
@@ -74,23 +82,37 @@ The `comment-phrasing` input controls how the action phrases its review comments
 
 ## Autonomous checks
 
-This workflow combines deterministic pre-steps with runtime APM skills from `elastic/elastic-docs-skills`. A pre-step runs Vale with `elastic/vale-rules` on eligible changed markdown files, and the prompt still embeds the review rules directly so the workflow can continue making evidence-based judgments even when a specific skill is not decisive. Vale is one input into the review, not a blocker for whether review happens. The workflow still reviews all eligible markdown files even when Vale finds nothing or is unavailable. It focuses on:
+This workflow combines deterministic pre-steps with the `elastic/elastic-docs-skills` six-criteria review rubric. A pre-step runs Vale with `elastic/vale-rules` on eligible changed markdown files. Vale is one input into the review, not a blocker — the workflow still reviews all eligible files even when Vale finds nothing or is unavailable.
 
-- Style and clarity issues from Vale, plus high-confidence Formatting, Accessibility, and UI writing checks from the embedded style guide checklist.
-- Elastic-internal jargon, outdated terms, informal shorthand, and unexplained acronyms that external readers will not understand.
-- Frontmatter quality for `description`, `products`, `navigation_title`, and verified `applies_to` guidance.
-- Content type fit and structure for overviews, how-to guides, tutorials, troubleshooting pages, and changelog entries.
-- Parent issue satisfaction when the pull request links to a docs issue.
+The review rubric (`review-criteria.md`) is compiled into the workflow and covers six criteria:
 
-At runtime, the workflow imports these skills through APM:
+| Criterion | Covers |
+|-----------|--------|
+| User focus | Content completeness, scannability, findability, logical flow |
+| Technical accuracy | Correctness, SME evidence, code samples, prerequisites |
+| Applicability | `applies_to` tags, cumulative structure, deployment types |
+| Maintainability | Single source of truth, redirects, high-maintenance content |
+| Language | Grammar, plain language, jargon, variables |
+| Style | Voice and tense, formatting, admonitions, accessibility |
 
-- `docs-check-style`.
-- `docs-flag-jargon-skill`.
-- `docs-frontmatter-audit`.
-- `docs-content-type-checker`.
-- `docs-applies-to-tagging`.
+At runtime, the workflow installs these `elastic/elastic-docs-skills` skills through the gh-aw `skills:` frontmatter key and the agent invokes each one with the `Skill` tool as an implementation tool for the relevant criterion:
 
-The workflow uses the Elastic docs MCP server only for targeted verification, such as published cumulative-docs guidance or sibling-page context. It noops or skips a finding when it cannot verify the evidence.
+- `docs-check-style` (Language and Style criteria).
+- `docs-flag-jargon-skill` (Language criterion).
+- `docs-frontmatter-audit` (Applicability criterion).
+- `docs-content-type-checker` (User Focus criterion).
+- `docs-applies-to-tagging` (Applicability criterion).
+- `docs-check-contradictions` (Technical accuracy criterion).
+
+The skills are pinned to `elastic-docs-skills@main` at compile time; the weekly recompile moves the pin. The Claude engine runs with `permission-mode: bypassPermissions` because gh-aw never adds the `Skill` tool to Claude's allowlist; the MCP gateway `allowed:` lists and the network firewall remain the enforced boundaries.
+
+The workflow uses the Elastic docs MCP server for targeted verification, such as cross-page duplication checks, published cumulative-docs guidance, and sibling-page context. It noops or skips a finding when it cannot verify the evidence.
+
+The workflow reads a linked code pull request's state before it describes it. It states that a linked commit is merged only with evidence for the target branch, such as a merged pull request that contains it, and that it is released only with a release or tag that contains it. It does not report a dependency or blocker that the PR description already names. It flags a UI label only after it finds the label in product source or in consistent published docs. When it cannot verify a label either way, it leaves the label alone and lists `UI labels: not verified` under `Review coverage`. It also lists any check that a rate limit or a tool error stopped.
+
+To check code in another public repository, such as a UI label in `elastic/kibana`, the workflow makes a shallow, sparse clone of one directory and searches it with `grep`, up to two clones per run. `search_code` is the fallback when a clone fails or the path list does not show where to look. A failed clone appears in the Review coverage list.
+
+It reads the PR conversation and review threads, and it treats a point that a reviewer or the author rejected as settled. It does not suggest content for a page that the PR links to another page for, and it follows the cumulative-docs rule that GA content in an unversioned product is labeled at the page level only.
 
 When an inline comment can be expressed as a small, exact replacement for the reviewed line or hunk, the workflow should prefer an apply-ready GitHub suggestion block over prose-only guidance.
 
@@ -107,6 +129,7 @@ permissions:
   contents: read
   discussions: write
   pull-requests: write
+  copilot-requests: write
 
 jobs:
   run:

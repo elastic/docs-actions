@@ -1,10 +1,18 @@
 # Issue scope
 
-Scopes documentation impact and estimates cost/benefit for an issue in a single comment. A
-`scoper` sub-agent identifies affected docs pages against linked code and the Elastic docs
-corpus; a `sizer` sub-agent estimates effort, ownership, audience, and a bill of materials.
-The workflow posts one combined comment and applies effort labels. The issue body is never
-rewritten.
+Scopes the documentation impact of an issue in a single comment. One agent judges the issue
+against the quality bar, searches the Elastic docs corpus for affected pages, verifies the
+request against any linked code, recommends how to tackle the work, and lists questions to go
+deeper. It applies `human-needed` only when the issue is not ready to scope. The issue body is
+never rewritten.
+
+## Model
+
+The agent runs `gpt-5.6-luna` through the Agent Router gateway (`/v1/responses`) on the codex engine, authenticated
+with a Google ID token. A run counts about 95,000 to 180,000 tokens against the service account's shared hourly limit (measured on Oct 21, 2026). See [Developing agentic workflows](../DEVELOPING.md#agent-router-workflows) for the setup, the limit and troubleshooting. Threat detection runs separately on GitHub Copilot with the `sonnet` model alias. The agent must query the Elastic docs MCP server before reading any
+repository file, so expect higher per-issue cost than a classification-only workflow — roughly
+7–10 AIC for a full assessment, about 7 for a partial one, and under 4 when the quality gate stops
+early (sandbox battery, 2026-09-15).
 
 ## Triggers
 
@@ -15,6 +23,9 @@ rewritten.
 
 The workflow runs on issues only. Commenting `/scope` on a pull request does not trigger it.
 
+The caller workflow uses `workflow_call` to invoke this reusable workflow. The triggers above
+refer to the conditions the caller evaluates before dispatching.
+
 ## Install
 
 ```bash
@@ -23,8 +34,9 @@ mkdir -p .github/workflows && curl -sL \
   -o .github/workflows/docs-scope.yml
 ```
 
-Add `copilot-requests: write` to the caller job `permissions:` block — no secret passthrough
-needed.
+The caller job needs `copilot-requests: write` in its `permissions:` block (threat detection
+runs on Copilot) and `id-token: write`. The repo must be on the allowlist of the Docs agentic workflows service
+account in `elastic/centralized-it-infra`. The workflow supplies the Workload Identity provider and the service account itself.
 
 ## Inputs
 
@@ -38,33 +50,82 @@ needed.
 
 | Output | Max | Description |
 |--------|-----|-------------|
-| `add-labels` | 2 | Apply one effort bucket label and, when all work is AI-suitable and effort is small, `good-for-ai`. |
-| `add-comment` | 1 | Post the combined scope and cost/benefit comment. Previous ScopeBot comments are hidden automatically. |
+| `add-labels` | 1 | Apply `human-needed` when the quality gate stops the run. No other label is ever applied. |
+| `add-comment` | 1 | Post the scope comment. Previous ScopeBot comments are hidden automatically. |
 
-Effort labels for `add-labels`: `hours`, `weeks: <1`, `weeks: 1`, `weeks: 2`, and `weeks: 4+`,
-plus `good-for-ai`. The workflow only applies labels that already exist in the target
-repository.
+The only allowed label is `human-needed`, and it must already exist in the target repository —
+the workflow never creates labels.
+
+## How it works
+
+1. Reads the issue title, body, comments, `CODEOWNERS` (for path vocabulary), any linked public
+   PRs or commits, and up to three linked public issues (one hop). Linked code is evidence, not a
+   prerequisite. When sources disagree it ranks them: linked code and PRs first, then comments
+   from Elastic members (`author_association` of `MEMBER`, `OWNER`, or `COLLABORATOR`), then other
+   comments and linked issues, then the issue description. Within a rank the newer source wins.
+   When it cannot read a source that the issue depends on, it says what it could not read, caps
+   dependent targets at Low, and returns 🟠 Partial scope if nothing else supports a target.
+2. Scores the issue against the five-criterion quality bar. A red score (0–1) stops the run:
+   the workflow applies `human-needed` and posts a team-facing list of what to resolve before
+   rerunning `/scope`.
+3. Searches the **Elastic docs MCP server** first (`search_docs`, `find_related_docs`,
+   `get_document_by_url`) and only then reads repository files to confirm details.
+4. Verifies the request against the linked code when there is any, otherwise against the
+   published pages it found.
+5. When something suggests an open pull request exists, checks sibling issues and open pull
+   requests for work already in flight, within a fixed search budget of three searches and five
+   pull request reads. The signals are a parent or tracking issue, a follow-up or sibling
+   relationship, a linked merged PR for the same feature, or a mentioned assignee, branch, or
+   draft PR. It searches the consumer repository and any other public repository that the issue,
+   its parent, or its siblings name or link to. It skips this step when no signal is present.
+6. Recommends documentation targets with a confidence level, describes how to tackle the work
+   with the information available, states the scope boundary, and lists questions to go deeper.
+   For find-and-replace issues it searches the consumer repository, and any other public
+   repository that the issue names, for the phrase. It reads code with two read-only tools,
+   `code_paths` and `code_grep`, which search a local copy, so it does not depend on GitHub code
+   search; `search_code` is the fallback. It reports the total match count and lists up
+   to 15 matching files, and writes "at least N files" when the results are partial. For issues about procedures, UI labels, or privileges it checks product source for the
+   current labels and says when it could not. It treats issue
+   comments as evidence and does not ask questions that they already answer.
+7. Posts one comment. The 🟢 and 🟠 comments end with a line that says the scope reflects the
+   issue as of the run and that `/scope` runs it again. The comment also carries a footer that
+   mentions the person who requested the scope, so that GitHub notifies them when the result
+   arrives, and asks them to add the label `ai-scope:helpful` or `ai-scope:unhelpful` to the issue
+   when the work closes. It is the `body-footer` setting, so it appears on the scope comment and
+   not on the "finished" status comment. A mention in the status message is escaped by gh-aw, so
+   the footer carries it. The workflow does not read or apply the labels.
+
+## Code tools
+
+The workflow has no shell. It defines two read-only tools with `mcp-scripts`, which run fixed scripts on the runner host with no secrets:
+
+| Tool | Inputs | What it does |
+| --- | --- | --- |
+| `code_paths` | `repo`, `name`, optional `ref` | Lists the file paths of a repository that contain `name`, from a shallow, blobless clone. |
+| `code_grep` | `repo`, `directory`, `phrase`, optional `ref` | Searches one directory for the exact phrase, matched literally and case-sensitive. It returns the match counts, the files, the first matches, and the commit hash. |
+
+Both tools accept only public repositories in the `elastic` organization, validate every input, and match text literally, so a phrase such as `foo[` is not a regular expression. They clone at most 2 repositories per run, refuse a directory with more than 8,000 files or 150 MB, and read the consumer repository from the workspace when the issue is in it. The Codex engine cannot restrict shell commands to a list, so these tools replace shell access.
 
 ## Outcomes
 
 | Outcome | Label | Comment |
 |---------|-------|---------|
-| 🟢 Full assessment | Effort + optional `good-for-ai` | Full scope table and cost/benefit |
-| 🟠 Additional context might help | Effort label when confident | Usable sections + what to add before rerunning |
-| 🔴 Not assessable | None | Short ask for missing context |
+| 🔴 Issue not ready to scope (quality gate) | `human-needed` | Team-facing list of gaps to resolve before rerunning |
+| 🟢 Full assessment | None | Summary, request accuracy, docs targets, how to tackle this, scope boundary, questions to go deeper |
+| 🟠 Partial scope | None | The sections that could be assessed, plus questions to resolve before rerunning |
 
-A 🟠 outcome is common when the issue has no linked PRs or commits — the scoper produces a
-limited scope from issue text and the Elastic docs corpus, and the sizer runs with lower
-confidence. Add the PR or commit link and rerun `/scope` for a full assessment.
+An issue with no linked PR or commit is normal for documentation work: targets are capped at
+Medium confidence and the outcome can still be 🟢. 🟠 means the issue scored orange on the
+quality bar, or no credible target was found.
 
 ## Project instructions
 
 By default, the workflow reads `.github/scope-instructions.md` from the consumer repository.
 If the file does not exist, the workflow continues without it. Use this file to customize:
 
-- Team, area, and ownership mappings
+- Area and ownership vocabulary
 - Which CODEOWNERS paths are relevant
-- Repository-specific vocabulary or docs structure
+- Repository-specific terminology or docs structure
 
 Project instructions cannot override the outcome contract, the comment templates, or the
 safe-output limits.
@@ -82,6 +143,6 @@ jobs:
     with:
       additional-instructions: |
         This repository's docs live under `docs/` and follow the Elastic docs structure.
-        Team:DocsEng owns all content under `docs/ingest/`.
+        Pages under `docs/ingest/` are owned by the ingest writers.
     secrets: inherit
 ```

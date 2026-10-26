@@ -44,27 +44,19 @@ runs:
       env:
         CONFIG: ${{ inputs.config }}
         BRANCH: ${{ inputs.branch }}
+        ARTIFACT_TYPE: ${{ inputs.artifact-type }}
       run: |
-        if [[ "$CONFIG" == /* ]]; then
-          echo "::error::config path must be relative, not absolute: ${CONFIG}"
-          exit 1
-        fi
-        if [[ "$CONFIG" == *..* ]]; then
-          echo "::error::config path must not contain '..': ${CONFIG}"
-          exit 1
-        fi
-        if [[ "$CONFIG" == *$'\n'* || "$CONFIG" == *$'\r'* ]]; then
-          echo "::error::config path must not contain newlines"
-          exit 1
-        fi
+        source "${GITHUB_ACTION_PATH}/../../scripts/validate-inputs.sh"
+
+        validate_path "$CONFIG" "config"
+
         if [[ -z "$BRANCH" ]]; then
           echo "::error::branch must not be empty"
           exit 1
         fi
-        if [[ "$BRANCH" == *$'\n'* || "$BRANCH" == *$'\r'* ]]; then
-          echo "::error::branch must not contain newlines"
-          exit 1
-        fi
+        validate_identifier "$BRANCH" "branch" '^[a-zA-Z0-9._/+-]+$'
+
+        validate_identifier "$ARTIFACT_TYPE" "artifact-type" '^(changelog|amend)(,(changelog|amend))*$'
 
     - name: Checkout
       uses: actions/checkout@v6

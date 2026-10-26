@@ -5,18 +5,18 @@ description: |
   pre-step and having the agent format the findings. Opens a single labeled
   fix-issue with structured YAML findings consumable by a future fix-agent.
 
+# Keep the agent and detection jobs on the tested image during the latest migration.
+runs-on: ubuntu-24.04
+
 inlined-imports: true
 imports:
-  - uses: shared/apm.md
-    with:
-      target: claude
-      packages:
-        - elastic/elastic-docs-skills/skills/review/docs-check-style
-        - elastic/elastic-docs-skills/skills/review/flag-jargon-skill
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/findings-contract.md
+skills:
+  - elastic/elastic-docs-skills/skills/review/docs-check-style@main
+  - elastic/elastic-docs-skills/skills/review/docs-flag-jargon-skill@main
 model: claude-sonnet-5
 engine:
   id: copilot
@@ -103,6 +103,11 @@ network:
     - "docs.bump.sh"
     - "search.elastic.co"
 safe-outputs:
+  threat-detection:
+    runs-on: ubuntu-24.04
+  report-failure-as-issue: false
+  messages:
+    footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
   noop:
   create-issue:
     title-prefix: "Docs fix — style: "
@@ -319,7 +324,7 @@ steps:
 
   - name: Install Vale and elastic/vale-rules
     env:
-      VALE_VERSION: "3.12.0"
+      VALE_VERSION: "3.24.0"
     run: |
       set -eu
       mkdir -p /tmp/gh-aw/bin
@@ -442,7 +447,8 @@ Manual checklist for non-Vale findings:
 - Formatting: UI element names should be bold; code, commands, config settings, file paths, fields, parameters, values, and environment variables should be monospace; new terms and Elastic docs resource titles should be italicized.
 - Formatting: Lists need at least two items, parallel structure, and periods only for complete sentences.
 - Formatting: Dates should use `Month DD, YYYY`; times should use uppercase `AM`/`PM`; avoid relative dates such as "recently" when they become stale.
-- Formatting: Do not stack admonitions or use an admonition when a requirements section would be clearer.
+- Formatting: Do not stack admonitions of the same or different types, and do not suggest merging them into one bigger admonition. Do not use an admonition for prerequisites.
+- Formatting: Use no more than one admonition per section. If a second seems necessary, suggest rewriting the content or adding context earlier on the page. Content that readers need to understand or complete the task belongs in the body. Reserve warning and important admonitions for real risk such as data loss, security issues, irreversible actions, or impact on performance or stability.
 - Accessibility: Images need useful alt text without backticks; link text must be descriptive; avoid directional-only references such as "above" or "below".
 - UI writing: Use "Click **Save**" for action buttons and icons, "Select **Logs**" for tabs, checkboxes, radio buttons, dropdown options, and choices, and "In the **Name** field, enter `value`" for text fields.
 - UI writing: Use "Turn on **Feature**" and "Turn off **Feature**" for toggles; use "toggle" as a noun, not a verb.

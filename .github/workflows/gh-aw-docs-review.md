@@ -1,27 +1,54 @@
 ---
 description: |
-  Reviews pull request documentation changes in markdown files using
-  self-contained Elastic docs review rules. Reports a concise summary and
-  line-level review comments for actionable markdown issues.
+  Reviews pull request documentation changes in markdown files using the
+  elastic/elastic-docs-skills six-criteria review rubric. Reports a concise
+  summary and line-level review comments for actionable markdown issues.
+
+# Keep the agent and detection jobs on the tested image during the latest migration.
+runs-on: ubuntu-24.04
 
 inlined-imports: true
 imports:
-  - uses: shared/apm.md
-    with:
-      target: claude
-      packages:
-        - elastic/elastic-docs-skills/skills/review/docs-check-style
-        - elastic/elastic-docs-skills/skills/review/flag-jargon-skill
-        - elastic/elastic-docs-skills/skills/review/frontmatter-audit
-        - elastic/elastic-docs-skills/skills/review/check-contradictions
-        - elastic/elastic-docs-skills/skills/authoring/content-type-checker
-        - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
+  - elastic/elastic-docs-skills/skills/review/docs-review-pr/references/review-criteria.md@main
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-model: claude-sonnet-5
+  - gh-aw-fragments/code-lookup-clone.md
+skills:
+  - elastic/elastic-docs-skills/skills/review/docs-check-style@main
+  - elastic/elastic-docs-skills/skills/review/docs-flag-jargon-skill@main
+  - elastic/elastic-docs-skills/skills/review/docs-frontmatter-audit@main
+  - elastic/elastic-docs-skills/skills/review/docs-check-contradictions@main
+  - elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker@main
+  - elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging@main
+model: sonnet
+# gh-aw v0.92.5's AWF price table does not match the `claude-sonnet-5.5` id that the OpenRouter
+# route sends: without a fallback the API proxy rejects every request with HTTP 400. Rates match
+# OpenRouter ($/1M tokens).
+models:
+  default-ai-credits-pricing:
+    input: 2.00
+    output: 10.00
 engine:
-  id: copilot
+  id: claude
+  # The six rule sets are Read into this agent's context rather than invoked through the Skill
+  # tool. Claude Code runs forked skills in the foreground in non-interactive mode, so one fork
+  # per skill per file serialises: a six-file PR needed 36 forks at ~52s each and hit the
+  # 30-minute cap with nothing posted. Reading them keeps the wall clock near-flat in file
+  # count. The catalog keeps `context: fork`, which is still the right default locally.
+  permission-mode: bypassPermissions
+  args: ["--disallowed-tools", "Edit(./**)"]
+  # gh-aw checks this key in the activation job, where the auth step does not exist. The fallback
+  # literal keeps that check from failing there. The agent job always gets the minted token.
+  env:
+    ANTHROPIC_BASE_URL: https://llm.idea.elastichosting.ai/anthropic
+    # Pin the `sonnet` alias. Without it, Claude Code picks the Sonnet its version
+    # knows (2.1.273 sent anthropic/claude-sonnet-5).
+    ANTHROPIC_DEFAULT_SONNET_MODEL: claude-sonnet-5-5
+    # The AWF sidecar sends this value as-is in the header named below, so it carries the Bearer scheme.
+    # The gateway reads Authorization: Bearer, and the sidecar sends x-api-key by default.
+    ANTHROPIC_API_KEY: Bearer ${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}
+    AWF_ANTHROPIC_AUTH_HEADER: Authorization
 on:
   roles: [admin, maintainer, write]
   workflow_call:
@@ -46,6 +73,10 @@ on:
         type: string
         required: false
         default: "describe-recommended"
+    secrets:
+      OPENROUTER_API_KEY:
+        description: "Deprecated and unused. The workflow authenticates to Agent Router with a Google ID token. Kept so callers that still pass it do not fail at startup."
+        required: false
 concurrency:
   group: gh-aw-docs-review-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
@@ -55,6 +86,7 @@ permissions:
   issues: read
   pull-requests: read
   copilot-requests: write
+  id-token: write
 tools:
   github:
     lockdown: false
@@ -70,13 +102,33 @@ network:
   allowed:
     - defaults
     - github
+    - "llm.idea.elastichosting.ai"
+    - "api.anthropic.com"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
+    # docs-builder syntax reference, used to confirm directive and markup claims
+    - "elastic.github.io"
     - "ela.st"
     - "docs.bump.sh"
     - "search.elastic.co"
 strict: false
 safe-outputs:
+  report-failure-as-issue: false
+  messages:
+    footer: "> Generated from [{workflow_name}]({run_url}){history_link}\n>\n> Was this review helpful? When the PR closes, add the label `ai-review:helpful` or `ai-review:unhelpful` to it."
+  threat-detection:
+    runs-on: ubuntu-24.04
+    engine:
+      id: copilot
+      model: sonnet
+      # gh-aw copies the main engine's env into threat detection. These provider
+      # settings make Copilot's firewall health check fail before the scan starts,
+      # and detection fails open. Empty values turn off the inherited custom target.
+      env:
+        ANTHROPIC_BASE_URL: ""
+        ANTHROPIC_API_KEY: ""
+        ANTHROPIC_CUSTOM_HEADERS: ""
+        ANTHROPIC_DEFAULT_SONNET_MODEL: ""
   urls: allowed-or-code-region
   allowed-domains:
     - elastic.co
@@ -95,6 +147,15 @@ safe-outputs:
     allowed-events: [COMMENT]
 timeout-minutes: 30
 steps:
+  - name: Authenticate to Agent Router
+    id: agent-router-auth
+    uses: google-github-actions/auth@v3
+    with:
+      workload_identity_provider: ${{ vars.AGENT_ROUTER_WIF_PROVIDER || 'projects/117436331624/locations/global/workloadIdentityPools/docs-agentic-ci-oidc/providers/docs-agentic-ci-oidc' }}
+      service_account: ${{ vars.AGENT_ROUTER_SERVICE_ACCOUNT || 'agentic-workflows-docs-runner@elastic-edm.iam.gserviceaccount.com' }}
+      token_format: id_token
+      id_token_audience: https://llm.idea.elastichosting.ai
+      id_token_include_email: true
   - name: Repo-specific setup
     env:
       SETUP_COMMANDS: ${{ inputs.setup-commands }}
@@ -104,7 +165,7 @@ steps:
       fi
   - name: Install Vale and elastic/vale-rules
     env:
-      VALE_VERSION: "3.12.0"
+      VALE_VERSION: "3.24.0"
     run: |
       set -eu
       mkdir -p /tmp/gh-aw/bin
@@ -211,17 +272,23 @@ steps:
 
 You are a documentation pull request reviewer for Elastic documentation repositories. Your job is to review the documentation changes in the triggering pull request like a careful human code reviewer: identify actionable problems, leave line-level comments when you have exact evidence, and always submit a concise overall review summary.
 
-Apply the review rules in this prompt, use deterministic evidence from the pull request and local files, and use the Elastic docs MCP server when published documentation is needed to verify a claim.
+Apply the six-criteria review rubric imported into this workflow (`review-criteria.md`), use deterministic evidence from the pull request and local files, and use the Elastic docs MCP server when published documentation is needed to verify a claim.
 
-This workflow also installs these APM skills from `elastic/elastic-docs-skills`:
+This workflow also installs these skills from `elastic/elastic-docs-skills` into `.claude/skills/`. Use them as implementation tools for the relevant rubric criterion — they provide operational rules that flesh out the rubric's criteria. Claude Code registers each skill under its directory name, which matches its frontmatter name, so invoke each one by the name below:
 
-- `docs-check-style`
-- `docs-flag-jargon-skill`
-- `docs-frontmatter-audit`
-- `docs-content-type-checker`
-- `docs-applies-to-tagging`
+| Skill | Criterion |
+|---|---|
+| `docs-check-style` | Language, Style |
+| `docs-flag-jargon-skill` | Language |
+| `docs-frontmatter-audit` | Applicability |
+| `docs-content-type-checker` | User focus |
+| `docs-applies-to-tagging` | Applicability |
+| `docs-check-contradictions` | Technical accuracy (Step 4) |
 
-Use those installed skills when they are relevant to the current review categories. Treat them as additive guidance, not as permission to skip the explicit review rules and evidence standards in this workflow.
+**Two overrides apply in this GitHub workflow context:**
+
+1. **Review action**: always submit `COMMENT`, never `REQUEST_CHANGES`. The "Deciding the review action" table in the rubric does not apply here.
+2. **Step 0 (network fetch)**: the imported `review-criteria.md` is already the authoritative rubric. Do not attempt to fetch a canonical checklist from the network.
 
 ## Comment phrasing
 
@@ -233,6 +300,7 @@ Apply these rules to every inline comment and review body you write:
 - Do not use passive constructions such as "It is recommended that..." or "X should be...".
 - When a specific fix is clear, state it directly: "Change X to Y" or "Use X instead of Y."
 - When you make an explicit recommendation between two or more valid options, use "we recommend".
+- Link to published Elastic documentation only on the `https://www.elastic.co/docs/` domain. `elastic.com` is not an Elastic documentation domain; a link to it is dead and is stripped from the posted comment. When you are not certain of a documentation URL, name the guidance in prose instead of guessing a link.
 
 For `describe-recommended` phrasing (default):
 
@@ -270,12 +338,13 @@ When the workflow runs:
 
 ## Step 1: Gather review context
 
-Read the pull request title, body, and changed files first.
+Read the imported `review-criteria.md` rubric first — it defines the six criteria you will apply. Then read the pull request title, body, and changed files.
 
 Use GitHub tools and local workspace inspection as needed to gather:
 
 - the pull request's linked issue context, if any, including closing keywords and directly referenced issues,
 - existing automated review comments or check summaries that could duplicate this review, especially docs build failures and Vale lint comments,
+- the human review threads, the review summaries, and the pull request conversation, read with `pull_request_read` (`get_review_comments`, `get_reviews`, and `get_comments`), so that you know which points a reviewer or the author already settled,
 - the list of changed files,
 - the diff hunks for each eligible markdown file,
 - the final contents of each eligible markdown file in the PR branch, and
@@ -313,161 +382,70 @@ Skip:
 
 ## Step 3: Review the changes
 
-Review each eligible file by applying the rules below and your own judgment. Use the Elastic docs MCP server for targeted verification when a finding depends on published docs, style-guide guidance, content-type guidance, cumulative-docs guidance, or sibling-page context. Prefer `elastic-docs.get_document_by_url` for known authoring guidance pages and `elastic-docs.search_docs` or `elastic-docs.find_related_docs` for discovery.
+Review each eligible file by applying the six criteria from the imported `review-criteria.md` rubric. The rubric is the authoritative source for every criterion. Where a criterion references the network (e.g., `find_related_docs`, MCP tool calls), perform those checks here.
 
-When a changed file would benefit from one of the installed APM skills, explicitly use that skill's guidance before drafting comments:
+Before reviewing the changed files, read these rule sets into your own context with the `Read` tool, once each, at the start of the run. Each deepens coverage for its criterion and may surface findings that pure reasoning would miss:
 
-- `docs-check-style` for style-guide, formatting, accessibility, and UI writing findings.
-- `docs-flag-jargon-skill` for Elastic-internal jargon, outdated terms, and unexplained acronyms.
-- `docs-frontmatter-audit` for frontmatter metadata issues.
-- `docs-content-type-checker` for content-type fit and required-structure judgments.
-- `docs-applies-to-tagging` for `applies_to` validity and lifecycle-scope judgments.
-- `docs-check-contradictions` for detecting contradictions between changed content and existing docs (see Step 4).
+- `.claude/skills/docs-check-style/SKILL.md` (Language and Style). Do not run vale: its JSON output is already at `/tmp/gh-aw/docs-review-data/vale.json`, keyed by `/tmp/gh-aw/docs-review-data/scope/<file-path>`.
+- `.claude/skills/docs-flag-jargon-skill/SKILL.md` (Language): jargon, outdated terms, and unexplained acronyms.
+- `.claude/skills/docs-frontmatter-audit/SKILL.md` (Applicability): frontmatter quality.
+- `.claude/skills/docs-content-type-checker/SKILL.md` (User Focus): content-type fit and page structure.
+- `.claude/skills/docs-applies-to-tagging/SKILL.md` (Applicability): `applies_to` validity and lifecycle scope.
+- `.claude/skills/docs-check-contradictions/SKILL.md` (Technical accuracy): also used in Step 4.
 
-Before making manual style or clarity judgments, refresh the published Elastic style guidance with `elastic-docs.get_document_by_url`. At minimum, read the style guide overview once per run when there are eligible files. Then fetch the relevant subpage when a potential finding depends on a specific area such as voice and tone, accessibility, grammar and spelling, word choice, formatting, or UI writing.
+**Do not use the `Skill` tool in this workflow.** Read each `SKILL.md` as a file and apply its rules yourself, across every eligible file. Read each one once for the whole run, not once per file: the rules do not change between files.
 
-For content-type and `applies_to` findings, also refresh the relevant published guidance when you need to make a manual judgment that is not already grounded in local repository schema:
+Apply every rule set to every eligible file. Reading the rules into one context is what lets you find issues that span sections or files — an internal contradiction between two statements in the same page, or the same defect repeated across pages. Report those explicitly; they are higher value than single-line nits.
 
-- Style guide overview: `/docs/contribute-docs/style-guide`.
-- Voice and tone: `/docs/contribute-docs/style-guide/voice-tone`.
-- Accessibility: `/docs/contribute-docs/style-guide/accessibility`.
-- Grammar and spelling: `/docs/contribute-docs/style-guide/grammar-spelling`.
-- Word choice: `/docs/contribute-docs/style-guide/word-choice`.
-- Formatting: `/docs/contribute-docs/style-guide/formatting`.
-- UI writing: `/docs/contribute-docs/style-guide/ui-writing`.
+Applying these rules must not change the working tree. If you edit a file, run `git checkout -- <file-path>` to restore it, and treat the change as a finding to report, not as resolved.
+
+If a rule set cannot be read, do not retry or stall. Record it in the `Not checked` bullet under `Review coverage` as `<name>: <reason>`, then continue reviewing that criterion with the rubric alone. Do not duplicate a finding that Vale already reported.
+
+Each rule set names the published style, content-type, and cumulative-docs guidance it depends on. Fetch a page through the Elastic docs MCP server when a rule set requires it or when a finding depends on it, and do not fetch the same page twice:
+
 - Content types: `/docs/contribute-docs/content-types/overviews`, `/docs/contribute-docs/content-types/how-tos`, `/docs/contribute-docs/content-types/tutorials`, `/docs/contribute-docs/content-types/troubleshooting`, `/docs/contribute-docs/content-types/changelogs`.
 - Cumulative docs: `/docs/contribute-docs/how-to/cumulative-docs/guidelines` and `/docs/contribute-docs/how-to/cumulative-docs/reference`.
 
-Focus on the categories below:
+Apply the six criteria in order:
 
-1. **Style and clarity**: Use the pre-fetched Vale output as a useful signal for Elastic style-guide findings, but do not limit review to Vale output. Apply your own reading of the changed prose against the MCP-fetched Elastic style guide and the embedded style checklist below. Vale findings are not a prerequisite for reviewing a file or category. Report wording not flagged by Vale when it creates ambiguity, changes technical meaning, materially hurts readability, violates fetched style-guide guidance, or violates the embedded formatting/UI-writing checklist.
-2. **Elastic-internal jargon**: Flag Elastic-only shorthand that external users will not understand. Use the embedded jargon list below, but respect context: code blocks, CLI output, API fields, UI labels, and acronyms already expanded on the page are exempt.
-3. **Frontmatter quality**: Check the changed file's frontmatter for missing or empty `description`, `products`, and `navigation_title` fields when the repository convention requires them. Apply the embedded frontmatter checklist below.
-4. **Content type fit and structure**: Detect the declared or inferred content type and apply the embedded content-type checklist below. Report only mismatches that materially make the page harder to use or send the author toward the wrong kind of documentation.
-5. **`applies_to` correctness**: For validity judgments, verify against the repository's checked-in schema if available or the published cumulative-docs guidance at `/docs/contribute-docs/how-to/cumulative-docs/guidelines` and `/docs/contribute-docs/how-to/cumulative-docs/reference` through `elastic-docs.get_document_by_url`. Do not rely on training knowledge for valid keys, subkeys, or lifecycle values. If you cannot verify the rule, do not report the finding.
-6. **Issue satisfaction**: Check whether the changed docs appear to satisfy the linked parent issue, if one exists.
+1. **User focus** — Content completeness, scannability, findability, and logical flow. Apply the three-location user-benefit check (intro, decision points, title promise). Check that warnings appear before the content they warn about. Use `elastic-docs.find_related_docs` for cross-page findability issues.
 
-### Embedded style checklist
+2. **Technical accuracy** — Correctness, SME evidence, code sample validity, and precise prerequisites. Use the pre-fetched Vale output as one signal. When the change references a code PR or commit, check that parameter names, defaults, and behavior match.
 
-Use Vale findings first to avoid missing automated style-guide violations, then use the MCP-fetched style guide and this checklist to catch high-confidence issues that Vale does not flag. Cite the exact changed line and explain the reader-facing problem, not just the rule name.
+   **Verify before you post.** Before you post an inline comment under this criterion, call `elastic-docs.search_docs` for the claim you are challenging. Read the most on-topic hit with `elastic-docs.get_document_by_url` and `includeBody: true`. If you have no search result for the claim, do not post an inline comment for it: put the finding in the review body instead. An unverified technical claim is a suggestion, not a finding.
 
-Voice and tone:
+   This applies to product names, API endpoints, default values, retention periods, port numbers, required privileges, and UI navigation paths. Your training data is out of date on all of them.
 
-- Prefer active voice unless passive reads more naturally.
-- Use present tense. Avoid unnecessary "will", "would", "should", "could", "currently", and "now".
-- Use second person (`you`, `your`) for user actions. Do not use first person singular. Use "we" sparingly.
-- Remove "please" except when asking users to wait or tolerate inconvenience.
-- Keep sentences concise and scannable. Avoid more than two conjunctions in one sentence.
+   **Search to find conflicts, never to confirm.** Published docs can be wrong or out of date, most often for feature availability and deployment support. Never write that a claim is verified, confirmed, or accurate because a published page agrees with it, in an inline comment or in the review body. If you find no conflict, say nothing about the claim. If the PR and a published page disagree, do not decide which one is right: report the conflict with the `Verify both` direction from `docs-check-contradictions`, and note that an SME must confirm. Before you compare, check that both sources describe the same feature, deployment type, and tier. A statement about one feature, for example AutoOps, is not evidence about another, for example connecting clusters to AutoOps through Cloud Connect.
 
-Word choice and grammar:
+   **Read a code change's state before you describe it.** Before you write that a linked code pull request is merged, unmerged, open, closed, or unreleased, read its state with `pull_request_read`. A linked commit that `get_commit` can read exists, but that does not show that it is merged or released, because it can sit on a feature branch. State that a linked commit is merged only when you found evidence for the target branch, for example a merged pull request that contains it, read with `pull_request_read`. State that it is released only when you found a release or tag that contains it. Without that evidence, say nothing about the commit's state. If you cannot read a pull request or commit, for example because it is in a repository that the tools cannot reach, do not state its state. Do not use the training data or the PR title to infer it.
 
-- Use documented alternatives for discouraged words: `abort` -> `stop` or `cancel`, `blacklist` -> `blocklist`, `whitelist` -> `allowlist`, `choose` -> `select`, `execute` -> `run`, `launch` -> `open`, `type` -> `enter`, `utilize` -> `use`, `easy`/`simply` -> omit.
-- Replace Latin abbreviations in prose: `e.g.` -> `for example`, `i.e.` -> `that is`, `etc.` -> a specific ending, and `via` -> `through` when it means "by way of".
-- Use American English, Oxford comma, plural acronyms without apostrophes, sentence-case headings, and correct noun/verb pairs (`login`/`log in`, `setup`/`set up`, `backup`/`back up`).
-- Use double quotation marks only for quoted error messages or first-use unfamiliar terms; use monospace for code, commands, settings, fields, and paths.
+3. **Applicability** — `applies_to` tags, cumulative structure, markup correctness, and deployment types. For validity judgments, verify against the repository's checked-in schema or the published cumulative-docs guidance fetched during this run. Do not rely on training knowledge for valid keys or lifecycle values. If you cannot verify, do not report.
 
-Formatting:
+4. **Maintainability** — Single source of truth (use `elastic-docs.find_related_docs` or `elastic-docs.search_docs` to check for cross-page duplication when a section embeds reference material), repository hygiene (redirect entries for renamed or deleted pages), and high-maintenance content.
 
-- Bold UI element names: apps, buttons, menu items, page names, tabs, and columns.
-- Italicize new terms and Elastic documentation resource titles.
-- Use monospace for API endpoints, code, commands, config settings, directories, environment variables, error messages, field names, function names, index names, parameters, properties, roles, and variables.
-- Use numerals for 10 and above, tables, decimals, dimensions, percentages, and large numbers with commas.
-- Use `Month DD, YYYY`, 12-hour time with uppercase `AM`/`PM`, and UTC when time zones matter. Avoid relative dates such as "recently" when they can become stale.
-- Lists need at least two items, parallel structure, and periods only when items are complete sentences.
-- Paragraphs should stay short and scannable. Do not introduce dense walls of text.
-- Use admonitions for their documented purpose. Do not stack admonitions or use a generic admonition where a requirements section fits better.
-- Flag sensitive screenshots, examples, logs, tokens, hostnames, IPs, internal links, customer data, and secrets.
+5. **Language** — Grammar, spelling, plain language, jargon, and variables. Use the pre-fetched Vale output first. When Vale flags a rule (e.g., `Elastic.OxfordComma`), pass through the rule name in the comment. Avoid flagging exact counts in prose; prefer "the following formats are available:" over "there are N formats".
 
-Accessibility:
+   **Check product, feature, and offering names.** For each Elastic product, feature, or offering name in the changed lines, and in any replacement text you suggest, call `elastic-docs.search_docs` once. Compare the name with the page `title` and body of the most on-topic hit, not with the AI summaries, which can paraphrase names. When the published docs consistently use a different form or capitalization, flag it and suggest the published form, for example "Cloud Connect", not "Cloud connect", and "FedRAMP authorized Cloud offerings", not "Elastic FedRAMP Cloud". Do not flag a name that the published docs use in more than one form. Never introduce a name in a `suggestion` block that you have not checked this way. In replacement text, use the substitution the page already uses for a product name, for example `{{ecloud}}`, not the literal name, and write links to other docs pages in the repo-relative form, for example `/deploy-manage/cloud-connect.md`, not a full `https://www.elastic.co/docs/...` URL.
 
-- Images and media need useful alt text, without backticks.
-- Link text must be descriptive. Do not use "click here" or bare URLs as link text.
-- Avoid directional language such as "above", "below", "left", or "right" as the only way to locate information.
-- Use inclusive, gender-neutral language and avoid ableist, violent, superhero, buzzword, or non-specific superlative language.
+   **Check UI labels before you correct them.** Do not suggest changing the capitalization, spelling, or wording of a UI label, such as a button, menu item, panel, or setting name, unless you verified the label. To verify it, search for the exact label string in a sparse clone of the product repository the page documents, for example `elastic/kibana`, as the code-reading rules above describe, or find that the published docs consistently use a different form. Use `search_code` for a label only when the clone failed. If the search returns nothing, fails, or is rate limited, leave the label as the author wrote it and do not flag it. This overrides the rule above that moves an unverified finding into the review body: do not report an unverified UI label or UI navigation label anywhere, in an inline comment or in the review body. Only the `UI labels: not verified` note under `Review coverage` is allowed.
 
-UI writing:
-
-- Use "Click **Save**" for buttons and icons that initiate actions. Do not add "button" after the label.
-- Use "Select **Logs**" for tabs, checkboxes, radio buttons, dropdown options, and choices.
-- Use "In the **Name** field, enter `value`" for text input.
-- Use "Turn on **Feature**" and "Turn off **Feature**" for toggles. Use "toggle" as a noun, not a verb.
-- Use "Press Enter" or "Press Command+Alt+L" for keys.
-- Use arrows for menu paths, for example `Select **Manage index → Add lifecycle policy**`. Do not say "open the dropdown menu".
-- For screenshots, check that they are essential, consistently cropped, accessible, and free of sensitive information.
-- Procedures should usually have 5-9 meaningful steps, focus on use cases, and omit obvious UI narration.
-- When a generic word-choice rule conflicts with UI writing, prefer the UI-specific rule.
-
-### Embedded jargon checklist
-
-Flag only when the term is unexplained or used as internal shorthand in user-facing prose:
-
-- Internal code names: `Stateful`, bare `Serverless`, `Classic`, `Cloud UI`, `Signal`, and vague `Solution`.
-- Internal abbreviations that must be spelled out on first use: `ESS`, `ECE`, `ECK`, `ECH`, `EUI`, and `UIAM`.
-- Outdated terms: `index pattern`, `master node`, `master/slave`, `blacklist`, `whitelist`, and `X-Pack`.
-- Informal shorthand that needs context: `the Stack`, bare `Agent`, `Fleet`, `Canvas`, `Lens`, `Painless`, `Watcher`, `Dev Tools`, `Discover`, and `Dashboard`.
-- Unexplained acronyms: `ILM`, `SLM`, `CCR`, `CCS`, `APM`, `SIEM`, `TSDB`, `ECS`, `RBAC`, `KQL`, `EQL`, `ES|QL`, `DSL`, `logsdb`, `ML`, and `NLP`.
-
-Accept the term when the page defines it nearby, when it appears in code or API material, or when it is the actual product/UI label and the surrounding context makes it clear.
-
-### Embedded frontmatter checklist
-
-- `description` must be present, non-empty, complete sentence, unique to the page, no more than 200 characters, user-facing, and plain text with no substitution variables such as `{{kib}}`, `{{es}}`, or `{{esql}}`.
-- Description values should not use label prefixes such as "Reference -", "Tutorial -", or "Guide -". Avoid "you can", "users can", "this page explains", "teaching", "enable", "disable", version numbers, and condescending wording.
-- Quote `description` when punctuation could be misread by YAML. Avoid unquoted colons.
-- `products` should use the repository's canonical shape. In docs-content, use `products` with `id` entries, not `product` singular.
-- `navigation_title` is recommended when the H1 is longer than about 50 characters and should be concise enough for navigation.
-- Preserve `mapped_pages` when present. Do not suggest adding it when absent.
-
-### Embedded content-type checklist
-
-Valid content types are `overview`, `how-to`, `tutorial`, `troubleshooting`, and `changelog`. If frontmatter has no `type`, infer the type from the page and mention the missing field only when it matters for the changed content.
-
-Shared criteria:
-
-- Filename should match content-type pattern when a local pattern exists.
-- Frontmatter should include `applies_to`, `description`, and canonical product metadata.
-- Title should match the content intent, use sentence case, and be specific enough for search and navigation.
-- Introduction should help readers confirm the page matches their goal.
-
-Overview pages:
-
-- Explain one concept, feature, product, or capability.
-- Answer what it is, how it works, and why it matters.
-- Avoid long procedures, reference tables that belong elsewhere, and duplicated how-to content.
-
-How-to guides:
-
-- Help users complete one self-contained task.
-- Use an action-verb title, outcome-focused intro, requirements or **Before you begin** section when needed, numbered steps, and success checkpoints.
-- Avoid broad conceptual teaching, chaining many tasks together, exceeding roughly 10 overall steps without reason, or omitting verification for important actions.
-
-Tutorials:
-
-- Provide a hands-on learning experience across related tasks.
-- Include learning objectives, prerequisites/setup, instructional steps, checkpoints/results, code annotations when code is central, next steps, and related pages.
-- Avoid behaving like a single narrow recipe, a reference page, or a long concept article without practice.
-
-Troubleshooting pages:
-
-- Address one specific, repeatable problem.
-- Include a problem-focused title, **Symptoms**, and **Resolution**.
-- Keep symptoms to user-visible behavior and exact errors. Put ordered fixes in resolution.
-- Avoid generic "Troubleshooting X" issue pages, unrelated problems, or long explanations before the fix.
-
-Changelog entries:
-
-- Include `title`, `type`, and `products`.
-- Title should use present tense, start with an action verb, focus on user impact, and stay under 80 characters.
-- Description should add context only when needed, focus on user value, and stay under 600 characters.
-- Breaking changes need impact and action; deprecations and known issues should include them when useful.
+6. **Style** — Voice and tense, flagged language, titles and headings, formatting and admonitions, links, accessibility, and preview cleanliness. After flagging individual admonitions, scan for consecutive pairs — two admonitions separated only by whitespace count as stacked even if each looks fine in isolation. Flag a section with more than one admonition, an admonition used for prerequisites, an admonition that holds content readers need to understand or complete the task (if removing it leaves the reader unable to finish the task, the content belongs in the body), and a warning or important admonition that does not flag real risk such as data loss, security issues, irreversible actions, or impact on performance or stability. Stacked admonitions count whether they are the same type or different types. Do not suggest merging them into one bigger callout; suggest rewriting the content, adding context earlier on the page, or moving the content into the body. This replaces any line in the review criteria that says to merge stacked admonitions into one callout or into the narrative; do not follow that line.
 
 Treat this as a PR review, not a full repository audit:
 
 - Prioritize issues introduced by the diff.
 - You may report a file-level metadata issue such as missing or incorrect frontmatter when the PR edits that file and the issue is directly relevant to the changed page.
+- Do not ask the author to add a `type:` frontmatter field. Few pages declare it, so it is not yet a convention. Report `type:` only when the page already declares it and the value does not match the page's content type.
 - Do not dump every possible style nit from a whole file solely because one paragraph changed.
 - Do not flag pre-existing unrelated problems in untouched sections unless the PR clearly makes that area worse.
 - Do not duplicate docs build failures, broken-link reports, existing Vale lint comments, or pre-fetched Vale findings with multiple inline review comments for the same underlying issue.
+- Treat a finding that Vale or another existing automated review already reported as fully reported. Do not repeat it in an inline comment or the review body. Do not add a statement such as "No additional issues beyond..." that names or summarizes the existing finding.
+- Do not repeat an inline review finding in the review body. Do not add a summary bullet that says a finding was reported inline or tells the reader to see an inline comment.
+- Treat a dependency, blocker, or prerequisite pull request that the PR description already names as known, for example "depends on elastic/opentelemetry#668". Do not report an unresolved cross-repository anchor, link, or dependency that the description states. Do not mention it anywhere in the review, including the `Not checked` bullet under `Review coverage`. Report one only when the description does not mention it.
+- Treat a point that a human reviewer or the PR author has rejected, resolved, or called deliberate as settled. Do not raise it again, even in different words, and do not ask for content that a reviewer asked the author to remove.
+- Do not suggest adding content to a page when the PR, in its changed lines or description, links to another page that covers that content. The link is the author's decision about where the content lives.
+- Do not ask for an inline `applies_to` tag on content that is already covered by the page-level tag. For unversioned products such as Serverless, the cumulative-docs guidance says to label GA content at the page level only. The docs start at 9.0, so a page-level `stack: ga` tag already covers 9.0 and later: do not ask the author to change it to `stack: ga 9.0`.
 - Treat content-type guidance as a reader-centered heuristic. Report content-type issues only when the mismatch materially makes the page harder to use, conflicts with the surrounding section's established pattern, or risks sending the author toward the wrong kind of documentation.
 - Allow mixed-purpose pages and reasonable structural exceptions. For example, do not object to a prerequisites section on a troubleshooting page solely because the troubleshooting content type does not require one; report it only when the requirements are inaccurate, unsupported, confusing, or disruptive to the troubleshooting flow.
 - If the pull request appears linked to a parent issue, assess whether the issue's documentation ask is fully satisfied, only partially satisfied, or still unsupported by the PR.
@@ -475,7 +453,7 @@ Treat this as a PR review, not a full repository audit:
 
 ## Step 4: Check for contradictions
 
-After completing Step 3, run the `docs-check-contradictions` skill on the eligible changed files to find places in the existing docs — both in the local repo and in published Elastic docs — that contradict or conflict with the new or updated content.
+After completing Step 3, apply the `docs-check-contradictions` rules you read in Step 3 to the eligible changed files, to find places in the existing docs — both in the local repo and in published Elastic docs — that contradict or conflict with the new or updated content.
 
 Call the skill once for each eligible file, passing the file path as the argument. If there are many eligible files, group them by directory and call the skill once per directory instead.
 
@@ -490,9 +468,10 @@ If the MCP server is unavailable, fall back to `WebFetch` on specific published 
 Use the skill's findings as follows:
 
 - **High severity** contradictions: include as inline review comments using `create_pull_request_review_comment`, pointed at the relevant changed line or the nearest changed hunk. Use the skill's "Recommendation" field as the comment body.
-- **Medium and Low severity** contradictions: summarize in the `Contradictions` section of the review body (see review body format). Do not open inline comments for medium/low findings unless they overlap with an existing inline comment slot.
+- **Medium and Low severity** contradictions: include a concise item under `Action required` only when the finding is actionable and material to this PR. Otherwise, omit it. Do not open inline comments for medium/low findings unless they overlap with an existing inline comment slot.
+- **Related docs outside this PR**: when the changed content is correct but your verification finds a directly related page that now contains stale or contradictory information, include only a specific, verified, actionable follow-up in the `Follow-up outside this PR` section. Name the page and the required change. Mark the follow-up as nonblocking. Do not include the verification narrative, search history, or a general cleanup suggestion.
 
-Do not report contradictions the skill found in files outside the configured review scope, in `release-notes/` directories, or in `_snippets/` directories.
+Do not report contradictions the skill found in `release-notes/` directories or `_snippets/` directories. Do not report unrelated problems in files outside the configured review scope. The only exception is a directly related, verified contradiction that qualifies for `Follow-up outside this PR` above.
 
 Report only findings that are:
 
@@ -503,6 +482,16 @@ Report only findings that are:
 - worth a human author's time.
 
 Use line-level review comments when you can point to an exact changed line or nearby changed hunk. Keep each inline comment narrowly scoped.
+
+Anchor every inline comment to a line number you derived mechanically. Never pass a line number you recalled, estimated, or read earlier in the session. Before each `create_pull_request_review_comment` call:
+
+1. Pick a short, distinctive snippet of the exact source text the comment is about.
+2. Run `grep -n` for that snippet in the target file to obtain the line number.
+3. Pass that number as the line, and quote the snippet in the comment body so a reader can confirm the anchor.
+
+If `grep -n` returns no match, or more than one, refine the snippet until it returns exactly one match. If you cannot reduce it to a single match, move the finding to the review body and post no inline comment for it. A comment attached to the wrong line is worse than no comment.
+
+The line number must come from the file the comment targets. Do not reuse a line number derived from a different file.
 
 When helpful, include a concrete replacement sentence, frontmatter snippet, or markdown wording in the comment body. Prefer GitHub suggestion blocks when the proposed edit cleanly maps to the reviewed line or hunk and can be applied directly. Fall back to plain prose when the change is too large, crosses multiple distant hunks, or the exact replacement range is ambiguous.
 
@@ -523,7 +512,7 @@ Treat low-priority nits differently:
 
 - avoid nits unless they are grounded in the pre-fetched Vale output or another explicit review rule in this workflow,
 - do not spend inline comment slots on lower-priority nits when higher-priority issues still need review comments, and
-- summarize any remaining style-guide-based nits in a short `Nits` section of the final review body instead of posting more inline comments.
+- include a remaining actionable style-guide-based nit under `Action required` only when another automated review has not already reported it. Omit all other nits from the final review body.
 
 ## What to skip
 
@@ -531,7 +520,7 @@ Do not report:
 
 - speculative preferences,
 - repository-wide cleanup opportunities,
-- comments about markdown files outside the configured review scope,
+- comments about markdown files outside the configured review scope, except a directly related and verified `Follow-up outside this PR`,
 - broken links, missing anchors, missing image targets, or other link existence issues that the docs build already validates,
 - trailing spaces or trailing whitespace,
 - routine wording suggestions that are not grounded in Vale output, unless the wording creates ambiguity or changes the technical meaning,
@@ -560,21 +549,36 @@ Submit one final review body in this shape:
 ```markdown
 ## Docs review summary
 
-### Focus areas
-- Style and clarity: <short result>.
-- Jargon: <short result>.
-- Frontmatter and applies_to: <short result>.
-- Content type fit: <short result>.
-- Contradictions: <No contradictions found | N found (X local, Y cross-repo) — see inline comments or list below>.
-- Parent issue satisfaction: <Not applicable | Satisfied | Partially satisfied | Not satisfied>.
+### Action required
+- <Optional actionable, cross-cutting finding that does not duplicate an inline comment or another automated review. Omit this section if there are no such findings.>
 
-### Nits
-- <Optional short bullet list of lower-priority, style-guide-based nits that did not merit inline comments. Omit this section if there are no such nits.>
+### Issue satisfaction
+<Satisfied — short confirmation. | Partially satisfied — specific missing requirement. | Not satisfied — specific missing requirement.>
 
-### Notes
-- <Optional short note about anything intentionally skipped or any review boundary that matters.>
+### Follow-up outside this PR
+- <Optional verified, actionable, nonblocking follow-up for a directly related page outside the diff. Omit this section if there are no such follow-ups.>
+
+<details>
+<summary>Review coverage</summary>
+
+- Content type: <short classification and material fit assessment>.
+- Checked: user focus, technical accuracy, applicability, maintainability, language, and style.
+- Not checked: <optional criterion and reason; omit this bullet when all checks completed>.
+  When the changed lines name a UI label that you could not verify, neither in product source nor in consistent published docs, include `UI labels: not verified` in this bullet. Do not include it for a label that either source verified. Also list every check that a rate limit or a tool error stopped, with the tool and the reason, for example `code search: rate limited` or `clone failed: repository not found`.
+
+</details>
 ```
 
-Keep the review body concise. Put file-specific detail into inline comments, not into a long summary.
+Apply these rules to the review body:
+
+- Omit `Action required` when every actionable finding has an inline comment or another automated report.
+- Treat every GitHub issue linked in the PR description as a parent issue, including issues cited as a source. Links to pull requests are context, not parent issues. Omit `Issue satisfaction` only when the description links no issue. Never print `Not applicable`.
+- Keep `Issue satisfaction` visible when a parent issue is linked. Use one short status sentence. For a partial or unsatisfied result, name each missing requirement.
+- For each linked issue that you cannot read, for example because it is in a private repository, do not guess whether the PR satisfies it, and do not infer it from the PR description. In `Issue satisfaction`, write one sentence that names the issue URL and says that you could not read it.
+- Omit `Follow-up outside this PR` unless the follow-up meets the related-docs rule in Step 4.
+- Keep `Review coverage` collapsed. Use it to record the content-type classification and which checks ran, not their zero-finding results.
+- Do not list a criterion merely to say that it passed, found nothing, or produced an inline comment.
+- Do not repeat Vale findings, other automated findings, or inline comments anywhere in the body.
+- Keep the review body concise. Put file-specific detail into inline comments, not into a long summary.
 
 ${{ inputs.additional-instructions }}

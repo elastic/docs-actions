@@ -5,7 +5,12 @@ description: |
   updates docs in a caller-configured target repository. The editorial guidance
   targets internal engineering handbooks: runbooks, architecture notes, and
   operational procedures for the team that builds the source repositories.
-  Callers pass an ephemeral GitHub token; no repository names are baked in.
+  Callers pass an ephemeral GitHub token to read source repos. The handbook
+  PR is opened with the caller GITHUB_TOKEN, so the target must be the
+  calling repository. No repository names are baked in.
+
+# Keep the agent and detection jobs on the tested image during the latest migration.
+runs-on: ubuntu-24.04
 
 inlined-imports: true
 imports:
@@ -27,7 +32,7 @@ on:
         required: false
         default: "7 days ago"
       target-repo:
-        description: "Docs repository that receives the PR (owner/repo). Empty means the calling repository."
+        description: "Docs repository that receives the PR (owner/repo). Empty means the calling repository. Must be the calling repository, because create-pull-request uses GITHUB_TOKEN."
         type: string
         required: false
         default: ""
@@ -63,7 +68,7 @@ on:
         default: ""
     secrets:
       source_sync_token:
-        description: "Token for reading source repos and opening the docs PR. Pass an ephemeral token, for example from elastic/ci-gh-actions/fetch-github-token."
+        description: "Token for reading source repos (merged PRs and commits). Pass an ephemeral token, for example from elastic/ci-gh-actions/fetch-github-token. The handbook PR uses GITHUB_TOKEN."
         required: true
 concurrency:
   group: gh-aw-docs-source-sync-${{ github.run_id }}
@@ -77,7 +82,6 @@ strict: false
 checkout:
   - repository: ${{ inputs.target-repo || github.repository }}
     fetch-depth: 0
-    github-token: ${{ secrets.source_sync_token }}
     current: true
 tools:
   github:
@@ -89,7 +93,6 @@ tools:
     - "find *"
     - "jq *"
     - "yq *"
-  web-fetch:
 network:
   allowed:
     - defaults
@@ -100,7 +103,11 @@ network:
     - "docs.bump.sh"
     - "search.elastic.co"
 safe-outputs:
-  github-token: ${{ secrets.source_sync_token }}
+  threat-detection:
+    runs-on: ubuntu-24.04
+  report-failure-as-issue: false
+  messages:
+    footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
   noop:
   create-pull-request:
     title-prefix: ${{ inputs.title-prefix }}

@@ -43,9 +43,14 @@ It has two severity tiers:
 
 - **error** — the spec parses, all `$ref`s resolve, and it conforms to the OAS schema for its
   detected version (Swagger 2.0, OpenAPI 3.0.x, or OpenAPI 3.1.x). These always fail the check.
+  One exception: a Swagger 2.0 `host` that fails the schema pattern (for example a placeholder
+  like `{{hostname}}` in a self-hosted product's spec) is reported as a warning.
 - **warn** — authoring conventions, currently the generic hygiene rules built into `spectral:oas`
   (`operationId` presence, required descriptions/tags/servers, tags defined at root). These pass
   by default so existing specs aren't broken; set `fail-on-warn: true` to enforce them.
+  `elastic-operation-summary-unique` also warns when operations on different paths share a `summary`:
+  the summary is the page title in the API docs, so duplicates give pages identical titles. Methods on
+  the same path may share one.
 
 Elastic-specific conventions (`operationId` casing, security scheme naming, the `x-state` shape)
 aren't encoded as rules yet — they're sketched as commented-out examples in `ruleset.yaml` pending
