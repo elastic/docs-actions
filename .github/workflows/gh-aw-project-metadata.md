@@ -810,7 +810,7 @@ safe-outputs:
                   -F project="$PROJECT_ID" \
                   -F item="$ITEM_ID" \
                   -F field="$FIELD_ID" \
-                  -F option="$(jq -r '.option_id' <<<"$UPDATE")" \
+                  -f option="$(jq -r '.option_id' <<<"$UPDATE")" \
                   >/dev/null
                 RESULT="applied"
               else
