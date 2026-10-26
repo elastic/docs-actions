@@ -125,13 +125,14 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
-      pull-requests: write
+      pull-requests: read
       id-token: write
+    outputs:
+      decision-uploaded: ${{ steps.apply.outputs.decision-uploaded }}
     steps:
       - name: Apply changelog
+        id: apply
         uses: elastic/docs-actions/changelog/submit/apply@v1
-        with:
-          config: ${{ inputs.config }}
 
   fork-guidance:
     needs: preflight
@@ -141,6 +142,8 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       actions: write
+    outputs:
+      decision-uploaded: ${{ steps.check.outputs.needed }}
     steps:
       - name: Check if fork guidance is needed
         id: check
@@ -218,3 +221,20 @@ jobs:
           path: .artifacts/changelog-decision
           if-no-files-found: warn
           retention-days: 1
+
+  # Posts the sticky changelog comment from the decision that an upstream job in
+  # this run uploaded. It runs in this run, not in a workflow_run caller, so the
+  # commit job does not need pull-requests: write.
+  comment:
+    needs: [apply, fork-guidance]
+    if: >-
+      always()
+      && (needs.apply.outputs.decision-uploaded == 'true' || needs.fork-guidance.outputs.decision-uploaded == 'true')
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post changelog comment
+        uses: elastic/docs-actions/changelog/comment@v1
+        with:
+          current-run: true

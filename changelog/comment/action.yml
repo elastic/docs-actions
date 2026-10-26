@@ -6,17 +6,22 @@ description: >
   Always comments on the newest completed run of the triggering workflow for the
   same PR branch, whichever run triggered the job, so a stale decision cannot
   overwrite a newer one and a cancelled job cannot leave the newest one unposted.
+  With current-run, it reads the artifact from the current run instead.
 
 inputs:
   github-token:
     description: 'GitHub token with pull-requests: write'
     default: '${{ github.token }}'
+  current-run:
+    description: 'Read the changelog-decision artifact from the current run instead of the triggering workflow run. Use it in a job that needs the job that uploads the artifact.'
+    default: 'false'
 
 runs:
   using: composite
   steps:
     - name: Resolve the run to comment on
       id: check-artifact
+      if: inputs.current-run != 'true'
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
@@ -103,15 +108,25 @@ runs:
         run-id: ${{ steps.check-artifact.outputs.run-id }}
         path: /tmp/changelog-decision
 
+    # The artifact is absent when the upstream job had nothing to comment on.
+    - name: Download decision artifact from this run
+      id: current
+      if: inputs.current-run == 'true'
+      continue-on-error: true
+      uses: actions/download-artifact@v8
+      with:
+        name: changelog-decision
+        path: /tmp/changelog-decision
+
     - name: Setup docs-builder
-      if: steps.check-artifact.outputs.exists == 'true'
+      if: steps.check-artifact.outputs.exists == 'true' || steps.current.outcome == 'success'
       uses: elastic/docs-actions/docs-builder/setup@v1
       with:
         version: edge
         github-token: ${{ inputs.github-token }}
 
     - name: Post or update changelog comment
-      if: steps.check-artifact.outputs.exists == 'true'
+      if: steps.check-artifact.outputs.exists == 'true' || steps.current.outcome == 'success'
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
