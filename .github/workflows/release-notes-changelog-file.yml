@@ -132,7 +132,7 @@ jobs:
     steps:
       - name: Apply changelog
         id: apply
-        uses: elastic/docs-actions/changelog/submit/apply@v1
+        uses: elastic/docs-actions/changelog/submit/apply@feature/changelog-comment-same-run
 
   fork-guidance:
     needs: preflight
@@ -235,6 +235,6 @@ jobs:
       pull-requests: write
     steps:
       - name: Post changelog comment
-        uses: elastic/docs-actions/changelog/comment@v1
+        uses: elastic/docs-actions/changelog/comment@feature/changelog-comment-same-run
         with:
           current-run: true
