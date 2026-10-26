@@ -51,3 +51,17 @@ jobs:
 ```
 
 The pull request comment names the missing sections. When both are present, the comment stays on breaking-change pull requests and shows the captured text, so authors can check it before bundling. The caller already runs on `edited` events, so adding the sections to the description clears the check.
+
+## Comment when the checks pass
+
+By default the pull request comment only appears when a check fails, or to show the captured Impact and Action of a breaking change. Set `comment-on-success` on the `release-notes` job to also comment when the checks pass:
+
+```yaml
+jobs:
+  release-notes:
+    uses: elastic/docs-actions/.github/workflows/release-notes.yml@v1
+    with:
+      comment-on-success: true
+```
+
+The comment says either that the pull request will be part of the release notes, with its type, products and areas, or that it will not be, with the reason (for example the label that excludes it). It is the same comment as the others, so a pull request never gets two: for a breaking change the captured Impact and Action are shown in it too.
