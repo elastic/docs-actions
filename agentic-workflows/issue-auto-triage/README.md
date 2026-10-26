@@ -15,8 +15,13 @@ For the same routing logic triggered manually, see [issue-triage](../issue-triag
 
 ## Model
 
-The workflow uses a fast, low-cost model (Haiku via OpenRouter). This keeps per-issue cost low.
-Factor the model tier into cost estimates before enabling at scale.
+The workflow uses a fast, low-cost model, Claude Haiku 5.5 (`claude-haiku-5-5`), through the Agent Router gateway on the Claude route (`/anthropic`). This keeps per-issue cost low.
+
+Add `id-token: write` to the caller job's permissions. The workflow authenticates to Agent Router with a Google ID
+token from the Docs agentic workflows service account, through the `docs-agentic-ci-oidc` Workload Identity provider.
+No model API key and no repository variable is needed. The repo must be on the service account's allowlist
+in `elastic/centralized-it-infra`.
+Factor the model tier into cost estimates before enabling at scale. A run counts about 290,000 tokens against the service account's shared hourly limit (measured on Oct 22, 2026, cached tokens included), so many issues opened in one hour can use up the limit. See [Developing agentic workflows](../DEVELOPING.md#agent-router-workflows) for the setup, the limit and troubleshooting.
 
 ## Triggers
 

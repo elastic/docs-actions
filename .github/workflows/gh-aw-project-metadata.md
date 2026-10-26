@@ -12,8 +12,8 @@ imports:
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
-model: openai/gpt-6-luna
-# The pinned AWF price table has no gpt-6-luna entry; without a fallback the API proxy rejects
+model: gpt-5.6-luna
+# The pinned AWF price table has no gpt-5.6-luna entry; without a fallback the API proxy rejects
 # every request with HTTP 400. Rates match OpenRouter ($/1M tokens).
 models:
   default-ai-credits-pricing:
@@ -21,16 +21,14 @@ models:
     output: 0.50
 engine:
   id: codex
-  # Use CLI overrides because gh-aw emits engine.config into both the converted and final Codex
-  # configuration. Escape the TOML values so each override remains one shell argument.
   args:
     - "-c"
     - 'model_reasoning_effort=\"high\"'
-    - "-c"
-    - 'model_providers.openai-proxy.http_headers=\{\"HTTP-Referer\"=\"https://github.com/${GITHUB_REPOSITORY}\",\"X-OpenRouter-Title\"=\"${GITHUB_REPOSITORY}/${GITHUB_WORKFLOW// /-}\",\"X-Session-ID\"=\"${GITHUB_REPOSITORY}/${GITHUB_WORKFLOW// /-}/${GITHUB_RUN_ID}\"\}'
+  # gh-aw checks this key in the activation job, where the auth step does not exist. The fallback
+  # literal keeps that check from failing there. The agent job always gets the minted token.
   env:
-    OPENAI_BASE_URL: https://openrouter.ai/api/v1
-    OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    OPENAI_BASE_URL: https://llm.idea.elastichosting.ai/v1
+    OPENAI_API_KEY: ${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}
 
 on:
   bots: ["github-actions[bot]"]
@@ -56,6 +54,10 @@ on:
         required: false
         default: ""
 
+    secrets:
+      OPENROUTER_API_KEY:
+        description: "Deprecated and unused. The workflow authenticates to Agent Router with a Google ID token. Kept so callers that still pass it do not fail at startup."
+        required: false
 concurrency:
   group: gh-aw-project-metadata-${{ inputs.issue-url }}
   cancel-in-progress: false
@@ -65,6 +67,7 @@ permissions:
   actions: read
   contents: read
   copilot-requests: write
+  id-token: write
   issues: read
   pull-requests: read
 
@@ -83,10 +86,19 @@ network:
   allowed:
     - defaults
     - github
-    - "openrouter.ai"
+    - "llm.idea.elastichosting.ai"
     - "api.anthropic.com"
 
 steps:
+  - name: Authenticate to Agent Router
+    id: agent-router-auth
+    uses: google-github-actions/auth@v3
+    with:
+      workload_identity_provider: ${{ vars.AGENT_ROUTER_WIF_PROVIDER || 'projects/117436331624/locations/global/workloadIdentityPools/docs-agentic-ci-oidc/providers/docs-agentic-ci-oidc' }}
+      service_account: ${{ vars.AGENT_ROUTER_SERVICE_ACCOUNT || 'agentic-workflows-docs-runner@elastic-edm.iam.gserviceaccount.com' }}
+      token_format: id_token
+      id_token_audience: https://llm.idea.elastichosting.ai
+      id_token_include_email: true
   - name: Prepare issue and project context
     env:
       GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
@@ -410,10 +422,9 @@ safe-outputs:
     runs-on: ubuntu-24.04
     engine:
       id: copilot
-      model: gpt-5-mini
-      # gh-aw copies the main engine's env into threat detection. These provider
-      # settings make Copilot's firewall health check fail before the scan starts,
-      # and detection fails open. Empty values turn off the inherited custom target.
+      model: claude-haiku-4.5
+      # gh-aw copies the main engine env into threat detection. Empty values keep the Agent Router
+      # target off the detection job, which runs on Copilot.
       env:
         OPENAI_BASE_URL: ""
         OPENAI_API_KEY: ""

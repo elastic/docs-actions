@@ -8,9 +8,8 @@ never rewritten.
 
 ## Model
 
-The agent runs `openai/gpt-6-luna` through OpenRouter on the codex engine, authenticated with
-the `OPENROUTER_API_KEY` secret. Threat detection runs separately on GitHub Copilot with the
-`sonnet` model alias. The agent must query the Elastic docs MCP server before reading any
+The agent runs `gpt-5.6-luna` through the Agent Router gateway (`/v1/responses`) on the codex engine, authenticated
+with a Google ID token. A run counts about 95,000 to 180,000 tokens against the service account's shared hourly limit (measured on Oct 21, 2026). See [Developing agentic workflows](../DEVELOPING.md#agent-router-workflows) for the setup, the limit and troubleshooting. Threat detection runs separately on GitHub Copilot with the `sonnet` model alias. The agent must query the Elastic docs MCP server before reading any
 repository file, so expect higher per-issue cost than a classification-only workflow — roughly
 7–10 AIC for a full assessment, about 7 for a partial one, and under 4 when the quality gate stops
 early (sandbox battery, 2026-09-15).
@@ -36,8 +35,8 @@ mkdir -p .github/workflows && curl -sL \
 ```
 
 The caller job needs `copilot-requests: write` in its `permissions:` block (threat detection
-runs on Copilot) and must make `OPENROUTER_API_KEY` available to the workflow — `secrets: inherit`
-is the simplest way, as in the example below.
+runs on Copilot) and `id-token: write`. The repo must be on the allowlist of the Docs agentic workflows service
+account in `elastic/centralized-it-infra`. The workflow supplies the Workload Identity provider and the service account itself.
 
 ## Inputs
 

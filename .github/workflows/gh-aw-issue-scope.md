@@ -16,8 +16,8 @@ imports:
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/safe-output-add-comment.md
   - gh-aw-fragments/quality-bar.md
-model: openai/gpt-6-luna
-# The pinned AWF price table has no gpt-6-luna entry; without a fallback the API proxy rejects
+model: gpt-5.6-luna
+# The pinned AWF price table has no gpt-5.6-luna entry; without a fallback the API proxy rejects
 # every request with HTTP 400. Rates match OpenRouter ($/1M tokens).
 models:
   default-ai-credits-pricing:
@@ -25,22 +25,11 @@ models:
     output: 0.50
 engine:
   id: codex
-  # Codex sends no OpenRouter attribution of its own. gh-aw writes the provider block as
-  # `[model_providers.openai-proxy]` and strips any user copy of that exact heading, but the
-  # `.http_headers` sub-table is a different literal line, so it survives the filter and TOML
-  # allows defining a sub-table after its parent. gh-aw rejects GitHub Actions expressions in
-  # this TOML, so the values come from engine.env and the TOML references them as ${VAR}.
-  config: |
-    [model_providers.openai-proxy.http_headers]
-    "HTTP-Referer" = "${OR_HTTP_REFERER}"
-    "X-OpenRouter-Title" = "${OR_TITLE}"
-    "X-Session-ID" = "${OR_SESSION_ID}"
+  # gh-aw checks this key in the activation job, where the auth step does not exist. The fallback
+  # literal keeps that check from failing there. The agent job always gets the minted token.
   env:
-    OPENAI_BASE_URL: https://openrouter.ai/api/v1
-    OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-    OR_HTTP_REFERER: https://github.com/${{ github.repository }}
-    OR_TITLE: ${{ github.repository }}/${{ github.workflow }}
-    OR_SESSION_ID: ${{ github.repository }}/${{ github.workflow }}/${{ github.run_id }}
+    OPENAI_BASE_URL: https://llm.idea.elastichosting.ai/v1
+    OPENAI_API_KEY: ${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}
 
 on:
   roles: [admin, maintainer, write]
@@ -74,6 +63,7 @@ permissions:
   issues: read
   pull-requests: read
   copilot-requests: write
+  id-token: write
 
 strict: false
 
@@ -202,7 +192,7 @@ network:
   allowed:
     - defaults
     - github
-    - "openrouter.ai"
+    - "llm.idea.elastichosting.ai"
     - "ab.chatgpt.com"
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
@@ -215,6 +205,15 @@ network:
     - "search.elastic.co"
 
 steps:
+  - name: Authenticate to Agent Router
+    id: agent-router-auth
+    uses: google-github-actions/auth@v3
+    with:
+      workload_identity_provider: ${{ vars.AGENT_ROUTER_WIF_PROVIDER || 'projects/117436331624/locations/global/workloadIdentityPools/docs-agentic-ci-oidc/providers/docs-agentic-ci-oidc' }}
+      service_account: ${{ vars.AGENT_ROUTER_SERVICE_ACCOUNT || 'agentic-workflows-docs-runner@elastic-edm.iam.gserviceaccount.com' }}
+      token_format: id_token
+      id_token_audience: https://llm.idea.elastichosting.ai
+      id_token_include_email: true
   - name: Repo-specific setup
     env:
       SETUP_COMMANDS: ${{ inputs.setup-commands }}
@@ -232,6 +231,7 @@ safe-outputs:
       model: sonnet
       env:
         OPENAI_BASE_URL: ""
+        OPENAI_API_KEY: ""
     prompt: |
       IMPORTANT context for this workflow: the prompt includes gh-aw
       framework scaffolding wrapped in <system> and <safe-outputs> tags.
