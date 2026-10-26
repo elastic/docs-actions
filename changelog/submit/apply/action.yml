@@ -151,7 +151,7 @@ runs:
     #      hard-fail, expose the generated entry on the PR so reviewers and the
     #      author can still see what would have been recorded.
     - name: Post comment-only changelog
-      if: steps.meta.outputs.should-comment-success == 'true' || steps.commit.outcome == 'failure'
+      if: (steps.meta.outputs.status == 'success' && steps.meta.outputs.should-commit != 'true') || steps.commit.outcome == 'failure'
       uses: actions/github-script@v9
       env:
         PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
@@ -166,7 +166,7 @@ runs:
           await script({ github, context, core });
 
     - name: Post failure comment
-      if: steps.meta.outputs.should-comment-failure == 'true'
+      if: steps.meta.outputs.status == 'no-label'
       uses: actions/github-script@v9
       env:
         PR_NUMBER: ${{ steps.meta.outputs.pr-number }}
