@@ -810,6 +810,8 @@ jobs:
 
             👋 Thanks for updating the docs! Elastic docs cover multiple versions and deployment types on the same page. \`applies_to\` tags help readers understand which information applies to them.
 
+            ⚠️ Don't remove or replace information that applies to an older version.
+
             **Need help with \`applies_to\`?**
 
             - [Tagging skill](https://github.com/elastic/elastic-docs-skills/blob/main/skills/authoring/docs-applies-to-tagging/SKILL.md): Identify, generate, update, and validate tags.
