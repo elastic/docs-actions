@@ -38,6 +38,16 @@ The release notes and changelog file callers use the default `docs/changelog.yml
 - [`release-notes-comments.yml`](../.github/workflows/release-notes-comments.yml)
 - [`release-notes-changelog-file.yml`](../.github/workflows/release-notes-changelog-file.yml)
 
+## Draft pull requests
+
+The checks run on draft pull requests, but they do not post a pull request comment. A failing check stays visible on the draft. The comment appears when the pull request is marked ready for review. For this, the `release-notes.yml` caller must include `ready_for_review` in its `pull_request` event types. Add it to callers that you copied before this change:
+
+```yaml
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled, ready_for_review]
+```
+
 ## Require Impact and Action on breaking changes
 
 Set `require-impact-action` on the `release-notes` job to fail pull requests that carry a `breaking-change` type label but whose description lacks an `Impact` or `Action` section. Use a heading (`## Impact`, `## Action`) or a label (`Impact: …`).
