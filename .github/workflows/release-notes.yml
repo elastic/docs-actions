@@ -23,6 +23,10 @@ on:
         description: 'Also comment when the checks pass, saying whether the PR will be part of the release notes and why'
         type: boolean
         default: false
+      skip-drafts:
+        description: 'Skip the checks on draft PRs. The caller must also listen for ready_for_review, or a PR that leaves draft is never checked'
+        type: boolean
+        default: false
 permissions: {}
 
 concurrency:
@@ -30,8 +34,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # skip-drafts is opt-in: a caller without ready_for_review would never re-run when a draft is ready,
+  # and the skipped check would count as passing.
   validate:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && !(inputs.skip-drafts && github.event.pull_request.draft)
     runs-on: ubuntu-24.04
     permissions:
       contents: read

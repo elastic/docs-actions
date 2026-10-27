@@ -38,6 +38,31 @@ The release notes and changelog file callers use the default `docs/changelog.yml
 - [`release-notes-comments.yml`](../.github/workflows/release-notes-comments.yml)
 - [`release-notes-changelog-file.yml`](../.github/workflows/release-notes-changelog-file.yml)
 
+## Draft pull requests
+
+Set `skip-drafts` on the `release-notes` job to skip the checks on draft pull requests. A draft then shows the `validate` job as skipped, and it gets no pull request comment. The downloadable caller sets it.
+
+```yaml
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled, ready_for_review, converted_to_draft]
+
+jobs:
+  release-notes:
+    uses: elastic/docs-actions/.github/workflows/release-notes.yml@v1
+    with:
+      skip-drafts: true
+```
+
+The caller must include `ready_for_review` and `converted_to_draft` in its `pull_request` event types:
+
+- `ready_for_review` runs the checks when a draft is marked ready for review. Without it, nothing checks the pull request until the next push or label change. GitHub counts the skipped check as passing, so the pull request can merge unchecked.
+- `converted_to_draft` replaces a failed check with a skipped one when a pull request goes back to draft.
+
+An existing comment stays on a pull request that goes back to draft. The checks update it when the pull request is ready again.
+
+Without `skip-drafts`, the checks run on drafts like on any other pull request.
+
 ## Require Impact and Action on breaking changes
 
 Set `require-impact-action` on the `release-notes` job to fail pull requests that carry a `breaking-change` type label but whose description lacks an `Impact` or `Action` section. Use a heading (`## Impact`, `## Action`) or a label (`Impact: …`).

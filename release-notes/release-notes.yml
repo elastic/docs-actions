@@ -2,7 +2,7 @@ name: Release notes
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled, ready_for_review, converted_to_draft]
   push:
     branches: [main]
 
@@ -16,3 +16,5 @@ jobs:
       packages: read
       pull-requests: read
     uses: elastic/docs-actions/.github/workflows/release-notes.yml@v1
+    with:
+      skip-drafts: true
