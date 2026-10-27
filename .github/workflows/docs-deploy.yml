@@ -808,28 +808,14 @@ jobs:
 
             const body = `${title}
 
-            👋 Thanks for updating the docs! Just a friendly reminder that our docs are now **cumulative**. This means all 9.x versions are documented on the same page and published off of the main branch, instead of creating separate pages for each minor version.
+            👋 Thanks for updating the docs! Elastic docs cover multiple versions and deployment types on the same page. **\`applies_to\` tags help readers understand which information applies to them.**
 
-            We use [applies_to tags](https://elastic.github.io/docs-builder/syntax/applies) to mark version-specific features and changes.
+            **Need help with \`applies_to\`?**
 
-            <details>
-            <summary>Expand for a quick overview</summary>
+            - **[Use the \`applies_to\` tagging skill](https://github.com/elastic/elastic-docs-skills/blob/main/skills/authoring/docs-applies-to-tagging/SKILL.md)** to identify, generate, update, and validate tags.
+            - **[Where should I put the \`applies_to\` metadata?](https://docs-v3-preview.elastic.dev/elastic/docs-builder/tree/main/syntax/applies#where-should-i-put-the-applies_to-metadata)**: Placement and syntax examples.
 
-            ### When to use applies_to tags:
-            ✅ At the page level to indicate which products/deployments the content applies to (mandatory)
-            ✅ When features change state (e.g. preview, ga) in a specific version
-            ✅ When availability differs across deployments and environments
-
-            ### What NOT to do:
-            ❌ Don't remove or replace information that applies to an older version
-            ❌ Don't add new information that applies to a specific version without an applies_to tag
-            ❌ Don't forget that applies_to tags can be used at the page, section, and inline level
-
-            </details>
-
-            ### 🤔 Need help?
-            - Check out the [cumulative docs guidelines](https://www.elastic.co/docs/contribute-docs/how-to/cumulative-docs/)
-            - Reach out in the [#docs](https://elastic.slack.com/archives/C0JF80CJZ) Slack channel`;
+            The [automated docs review](https://github.com/elastic/docs-actions/blob/main/.github/workflows/gh-aw-docs-review.md) also checks for tagging issues on your PR, where enabled.`;
 
             await github.rest.issues.createComment({
               owner, repo,
