@@ -61,6 +61,8 @@ The caller must include `ready_for_review` and `converted_to_draft` in its `pull
 
 An existing comment stays on a pull request that goes back to draft. The checks update it when the pull request is ready again.
 
+The checks skip a run only when the pull request is still a draft when the run starts. GitHub can start the run for a push to a draft after the pull request is marked ready. Such a run reads the current state from the GitHub API and runs the checks.
+
 Without `skip-drafts`, the checks run on drafts like on any other pull request.
 
 ## Require Impact and Action on breaking changes
