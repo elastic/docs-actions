@@ -15,8 +15,10 @@ on:
 permissions: {}
 
 concurrency:
-  group: release-notes-changelog-file-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}-${{ github.event.workflow_run.id }}
-  cancel-in-progress: true
+  group: release-notes-changelog-file-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  # Queue, don't cancel: a run cancelled after its push but before its comment
+  # would leave the next run with nothing to commit and nothing to post.
+  cancel-in-progress: false
 
 jobs:
   preflight:
