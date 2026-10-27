@@ -808,12 +808,12 @@ jobs:
 
             const body = `${title}
 
-            👋 Thanks for updating the docs! Elastic docs cover multiple versions and deployment types on the same page. **\`applies_to\` tags help readers understand which information applies to them.**
+            👋 Thanks for updating the docs! Elastic docs cover multiple versions and deployment types on the same page. \`applies_to\` tags help readers understand which information applies to them.
 
             **Need help with \`applies_to\`?**
 
-            - **[Use the \`applies_to\` tagging skill](https://github.com/elastic/elastic-docs-skills/blob/main/skills/authoring/docs-applies-to-tagging/SKILL.md)** to identify, generate, update, and validate tags.
-            - **[Where should I put the \`applies_to\` metadata?](https://docs-v3-preview.elastic.dev/elastic/docs-builder/tree/main/syntax/applies#where-should-i-put-the-applies_to-metadata)**: Placement and syntax examples.
+            - [Tagging skill](https://github.com/elastic/elastic-docs-skills/blob/main/skills/authoring/docs-applies-to-tagging/SKILL.md): Identify, generate, update, and validate tags.
+            - [Placement guide](https://docs-v3-preview.elastic.dev/elastic/docs-builder/tree/main/syntax/applies#where-should-i-put-the-applies_to-metadata): Where to put \`applies_to\` metadata, with syntax examples.
 
             The [automated docs review](https://github.com/elastic/docs-actions/blob/main/.github/workflows/gh-aw-docs-review.md) also checks for tagging issues on your PR, where enabled.`;
 
