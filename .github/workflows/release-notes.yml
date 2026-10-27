@@ -30,8 +30,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Drafts skip validation, so they get no failing check and no PR comment. GitHub cannot merge a draft,
+  # so the skip never lets a PR through. The caller listens for ready_for_review to validate it then.
   validate:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -140,10 +142,8 @@ jobs:
           TITLE_CHANGED: ${{ github.event.changes.title != null }}
           BODY_CHANGED: ${{ github.event.changes.body != null }}
 
-      # No artifact on a draft means no PR comment. The check still fails, so the author still sees it.
-      # The caller must listen for ready_for_review so the comment appears once the PR is ready.
       - name: Upload decision artifact
-        if: always() && !github.event.pull_request.draft
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: changelog-decision

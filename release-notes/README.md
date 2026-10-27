@@ -40,13 +40,19 @@ The release notes and changelog file callers use the default `docs/changelog.yml
 
 ## Draft pull requests
 
-The checks run on draft pull requests, but they do not post a pull request comment. A failing check stays visible on the draft. The comment appears when the pull request is marked ready for review. For this, the `release-notes.yml` caller must include `ready_for_review` in its `pull_request` event types. Add it to callers that you copied before this change:
+The checks skip draft pull requests. A draft shows the `validate` job as skipped, and it gets no pull request comment. GitHub does not merge drafts, so the skip never lets an unchecked pull request through.
+
+When a draft is marked ready for review, the checks run and the comment appears if a check fails. When a pull request goes back to draft, the next run skips the checks again. An existing comment stays on the pull request, and the checks update it when the pull request is ready again.
+
+For this, the `release-notes.yml` caller must include `ready_for_review` and `converted_to_draft` in its `pull_request` event types. Add them to callers that you copied before this change:
 
 ```yaml
 on:
   pull_request:
-    types: [opened, synchronize, reopened, edited, labeled, unlabeled, ready_for_review]
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled, ready_for_review, converted_to_draft]
 ```
+
+Without `ready_for_review`, the checks run only at the next push or label change after the pull request is ready. Without `converted_to_draft`, a failed check from before the conversion stays on the draft until the next push.
 
 ## Require Impact and Action on breaking changes
 
