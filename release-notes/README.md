@@ -40,19 +40,28 @@ The release notes and changelog file callers use the default `docs/changelog.yml
 
 ## Draft pull requests
 
-The checks skip draft pull requests. A draft shows the `validate` job as skipped, and it gets no pull request comment. GitHub does not merge drafts, so the skip never lets an unchecked pull request through.
-
-When a draft is marked ready for review, the checks run and the comment appears if a check fails. When a pull request goes back to draft, the next run skips the checks again. An existing comment stays on the pull request, and the checks update it when the pull request is ready again.
-
-For this, the `release-notes.yml` caller must include `ready_for_review` and `converted_to_draft` in its `pull_request` event types. Add them to callers that you copied before this change:
+Set `skip-drafts` on the `release-notes` job to skip the checks on draft pull requests. A draft then shows the `validate` job as skipped, and it gets no pull request comment. The downloadable caller sets it.
 
 ```yaml
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited, labeled, unlabeled, ready_for_review, converted_to_draft]
+
+jobs:
+  release-notes:
+    uses: elastic/docs-actions/.github/workflows/release-notes.yml@v1
+    with:
+      skip-drafts: true
 ```
 
-Without `ready_for_review`, the checks run only at the next push or label change after the pull request is ready. Without `converted_to_draft`, a failed check from before the conversion stays on the draft until the next push.
+The caller must include `ready_for_review` and `converted_to_draft` in its `pull_request` event types:
+
+- `ready_for_review` runs the checks when a draft is marked ready for review. Without it, nothing checks the pull request until the next push or label change. GitHub counts the skipped check as passing, so the pull request can merge unchecked.
+- `converted_to_draft` replaces a failed check with a skipped one when a pull request goes back to draft.
+
+An existing comment stays on a pull request that goes back to draft. The checks update it when the pull request is ready again.
+
+Without `skip-drafts`, the checks run on drafts like on any other pull request.
 
 ## Require Impact and Action on breaking changes
 
