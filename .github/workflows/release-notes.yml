@@ -34,10 +34,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The event's draft flag is a snapshot. In a large repository the run for a push to a draft can start
+  # after the PR is marked ready, and a late skip would then hide a failed check. So the live state decides.
+  draft-state:
+    if: github.event_name == 'pull_request' && inputs.skip-drafts && github.event.pull_request.draft
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: read
+    outputs:
+      draft: ${{ steps.live.outputs.draft }}
+    steps:
+      - name: Read the live draft state
+        id: live
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          draft=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.draft')
+          echo "draft=${draft}" >> "$GITHUB_OUTPUT"
+          echo "::notice::The event says draft, the PR is now draft=${draft}"
+
   # skip-drafts is opt-in: a caller without ready_for_review would never re-run when a draft is ready,
-  # and the skipped check would count as passing.
+  # and the skipped check would count as passing. When draft-state fails or is skipped, validate runs.
   validate:
-    if: github.event_name == 'pull_request' && !(inputs.skip-drafts && github.event.pull_request.draft)
+    needs: draft-state
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.draft-state.outputs.draft != 'true' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
