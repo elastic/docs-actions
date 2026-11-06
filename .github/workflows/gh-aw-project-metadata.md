@@ -13,12 +13,6 @@ imports:
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
 model: gpt-5.6-luna
-# The pinned AWF price table has no gpt-5.6-luna entry; without a fallback the API proxy rejects
-# every request with HTTP 400. Rates match OpenRouter ($/1M tokens).
-models:
-  default-ai-credits-pricing:
-    input: 0.10
-    output: 0.50
 engine:
   id: codex
   args:
