@@ -15,6 +15,7 @@ permissions:
   actions: read
   contents: read
   discussions: write
+  issues: write
   pull-requests: write
   copilot-requests: write
   id-token: write
