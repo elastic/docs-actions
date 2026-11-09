@@ -81,6 +81,8 @@ jobs:
       head-repo: ${{ steps.context.outputs.head-repo }}
       is-fork: ${{ steps.context.outputs.is-fork }}
       base-ref: ${{ steps.context.outputs.base-ref }}
+      stack-base-ref: ${{ steps.context.outputs.stack-base-ref }}
+      stack-note: ${{ steps.context.outputs.stack-note }}
       is-org-member: ${{ steps.check-org-membership.outputs.is-member }}
       vale-files-match: ${{ steps.context.outputs.vale-files-match }}
       link-index-eligible: ${{ steps.link-index-branch.outputs.eligible }}
@@ -214,6 +216,13 @@ jobs:
             core.setOutput('base-ref', pr.base.ref);
             core.setOutput('pr-author', pr.user.login);
 
+            // Honor the stack only for same-repository PRs: GitHub does not support cross-fork stacks.
+            if (pr.stack && !isFork) {
+              core.info(`PR #${prNumber} is layer ${pr.stack.position} of ${pr.stack.size} in a stack targeting '${pr.stack.base.ref}'`);
+              core.setOutput('stack-base-ref', pr.stack.base.ref);
+              core.setOutput('stack-note', `This PR is layer ${pr.stack.position} of ${pr.stack.size} in a stack targeting \`${pr.stack.base.ref}\`. Its preview includes the layers below it.`);
+            }
+
             // --- Changed-files check (docs-relevant files only) ---
             const files = await github.paginate(github.rest.pulls.listFiles, {
               owner, repo, pull_number: prNumber
@@ -246,7 +255,7 @@ jobs:
         if: steps.context.outputs.has-changes == 'true'
         uses: elastic/docs-builder/actions/assembler-match@main
         with:
-          ref_name: ${{ steps.context.outputs.base-ref }}
+          ref_name: ${{ steps.context.outputs.stack-base-ref || steps.context.outputs.base-ref }}
           repository: ${{ github.repository }}
 
       - name: Fetch ephemeral GitHub token
@@ -333,6 +342,7 @@ jobs:
         uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
+          STACK_NOTE: ${{ needs.preflight.outputs.stack-note }}
         with:
           # language=js
           script: |
@@ -340,11 +350,13 @@ jobs:
             const { owner, repo } = context.repo;
             const prNumber = parseInt(process.env.PR_NUMBER);
             const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+            const stackNote = process.env.STACK_NOTE;
 
             const body = [
               title,
               '',
               `⏳ Building and deploying preview... [View progress](${runUrl})`,
+              ...(stackNote ? ['', stackNote] : []),
               '',
               '_This comment will be updated with preview links when the build is complete._',
             ].join('\n');
@@ -662,12 +674,14 @@ jobs:
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
           DOCS_PATH: ${{ inputs.path }}
           PATH_PATTERN: ${{ inputs.path-pattern }}
+          STACK_NOTE: ${{ needs.preflight.outputs.stack-note }}
         with:
           # language=js
           script: |
             const title = '## 🔍 Preview links for changed docs'
             const { owner, repo } = context.repo;
             const prNumber = parseInt(process.env.PR_NUMBER);
+            const stackNote = process.env.STACK_NOTE;
 
             const files = await github.paginate(github.rest.pulls.listFiles, {
               owner, repo, pull_number: prNumber
@@ -688,6 +702,7 @@ jobs:
               const body = [
                 title,
                 '',
+                ...(stackNote ? [stackNote, ''] : []),
                 'This PR only changes snippets or data files. No direct page links are available.',
                 `[Browse the full preview](${previewUrl})`,
               ].join('\n');
@@ -740,6 +755,7 @@ jobs:
 
             const body = [
               title,
+              ...(stackNote ? ['', stackNote, ''] : []),
               ...links.slice(0, 10).map(i => `- ${i}`),
             ]
 
