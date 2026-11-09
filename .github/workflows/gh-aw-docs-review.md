@@ -43,7 +43,10 @@ engine:
     ANTHROPIC_API_KEY: Bearer ${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}
     AWF_ANTHROPIC_AUTH_HEADER: Authorization
 on:
-  roles: [admin, maintainer, write]
+  # Open to every actor: the callers run this workflow for each new pull request, and bot authors
+  # such as Dependabot do not hold a write role. A caller that exposes a slash command or a menu
+  # must limit who can start it, and must skip fork pull requests, which get no token.
+  roles: all
   workflow_call:
     inputs:
       additional-instructions:

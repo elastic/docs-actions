@@ -6,8 +6,11 @@ Reviews changed markdown files in pull requests using self-contained Elastic doc
 
 | Event | Description |
 |-------|-------------|
-| `/docs-review` | Slash command on a pull request comment |
+| `pull_request` | Automatic review when a pull request opens, reopens, or leaves draft. The caller skips drafts and fork pull requests. Converting to draft cancels a review in progress |
+| `/docs-review` | Slash command on a pull request comment. The caller limits it to owners, members, and collaborators |
 | PR checkbox menu | Consumer-managed PR menu workflow that calls the same reusable workflow when a checkbox is selected |
+
+The workflow runs for every actor (`roles: all`) so that automatic runs work for bot authors. The caller decides who can start a review: keep the author association check on the slash command, and keep the fork check on the automatic trigger.
 
 ## Install
 
