@@ -31,6 +31,16 @@ Run Vale with Elastic style guide on documentation and user-facing metadata file
 | `artifact_uploaded` | Whether Vale results were uploaded as an artifact |
 <!--/outputs-->
 
+## When Vale is unavailable
+
+Vale is a best-effort check. If the action cannot download Vale or the Elastic style package, it skips linting and the job passes.
+
+- The action retries `vale sync` up to 3 times, with a 5-second pause between attempts. The Vale install step makes 3 download attempts.
+- If the install or the sync still fails, the action prints a warning, adds a "Vale check skipped" note to the job summary, and skips the remaining Vale steps.
+- This applies even when `fail_on_error` is `true`. A green check can mean that Vale did not run.
+- A skipped run creates no results file and uploads no artifact. The `artifact_uploaded` output is `false`. Downstream steps, such as the report action, must handle missing results.
+- A checksum mismatch on the downloaded Vale binary still fails the job.
+
 ## Usage
 <!--usage action="elastic/docs-actions/vale/lint" version="v1"-->
 ```yaml

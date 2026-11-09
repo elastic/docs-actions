@@ -475,10 +475,63 @@ jobs:
             exit 1
           fi
 
+  test-vale-unavailable:
+    name: Test skip when Vale is unavailable (${{ matrix.case }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: install
+            vale_version: '0.0.0'
+          - case: sync
+            vale_version: latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Put a Vale stub that fails to sync on the PATH
+        if: matrix.case == 'sync'
+        run: |
+          mkdir -p "$RUNNER_TEMP/stub-bin"
+          printf '#!/bin/bash\necho "stub vale: sync failed" >&2\nexit 2\n' > "$RUNNER_TEMP/stub-bin/vale"
+          chmod +x "$RUNNER_TEMP/stub-bin/vale"
+          echo "$RUNNER_TEMP/stub-bin" >> "$GITHUB_PATH"
+
+      - name: Run lint when Vale cannot be installed or synced
+        id: lint-unavailable
+        uses: ./vale/lint
+        with:
+          files: vale/test-fixtures/sample-violations.md
+          fail_on_error: 'true'
+          vale_version: ${{ matrix.vale_version }}
+          disable_telemetry: 'true'
+          upload_artifact: 'true'
+
+      - name: Verify the check was skipped without failing
+        env:
+          ARTIFACT_UPLOADED: ${{ steps.lint-unavailable.outputs.artifact_uploaded }}
+        run: |
+          if [ "$ARTIFACT_UPLOADED" != "false" ]; then
+            echo "::error::Expected artifact_uploaded=false when Vale is unavailable, got '$ARTIFACT_UPLOADED'"
+            exit 1
+          fi
+
+          if [ -f vale_results.json ] || [ -f issue_counts.txt ]; then
+            echo "::error::A skipped run must not create result files"
+            exit 1
+          fi
+
+          echo "Vale check was skipped and the job passed"
+
   upload-results:
     name: Upload combined results
     runs-on: ubuntu-latest
-    needs: [test-lint, test-clean-file, test-vale-paths, test-vale-paths-negation, test-yaml-files, test-repo-override]
+    needs: [test-lint, test-clean-file, test-vale-paths, test-vale-paths-negation, test-yaml-files, test-repo-override, test-vale-unavailable]
     if: always() && needs.test-lint.result == 'success'
 
     steps:

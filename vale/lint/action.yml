@@ -111,7 +111,7 @@ runs:
         echo "Installing Vale..."
 
         if [ "$VALE_VERSION" == "latest" ]; then
-          VALE_VERSION=$(gh api repos/errata-ai/vale/releases/latest --jq '.tag_name' 2>/dev/null | sed 's/^v//')
+          VALE_VERSION=$(gh api repos/errata-ai/vale/releases/latest --jq '.tag_name' 2>/dev/null | sed 's/^v//') || VALE_VERSION=""
           if [ -z "$VALE_VERSION" ] || [ "$VALE_VERSION" == "null" ]; then
             echo "::warning::Could not resolve latest Vale version from GitHub API"
             VALE_VERSION=""
