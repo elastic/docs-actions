@@ -92,6 +92,7 @@ runs:
         echo "✓ All dependencies are available"
 
     - name: Install Vale
+      id: install-vale
       shell: bash
       env:
         VALE_VERSION: ${{ inputs.vale_version }}
@@ -99,8 +100,13 @@ runs:
       run: |
         if command -v vale &> /dev/null; then
           echo "Vale is already installed: $(vale --version)"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
           exit 0
         fi
+
+        # Vale is a best-effort check. If it cannot be installed, skip it
+        # instead of failing the job and blocking CI.
+        echo "ready=false" >> "$GITHUB_OUTPUT"
 
         echo "Installing Vale..."
 
@@ -115,8 +121,8 @@ runs:
         fi
 
         if [ -z "$VALE_VERSION" ]; then
-          echo "::error::Could not determine Vale version to install"
-          exit 1
+          echo "::warning::Could not determine Vale version to install. Skipping the Vale check."
+          exit 0
         fi
 
         TARBALL="vale_${VALE_VERSION}_Linux_64-bit.tar.gz"
@@ -137,26 +143,32 @@ runs:
         done
 
         if [ ! -f "$TMPDIR/$TARBALL" ] || [ ! -f "$TMPDIR/$CHECKSUMS" ]; then
-          echo "::error::Failed to download Vale binary or checksums after 3 attempts"
+          echo "::warning::Failed to download Vale binary or checksums after 3 attempts. Skipping the Vale check."
           rm -rf "$TMPDIR"
-          exit 1
+          exit 0
         fi
 
         echo "Verifying SHA-256 checksum..."
-        (cd "$TMPDIR" && grep "$TARBALL" "$CHECKSUMS" | sha256sum --check --strict)
-        if [ $? -ne 0 ]; then
+        # A checksum mismatch is a security signal, not a transient failure: keep it fatal.
+        if ! (cd "$TMPDIR" && grep "$TARBALL" "$CHECKSUMS" | sha256sum --check --strict); then
           echo "::error::Checksum verification failed for $TARBALL"
           rm -rf "$TMPDIR"
           exit 1
         fi
 
-        sudo tar xz -C /usr/local/bin vale < "$TMPDIR/$TARBALL"
+        if ! sudo tar xz -C /usr/local/bin vale < "$TMPDIR/$TARBALL"; then
+          echo "::warning::Could not extract Vale. Skipping the Vale check."
+          rm -rf "$TMPDIR"
+          exit 0
+        fi
         rm -rf "$TMPDIR"
 
         echo "Installed: $(vale --version)"
+        echo "ready=true" >> "$GITHUB_OUTPUT"
 
     - name: Configure Vale with released styles
-      if: inputs.use_local_styles != 'true'
+      id: sync-styles
+      if: inputs.use_local_styles != 'true' && steps.install-vale.outputs.ready == 'true'
       shell: bash
       run: |
         # Create a minimal .vale.ini for this run
@@ -175,17 +187,35 @@ runs:
         Packages = https://github.com/elastic/vale-rules/releases/latest/download/elastic-vale.zip
         EOF
 
-        # Sync the Elastic style package (downloads styles and merges packaged config)
+        # Sync the Elastic style package (downloads styles and merges packaged config).
+        # Retry up to 3 times after the first attempt, pausing between attempts.
+        # If every attempt fails, skip the Vale check instead of blocking CI.
+        MAX_RETRIES=3
+        RETRY_DELAY=5
         echo "Downloading Elastic style guide..."
-        if ! vale --config=.vale.ini.temp sync 2>&1; then
-          echo "::error::Vale sync failed. Check if the package URL is accessible: https://github.com/elastic/vale-rules/releases/latest/download/elastic-vale.zip"
-          exit 1
+        synced=false
+        for attempt in $(seq 0 "$MAX_RETRIES"); do
+          if [ "$attempt" -gt 0 ]; then
+            echo "::warning::Vale sync failed. Retry ${attempt}/${MAX_RETRIES} in ${RETRY_DELAY}s..."
+            sleep "$RETRY_DELAY"
+          fi
+          if vale --config=.vale.ini.temp sync 2>&1; then
+            synced=true
+            break
+          fi
+        done
+
+        if [ "$synced" != "true" ]; then
+          echo "::warning::Vale sync failed after ${MAX_RETRIES} retries. Skipping the Vale check. Check if the package URL is accessible: https://github.com/elastic/vale-rules/releases/latest/download/elastic-vale.zip"
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          exit 0
         fi
 
+        echo "ready=true" >> "$GITHUB_OUTPUT"
         echo "Vale configured with Elastic style guide (released)"
 
     - name: Configure Vale with local styles
-      if: inputs.use_local_styles == 'true'
+      if: inputs.use_local_styles == 'true' && steps.install-vale.outputs.ready == 'true'
       shell: bash
       env:
         STYLES_PATH: ${{ inputs.styles_path }}
@@ -229,6 +259,7 @@ runs:
         ls -la .vale-styles/
 
     - name: Apply repo-level Vale overrides
+      if: steps.install-vale.outputs.ready == 'true' && steps.sync-styles.outputs.ready != 'false'
       shell: bash
       env:
         DEBUG: ${{ inputs.debug }}
@@ -472,9 +503,18 @@ runs:
       id: final-files-check
       if: steps.files-to-lint.outputs.has_files == 'true'
       shell: bash
+      env:
+        INSTALL_READY: ${{ steps.install-vale.outputs.ready }}
+        SYNC_READY: ${{ steps.sync-styles.outputs.ready }}
       run: |
+        # Skip linting, without failing the job, when Vale or its styles could not be downloaded
+        if [ "$INSTALL_READY" != "true" ] || [ "$SYNC_READY" == "false" ]; then
+          echo "::warning::Vale is not available. Skipping the Vale check."
+          echo "### Vale check skipped" >> "$GITHUB_STEP_SUMMARY"
+          echo "Vale or the Elastic style package could not be downloaded. See the job log for details." >> "$GITHUB_STEP_SUMMARY"
+          echo "has_files=false" >> $GITHUB_OUTPUT
         # Check if files_to_lint.txt exists and has content after potential filtering
-        if [ -f files_to_lint.txt ] && [ -s files_to_lint.txt ]; then
+        elif [ -f files_to_lint.txt ] && [ -s files_to_lint.txt ]; then
           echo "has_files=true" >> $GITHUB_OUTPUT
         else
           echo "has_files=false" >> $GITHUB_OUTPUT
@@ -751,7 +791,7 @@ runs:
         fi
 
     - name: Fail on errors
-      if: inputs.fail_on_error == 'true' && steps.vale-report.outputs.error_count != '0'
+      if: inputs.fail_on_error == 'true' && steps.vale-report.outputs.error_count != '0' && steps.install-vale.outputs.ready == 'true' && steps.sync-styles.outputs.ready != 'false'
       shell: bash
       run: |
         echo "❌ Vale found ${STEPS_VALE_REPORT_OUTPUTS_ERROR_COUNT} error-level issue(s)"
