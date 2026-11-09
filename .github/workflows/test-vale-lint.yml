@@ -486,6 +486,8 @@ jobs:
             vale_version: '0.0.0'
           - case: sync
             vale_version: latest
+          - case: version-lookup
+            vale_version: latest
 
     steps:
       - name: Checkout repository
@@ -501,6 +503,14 @@ jobs:
           printf '#!/bin/bash\necho "stub vale: sync failed" >&2\nexit 2\n' > "$RUNNER_TEMP/stub-bin/vale"
           chmod +x "$RUNNER_TEMP/stub-bin/vale"
           echo "$RUNNER_TEMP/stub-bin" >> "$GITHUB_PATH"
+
+      - name: Put a gh stub that fails on the PATH
+        if: matrix.case == 'version-lookup'
+        run: |
+          mkdir -p "$RUNNER_TEMP/stub-gh"
+          printf '#!/bin/bash\necho "stub gh: API request failed" >&2\nexit 1\n' > "$RUNNER_TEMP/stub-gh/gh"
+          chmod +x "$RUNNER_TEMP/stub-gh/gh"
+          echo "$RUNNER_TEMP/stub-gh" >> "$GITHUB_PATH"
 
       - name: Run lint when Vale cannot be installed or synced
         id: lint-unavailable
