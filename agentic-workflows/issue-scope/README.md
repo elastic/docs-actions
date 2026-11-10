@@ -18,8 +18,11 @@ early (sandbox battery, 2026-09-15).
 
 | Event | Description |
 |-------|-------------|
-| `/scope` | Slash command on an issue comment. |
+| `issues: opened` | Automatic scope for every new issue. The footer reads "Scoped automatically when the issue opened." |
+| `/scope` | Slash command on an issue comment, to scope again. The caller limits it to owners, members, and collaborators. |
 | `workflow_dispatch` | Manual trigger. |
+
+The workflow has no role check (`roles: all`), because issue authors are often outside the organization. It gates itself instead: a new issue always runs, and a new comment must come from an owner, member, or collaborator. Keep the same condition in the caller.
 
 The workflow runs on issues only. Commenting `/scope` on a pull request does not trigger it.
 
@@ -137,8 +140,11 @@ jobs:
   run:
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      (startsWith(github.event.comment.body, '/scope') &&
-       github.event.issue.pull_request == null)
+      github.event_name == 'issues' ||
+      (github.event_name == 'issue_comment' &&
+       startsWith(github.event.comment.body, '/scope') &&
+       github.event.issue.pull_request == null &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
     uses: elastic/docs-actions/.github/workflows/gh-aw-issue-scope.lock.yml@v1
     with:
       additional-instructions: |
