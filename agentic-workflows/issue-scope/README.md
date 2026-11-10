@@ -22,7 +22,7 @@ early (sandbox battery, 2026-09-15).
 | `/scope` | Slash command on an issue comment, to scope again. The caller limits it to owners, members, and collaborators. |
 | `workflow_dispatch` | Manual trigger. |
 
-The workflow runs for every actor (`roles: all`) because issue authors are often outside the organization. The caller must keep the author association check on the slash command.
+The workflow has no role check (`roles: all`), because issue authors are often outside the organization. It gates itself instead: a new issue always runs, and a new comment must come from an owner, member, or collaborator. Keep the same condition in the caller.
 
 The workflow runs on issues only. Commenting `/scope` on a pull request does not trigger it.
 

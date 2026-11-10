@@ -42,10 +42,20 @@ engine:
     # The gateway reads Authorization: Bearer, and the sidecar sends x-api-key by default.
     ANTHROPIC_API_KEY: Bearer ${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}
     AWF_ANTHROPIC_AUTH_HEADER: Authorization
+# Actor gate. roles: all removed the role check, so this expression is the only gate left for
+# callers that pin @v1 and still use an old template. A comment starts a run only when its author
+# is an owner, member, or collaborator. A menu edit (issue_comment edited) needs write access to
+# the bot's comment, and the callers check it again. Pull requests must come from the same
+# repository: a fork pull request has no secrets, and its author is not trusted.
+if: >-
+  (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
+  github.event_name == 'workflow_dispatch' ||
+  (github.event_name == 'issue_comment' &&
+   (github.event.action == 'edited' ||
+    contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))
 on:
-  # Open to every actor: the callers run this workflow for each new pull request, and bot authors
-  # such as Dependabot do not hold a write role. A caller that exposes a slash command or a menu
-  # must limit who can start it, and must skip fork pull requests, which get no token.
+  # No role check, because bot authors such as Dependabot do not hold a write role. The `if:`
+  # expression above gates comments and fork pull requests instead.
   roles: all
   workflow_call:
     inputs:

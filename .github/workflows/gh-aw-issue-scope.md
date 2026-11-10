@@ -25,10 +25,20 @@ engine:
     OPENAI_BASE_URL: https://llm.idea.elastichosting.ai/v1
     OPENAI_API_KEY: ${{ steps.agent-router-auth.outputs.id_token || 'agent-router' }}
 
+# Actor gate. roles: all removed the role check, so this expression is the only gate left for
+# callers that pin @v1 and still use an old template. A comment starts a run only when its author
+# is an owner, member, or collaborator. A menu edit (issue_comment edited) needs write access to
+# the bot's comment, and the callers check it again. Pull requests must come from the same
+# repository: a fork pull request has no secrets, and its author is not trusted.
+if: >-
+  (github.event_name == 'issues' && github.event.action == 'opened') ||
+  github.event_name == 'workflow_dispatch' ||
+  (github.event_name == 'issue_comment' &&
+   (github.event.action == 'edited' ||
+    contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))
 on:
-  # Open to every actor: the callers run this workflow for each new issue, and issue authors are
-  # often outside the organization. A caller that exposes the /scope slash command must limit it
-  # to members, collaborators, and owners with the comment's author_association.
+  # No role check, because issue authors are often outside the organization and the callers run
+  # this workflow for each new issue. The `if:` expression above gates comments instead.
   roles: all
   reaction: eyes
   status-comment: true
