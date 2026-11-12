@@ -405,7 +405,31 @@ jobs:
           echo "::error::Fork code must never be checked out in the deploy workflow"
           exit 1
 
+      # Forks of a private repository are private as well, and the token of this
+      # workflow cannot read them ("repository 'https://github.com/<user>/<repo>/'
+      # not found"). The base repository does expose the PR head as refs/pull/<n>/head,
+      # so for private repositories the same commit is fetched from there instead.
+      # Only org members' fork PRs get here: non-members are rejected above.
+      # Public repositories keep checking out the fork directly.
+      - name: Checkout (fork PR of a private repository)
+        if: >
+          github.event.repository.private == true
+          && needs.preflight.outputs.event == 'pull_request'
+          && needs.preflight.outputs.is-fork == 'true'
+          && needs.preflight.outputs.pr-number != ''
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ github.repository }}
+          ref: refs/pull/${{ needs.preflight.outputs.pr-number }}/head
+          persist-credentials: false
+          allow-unsafe-pr-checkout: true
+
       - name: Checkout
+        if: >
+          !(github.event.repository.private == true
+            && needs.preflight.outputs.event == 'pull_request'
+            && needs.preflight.outputs.is-fork == 'true'
+            && needs.preflight.outputs.pr-number != '')
         uses: actions/checkout@v7
         with:
           repository: ${{ needs.preflight.outputs.head-repo }}
