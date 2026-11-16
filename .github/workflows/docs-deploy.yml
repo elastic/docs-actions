@@ -825,6 +825,71 @@ jobs:
               body
             });
 
+  # pre-comment promises "Building and deploying preview..." and only the comment
+  # job replaces it, and only after a successful deploy. When build or deploy-preview
+  # fails nothing rewrites the comment, so it claims to be building forever.
+  # Cancelled runs are left alone: cancel-in-progress means a newer run took over.
+  comment-failure:
+    if: >
+      always()
+      && needs.preflight.outputs.event == 'pull_request'
+      && (needs.preflight.outputs.is-fork == 'false'
+          || needs.preflight.outputs.is-org-member == 'true')
+      && needs.pre-comment.result == 'success'
+      && (needs.build.result == 'failure'
+          || needs.deploy-preview.result == 'failure')
+      && inputs.disable-comments != true
+    needs:
+      - preflight
+      - build
+      - deploy-preview
+      - pre-comment
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: none
+      deployments: none
+      id-token: none
+      pull-requests: write
+    steps:
+      - name: Update comment to failed
+        continue-on-error: true
+        uses: actions/github-script@v9
+        env:
+          PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
+          BUILD_RESULT: ${{ needs.build.result }}
+        with:
+          # language=js
+          script: |
+            const title = '## 🔍 Preview links for changed docs'
+            const { owner, repo } = context.repo;
+            const prNumber = parseInt(process.env.PR_NUMBER);
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+            const stage = process.env.BUILD_RESULT === 'failure' ? 'build' : 'deployment';
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number: prNumber
+            });
+            // Only touch the comment this run wrote (it links to this run), never one
+            // from a newer run or a finished preview.
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.startsWith(title) &&
+              c.body.includes(runUrl)
+            );
+            if (!existing) return;
+
+            await github.rest.issues.updateComment({
+              owner, repo,
+              comment_id: existing.id,
+              body: [
+                title,
+                '',
+                `❌ The preview ${stage} failed. [View the logs](${runUrl})`,
+                '',
+                '_Push a new commit or re-run the failed jobs to try again._',
+              ].join('\n'),
+            });
+
   vale-report:
     if: >
       needs.preflight.outputs.event == 'pull_request'
