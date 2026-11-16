@@ -1,0 +1,49 @@
+openapi: 3.2.0
+info:
+  title: Test API
+  version: "1.0.0"
+  description: A clean OpenAPI 3.2 fixture used to prove the ruleset passes valid specs.
+servers:
+  - url: https://api.example.com
+    name: Production
+paths:
+  /things:
+    get:
+      operationId: getThings
+      summary: Get things
+      description: Returns a list of things.
+      tags: [things]
+      responses:
+        '200':
+          summary: A list of things
+          description: OK
+  /things/_stream:
+    get:
+      operationId: streamThings
+      summary: Stream things
+      description: Returns things as newline-delimited JSON.
+      tags: [things]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/x-ndjson:
+              itemSchema:
+                type: object
+                properties:
+                  name:
+                    type: string
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+tags:
+  - name: catalog
+    summary: Catalog
+    description: Groups the catalog APIs.
+    kind: nav
+  - name: things
+    summary: Things
+    description: Manage things.
+    parent: catalog

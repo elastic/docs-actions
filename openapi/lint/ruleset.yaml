@@ -29,7 +29,7 @@ overrides:
 rules:
   # ---- Core tier (error) ----
   oas2-schema: error
-  oas3-schema: error # covers both 3.0.x and 3.1.0; Spectral dispatches on detected version
+  oas3-schema: error # covers 3.0.x, 3.1.x, and 3.2.x; Spectral dispatches on detected version
 
   # ---- Convention tier (warn) — built-in spectral:oas rules, re-enabled ----
   operation-operationId: warn
