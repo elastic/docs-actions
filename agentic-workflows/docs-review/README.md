@@ -6,8 +6,11 @@ Reviews changed markdown files in pull requests using self-contained Elastic doc
 
 | Event | Description |
 |-------|-------------|
-| `/docs-review` | Slash command on a pull request comment |
+| `pull_request` | Automatic review when a pull request opens, reopens, or leaves draft. The caller skips drafts and fork pull requests. Converting to draft cancels a review in progress |
+| `/docs-review` | Slash command on a pull request comment. The caller limits it to owners, members, and collaborators |
 | PR checkbox menu | Consumer-managed PR menu workflow that calls the same reusable workflow when a checkbox is selected |
+
+The workflow has no role check (`roles: all`), so that automatic runs work for bot authors. It gates itself instead: a pull request must come from the same repository, and a new comment must come from an owner, member, or collaborator. Keep the same conditions in the caller, so that an unauthorized comment never starts a run.
 
 ## Install
 
@@ -121,21 +124,41 @@ When an inline comment can be expressed as a small, exact replacement for the re
 ```yaml
 name: Docs Review
 on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, converted_to_draft]
   issue_comment:
     types: [created]
+
+# Same-repository pull request events and authorized /docs-review commands share one group per pull
+# request, so converting a pull request to draft cancels a review in progress. Everything else gets
+# its own group: a discussion comment, an unauthorized command, or an event from a fork pull
+# request, which the job skips, never cancels a review.
+concurrency:
+  group: docs-review-${{ github.event.pull_request.number || github.event.issue.number }}-${{ ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (startsWith(github.event.comment.body, '/docs-review') && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))) && 'pr' || github.run_id }}
+  cancel-in-progress: true
 
 permissions:
   actions: read
   contents: read
   discussions: write
+  issues: write
   pull-requests: write
   copilot-requests: write
+  id-token: write
 
 jobs:
   run:
+    # Automatic: ready pull requests from this repository. Fork pull requests get no token, so they
+    # use the slash command or the PR menu instead.
+    # Manual: /docs-review from a member, owner, or collaborator.
     if: >-
-      github.event.issue.pull_request != null &&
-      startsWith(github.event.comment.body, '/docs-review')
+      (github.event_name == 'pull_request' &&
+       !github.event.pull_request.draft &&
+       github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request != null &&
+       startsWith(github.event.comment.body, '/docs-review') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
     uses: elastic/docs-actions/.github/workflows/gh-aw-docs-review.lock.yml@v1
     with:
       review-scope: docs-subtree
