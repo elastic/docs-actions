@@ -1,0 +1,23 @@
+openapi: 3.2.0
+info:
+  title: Test API
+  version: "1.0.0"
+  description: An OpenAPI 3.2 fixture with a tag `parent` that is not a string, which the 3.2 schema rejects.
+servers:
+  - url: https://api.example.com
+paths:
+  /things:
+    get:
+      operationId: getThings
+      summary: Get things
+      description: Returns a list of things.
+      tags: [things]
+      responses:
+        '200':
+          description: OK
+tags:
+  - name: things
+    summary: Things
+    description: Manage things.
+    parent:
+      name: catalog

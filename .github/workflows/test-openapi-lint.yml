@@ -38,10 +38,16 @@ jobs:
           - fixture: valid-3.1.yaml
             fail-on-warn: 'true'
             expect: success
+          - fixture: valid-3.2.yaml
+            fail-on-warn: 'true'
+            expect: success
           - fixture: broken-ref.yaml
             fail-on-warn: 'false'
             expect: failure
           - fixture: schema-violation.yaml
+            fail-on-warn: 'false'
+            expect: failure
+          - fixture: schema-violation-3.2.yaml
             fail-on-warn: 'false'
             expect: failure
           - fixture: not-openapi.yaml
