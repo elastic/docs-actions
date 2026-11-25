@@ -54,6 +54,18 @@ on:
         type: boolean
         default: false
         required: false
+      pre-build-artifact:
+        description: >
+          Name of an artifact from the triggering docs-build run to download into the checkout before the build, for docs
+          sources a previous job generates (e.g. an OpenAPI spec built from the PR). Empty skips the download.
+        type: string
+        default: ''
+        required: false
+      pre-build-artifact-path:
+        description: 'Folder, relative to the repository root, that pre-build-artifact is extracted into.'
+        type: string
+        default: ''
+        required: false
 
 permissions: {}
 
@@ -383,6 +395,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      actions: read # pre-build-artifact is downloaded from the triggering run
     outputs:
       build_outcome: ${{ steps.docs-build.outcome == 'success' && 'success' || '' }}
       skip: ${{ steps.docs-build.outputs.skip }}
@@ -419,6 +432,37 @@ jobs:
           ACTUAL_SHA=$(git rev-parse HEAD)
           if [[ "$ACTUAL_SHA" != "$HEAD_SHA" ]]; then
             echo "::error::Checkout SHA mismatch: expected ${HEAD_SHA}, got ${ACTUAL_SHA}. The branch may have been updated since the build was triggered."
+            exit 1
+          fi
+
+      - name: Validate pre-build artifact path
+        if: inputs.pre-build-artifact != ''
+        env:
+          ARTIFACT_PATH: ${{ inputs.pre-build-artifact-path }}
+        # language=bash
+        run: |
+          if [[ -z "$ARTIFACT_PATH" || "$ARTIFACT_PATH" == /* || "/$ARTIFACT_PATH/" == *"/../"* ]]; then
+            echo "::error::pre-build-artifact-path must be a relative path inside the repository: '${ARTIFACT_PATH}'"
+            exit 1
+          fi
+
+      - name: Download pre-build artifact
+        if: inputs.pre-build-artifact != ''
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ inputs.pre-build-artifact }}
+          path: ${{ inputs.pre-build-artifact-path }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Reject symlinks in pre-build artifact
+        if: inputs.pre-build-artifact != ''
+        env:
+          ARTIFACT_PATH: ${{ inputs.pre-build-artifact-path }}
+        # language=bash
+        run: |
+          if find "$ARTIFACT_PATH" -type l | grep -q .; then
+            echo "::error::Symlinks found in pre-build artifact — refusing to build"
             exit 1
           fi
 

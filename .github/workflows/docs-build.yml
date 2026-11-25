@@ -45,6 +45,18 @@ on:
         type: boolean
         default: false
         required: false
+      pre-build-artifact:
+        description: >
+          Name of an artifact from this workflow run to download into the checkout before the build, for docs
+          sources a previous job generates (e.g. an OpenAPI spec built from the PR). Empty skips the download.
+        type: string
+        default: ''
+        required: false
+      pre-build-artifact-path:
+        description: 'Folder, relative to the repository root, that pre-build-artifact is extracted into.'
+        type: string
+        default: ''
+        required: false
 
 permissions:
   contents: read
@@ -268,6 +280,44 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
           persist-credentials: false
+
+      - name: Validate pre-build artifact path
+        if: >
+          inputs.pre-build-artifact != ''
+          && env.MATCH == 'true'
+          && needs.check.outputs.effective_any_modified != 'false'
+        env:
+          ARTIFACT_PATH: ${{ inputs.pre-build-artifact-path }}
+        # language=bash
+        run: |
+          if [[ -z "$ARTIFACT_PATH" || "$ARTIFACT_PATH" == /* || "/$ARTIFACT_PATH/" == *"/../"* ]]; then
+            echo "::error::pre-build-artifact-path must be a relative path inside the repository: '${ARTIFACT_PATH}'"
+            exit 1
+          fi
+
+      - name: Download pre-build artifact
+        if: >
+          inputs.pre-build-artifact != ''
+          && env.MATCH == 'true'
+          && needs.check.outputs.effective_any_modified != 'false'
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ inputs.pre-build-artifact }}
+          path: ${{ inputs.pre-build-artifact-path }}
+
+      - name: Reject symlinks in pre-build artifact
+        if: >
+          inputs.pre-build-artifact != ''
+          && env.MATCH == 'true'
+          && needs.check.outputs.effective_any_modified != 'false'
+        env:
+          ARTIFACT_PATH: ${{ inputs.pre-build-artifact-path }}
+        # language=bash
+        run: |
+          if find "$ARTIFACT_PATH" -type l | grep -q .; then
+            echo "::error::Symlinks found in pre-build artifact — refusing to build"
+            exit 1
+          fi
 
       - name: Generate env.PATH_PREFIX
         id: generate-path-prefix
