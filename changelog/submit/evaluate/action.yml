@@ -104,7 +104,7 @@ runs:
       with:
         ref: refs/pull/${{ steps.pr.outputs.number }}/head
         persist-credentials: false
-        allow-unsafe-pr-checkout: true
+        allow-unsafe-pr-checkout: true # zizmor: ignore[unsafe-checkout] trusted org members only; SHA verified below
 
     - name: Checkout base repo (untrusted)
       if: steps.pr-data.outputs.proceed == 'true' && steps.strategy.outputs.trusted != 'true'
