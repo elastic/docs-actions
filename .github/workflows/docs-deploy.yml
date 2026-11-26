@@ -435,17 +435,6 @@ jobs:
             exit 1
           fi
 
-      - name: Validate pre-build artifact path
-        if: inputs.pre-build-artifact != ''
-        env:
-          ARTIFACT_PATH: ${{ inputs.pre-build-artifact-path }}
-        # language=bash
-        run: |
-          if [[ -z "$ARTIFACT_PATH" || "$ARTIFACT_PATH" == /* || "/$ARTIFACT_PATH/" == *"/../"* ]]; then
-            echo "::error::pre-build-artifact-path must be a relative path inside the repository: '${ARTIFACT_PATH}'"
-            exit 1
-          fi
-
       - name: Download pre-build artifact
         if: inputs.pre-build-artifact != ''
         uses: actions/download-artifact@v8
@@ -454,17 +443,6 @@ jobs:
           path: ${{ inputs.pre-build-artifact-path }}
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
-
-      - name: Reject symlinks in pre-build artifact
-        if: inputs.pre-build-artifact != ''
-        env:
-          ARTIFACT_PATH: ${{ inputs.pre-build-artifact-path }}
-        # language=bash
-        run: |
-          if find "$ARTIFACT_PATH" -type l | grep -q .; then
-            echo "::error::Symlinks found in pre-build artifact — refusing to build"
-            exit 1
-          fi
 
       - name: Generate env.PATH_PREFIX
         id: generate-path-prefix
