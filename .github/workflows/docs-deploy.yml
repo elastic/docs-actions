@@ -411,7 +411,7 @@ jobs:
           repository: ${{ needs.preflight.outputs.head-repo }}
           ref: ${{ needs.preflight.outputs.head-sha }}
           persist-credentials: false
-          allow-unsafe-pr-checkout: true
+          allow-unsafe-pr-checkout: true # zizmor: ignore[unsafe-checkout] unprivileged job; fork PRs need org membership and the SHA is checked below
 
       - name: Validate checkout SHA
         # language=bash
