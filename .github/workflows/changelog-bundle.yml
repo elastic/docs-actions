@@ -3,14 +3,6 @@ name: Changelog bundle
 on:
   workflow_call:
     inputs:
-      mode:
-        description: >
-          Operation mode: 'bundle' (default) runs changelog bundle,
-          'gh-release' runs changelog gh-release to create changelogs
-          from a GitHub release. In gh-release mode, repo and version
-          are required.
-        type: string
-        default: 'bundle'
       config:
         description: 'Path to changelog.yml configuration file'
         type: string
@@ -45,8 +37,8 @@ on:
       output:
         description: >
           Output file path for the bundle (e.g. docs/releases/v9.2.0.yaml).
-          Optional. When not provided, the path is determined by the config
-          (bundle.output_directory) and discovered automatically after generation.
+          Optional. When omitted in profile mode, --plan uses the profile's
+          output_directory if set, otherwise bundle.output_directory.
         type: string
       repo:
         description: 'GitHub repository name; falls back to bundle.repo in changelog.yml'
@@ -77,7 +69,7 @@ concurrency:
 
 jobs:
   generate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: read
@@ -87,7 +79,6 @@ jobs:
       - id: bundle
         uses: elastic/docs-actions/changelog/bundle-create@v1
         with:
-          mode: ${{ inputs.mode }}
           config: ${{ inputs.config }}
           profile: ${{ inputs.profile }}
           version: ${{ inputs.version }}
@@ -103,7 +94,7 @@ jobs:
 
   upload:
     needs: generate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write

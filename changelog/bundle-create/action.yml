@@ -3,17 +3,11 @@ description: >
   Checks out the repository, runs docs-builder changelog bundle in Docker
   to generate a fully-resolved bundle file, and uploads the result as an
   artifact. Supports option-based filtering (release-version, report, prs),
-  profile-based bundling, and gh-release mode (creates changelogs from a
+  profile-based bundling, commit-range bundling (start-git-ref/end-git-ref,
+  with dry-run reporting), and gh-release mode (creates changelogs from a
   GitHub release). Uses --network none where possible.
 
 inputs:
-  mode:
-    description: >
-      Operation mode: 'bundle' (default) runs changelog bundle,
-      'gh-release' runs changelog gh-release to create changelogs
-      from a GitHub release. In gh-release mode, repo and version
-      are required; most other inputs are ignored.
-    default: 'bundle'
   config:
     description: 'Path to changelog.yml configuration file'
     default: 'docs/changelog.yml'
@@ -24,9 +18,10 @@ inputs:
       all paths and filters come from the config.
   version:
     description: >
-      Version string for profile mode (e.g. 9.2.0, 2026-03).
-      Used for {version} substitution in profile patterns.
-      Only valid with profile.
+      Version string for profile mode (e.g. 9.2.0, 2026-03) or, when no
+      profile is set, a GitHub release tag treated as release-version
+      (e.g. v9.2.0). In profile mode used for {version} substitution;
+      in option mode equivalent to release-version.
   release-version:
     description: >
       GitHub release tag used as the PR filter source (e.g. v9.2.0).
@@ -45,16 +40,36 @@ inputs:
   output:
     description: >
       Output file path for the bundle, relative to the repo root.
-      Optional in both modes. When not provided, docs-builder writes
-      to the path determined by the config (bundle.output_directory)
-      and the plan resolves the generated file path automatically.
+      Optional in both modes. When omitted in profile mode, docs-builder
+      writes `{repo}-{product}-{version}.yaml` under the profile's
+      output_directory if set, otherwise bundle.output_directory.
   repo:
     description: >
-      GitHub repository name. Falls back to bundle.repo in changelog.yml.
+      GitHub repository name. Used in the profile-mode bundle filename
+      (`{repo}-{product}-{version}.yaml`). Falls back to bundle.repo in
+      changelog.yml, then git remote origin.
   owner:
     description: >
       GitHub repository owner. Falls back to bundle.owner in changelog.yml,
       then to elastic.
+  start-git-ref:
+    description: >
+      Start ref (exclusive) of a git commit range to bundle — the previously
+      published endpoint ref. Must be provided together with end-git-ref and a
+      profile; mutually exclusive with release-version, report, and prs. The PR
+      list is derived from the range itself (GitHub compare API + GraphQL
+      associatedPullRequests) and requires a GitHub token.
+  end-git-ref:
+    description: >
+      End ref (inclusive) of the git commit range — the currently published
+      endpoint ref. Recorded in the bundle output as the git_ref metadata field.
+  dry-run:
+    description: >
+      Resolve the commit range and print the run report (resolved PR list with
+      per-PR entry source) without writing a bundle or uploading an artifact.
+      Only valid together with start-git-ref/end-git-ref. The report is appended
+      to the job summary.
+    default: 'false'
   docs-builder-version:
     description: >
       docs-builder version to use (e.g. 0.1.100, latest, edge).
@@ -73,7 +88,7 @@ inputs:
 outputs:
   output:
     description: 'Resolved output file path for the bundle'
-    value: ${{ steps.plan.outputs.output_path || steps.gh-release-output.outputs.output_path }}
+    value: ${{ steps.plan.outputs.output_path }}
 
 runs:
   using: composite
@@ -86,7 +101,6 @@ runs:
     - name: Validate inputs
       shell: bash
       env:
-        MODE: ${{ inputs.mode }}
         CONFIG: ${{ inputs.config }}
         PROFILE: ${{ inputs.profile }}
         VERSION: ${{ inputs.version }}
@@ -97,14 +111,25 @@ runs:
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
         ARTIFACT_NAME: ${{ inputs.artifact-name }}
+        START_GIT_REF: ${{ inputs.start-git-ref }}
+        END_GIT_REF: ${{ inputs.end-git-ref }}
+        DRY_RUN: ${{ inputs.dry-run }}
       run: |
-        if [[ "$MODE" != "bundle" && "$MODE" != "gh-release" ]]; then
-          echo "::error::mode must be 'bundle' or 'gh-release', got: ${MODE}"
-          exit 1
-        fi
-
-        if [[ "$MODE" == "gh-release" && -z "$REPO" ]]; then
-          echo "::error::repo is required in gh-release mode"
+        if [ -n "$START_GIT_REF" ] || [ -n "$END_GIT_REF" ]; then
+          if [ -z "$START_GIT_REF" ] || [ -z "$END_GIT_REF" ]; then
+            echo "::error::start-git-ref and end-git-ref must be provided together; the start ref is never inferred"
+            exit 1
+          fi
+          if [ -z "$PROFILE" ]; then
+            echo "::error::start-git-ref/end-git-ref require a profile"
+            exit 1
+          fi
+          if [ -n "$RELEASE_VERSION" ] || [ -n "$REPORT" ] || [ -n "$PRS" ]; then
+            echo "::error::start-git-ref/end-git-ref are mutually exclusive with release-version, report, and prs"
+            exit 1
+          fi
+        elif [ "$DRY_RUN" = "true" ]; then
+          echo "::error::dry-run is only supported together with start-git-ref/end-git-ref"
           exit 1
         fi
 
@@ -126,6 +151,9 @@ runs:
         validate_identifier "$REPO" "repo" '^[a-zA-Z0-9._-]+$'
         validate_identifier "$OWNER" "owner" '^[a-zA-Z0-9._-]+$'
         validate_identifier "$ARTIFACT_NAME" "artifact-name" '^[a-zA-Z0-9._-]+$'
+        # Refs must not start with '-' so they can never be read as CLI flags.
+        validate_identifier "$START_GIT_REF" "start-git-ref" '^[a-zA-Z0-9][a-zA-Z0-9._/+-]*$'
+        validate_identifier "$END_GIT_REF" "end-git-ref" '^[a-zA-Z0-9][a-zA-Z0-9._/+-]*$'
 
         if [ -n "$REPORT" ] && [[ "$REPORT" == http://* ]]; then
           echo "::error::Report URL must use HTTPS: ${REPORT}"; exit 1
@@ -138,7 +166,6 @@ runs:
         github-token: ${{ inputs.github-token }}
 
     - name: Resolve bundle plan
-      if: inputs.mode == 'bundle'
       id: plan
       shell: bash
       env:
@@ -151,38 +178,47 @@ runs:
         OUTPUT: ${{ inputs.output }}
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
+        START_GIT_REF: ${{ inputs.start-git-ref }}
+        END_GIT_REF: ${{ inputs.end-git-ref }}
       run: |
+        # version without a profile is equivalent to release-version (convenient for release workflows).
+        if [ -z "$PROFILE" ] && [ -n "$VERSION" ] && [ -z "$RELEASE_VERSION" ]; then
+          RELEASE_VERSION="$VERSION"
+        fi
+
         ARGS=()
         ARGS+=(changelog bundle --plan)
         if [ -n "$PROFILE" ]; then
           ARGS+=("$PROFILE")
           [ -n "$VERSION" ] && ARGS+=("$VERSION")
           [ -n "$REPORT" ] && ARGS+=("$REPORT")
+          [ -n "$START_GIT_REF" ] && ARGS+=(--start-git-ref "$START_GIT_REF" --end-git-ref "$END_GIT_REF")
         else
-          ARGS+=(--config "$CONFIG" --resolve)
+          ARGS+=(--config "$CONFIG")
           [ -n "$RELEASE_VERSION" ] && ARGS+=(--release-version "$RELEASE_VERSION")
           [ -n "$REPORT" ] && ARGS+=(--report "$REPORT")
           [ -n "$PRS" ] && ARGS+=(--prs "$PRS")
           [ -n "$OUTPUT" ] && ARGS+=(--output "$OUTPUT")
-          [ -n "$REPO" ] && ARGS+=(--repo "$REPO")
-          [ -n "$OWNER" ] && ARGS+=(--owner "$OWNER")
         fi
+        # Forward in profile mode too: docs-builder uses --repo for the
+        # {repo}-{product}-{version}.yaml filename when bundle.repo is unset.
+        [ -n "$REPO" ] && ARGS+=(--repo "$REPO")
+        [ -n "$OWNER" ] && ARGS+=(--owner "$OWNER")
 
         docs-builder "${ARGS[@]}"
 
     - name: Verify plan output
-      if: inputs.mode == 'bundle'
       shell: bash
       env:
         OUTPUT_PATH: ${{ steps.plan.outputs.output_path }}
       run: |
         if [ -z "$OUTPUT_PATH" ]; then
-          echo "::error::Plan did not resolve an output path. Set 'output' input or configure bundle.output_directory in changelog.yml."
+          echo "::error::Plan did not resolve an output path. Configure bundle.output_directory in changelog.yml."
           exit 1
         fi
 
     - name: Download report
-      if: inputs.mode == 'bundle' && inputs.report != '' && startsWith(inputs.report, 'https://')
+      if: steps.plan.outputs.mode == 'bundle' && inputs.report != '' && startsWith(inputs.report, 'https://')
       shell: bash
       env:
         REPORT: ${{ inputs.report }}
@@ -201,7 +237,7 @@ runs:
         echo "::notice title=Docker image digest::${DIGEST}"
 
     - name: Generate changelog bundle
-      if: inputs.mode == 'bundle'
+      if: steps.plan.outputs.mode == 'bundle'
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
@@ -217,6 +253,9 @@ runs:
         OUTPUT: ${{ inputs.output }}
         REPO: ${{ inputs.repo }}
         OWNER: ${{ inputs.owner }}
+        START_GIT_REF: ${{ inputs.start-git-ref }}
+        END_GIT_REF: ${{ inputs.end-git-ref }}
+        DRY_RUN: ${{ inputs.dry-run }}
       run: |
         DOCKER_ARGS=(--rm -v "${PWD}:/github/workspace" -w /github/workspace)
 
@@ -240,20 +279,30 @@ runs:
           BUNDLE_ARGS+=("$PROFILE")
           [ -n "$VERSION" ] && BUNDLE_ARGS+=("$VERSION")
           [ -n "$REPORT" ] && BUNDLE_ARGS+=("$(resolve_report "$REPORT")")
+          [ -n "$START_GIT_REF" ] && BUNDLE_ARGS+=(--start-git-ref "$START_GIT_REF" --end-git-ref "$END_GIT_REF")
+          [ "$DRY_RUN" = "true" ] && BUNDLE_ARGS+=(--dry-run)
         else
           BUNDLE_ARGS+=(--config "$CONFIG" --resolve)
           [ -n "$RELEASE_VERSION" ] && BUNDLE_ARGS+=(--release-version "$RELEASE_VERSION")
           [ -n "$REPORT" ] && BUNDLE_ARGS+=(--report "$(resolve_report "$REPORT")")
           [ -n "$PRS" ] && BUNDLE_ARGS+=(--prs "$PRS")
           [ -n "$OUTPUT" ] && BUNDLE_ARGS+=(--output "$OUTPUT")
-          [ -n "$REPO" ] && BUNDLE_ARGS+=(--repo "$REPO")
-          [ -n "$OWNER" ] && BUNDLE_ARGS+=(--owner "$OWNER")
+        fi
+        [ -n "$REPO" ] && BUNDLE_ARGS+=(--repo "$REPO")
+        [ -n "$OWNER" ] && BUNDLE_ARGS+=(--owner "$OWNER")
+
+        if [ "$DRY_RUN" = "true" ]; then
+          # Surface the commit-range run report (resolved PR list with per-PR source) in the
+          # job summary — it is the dry run's product.
+          docker run "${DOCKER_ARGS[@]}" "$IMAGE_DIGEST" "${BUNDLE_ARGS[@]}" | tee .bundle-dry-run.log
+          awk '/^### Changelog bundle for/,0' .bundle-dry-run.log >> "$GITHUB_STEP_SUMMARY"
+          rm -f .bundle-dry-run.log
+        else
+          docker run "${DOCKER_ARGS[@]}" "$IMAGE_DIGEST" "${BUNDLE_ARGS[@]}"
         fi
 
-        docker run "${DOCKER_ARGS[@]}" "$IMAGE_DIGEST" "${BUNDLE_ARGS[@]}"
-
     - name: Generate changelogs from GitHub release
-      if: inputs.mode == 'gh-release'
+      if: steps.plan.outputs.mode == 'gh-release'
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
@@ -269,6 +318,13 @@ runs:
 
         GH_RELEASE_ARGS=(changelog gh-release)
 
+        # Fall back to GITHUB_REPOSITORY when the repo input is not supplied.
+        # GITHUB_REPOSITORY is 'owner/repo' and is set by the runner in every Actions context.
+        if [ -z "$REPO" ] && [ -n "${GITHUB_REPOSITORY:-}" ]; then
+          REPO="${GITHUB_REPOSITORY##*/}"
+          [ -z "$OWNER" ] && OWNER="${GITHUB_REPOSITORY%%/*}"
+        fi
+
         REPO_ARG="$REPO"
         if [ -n "$OWNER" ]; then
           REPO_ARG="${OWNER}/${REPO}"
@@ -282,36 +338,11 @@ runs:
 
         docker run "${DOCKER_ARGS[@]}" "$IMAGE_DIGEST" "${GH_RELEASE_ARGS[@]}"
 
-    - name: Discover gh-release output
-      if: inputs.mode == 'gh-release'
-      id: gh-release-output
-      shell: bash
-      env:
-        OUTPUT: ${{ inputs.output }}
-        CONFIG: ${{ inputs.config }}
-      run: |
-        SEARCH_DIR="${OUTPUT:-docs/releases}"
-        if [ -f "$SEARCH_DIR" ]; then
-          SEARCH_DIR="$(dirname "$SEARCH_DIR")"
-        fi
-
-        BUNDLE_DIR="${SEARCH_DIR}/bundles"
-        if [ ! -d "$BUNDLE_DIR" ]; then
-          BUNDLE_DIR="$SEARCH_DIR"
-        fi
-
-        BUNDLE_FILE=$(find "$BUNDLE_DIR" -maxdepth 1 -name '*.yaml' -o -name '*.yml' | head -1)
-        if [ -z "$BUNDLE_FILE" ]; then
-          echo "::error::No bundle file found in ${BUNDLE_DIR}"
-          exit 1
-        fi
-        echo "output_path=${BUNDLE_FILE}" >> "$GITHUB_OUTPUT"
-        echo "::notice title=Bundle output::${BUNDLE_FILE}"
-
     - name: Upload bundle artifact
+      if: inputs.dry-run != 'true'
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}
-        path: ${{ steps.plan.outputs.output_path || steps.gh-release-output.outputs.output_path }}
+        path: ${{ steps.plan.outputs.output_path }}
         if-no-files-found: error
         retention-days: 1

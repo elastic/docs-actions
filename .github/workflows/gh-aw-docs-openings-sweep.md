@@ -5,20 +5,20 @@ description: |
   review rules and targeted Elastic docs MCP checks. Opens a single labeled
   fix-issue with structured YAML findings.
 
+# Keep the agent and detection jobs on the tested image during the latest migration.
+runs-on: ubuntu-24.04
+
 inlined-imports: true
 imports:
-  - uses: shared/apm.md
-    with:
-      target: claude
-      packages:
-        - elastic/elastic-docs-skills/skills/authoring/page-opening-optimizer
-        - elastic/elastic-docs-skills/skills/authoring/frontmatter-description
-        - elastic/elastic-docs-skills/skills/authoring/content-type-checker
-        - elastic/elastic-docs-skills/skills/review/docs-check-style
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
   - gh-aw-fragments/findings-contract.md
+skills:
+  - elastic/elastic-docs-skills/skills/authoring/docs-page-opening-optimizer@main
+  - elastic/elastic-docs-skills/skills/authoring/docs-frontmatter-description@main
+  - elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker@main
+  - elastic/elastic-docs-skills/skills/review/docs-check-style@main
 model: claude-sonnet-5
 engine:
   id: copilot
@@ -103,7 +103,14 @@ network:
     - github
     - "www.elastic.co"
     - "ela.st"
+    - "docs.bump.sh"
+    - "search.elastic.co"
 safe-outputs:
+  threat-detection:
+    runs-on: ubuntu-24.04
+  report-failure-as-issue: false
+  messages:
+    footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
   noop:
   create-issue:
     title-prefix: "Docs fix — page openings: "
@@ -114,7 +121,7 @@ safe-outputs:
 timeout-minutes: 30
 steps:
   - name: Checkout source docs repo
-    uses: actions/checkout@v6
+    uses: actions/checkout@v7.0.1
     with:
       repository: ${{ inputs.source-repo || github.repository }}
       fetch-depth: 30

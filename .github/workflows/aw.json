@@ -1,0 +1,5 @@
+{
+  "maintenance": {
+    "runs_on": "${{ inputs.operation != '' && 'ubuntu-24.04' || 'ubuntu-slim' }}"
+  }
+}

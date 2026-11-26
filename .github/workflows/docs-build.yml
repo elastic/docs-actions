@@ -57,7 +57,7 @@ concurrency:
 jobs:
   match:
     if: github.event.repository.fork == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: none
       pull-requests: none
@@ -95,7 +95,7 @@ jobs:
           repository: ${{ github.repository }}
 
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: read
@@ -188,10 +188,22 @@ jobs:
               }
             }
 
-            core.setOutput('added_files', added.join(' '));
-            core.setOutput('modified_files', modified.join(' '));
-            core.setOutput('deleted_files', deleted.join(' '));
-            core.setOutput('renamed_files', renamed.join(' '));
+            // When too many files change the joined strings exceed Linux's ARG_MAX,
+            // crashing bash before any step can run. Empty outputs tell the build to
+            // do a full rebuild instead of an incremental one.
+            const MAX_INCREMENTAL_FILES = 500;
+            const total = added.length + modified.length + deleted.length + renamed.length;
+            if (total > MAX_INCREMENTAL_FILES) {
+              core.setOutput('added_files', '');
+              core.setOutput('modified_files', '');
+              core.setOutput('deleted_files', '');
+              core.setOutput('renamed_files', '');
+            } else {
+              core.setOutput('added_files', added.join(' '));
+              core.setOutput('modified_files', modified.join(' '));
+              core.setOutput('deleted_files', deleted.join(' '));
+              core.setOutput('renamed_files', renamed.join(' '));
+            }
 
       # Why: When a release branch (e.g. 9.4) is first created, it may share the same commit as the default
       # branch, so changed-files reports no diff. We still need a full docs build on that first push so
@@ -230,7 +242,7 @@ jobs:
   # sources, so assembler-match would return false and the build would skip anyway.
   build:
     if: github.event.repository.fork == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     needs:
@@ -337,7 +349,7 @@ jobs:
       github.event_name == 'pull_request'
       && inputs.enable-vale-linting == true
       && needs.check.outputs.any_modified == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: check
     permissions:
       contents: read
@@ -359,4 +371,4 @@ jobs:
         with:
           files: ${{ needs.check.outputs.all_changed_files }}
           vale-paths: ${{ inputs.vale-paths }}
-          vale_version: 3.14.1
+          vale_version: 3.24.0

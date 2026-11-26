@@ -1,3 +1,11 @@
+## MCP Tool Invocation
+
+MCP tools are called **directly through your native tool-calling interface**.
+They are not Python modules, shell commands, or importable libraries — never
+try `import`, `from ... import`, or CLI invocations for them. If a tool you
+need does not appear in your tool list, report it with the `missing_tool`
+safe output instead of improvising an alternative access path.
+
 ## MCP Pagination
 
 MCP tool responses have a **25,000 token limit**. When responses exceed this limit, the call fails and you must retry with pagination — wasting turns and tokens. Use proactive pagination to stay under the limit.

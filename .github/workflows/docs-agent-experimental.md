@@ -6,20 +6,20 @@ description: >
   validation and review.
 emoji: 🧪
 
+# Keep the agent and detection jobs on the tested image during the latest migration.
+runs-on: ubuntu-24.04
+
 inlined-imports: true
 imports:
-  - uses: shared/apm.md
-    with:
-      target: claude
-      packages:
-        - elastic/elastic-docs-skills/skills/authoring/content-type-checker
-        - elastic/elastic-docs-skills/skills/authoring/applies-to-tagging
-        - elastic/elastic-docs-skills/skills/authoring/docs-syntax-help
-        - elastic/elastic-docs-skills/skills/authoring/frontmatter-description
   - gh-aw-fragments/formatting.md
   - gh-aw-fragments/rigor.md
   - gh-aw-fragments/mcp-pagination.md
 
+skills:
+  - elastic/elastic-docs-skills/skills/authoring/docs-content-type-checker@main
+  - elastic/elastic-docs-skills/skills/authoring/docs-applies-to-tagging@main
+  - elastic/elastic-docs-skills/skills/authoring/docs-syntax-help@main
+  - elastic/elastic-docs-skills/skills/authoring/docs-frontmatter-description@main
 model: claude-sonnet-5
 engine:
   id: copilot
@@ -60,6 +60,7 @@ timeout-minutes: 45
 max-ai-credits: 2000
 
 tools:
+  bash: true
   github:
     mode: gh-proxy
     toolsets: [default]
@@ -71,10 +72,10 @@ mcp-servers:
     type: http
     url: "https://www.elastic.co/docs/_mcp/"
     allowed:
-      - "SemanticSearch"
-      - "GetDocumentByUrl"
-      - "FindRelatedDocs"
-      - "FindInconsistencies"
+      - "search_docs"
+      - "get_document_by_url"
+      - "find_related_docs"
+      - "find_docs_inconsistencies"
 
 network:
   allowed:
@@ -83,6 +84,8 @@ network:
     - "www.elastic.co"
     - "docs-v3-preview.elastic.dev"
     - "ela.st"
+    - "docs.bump.sh"
+    - "search.elastic.co"
 
 steps:
   - name: Read issue context
@@ -105,8 +108,11 @@ steps:
         > /tmp/gh-aw/docs-agent/issue.json
 
 safe-outputs:
-  staged: false
+  threat-detection:
+    runs-on: ubuntu-24.04
+  report-failure-as-issue: false
   messages:
+    footer: "> Generated from [{workflow_name}]({run_url}){history_link}"
     run-started: "🧪 [docs-agent-experimental]({run_url}) is analyzing this issue. This comment will be updated when the run finishes."
     run-success: "✅ [docs-agent-experimental]({run_url}) finished processing this issue."
     run-failure: "❌ [docs-agent-experimental]({run_url}) could not complete this issue. Open the run for details."

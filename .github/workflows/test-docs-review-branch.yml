@@ -1,0 +1,33 @@
+name: Test docs review (branch)
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number in elastic/docs-content to review"
+        required: true
+        type: string
+      review-scope:
+        description: "Markdown review scope"
+        required: false
+        default: "repo-wide-markdown"
+
+permissions:
+  actions: read
+  contents: read
+  discussions: write
+  issues: write
+  pull-requests: write
+  copilot-requests: write
+
+jobs:
+  run-docs-review:
+    name: Test docs review (branch)
+    uses: elastic/docs-actions/.github/workflows/gh-aw-docs-review.lock.yml@scope-quality-and-docs-impact
+    with:
+      review-scope: ${{ inputs.review-scope }}
+      additional-instructions: |
+        This is a branch test against elastic/docs-content PR #${{ inputs.pr_number }}.
+        Use repo-wide-markdown scope.
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

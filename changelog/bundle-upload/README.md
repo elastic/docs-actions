@@ -28,4 +28,4 @@ steps:
 
 This action is typically used as the second job in the `changelog-bundle.yml` reusable workflow, after `bundle-create` generates the artifact. The S3 key for each bundle is `bundle/{product}/{filename}`, where the product is read from the bundle's YAML `products` array.
 
-> **Note:** Bundles are keyed by product, so a shared product (e.g. `cloud-serverless`) published by more than one repository shares the `bundle/{product}/` prefix. To avoid collisions, give each bundle a repo-qualified filename such as `{repo}-{dateOrVersion}.yaml` (e.g. `my-repo-2026-03.yaml`).
+> **Note:** Bundles are keyed by product, so a shared product (e.g. `cloud-serverless`) published by more than one repository shares the `bundle/{product}/` prefix. Profile mode writes `{repo}-{product}-{version}.yaml` (for example `kibana-cloud-serverless-2026-08-27.yaml`); S3 uniqueness is that basename. The CDN `:cdn:` listing includes every object under `bundle/{product}/`.

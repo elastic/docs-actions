@@ -42,6 +42,11 @@ on:
         type: string
         default: ''
         required: false
+      path:
+        description: 'Root directory of the documentation source (e.g. docs or generated/docs). Used to strip the correct prefix from preview comment links. Defaults to docs.'
+        type: string
+        default: ''
+        required: false
       use-release-branches:
         description: >
           When true, update-link-index runs for semver release branches (e.g. 9.4) as well as the default branch.
@@ -61,7 +66,7 @@ jobs:
     if: >
       github.event.workflow_run.conclusion == 'success'
       && github.event.repository.fork == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: read
@@ -84,7 +89,7 @@ jobs:
         id: context
         uses: actions/github-script@v9
         env:
-          PATH_PATTERN: ${{ inputs.path-pattern }}
+          PATH_PATTERN: ${{ inputs.path-pattern || (inputs.path && format('{0}/**', inputs.path)) || 'docs/**' }}
           IGNORE_PATTERNS: |
             ${{ inputs.path-pattern-ignore }}
             .github/**
@@ -113,27 +118,22 @@ jobs:
             const ignoreLines = (process.env.IGNORE_PATTERNS || '')
               .split('\n').map(s => s.trim()).filter(Boolean);
 
-            const matchesPattern = (filename) => {
-              if (pathPattern === '**' || pathPattern === '') return true;
-              if (pathPattern.endsWith('/**')) {
-                return filename.startsWith(pathPattern.slice(0, -3) + '/');
+            // No checkout in this workflow_run phase, so patterns are matched
+            // against API filenames: dir/** (subtree), dir/* (direct children), exact.
+            const matchesGlob = (f, pattern) => {
+              if (pattern.endsWith('/**')) return f.startsWith(pattern.slice(0, -3) + '/');
+              if (pattern.endsWith('/*')) {
+                const dir = pattern.slice(0, -2);
+                return f.startsWith(dir + '/') && !f.slice(dir.length + 1).includes('/');
               }
-              return true;
+              return f === pattern;
             };
 
-            const isIgnored = (filename) => {
-              for (const pattern of ignoreLines) {
-                if (pattern.endsWith('/**')) {
-                  if (filename.startsWith(pattern.slice(0, -3) + '/')) return true;
-                } else if (pattern.endsWith('/*')) {
-                  const dir = pattern.slice(0, -2);
-                  if (filename.startsWith(dir + '/') && !filename.slice(dir.length + 1).includes('/')) return true;
-                } else if (filename === pattern) {
-                  return true;
-                }
-              }
-              return false;
-            };
+            // Fails open: any pattern shape other than dir/** matches everything.
+            const matchesPattern = (filename) =>
+              !pathPattern.endsWith('/**') || matchesGlob(filename, pathPattern);
+
+            const isIgnored = (filename) => ignoreLines.some(p => matchesGlob(filename, p));
 
             if (event === 'push') {
               core.setOutput('base-ref', headBranch);
@@ -233,14 +233,6 @@ jobs:
               const valeIncludes = valePathLines.filter(p => !p.startsWith('!'));
               const valeExcludes = valePathLines.filter(p => p.startsWith('!')).map(p => p.slice(1));
               const matchesVale = (filename) => {
-                const matchesGlob = (f, pattern) => {
-                  if (pattern.endsWith('/**')) return f.startsWith(pattern.slice(0, -3) + '/');
-                  if (pattern.endsWith('/*')) {
-                    const dir = pattern.slice(0, -2);
-                    return f.startsWith(dir + '/') && !f.slice(dir.length + 1).includes('/');
-                  }
-                  return f === pattern;
-                };
                 const included = valeIncludes.length === 0 || valeIncludes.some(p => matchesGlob(filename, p));
                 const excluded = valeExcludes.some(p => matchesGlob(filename, p));
                 return included && !excluded;
@@ -305,9 +297,13 @@ jobs:
           HEAD_BRANCH: ${{ steps.context.outputs.head-branch }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           USE_RELEASE: ${{ inputs.use-release-branches }}
+          EVENT: ${{ steps.context.outputs.event }}
         run: |
           eligible=false
-          if [[ "$HEAD_BRANCH" == "$DEFAULT_BRANCH" ]]; then
+          # Pull requests publish previews only; the link index is fed from pushes to branches in this repository.
+          if [[ "$EVENT" == "pull_request" ]]; then
+            eligible=false
+          elif [[ "$HEAD_BRANCH" == "$DEFAULT_BRANCH" ]]; then
             eligible=true
           elif [[ "${USE_RELEASE}" == "true" ]] && [[ "$HEAD_BRANCH" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
             eligible=true
@@ -325,7 +321,7 @@ jobs:
           || needs.preflight.outputs.is-org-member == 'true')
       && needs.preflight.outputs.should-deploy == 'true'
       && inputs.disable-comments != true
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: none
       deployments: none
@@ -384,7 +380,7 @@ jobs:
   build:
     needs: preflight
     if: needs.preflight.outputs.should-deploy == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -543,7 +539,7 @@ jobs:
     if: >
       needs.build.outputs.build_outcome == 'success'
       && needs.build.outputs.skip != 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: none
       deployments: write
@@ -651,7 +647,7 @@ jobs:
       - build
       - deploy-preview
       - pre-comment
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: none
       deployments: none
@@ -664,6 +660,8 @@ jobs:
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr-number }}
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
+          DOCS_PATH: ${{ inputs.path }}
+          PATH_PATTERN: ${{ inputs.path-pattern }}
         with:
           # language=js
           script: |
@@ -717,13 +715,25 @@ jobs:
               return;
             }
 
+            const rawDocsPath = process.env.DOCS_PATH
+              || (process.env.PATH_PATTERN || '').replace(/\/\*+$/, '')
+              || 'docs';
+            const docsRoot = rawDocsPath
+              .replace(/^\.\//, '')
+              .replace(/\/+$/, '');
+            const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
+
             const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
             const toMarkdownLink = (file) => {
               const path = file
-                .replace(/^docs\//, '')
-                .replace(/\/index.md$/, '')
+                .replace(rootPattern, '')
+                .replace(/(?:^|\/)index\.md$/, '')
                 .replace(/\.md$/, '');
-              return `[${escapeMarkdown(file)}](https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path})`;
+              const href = path
+                ? `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path}`
+                : `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}`;
+              return `[${escapeMarkdown(file)}](${href})`;
             }
 
             const links = changedMdFiles.map(toMarkdownLink)
@@ -798,28 +808,16 @@ jobs:
 
             const body = `${title}
 
-            👋 Thanks for updating the docs! Just a friendly reminder that our docs are now **cumulative**. This means all 9.x versions are documented on the same page and published off of the main branch, instead of creating separate pages for each minor version.
+            👋 Thanks for updating the docs! Elastic docs cover multiple versions and deployment types on the same page. \`applies_to\` tags help readers understand which information applies to them.
 
-            We use [applies_to tags](https://elastic.github.io/docs-builder/syntax/applies) to mark version-specific features and changes.
+            ⚠️ Don't remove or replace information that applies to an older version.
 
-            <details>
-            <summary>Expand for a quick overview</summary>
+            **Need help with \`applies_to\`?**
 
-            ### When to use applies_to tags:
-            ✅ At the page level to indicate which products/deployments the content applies to (mandatory)
-            ✅ When features change state (e.g. preview, ga) in a specific version
-            ✅ When availability differs across deployments and environments
+            - [Tagging skill](https://github.com/elastic/elastic-docs-skills/blob/main/skills/authoring/docs-applies-to-tagging/SKILL.md): Identify, generate, update, and validate tags.
+            - [Placement guide](https://docs-v3-preview.elastic.dev/elastic/docs-builder/tree/main/syntax/applies#where-should-i-put-the-applies_to-metadata): Where to put \`applies_to\` metadata, with syntax examples.
 
-            ### What NOT to do:
-            ❌ Don't remove or replace information that applies to an older version
-            ❌ Don't add new information that applies to a specific version without an applies_to tag
-            ❌ Don't forget that applies_to tags can be used at the page, section, and inline level
-
-            </details>
-
-            ### 🤔 Need help?
-            - Check out the [cumulative docs guidelines](https://www.elastic.co/docs/contribute-docs/how-to/cumulative-docs/)
-            - Reach out in the [#docs](https://elastic.slack.com/archives/C0JF80CJZ) Slack channel`;
+            The [automated docs review](https://github.com/elastic/docs-actions/blob/main/.github/workflows/gh-aw-docs-review.md) also checks for tagging issues on your PR, where enabled.`;
 
             await github.rest.issues.createComment({
               owner, repo,
@@ -837,7 +835,7 @@ jobs:
       && needs.preflight.outputs.vale-files-match == 'true'
     needs:
       - preflight
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: none
@@ -882,7 +880,7 @@ jobs:
     needs:
       - preflight
       - build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
     env:

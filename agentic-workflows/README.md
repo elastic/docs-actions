@@ -5,10 +5,10 @@ AI-powered workflows for Elastic documentation tasks. Each directory contains a 
 | Workflow | Description | Trigger | Safe output |
 |----------|-------------|---------|-------------|
 | [docs-review](docs-review/) | Review changed markdown files in pull requests (`docs/` by default, or repo-wide with `review-scope`) | `/docs-review`, PR checkbox menu | `create-pull-request-review-comment`, `submit-pull-request-review` |
-| [docs-issue-scope](docs-issue-scope/) | Scope docs work from an issue plus linked PRs or commits | `/docs-issue-scope` | `add-comment`, `update-issue` |
-| [issue-triage](issue-triage/) | Triage and refine an issue: classify, validate, rewrite the description, and apply labels | `/triage`, dispatch | `add-labels`, `add-comment`, `update-issue` |
-| [issue-auto-triage](issue-auto-triage/) | Same triage and refinement logic, run automatically when an issue is opened | `issues: opened` | `add-labels`, `add-comment`, `update-issue` |
-| [issue-size](issue-size/) | Estimate the cost and benefit of an issue, with a bill of materials | `/size`, dispatch | `add-labels`, `add-comment` |
+| [issue-scope](issue-scope/) | Scope docs impact and estimate cost/benefit for an issue in one comment | `/scope`, dispatch | `add-labels`, `add-comment` |
+| [issue-triage](issue-triage/) | Route and quality-check an issue on demand: classify it, check it against the quality bar, and apply labels | `/triage`, dispatch | `add-labels`, `remove-labels`, `react-green`, `add-comment` |
+| [issue-auto-triage](issue-auto-triage/) | Route and quality-check a new issue with per-project instructions | `issues: opened` | `add-labels`, `remove-labels`, `react-green`, `add-comment` |
+| [project-metadata](project-metadata/) | Fill configured empty fields for one selected GitHub Project issue | `workflow_dispatch` | `apply-project-fields` |
 | [docs-frontmatter-sweep](docs-frontmatter-sweep/) | Audit frontmatter on a rotating slice, or all markdown files under a selected subtree | `workflow_dispatch` | `create-issue` (label `docs-fix:frontmatter`) |
 | [docs-quality-sweep](docs-quality-sweep/) | Orchestrator that fans out to all quality sweeps in parallel | `workflow_dispatch` | (per sub-workflow) |
 | [docs-applies-to-sweep](docs-applies-to-sweep/) | Validate `applies_to` keys on a rotating slice, or all markdown files under a selected subtree | `workflow_dispatch` | `create-issue` (label `docs-fix:applies-to`) |
@@ -25,11 +25,15 @@ Copy a workflow's `example.yml` into your repository's `.github/workflows/` dire
 
 ```bash
 mkdir -p .github/workflows && curl -sL \
-  https://raw.githubusercontent.com/elastic/docs-actions/v1/agentic-workflows/docs-issue-scope/example.yml \
-  -o .github/workflows/docs-issue-scope.yml
+  https://raw.githubusercontent.com/elastic/docs-actions/v1/agentic-workflows/issue-scope/example.yml \
+  -o .github/workflows/docs-scope.yml
 ```
 
-These workflows use `COPILOT_GITHUB_TOKEN` for authentication. Pass `secrets.COPILOT_GITHUB_TOKEN` from the caller workflow as shown in the `example.yml` files. The quality-sweep orchestrator is the exception — it dispatches sibling workflows via `gh workflow run` and does not pass a token directly.
+The sweeps and `docs-source-sync` use the built-in `github.token` with `copilot-requests: write` permission for
+authentication, so no secret passthrough is needed. The quality-sweep orchestrator is the
+exception: it dispatches sibling workflows via `gh workflow run`.
+
+`docs-review`, `issue-triage`, `issue-auto-triage`, `issue-scope` and `project-metadata` call the Agent Router gateway as a service account. Their callers need `id-token: write` (and `copilot-requests: write` for threat detection), and the calling repo must be on the service account's allowlist. See [Developing agentic workflows](DEVELOPING.md#agent-router-workflows).
 
 Skill imports are workflow-specific. Some workflows install APM skills from `elastic/elastic-docs-skills`, while others intentionally rely only on embedded rules and deterministic pre-steps.
 

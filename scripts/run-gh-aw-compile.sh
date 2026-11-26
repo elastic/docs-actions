@@ -2,7 +2,8 @@
 
 set -euo pipefail
 
-EXPECTED_GH_AW_VERSION="v0.83.4"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+EXPECTED_GH_AW_VERSION="$(<"${repo_root}/.gh-aw-version")"
 
 installed_version="$(
   gh extension list \

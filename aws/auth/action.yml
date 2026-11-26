@@ -21,6 +21,21 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        AWS_ACCOUNT_ID: ${{ inputs.aws_account_id }}
+        ROLE_NAME_PREFIX: ${{ inputs.aws_role_name_prefix }}
+      run: |
+        if [[ ! "$AWS_ACCOUNT_ID" =~ ^[0-9]{12}$ ]]; then
+          echo "::error::aws_account_id must be exactly 12 digits: ${AWS_ACCOUNT_ID}"
+          exit 1
+        fi
+        if [[ ! "$ROLE_NAME_PREFIX" =~ ^[a-zA-Z0-9-]+$ ]]; then
+          echo "::error::aws_role_name_prefix must match [a-zA-Z0-9-]+: ${ROLE_NAME_PREFIX}"
+          exit 1
+        fi
+
     - name: Generate AWS Role ARN
       id: role_arn
       shell: python
@@ -35,7 +50,7 @@ runs:
           m.update(os.environ["GITHUB_REPOSITORY"].encode('utf-8'))
           hash = m.hexdigest()[:64-len(prefix)]
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-            f.write(f"result=arn:aws:iam::{os.environ["AWS_ACCOUNT_ID"]}:role/{prefix}{hash}")
+            f.write(f"result=arn:aws:iam::{os.environ['AWS_ACCOUNT_ID']}:role/{prefix}{hash}\n")
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
       with:

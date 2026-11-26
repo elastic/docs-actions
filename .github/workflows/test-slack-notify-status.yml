@@ -16,7 +16,8 @@ on:
 
 jobs:
   unit:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
     permissions: {}
     steps:
       - uses: actions/checkout@v6

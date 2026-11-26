@@ -53,10 +53,13 @@ runs:
         PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         HEAD_REF: ${{ github.event.pull_request.head.ref }}
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
         EVENT_ACTION: ${{ github.event.action }}
         TITLE_CHANGED: ${{ github.event.changes.title != null }}
         BODY_CHANGED: ${{ github.event.changes.body != null }}
         STRIP_PREFIX: ${{ inputs.strip-title-prefix }}
+        IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+        MAINTAINER_CAN_MODIFY: ${{ github.event.pull_request.maintainer_can_modify }}
       run: |
         TITLE_FLAG=""
         if [ "$TITLE_CHANGED" = "true" ]; then
@@ -73,6 +76,22 @@ runs:
           PREFIX_FLAG="--strip-title-prefix"
         fi
 
+        FORK_FLAG=""
+        if [ "$IS_FORK" = "true" ]; then
+          FORK_FLAG="--is-fork"
+        fi
+
+        # can-commit is true for same-repo PRs; for forks it requires maintainer_can_modify
+        CAN_COMMIT_FLAG=""
+        if [ "$IS_FORK" != "true" ] || [ "$MAINTAINER_CAN_MODIFY" = "true" ]; then
+          CAN_COMMIT_FLAG="--can-commit"
+        fi
+
+        MAINTAINER_FLAG=""
+        if [ "$MAINTAINER_CAN_MODIFY" = "true" ]; then
+          MAINTAINER_FLAG="--maintainer-can-modify"
+        fi
+
         docs-builder changelog evaluate-pr \
           --config "$CONFIG_FILE" \
           --owner "$REPO_OWNER" \
@@ -82,10 +101,14 @@ runs:
           --pr-labels "$PR_LABELS" \
           --head-ref "$HEAD_REF" \
           --head-sha "$HEAD_SHA" \
+          --head-repo "$HEAD_REPO" \
           --event-action "$EVENT_ACTION" \
           $TITLE_FLAG \
           $BODY_FLAG \
-          $PREFIX_FLAG
+          $PREFIX_FLAG \
+          $FORK_FLAG \
+          $CAN_COMMIT_FLAG \
+          $MAINTAINER_FLAG
 
     - name: Gate
       if: always()
@@ -117,3 +140,12 @@ runs:
             exit 1
             ;;
         esac
+
+    - name: Upload decision artifact
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: changelog-decision
+        path: .artifacts/changelog-decision
+        retention-days: 1
+        if-no-files-found: ignore
