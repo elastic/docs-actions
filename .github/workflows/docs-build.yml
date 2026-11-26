@@ -48,7 +48,8 @@ on:
       pre-build-artifact:
         description: >
           Name of an artifact from this workflow run to download into the checkout before the build, for docs
-          sources a previous job generates (e.g. an OpenAPI spec built from the PR). Empty skips the download.
+          sources a previous job generates (e.g. an OpenAPI spec built from the PR). Empty skips the download. Set path-pattern to
+          also match the files the artifact is generated from, or a PR that only changes them skips the build.
         type: string
         default: ''
         required: false

@@ -57,7 +57,8 @@ on:
       pre-build-artifact:
         description: >
           Name of an artifact from the triggering docs-build run to download into the checkout before the build, for docs
-          sources a previous job generates (e.g. an OpenAPI spec built from the PR). Empty skips the download.
+          sources a previous job generates (e.g. an OpenAPI spec built from the PR). Empty skips the download. Set path-pattern to
+          also match the files the artifact is generated from, or a PR that only changes them skips the build.
         type: string
         default: ''
         required: false
@@ -440,9 +441,36 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: ${{ inputs.pre-build-artifact }}
-          path: ${{ inputs.pre-build-artifact-path }}
+          # Staged outside the checkout: the PR controls the checkout, so a symlink there could redirect extraction.
+          path: ${{ runner.temp }}/pre-build-artifact
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
+
+      - name: Copy pre-build artifact into the checkout
+        if: inputs.pre-build-artifact != ''
+        env:
+          DEST: ${{ inputs.pre-build-artifact-path }}
+        # language=bash
+        run: |
+          if [[ -z "$DEST" || "$DEST" == /* || "/$DEST/" == */../* ]]; then
+            echo "::error::pre-build-artifact-path must be a relative path inside the repository: '${DEST}'"
+            exit 1
+          fi
+          part=""
+          IFS=/ read -ra segments <<< "$DEST"
+          for segment in "${segments[@]}"; do
+            part="${part:+$part/}${segment}"
+            if [[ -L "$part" ]]; then
+              echo "::error::pre-build-artifact-path goes through a symlink in the checkout: ${part}"
+              exit 1
+            fi
+          done
+          mkdir -p "$DEST"
+          if find "$DEST" -type l | grep -q .; then
+            echo "::error::Symlinks found under ${DEST} in the checkout — refusing to copy the pre-build artifact"
+            exit 1
+          fi
+          cp -R "${RUNNER_TEMP}/pre-build-artifact/." "$DEST/"
 
       - name: Generate env.PATH_PREFIX
         id: generate-path-prefix
