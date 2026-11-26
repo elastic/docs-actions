@@ -45,6 +45,19 @@ on:
         type: boolean
         default: false
         required: false
+      pre-build-artifact:
+        description: >
+          Name of an artifact from this workflow run to download into the checkout before the build, for docs
+          sources a previous job generates (e.g. an OpenAPI spec built from the PR). Empty skips the download. Set path-pattern to
+          also match the files the artifact is generated from, or a PR that only changes them skips the build.
+        type: string
+        default: ''
+        required: false
+      pre-build-artifact-path:
+        description: 'Folder, relative to the repository root, that pre-build-artifact is extracted into.'
+        type: string
+        default: ''
+        required: false
 
 permissions:
   contents: read
@@ -268,6 +281,16 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
           persist-credentials: false
+
+      - name: Download pre-build artifact
+        if: >
+          inputs.pre-build-artifact != ''
+          && env.MATCH == 'true'
+          && needs.check.outputs.effective_any_modified != 'false'
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ inputs.pre-build-artifact }}
+          path: ${{ inputs.pre-build-artifact-path }}
 
       - name: Generate env.PATH_PREFIX
         id: generate-path-prefix
