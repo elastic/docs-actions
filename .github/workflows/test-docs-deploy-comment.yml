@@ -1,0 +1,31 @@
+name: test-docs-deploy-comment
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/docs-deploy.yml'
+      - '.github/workflows/test-docs-deploy-comment.yml'
+      - 'scripts/docs-deploy-preview-comment.test.mjs'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/docs-deploy.yml'
+      - '.github/workflows/test-docs-deploy-comment.yml'
+      - 'scripts/docs-deploy-preview-comment.test.mjs'
+
+permissions: {}
+
+jobs:
+  unit:
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run preview comment tests
+        run: node --test scripts/docs-deploy-preview-comment.test.mjs

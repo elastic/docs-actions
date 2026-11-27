@@ -47,6 +47,14 @@ on:
         type: string
         default: ''
         required: false
+      preview-links:
+        description: >
+          Pages to link in every preview comment, one path per line, relative to the preview root
+          (e.g. api/elasticsearch/next). Use for pages that change without a Markdown file changing,
+          such as generated API references.
+        type: string
+        default: ''
+        required: false
       use-release-branches:
         description: >
           When true, update-link-index runs for semver release branches (e.g. 9.4) as well as the default branch.
@@ -362,7 +370,7 @@ jobs:
               '_This comment will be updated with preview links when the build is complete._',
             ].join('\n');
 
-            const { data: comments } = await github.rest.issues.listComments({
+            const comments = await github.paginate(github.rest.issues.listComments, {
               owner, repo, issue_number: prNumber
             });
             const existing = comments.find(c =>
@@ -712,58 +720,14 @@ jobs:
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
           DOCS_PATH: ${{ inputs.path }}
           PATH_PATTERN: ${{ inputs.path-pattern }}
+          PREVIEW_LINKS: ${{ inputs.preview-links }}
         with:
           # language=js
           script: |
             const title = '## 🔍 Preview links for changed docs'
             const { owner, repo } = context.repo;
             const prNumber = parseInt(process.env.PR_NUMBER);
-
-            const files = await github.paginate(github.rest.pulls.listFiles, {
-              owner, repo, pull_number: prNumber
-            });
-
-            const changedMdFiles = files
-              .map(f => f.filename)
-              .filter(i => i.endsWith('.md'))
-              .filter(i => !i.includes('/_snippets/'));
-
-            if (changedMdFiles.length === 0) {
-              const hasSnippetOrCsv = files
-                .map(f => f.filename)
-                .some(f => f.includes('/_snippets/') || f.endsWith('.csv'));
-              if (!hasSnippetOrCsv) return;
-
-              const previewUrl = `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}`;
-              const body = [
-                title,
-                '',
-                'This PR only changes snippets or data files. No direct page links are available.',
-                `[Browse the full preview](${previewUrl})`,
-              ].join('\n');
-
-              const { data: comments } = await github.rest.issues.listComments({
-                owner, repo, issue_number: prNumber
-              });
-              const existing = comments.find(c =>
-                c.user.type === 'Bot' &&
-                c.body.startsWith(title)
-              );
-              if (existing) {
-                await github.rest.issues.updateComment({
-                  owner, repo,
-                  comment_id: existing.id,
-                  body,
-                });
-              } else {
-                await github.rest.issues.createComment({
-                  owner, repo,
-                  issue_number: prNumber,
-                  body,
-                });
-              }
-              return;
-            }
+            const previewUrl = `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}`;
 
             const rawDocsPath = process.env.DOCS_PATH
               || (process.env.PATH_PATTERN || '').replace(/\/\*+$/, '')
@@ -774,24 +738,48 @@ jobs:
             const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
 
-            const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
-            const toMarkdownLink = (file) => {
-              const path = file
+            const escapeMarkdown = (s) => s.replace(/([[\]()\\<>])/g, '\\$1');
+            // <...> lets the destination hold spaces without re-encoding paths that are already encoded;
+            // only < and >, which would end it, are encoded.
+            const toLink = (label, path) => `[${escapeMarkdown(label)}](<${path ? `${previewUrl}/${path.replace(/[<>]/g, encodeURIComponent)}` : previewUrl}>)`;
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner, repo, pull_number: prNumber
+            });
+
+            const changedMdFiles = files
+              .map(f => f.filename)
+              .filter(i => i.endsWith('.md'))
+              .filter(i => !i.includes('/_snippets/'));
+
+            const links = [
+              ...(process.env.PREVIEW_LINKS || '')
+                .split('\n')
+                .map(p => p.trim().replace(/^\/+|\/+$/g, ''))
+                .filter(Boolean)
+                .map(p => toLink(p, p)),
+              ...changedMdFiles.map(file => toLink(file, file
                 .replace(rootPattern, '')
                 .replace(/(?:^|\/)index\.md$/, '')
-                .replace(/\.md$/, '');
-              const href = path
-                ? `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path}`
-                : `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}`;
-              return `[${escapeMarkdown(file)}](${href})`;
-            }
-
-            const links = changedMdFiles.map(toMarkdownLink)
+                .replace(/\.md$/, ''))),
+            ];
 
             const body = [
               title,
               ...links.slice(0, 10).map(i => `- ${i}`),
             ]
+
+            // pre-comment already posted the in-progress comment, so replace it even with nothing to link.
+            if (links.length === 0) {
+              const onlySnippetsOrCsv = files.every(f => f.filename.includes('/_snippets/') || f.filename.endsWith('.csv'));
+              body.push(
+                '',
+                onlySnippetsOrCsv
+                  ? 'This PR only changes snippets or data files. No direct page links are available.'
+                  : 'No direct page links are available.',
+                `[Browse the full preview](${previewUrl})`,
+              );
+            }
 
             if (links.length > 10) {
               body.push('<details>');
@@ -806,10 +794,10 @@ jobs:
 
             if (links.length > 100) {
               body.push('');
-              body.push(`<sub> In total, ${links.length} files changed. </sub>`);
+              body.push(`<sub> Showing 100 of ${links.length} links. In total, ${changedMdFiles.length} files changed. </sub>`);
             }
 
-            const { data: comments } = await github.rest.issues.listComments({
+            const comments = await github.paginate(github.rest.issues.listComments, {
               owner, repo, issue_number: prNumber
             });
             const existing = comments.find(c =>
