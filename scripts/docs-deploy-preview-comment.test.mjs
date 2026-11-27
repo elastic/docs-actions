@@ -74,7 +74,7 @@ test('comment keeps the snippet explanation for snippet-only PRs', async () => {
 test('comment lists preview-links first, with escaped labels and raw destinations', async () => {
   const calls = await runStep('Comment on PR', {
     files: ['docs/guide.md'],
-    previewLinks: '/api/elasticsearch/next/\n\napi/get started\napi/[beta]\napi/get%20started\n',
+    previewLinks: '/api/elasticsearch/next/\n\napi/get started\napi/[beta]\napi/get%20started\napi/<x>\n',
   });
   assert.deepEqual(calls.map(c => c.op), ['create']);
   assert.deepEqual(calls[0].body.split('\n').slice(1), [
@@ -82,6 +82,7 @@ test('comment lists preview-links first, with escaped labels and raw destination
     `- [api/get started](<${previewUrl}/api/get started>)`,
     `- [api/\\[beta\\]](<${previewUrl}/api/[beta]>)`,
     `- [api/get%20started](<${previewUrl}/api/get%20started>)`,
+    `- [api/<x>](<${previewUrl}/api/%3Cx%3E>)`,
     `- [docs/guide.md](<${previewUrl}/guide>)`,
   ]);
 });
