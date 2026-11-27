@@ -738,7 +738,7 @@ jobs:
             const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
 
-            const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
+            const escapeMarkdown = (s) => s.replace(/([[\]()\\<>])/g, '\\$1');
             // <...> lets the destination hold spaces without re-encoding paths that are already encoded;
             // only < and >, which would end it, are encoded.
             const toLink = (label, path) => `[${escapeMarkdown(label)}](<${path ? `${previewUrl}/${path.replace(/[<>]/g, encodeURIComponent)}` : previewUrl}>)`;

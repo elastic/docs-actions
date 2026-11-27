@@ -82,7 +82,7 @@ test('comment lists preview-links first, with escaped labels and raw destination
     `- [api/get started](<${previewUrl}/api/get started>)`,
     `- [api/\\[beta\\]](<${previewUrl}/api/[beta]>)`,
     `- [api/get%20started](<${previewUrl}/api/get%20started>)`,
-    `- [api/<x>](<${previewUrl}/api/%3Cx%3E>)`,
+    `- [api/\\<x\\>](<${previewUrl}/api/%3Cx%3E>)`,
     `- [docs/guide.md](<${previewUrl}/guide>)`,
   ]);
 });
