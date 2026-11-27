@@ -1,0 +1,45 @@
+name: test-activation-gates
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/gh-aw-docs-review.md'
+      - '.github/workflows/gh-aw-docs-review.lock.yml'
+      - '.github/workflows/gh-aw-issue-scope.md'
+      - '.github/workflows/gh-aw-issue-scope.lock.yml'
+      - '.github/workflows/test-activation-gates.yml'
+      - 'scripts/test_activation_gates.py'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/gh-aw-docs-review.lock.yml'
+      - '.github/workflows/gh-aw-issue-scope.lock.yml'
+      - '.github/workflows/test-activation-gates.yml'
+      - 'scripts/test_activation_gates.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-activation-gates-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test-gates:
+    name: Test activation gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install PyYAML
+        run: python3 -m pip install --quiet pyyaml
+
+      - name: Evaluate the activation gates against an event matrix
+        run: python3 scripts/test_activation_gates.py
