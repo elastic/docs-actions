@@ -47,6 +47,14 @@ on:
         type: string
         default: ''
         required: false
+      preview-links:
+        description: >
+          Pages to link in every preview comment, one path per line, relative to the preview root
+          (e.g. api/elasticsearch/next). Use for pages that change without a Markdown file changing,
+          such as generated API references.
+        type: string
+        default: ''
+        required: false
       use-release-branches:
         description: >
           When true, update-link-index runs for semver release branches (e.g. 9.4) as well as the default branch.
@@ -712,36 +720,16 @@ jobs:
           PATH_PREFIX: ${{ needs.build.outputs.path_prefix }}
           DOCS_PATH: ${{ inputs.path }}
           PATH_PATTERN: ${{ inputs.path-pattern }}
+          PREVIEW_LINKS: ${{ inputs.preview-links }}
         with:
           # language=js
           script: |
             const title = '## 🔍 Preview links for changed docs'
             const { owner, repo } = context.repo;
             const prNumber = parseInt(process.env.PR_NUMBER);
+            const previewUrl = `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}`;
 
-            const files = await github.paginate(github.rest.pulls.listFiles, {
-              owner, repo, pull_number: prNumber
-            });
-
-            const changedMdFiles = files
-              .map(f => f.filename)
-              .filter(i => i.endsWith('.md'))
-              .filter(i => !i.includes('/_snippets/'));
-
-            if (changedMdFiles.length === 0) {
-              const hasSnippetOrCsv = files
-                .map(f => f.filename)
-                .some(f => f.includes('/_snippets/') || f.endsWith('.csv'));
-              if (!hasSnippetOrCsv) return;
-
-              const previewUrl = `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}`;
-              const body = [
-                title,
-                '',
-                'This PR only changes snippets or data files. No direct page links are available.',
-                `[Browse the full preview](${previewUrl})`,
-              ].join('\n');
-
+            const upsertComment = async (body) => {
               const { data: comments } = await github.rest.issues.listComments({
                 owner, repo, issue_number: prNumber
               });
@@ -762,6 +750,36 @@ jobs:
                   body,
                 });
               }
+            }
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner, repo, pull_number: prNumber
+            });
+
+            const changedMdFiles = files
+              .map(f => f.filename)
+              .filter(i => i.endsWith('.md'))
+              .filter(i => !i.includes('/_snippets/'));
+
+            const fixedLinks = (process.env.PREVIEW_LINKS || '')
+              .split('\n')
+              .map(p => p.trim().replace(/^\/+|\/+$/g, ''))
+              .filter(Boolean)
+              .map(p => `[${p}](${previewUrl}/${p})`);
+
+            if (changedMdFiles.length === 0 && fixedLinks.length === 0) {
+              const hasSnippetOrCsv = files
+                .map(f => f.filename)
+                .some(f => f.includes('/_snippets/') || f.endsWith('.csv'));
+              // pre-comment already posted the in-progress comment, so always replace it.
+              await upsertComment([
+                title,
+                '',
+                hasSnippetOrCsv
+                  ? 'This PR only changes snippets or data files. No direct page links are available.'
+                  : 'No changed pages to link to.',
+                `[Browse the full preview](${previewUrl})`,
+              ].join('\n'));
               return;
             }
 
@@ -786,7 +804,7 @@ jobs:
               return `[${escapeMarkdown(file)}](${href})`;
             }
 
-            const links = changedMdFiles.map(toMarkdownLink)
+            const links = [...fixedLinks, ...changedMdFiles.map(toMarkdownLink)]
 
             const body = [
               title,
@@ -806,29 +824,10 @@ jobs:
 
             if (links.length > 100) {
               body.push('');
-              body.push(`<sub> In total, ${links.length} files changed. </sub>`);
+              body.push(`<sub> In total, ${changedMdFiles.length} files changed. </sub>`);
             }
 
-            const { data: comments } = await github.rest.issues.listComments({
-              owner, repo, issue_number: prNumber
-            });
-            const existing = comments.find(c =>
-              c.user.type === 'Bot' &&
-              c.body.startsWith(title)
-            );
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner, repo,
-                comment_id: existing.id,
-                body: body.join('\n'),
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner, repo,
-                issue_number: prNumber,
-                body: body.join('\n'),
-              });
-            }
+            await upsertComment(body.join('\n'));
 
       - name: Comment on docs changes about versioning requirements
         if: inputs.enable-cumulative-comment == true
