@@ -729,28 +729,18 @@ jobs:
             const prNumber = parseInt(process.env.PR_NUMBER);
             const previewUrl = `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}`;
 
-            const upsertComment = async (body) => {
-              const comments = await github.paginate(github.rest.issues.listComments, {
-                owner, repo, issue_number: prNumber
-              });
-              const existing = comments.find(c =>
-                c.user.type === 'Bot' &&
-                c.body.startsWith(title)
-              );
-              if (existing) {
-                await github.rest.issues.updateComment({
-                  owner, repo,
-                  comment_id: existing.id,
-                  body,
-                });
-              } else {
-                await github.rest.issues.createComment({
-                  owner, repo,
-                  issue_number: prNumber,
-                  body,
-                });
-              }
-            }
+            const rawDocsPath = process.env.DOCS_PATH
+              || (process.env.PATH_PATTERN || '').replace(/\/\*+$/, '')
+              || 'docs';
+            const docsRoot = rawDocsPath
+              .replace(/^\.\//, '')
+              .replace(/\/+$/, '');
+            const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
+
+            const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
+            // <...> lets the destination hold spaces without re-encoding paths that are already encoded.
+            const toLink = (label, path) => `[${escapeMarkdown(label)}](<${path ? `${previewUrl}/${path}` : previewUrl}>)`;
 
             const files = await github.paginate(github.rest.pulls.listFiles, {
               owner, repo, pull_number: prNumber
@@ -761,55 +751,27 @@ jobs:
               .filter(i => i.endsWith('.md'))
               .filter(i => !i.includes('/_snippets/'));
 
-            const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
-            const fixedLinks = (process.env.PREVIEW_LINKS || '')
-              .split('\n')
-              .map(p => p.trim().replace(/^\/+|\/+$/g, ''))
-              .filter(Boolean)
-              .map(p => `[${escapeMarkdown(p)}](${previewUrl}/${encodeURI(p)})`);
-
-            if (changedMdFiles.length === 0 && fixedLinks.length === 0) {
-              const hasSnippetOrCsv = files
-                .map(f => f.filename)
-                .some(f => f.includes('/_snippets/') || f.endsWith('.csv'));
-              // pre-comment already posted the in-progress comment, so always replace it.
-              await upsertComment([
-                title,
-                '',
-                hasSnippetOrCsv
-                  ? 'This PR only changes snippets or data files. No direct page links are available.'
-                  : 'No changed pages to link to.',
-                `[Browse the full preview](${previewUrl})`,
-              ].join('\n'));
-              return;
-            }
-
-            const rawDocsPath = process.env.DOCS_PATH
-              || (process.env.PATH_PATTERN || '').replace(/\/\*+$/, '')
-              || 'docs';
-            const docsRoot = rawDocsPath
-              .replace(/^\.\//, '')
-              .replace(/\/+$/, '');
-            const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
-
-            const toMarkdownLink = (file) => {
-              const path = file
+            const links = [
+              ...(process.env.PREVIEW_LINKS || '')
+                .split('\n')
+                .map(p => p.trim().replace(/^\/+|\/+$/g, ''))
+                .filter(Boolean)
+                .map(p => toLink(p, p)),
+              ...changedMdFiles.map(file => toLink(file, file
                 .replace(rootPattern, '')
                 .replace(/(?:^|\/)index\.md$/, '')
-                .replace(/\.md$/, '');
-              const href = path
-                ? `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}/${path}`
-                : `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}`;
-              return `[${escapeMarkdown(file)}](${href})`;
-            }
-
-            const links = [...fixedLinks, ...changedMdFiles.map(toMarkdownLink)]
+                .replace(/\.md$/, ''))),
+            ];
 
             const body = [
               title,
               ...links.slice(0, 10).map(i => `- ${i}`),
             ]
+
+            // pre-comment already posted the in-progress comment, so replace it even with nothing to link.
+            if (links.length === 0) {
+              body.push('', 'No direct page links are available.', `[Browse the full preview](${previewUrl})`);
+            }
 
             if (links.length > 10) {
               body.push('<details>');
@@ -827,7 +789,26 @@ jobs:
               body.push(`<sub> Showing 100 of ${links.length} links. In total, ${changedMdFiles.length} files changed. </sub>`);
             }
 
-            await upsertComment(body.join('\n'));
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number: prNumber
+            });
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.startsWith(title)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo,
+                comment_id: existing.id,
+                body: body.join('\n'),
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo,
+                issue_number: prNumber,
+                body: body.join('\n'),
+              });
+            }
 
       - name: Comment on docs changes about versioning requirements
         if: inputs.enable-cumulative-comment == true

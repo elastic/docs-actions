@@ -1,9 +1,10 @@
-// Runs the inline "Comment on PR" script from docs-deploy.yml against a mocked GitHub client.
+// Runs the inline preview comment scripts from docs-deploy.yml against a mocked GitHub client.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const workflow = readFileSync(new URL('../.github/workflows/docs-deploy.yml', import.meta.url), 'utf8').split('\n');
+const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 
 function extractScript(stepName) {
   const step = workflow.findIndex(l => l.trim() === `- name: ${stepName}`);
@@ -19,17 +20,18 @@ function extractScript(stepName) {
   return lines.join('\n');
 }
 
-const script = extractScript('Comment on PR');
-const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 const title = '## 🔍 Preview links for changed docs';
 const previewUrl = 'https://docs-v3-preview.elastic.dev/elastic/repo/pull/1';
+const inProgress = { id: 42, user: { type: 'Bot' }, body: `${title}\n\n⏳ Building and deploying preview...` };
+// 40 comments push the preview comment past the first page of 30.
+const busyPr = [...Array.from({ length: 40 }, (_, i) => ({ id: i, user: { type: 'User' }, body: 'lgtm' })), inProgress];
 
-async function runComment({ files, comments = [], previewLinks = '' }) {
+async function runStep(stepName, { files = [], comments = [], previewLinks = '' }) {
   const calls = [];
   const rest = {
     pulls: { listFiles: () => {} },
     issues: {
-      // Only github.paginate returns comments, so a lookup that skips pagination finds none.
+      // Only github.paginate returns comments, so a lookup that reads one page finds none.
       listComments: async () => ({ data: [] }),
       updateComment: async (a) => calls.push({ op: 'update', id: a.comment_id, body: a.body }),
       createComment: async (a) => calls.push({ op: 'create', body: a.body }),
@@ -39,44 +41,45 @@ async function runComment({ files, comments = [], previewLinks = '' }) {
     rest,
     paginate: async (fn) => fn === rest.pulls.listFiles ? files.map(filename => ({ filename })) : comments,
   };
-  process.env.PR_NUMBER = '1';
-  process.env.PATH_PREFIX = '/elastic/repo/pull/1';
-  process.env.DOCS_PATH = 'docs';
-  process.env.PATH_PATTERN = '';
-  process.env.PREVIEW_LINKS = previewLinks;
-  await new AsyncFunction('github', 'context', script)(github, { repo: { owner: 'elastic', repo: 'repo' } });
+  Object.assign(process.env, {
+    PR_NUMBER: '1',
+    PATH_PREFIX: '/elastic/repo/pull/1',
+    DOCS_PATH: 'docs',
+    PATH_PATTERN: '',
+    PREVIEW_LINKS: previewLinks,
+  });
+  const context = { repo: { owner: 'elastic', repo: 'repo' }, runId: 7 };
+  await new AsyncFunction('github', 'context', extractScript(stepName))(github, context);
   return calls;
 }
 
-const inProgress = { id: 42, user: { type: 'Bot' }, body: `${title}\n\n⏳ Building and deploying preview...` };
-const otherComments = Array.from({ length: 40 }, (_, i) => ({ id: i, user: { type: 'User' }, body: 'lgtm' }));
+test('pre-comment updates the existing comment past the first page', async () => {
+  const calls = await runStep('Update comment to in-progress', { comments: busyPr });
+  assert.deepEqual(calls.map(c => [c.op, c.id]), [['update', 42]]);
+});
 
-test('replaces the in-progress comment when nothing is linkable', async () => {
-  const calls = await runComment({ files: ['src/schema.ts'], comments: [...otherComments, inProgress] });
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0].op, 'update');
-  assert.equal(calls[0].id, 42);
-  assert.match(calls[0].body, /No changed pages to link to\./);
+test('comment replaces the in-progress comment when nothing is linkable', async () => {
+  const calls = await runStep('Comment on PR', { files: ['src/schema.ts'], comments: busyPr });
+  assert.deepEqual(calls.map(c => [c.op, c.id]), [['update', 42]]);
   assert.ok(calls[0].body.includes(`[Browse the full preview](${previewUrl})`));
 });
 
-test('lists preview-links before changed pages, escaped and encoded', async () => {
-  const calls = await runComment({
+test('comment lists preview-links first, with escaped labels and raw destinations', async () => {
+  const calls = await runStep('Comment on PR', {
     files: ['docs/guide.md'],
-    comments: [inProgress],
-    previewLinks: '/api/elasticsearch/next/\n\napi/get started\n',
+    previewLinks: '/api/elasticsearch/next/\n\napi/get started\napi/[beta]\napi/get%20started\n',
   });
-  assert.equal(calls[0].op, 'update');
   assert.deepEqual(calls[0].body.split('\n').slice(1), [
-    `- [api/elasticsearch/next](${previewUrl}/api/elasticsearch/next)`,
-    `- [api/get started](${previewUrl}/api/get%20started)`,
-    `- [docs/guide.md](${previewUrl}/guide)`,
+    `- [api/elasticsearch/next](<${previewUrl}/api/elasticsearch/next>)`,
+    `- [api/get started](<${previewUrl}/api/get started>)`,
+    `- [api/\\[beta\\]](<${previewUrl}/api/[beta]>)`,
+    `- [api/get%20started](<${previewUrl}/api/get%20started>)`,
+    `- [docs/guide.md](<${previewUrl}/guide>)`,
   ]);
 });
 
-test('says how many links were left out', async () => {
+test('comment says how many links were left out', async () => {
   const files = Array.from({ length: 100 }, (_, i) => `docs/page-${i}.md`);
-  const calls = await runComment({ files, previewLinks: 'a\nb\nc\nd\ne' });
-  assert.equal(calls[0].op, 'create');
+  const calls = await runStep('Comment on PR', { files, previewLinks: 'a\nb\nc\nd\ne' });
   assert.match(calls[0].body, /Showing 100 of 105 links\. In total, 100 files changed\./);
 });
