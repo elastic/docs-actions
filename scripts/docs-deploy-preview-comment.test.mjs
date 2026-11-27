@@ -61,7 +61,14 @@ test('pre-comment updates the existing comment past the first page', async () =>
 test('comment replaces the in-progress comment when nothing is linkable', async () => {
   const calls = await runStep('Comment on PR', { files: ['src/schema.ts'], comments: busyPr });
   assert.deepEqual(calls.map(c => [c.op, c.id]), [['update', 42]]);
-  assert.ok(calls[0].body.includes(`[Browse the full preview](${previewUrl})`));
+  assert.ok(calls[0].body.includes(`No direct page links are available.\n[Browse the full preview](${previewUrl})`));
+  assert.doesNotMatch(calls[0].body, /only changes snippets/);
+});
+
+test('comment keeps the snippet explanation for snippet-only PRs', async () => {
+  const calls = await runStep('Comment on PR', { files: ['docs/_snippets/note.md', 'docs/data.csv'] });
+  assert.deepEqual(calls.map(c => c.op), ['create']);
+  assert.match(calls[0].body, /This PR only changes snippets or data files\./);
 });
 
 test('comment lists preview-links first, with escaped labels and raw destinations', async () => {
@@ -69,6 +76,7 @@ test('comment lists preview-links first, with escaped labels and raw destination
     files: ['docs/guide.md'],
     previewLinks: '/api/elasticsearch/next/\n\napi/get started\napi/[beta]\napi/get%20started\n',
   });
+  assert.deepEqual(calls.map(c => c.op), ['create']);
   assert.deepEqual(calls[0].body.split('\n').slice(1), [
     `- [api/elasticsearch/next](<${previewUrl}/api/elasticsearch/next>)`,
     `- [api/get started](<${previewUrl}/api/get started>)`,
@@ -81,5 +89,6 @@ test('comment lists preview-links first, with escaped labels and raw destination
 test('comment says how many links were left out', async () => {
   const files = Array.from({ length: 100 }, (_, i) => `docs/page-${i}.md`);
   const calls = await runStep('Comment on PR', { files, previewLinks: 'a\nb\nc\nd\ne' });
+  assert.deepEqual(calls.map(c => c.op), ['create']);
   assert.match(calls[0].body, /Showing 100 of 105 links\. In total, 100 files changed\./);
 });

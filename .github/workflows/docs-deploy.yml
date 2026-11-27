@@ -770,7 +770,14 @@ jobs:
 
             // pre-comment already posted the in-progress comment, so replace it even with nothing to link.
             if (links.length === 0) {
-              body.push('', 'No direct page links are available.', `[Browse the full preview](${previewUrl})`);
+              const hasSnippetOrCsv = files.some(f => f.filename.includes('/_snippets/') || f.filename.endsWith('.csv'));
+              body.push(
+                '',
+                hasSnippetOrCsv
+                  ? 'This PR only changes snippets or data files. No direct page links are available.'
+                  : 'No direct page links are available.',
+                `[Browse the full preview](${previewUrl})`,
+              );
             }
 
             if (links.length > 10) {
