@@ -71,6 +71,12 @@ test('comment keeps the snippet explanation for snippet-only PRs', async () => {
   assert.match(calls[0].body, /This PR only changes snippets or data files\./);
 });
 
+test('comment uses the generic message when snippets come with other files', async () => {
+  const calls = await runStep('Comment on PR', { files: ['docs/data.csv', 'docs/settings.yml'] });
+  assert.doesNotMatch(calls[0].body, /only changes snippets/);
+  assert.match(calls[0].body, /No direct page links are available\./);
+});
+
 test('comment lists preview-links first, with escaped labels and raw destinations', async () => {
   const calls = await runStep('Comment on PR', {
     files: ['docs/guide.md'],
