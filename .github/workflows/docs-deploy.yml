@@ -370,7 +370,7 @@ jobs:
               '_This comment will be updated with preview links when the build is complete._',
             ].join('\n');
 
-            const { data: comments } = await github.rest.issues.listComments({
+            const comments = await github.paginate(github.rest.issues.listComments, {
               owner, repo, issue_number: prNumber
             });
             const existing = comments.find(c =>
@@ -730,7 +730,7 @@ jobs:
             const previewUrl = `https://docs-v3-preview.elastic.dev${process.env.PATH_PREFIX}`;
 
             const upsertComment = async (body) => {
-              const { data: comments } = await github.rest.issues.listComments({
+              const comments = await github.paginate(github.rest.issues.listComments, {
                 owner, repo, issue_number: prNumber
               });
               const existing = comments.find(c =>
@@ -761,11 +761,12 @@ jobs:
               .filter(i => i.endsWith('.md'))
               .filter(i => !i.includes('/_snippets/'));
 
+            const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
             const fixedLinks = (process.env.PREVIEW_LINKS || '')
               .split('\n')
               .map(p => p.trim().replace(/^\/+|\/+$/g, ''))
               .filter(Boolean)
-              .map(p => `[${p}](${previewUrl}/${p})`);
+              .map(p => `[${escapeMarkdown(p)}](${previewUrl}/${encodeURI(p)})`);
 
             if (changedMdFiles.length === 0 && fixedLinks.length === 0) {
               const hasSnippetOrCsv = files
@@ -792,7 +793,6 @@ jobs:
             const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const rootPattern = new RegExp(`^${escapeRegExp(docsRoot)}/`);
 
-            const escapeMarkdown = (s) => s.replace(/([[\]()\\])/g, '\\$1');
             const toMarkdownLink = (file) => {
               const path = file
                 .replace(rootPattern, '')
@@ -824,7 +824,7 @@ jobs:
 
             if (links.length > 100) {
               body.push('');
-              body.push(`<sub> In total, ${changedMdFiles.length} files changed. </sub>`);
+              body.push(`<sub> Showing 100 of ${links.length} links. In total, ${changedMdFiles.length} files changed. </sub>`);
             }
 
             await upsertComment(body.join('\n'));
